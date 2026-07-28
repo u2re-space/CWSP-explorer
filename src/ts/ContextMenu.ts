@@ -1,7 +1,15 @@
+/*
+ * Filename: ContextMenu.ts
+ * FullPath: modules/views/explorer-view/src/ts/ContextMenu.ts
+ * Change date and time: 22.42.00_28.07.2026
+ * Reason for changes: Keep the page click surface active while menus are open.
+ */
+
 import { MOCElement } from "fest/dom";
 import type { FileEntryItem } from "./Operative";
-import { ctxMenuTrigger, H } from "fest/lure";
+import { canReceiveIncomingPath } from "./Operative";
 import { resolveOverlayMountPoint } from "boot/shell-slots";
+import { entryKey, entryKind } from "./utils";
 
 
 type ContextMenuEntry = {
@@ -645,9 +653,6 @@ export const openUnifiedContextMenu = (request: ContextMenuOpenRequest): void =>
 
     const mount =
         request.resolveOverlayMountPoint?.(request.anchor ?? null) ?? resolveOverlayMountPoint(request.anchor ?? null);
-    if (mount !== document.body) {
-        mount.style.pointerEvents = mount.style.pointerEvents || "none";
-    }
 
     const layer = document.createElement("div");
     layer.className = "cw-context-menu-layer";
@@ -755,12 +760,6 @@ export const openUnifiedContextMenu = (request: ContextMenuOpenRequest): void =>
 export type { ContextMenuEntry, ContextMenuOpenRequest };
 
 //
-const disconnectRegistry = new FinalizationRegistry((ctxMenu: HTMLElement) => {
-    // utilize redundant ctx menu from DOM
-    //ctxMenu?.remove?.();
-});
-
-//
 const makeFileActionOps = () => {
     return [
         { id: "open", label: "Open", icon: "function" },
@@ -784,34 +783,61 @@ const makeFileSystemOps = () => {
     ];
 };
 
-//
-const makeContextMenu = (anchor?: Element | null) => {
-    const ctxMenu = H`<ul class="round-decor ctx-menu ux-anchor" style="position: fixed; z-index: 99999;" data-hidden></ul>`;
-    const mount = resolveOverlayMountPoint(anchor ?? null);
-    mount.append(ctxMenu);
-    return ctxMenu;
+const makeDirectoryOps = () => {
+    const allowed = new Set(["open", "download", "delete", "rename", "copyPath", "movePath"]);
+    return [...makeFileActionOps(), ...makeFileSystemOps()].filter((item) => allowed.has(item.id));
 };
 
+const makeEmptyOps = (path: string) => {
+    if (!canReceiveIncomingPath(path)) return [];
+    return [{ id: "paste", label: "Paste", icon: "clipboard" }];
+};
+
+const getExplorerOperative = (fileManager: HTMLElement): any =>
+    ((fileManager.getRootNode?.() as ShadowRoot | null)?.host as any)?.operativeInstance ?? null;
+
 //
-export const createItemCtxMenu = async (fileManager: any, onMenuAction: (item: FileEntryItem | null | undefined, actionId: string, ev: MouseEvent) => Promise<void>, entries: {value: FileEntryItem[]}) => {
-    const ctxMenuDesc = {
-        openedWith: null,
-        items: [
-            makeFileActionOps(),
-            makeFileSystemOps(),
-        ],
-        defaultAction: (initiator: HTMLElement, menuItem: any, ev: MouseEvent) => {
-            const rowFromCompose = Array.from(ev?.composedPath?.() || []).find((element: any) => element?.classList?.contains?.("row")) || MOCElement(initiator, ".row");
-            onMenuAction?.(((entries?.value ?? entries) as FileEntryItem[])?.find?.(item => (item?.name === (rowFromCompose as any)?.getAttribute?.("data-id"))), menuItem?.id, ev);
-        }
+export const createItemCtxMenu = (
+    fileManager: HTMLElement,
+    onMenuAction: (item: FileEntryItem | null | undefined, actionId: string, ev: MouseEvent) => Promise<void>,
+    entries: { value: FileEntryItem[] }
+) => {
+    const onContextMenu = (event: Event): void => {
+        const ev = event as MouseEvent;
+
+        const row = Array.from(ev.composedPath?.() || [])
+            .find((element: any) => element?.classList?.contains?.("row")) as HTMLElement | undefined
+            ?? MOCElement(ev.target as HTMLElement | null, ".row");
+        const rowKey = row?.getAttribute("data-entry-key");
+        const rowName = row?.getAttribute("data-id");
+        const item = ((entries?.value ?? entries) as FileEntryItem[]).find((entry) =>
+            rowKey ? entryKey(entry) === rowKey : entry?.name === rowName
+        ) ?? null;
+
+        const operative = getExplorerOperative(fileManager);
+        const currentPath = String(operative?.path || "/");
+        const baseItems = item
+            ? entryKind(item) === "directory" ? makeDirectoryOps() : [...makeFileActionOps(), ...makeFileSystemOps()]
+            : makeEmptyOps(currentPath);
+        if (baseItems.length === 0) return;
+
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        const menuItems = baseItems.map((menuItem: any) => ({
+            ...menuItem,
+            danger: menuItem.id === "delete",
+            action: () => onMenuAction?.(item, menuItem.id, ev)
+        }));
+
+        openUnifiedContextMenu({
+            x: ev.clientX,
+            y: ev.clientY,
+            items: menuItems,
+            anchor: fileManager
+        });
     };
 
-    //
-    const initiatorElement = fileManager;
-
-    //
-    const ctxMenu = makeContextMenu(initiatorElement as unknown as Element);
-    ctxMenuTrigger(initiatorElement as any, ctxMenuDesc, ctxMenu);
-    disconnectRegistry.register(initiatorElement, ctxMenu);
-    return ctxMenu;
-}
+    fileManager.addEventListener("contextmenu", onContextMenu);
+    return () => fileManager.removeEventListener("contextmenu", onContextMenu);
+};
