@@ -2,7 +2,7 @@
  * Explorer appearance: resolves light / dark / system and applies stable data attributes +
  * `color-scheme` so UA form controls / scrollbars track the shell.
  *
- * NOTE: `system` follows CrossWord’s `document.documentElement[data-theme]` first (from Theme.syncBrowserChromeTheme),
+ * NOTE: `system` follows CWSP-shell’s `document.documentElement[data-theme]` first (from Theme.syncBrowserChromeTheme),
  * then `(prefers-color-scheme)`, so explorer matches the app shell after async theme loads.
  */
 
