@@ -1,5 +1,5 @@
 import { speedDialItems } from "core/store/StateStorage";
-import { openUnifiedContextMenu, type ContextMenuEntry } from "./ts/ContextMenu";
+import { openUnifiedContextMenu, type ContextMenuEntry } from "./web/ts/ContextMenu";
 
 //
 export type ContextMenuItem = {
