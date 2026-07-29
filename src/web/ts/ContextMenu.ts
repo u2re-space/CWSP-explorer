@@ -1,11 +1,12 @@
 /*
  * Filename: ContextMenu.ts
  * FullPath: modules/views/explorer-view/src/ts/ContextMenu.ts
- * Change date and time: 22.42.00_28.07.2026
- * Reason for changes: Keep the page click surface active while menus are open.
+ * Change date and time: 13.30.00_29.07.2026
+ * Reason for changes: Inline layer stacking so menus beat taskbar even in shadow / late CSS.
  */
 
 import { MOCElement } from "fest/dom";
+import "fest/icon";
 import type { FileEntryItem } from "./Operative";
 import { canReceiveIncomingPath } from "./Operative";
 import { resolveOverlayMountPoint } from "boot/shell-slots";
@@ -408,6 +409,15 @@ function refreshContextMenuUiIcons(root: HTMLElement): void {
     }
     for (const node of root.querySelectorAll("ui-icon")) {
         const el = node as HTMLElement & { updateIcon?: () => unknown };
+        // WHY: force paint size before update — cyclic % min-size collapses ::before mask to 0.
+        el.style.setProperty("--icon-size", "1.125rem", IMP_CSS);
+        el.style.setProperty("--icon-padding", "0px", IMP_CSS);
+        el.style.setProperty("--icon-color", "currentColor", IMP_CSS);
+        el.style.setProperty("width", "1.125rem", IMP_CSS);
+        el.style.setProperty("height", "1.125rem", IMP_CSS);
+        el.style.setProperty("min-width", "1.125rem", IMP_CSS);
+        el.style.setProperty("min-height", "1.125rem", IMP_CSS);
+        el.style.setProperty("display", "inline-grid", IMP_CSS);
         if (typeof el.updateIcon === "function") {
             el.updateIcon.call(node);
         }
@@ -415,9 +425,19 @@ function refreshContextMenuUiIcons(root: HTMLElement): void {
 }
 
 function appendUiIcon(target: HTMLElement, iconName: string): void {
+    const name = String(iconName || "").trim();
+    if (!name) return;
     const el = document.createElement("ui-icon");
-    el.setAttribute("icon", iconName);
+    el.setAttribute("icon", name);
     el.setAttribute("icon-style", "duotone");
+    el.setAttribute("size", "18");
+    el.setAttribute("aria-hidden", "true");
+    // WHY: stamp before connect so first paint has a non-zero box (see Phosphor min(size, 100%)).
+    el.style.setProperty("--icon-size", "1.125rem", IMP_CSS);
+    el.style.setProperty("--icon-padding", "0px", IMP_CSS);
+    el.style.setProperty("--icon-color", "currentColor", IMP_CSS);
+    el.style.setProperty("width", "1.125rem", IMP_CSS);
+    el.style.setProperty("height", "1.125rem", IMP_CSS);
     target.append(el);
 }
 
@@ -656,6 +676,17 @@ export const openUnifiedContextMenu = (request: ContextMenuOpenRequest): void =>
 
     const layer = document.createElement("div");
     layer.className = "cw-context-menu-layer";
+    /*
+     * WHY: Critical stacking must be inline — document stylesheets do not pierce shadow
+     * mounts, and env chrome uses ~2.147e9. Keep menus above taskbar / mobile nav always.
+     */
+    layer.style.setProperty("position", "fixed", IMP_CSS);
+    layer.style.setProperty("inset", "0", IMP_CSS);
+    layer.style.setProperty("z-index", CONTEXT_MENU_LAYER_Z_FALLBACK, IMP_CSS);
+    layer.style.setProperty("pointer-events", "none", IMP_CSS);
+    /* WHY: ancestor backdrop-filter / isolation can drop Phosphor mask paint — keep layer flat. */
+    layer.style.setProperty("backdrop-filter", "none", IMP_CSS);
+    layer.style.setProperty("-webkit-backdrop-filter", "none", IMP_CSS);
     menuLayer = layer;
     mount.appendChild(layer);
 
@@ -663,12 +694,19 @@ export const openUnifiedContextMenu = (request: ContextMenuOpenRequest): void =>
     rootMenu = menu;
     layer.appendChild(menu);
     placeMenu(menu, request.x, request.y);
-    queueMicrotask(() => {
+    const hydrateIcons = (): void => {
         if (session !== menuSession || !menu.isConnected) return;
         refreshContextMenuUiIcons(menu);
+    };
+    const whenIcon =
+        typeof customElements !== "undefined" && customElements.whenDefined
+            ? customElements.whenDefined("ui-icon").then(hydrateIcons).catch(() => {})
+            : Promise.resolve();
+    queueMicrotask(() => {
+        void whenIcon.then(hydrateIcons);
         requestAnimationFrame(() => {
-            if (session !== menuSession || !menu.isConnected) return;
-            refreshContextMenuUiIcons(menu);
+            hydrateIcons();
+            requestAnimationFrame(hydrateIcons);
         });
     });
 
