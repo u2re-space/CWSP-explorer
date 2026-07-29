@@ -1,7 +1,49 @@
+/*
+ * Filename: index.scss
+ * FullPath: modules/views/explorer-view/src/index.scss
+ * Change date and time: 10.22.00_29.07.2026
+ * Reason for changes: Light-DOM fill for native-mode demo host (toolbar-only height).
+ */
 /* FL-UI file-manager chrome, scoped to the standalone explorer view. */
 @use "./scss/explorer" as *;
 @use "./scss/explorer-content" as *;
 @use "./scss/essentials" as *;
+
+/*
+ * Demo / PWA host: `#app` → `ui-window[native-mode]` → slotted body.
+ * Shadow `::slotted` fill lives in fl.ui Windows2; these keep the light tree stretched.
+ */
+#app:has(> ui-window.explorer-native-window),
+#app:has(> ui-window[native-mode]) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    min-block-size: 0;
+}
+
+ui-window.explorer-native-window,
+ui-window.explorer-native-window[native-mode] {
+    flex: 1 1 auto;
+    min-block-size: 0;
+}
+
+.explorer-native-window__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-block-size: 0;
+    min-inline-size: 0;
+    block-size: 100%;
+    inline-size: 100%;
+    overflow: hidden;
+}
+
+.explorer-native-window__body > .view-explorer {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    block-size: 100%;
+    inline-size: 100%;
+}
 
 @mixin spinner($size, $border, $accent, $duration: 0.8s) {
     inline-size: $size;

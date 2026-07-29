@@ -1,7 +1,7 @@
 {
   "name": "explorer-view",
   "version": "1.0.0",
-  "description": "Standalone file explorer view module. Dev HTTPS: PEM files in certs/ (see npm run ssl:localhost); else plugin-basic-ssl. Port 443 may need privileges; npm run dev:8434 otherwise.",
+  "description": "Standalone Explorer PWA (manifest + slim SW + share-target→OPFS). Dev HTTPS: CrossWord/CWSP-shared multi.crt; Port 443 may need privileges; npm run dev:8434 otherwise.",
   "type": "module",
   "main": "./dist/explorer-view.js",
   "module": "./dist/explorer-view.js",
@@ -14,6 +14,7 @@
     "dev:8434": "VIEW_DEV_PORT=8434 vite --host 0.0.0.0",
     "demo": "npm run dev",
     "ssl:localhost": "mkdir -p certs && openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/key.pem -out certs/cert.pem -days 825 -subj '/CN=localhost'",
+    "ssl:link-multi": "mkdir -p certs && ln -sfn ../../../apps/CrossWord/private/https/local/multi.crt certs/multi.crt && ln -sfn ../../../apps/CrossWord/private/https/local/multi.key certs/multi.key",
     "test": "vite build --config vite.config.js --mode test",
     "build": "vite build --config vite.config.js",
     "preview": "vite preview"

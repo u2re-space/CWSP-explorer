@@ -1,3 +1,9 @@
+/*
+ * Filename: index.ts
+ * FullPath: modules/views/explorer-view/src/index.ts
+ * Change date and time: 10.24.00_29.07.2026
+ * Reason for changes: Adopt layout CSS on onMount (demo/PWA may skip onShow).
+ */
 /**
  * Explorer View
  *
@@ -125,6 +131,9 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
 
         lifecycle: ViewLifecycle = {
             onMount: () => {
+                // WHY: standalone demo / PWA boot may never call onShow; layout shell CSS must load on mount.
+                this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
+                this.syncExplorerThemeSubscription();
                 this.attachExplorerWire();
             },
             onUnmount: () => {

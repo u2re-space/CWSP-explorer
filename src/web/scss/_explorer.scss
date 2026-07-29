@@ -222,6 +222,15 @@
 
             scrollbar-width: thin;
             scrollbar-color: color-mix(in oklab, var(--color-on-surface) 22%, transparent) transparent;
+
+            /* WHY: light-DOM <ui-file-manager-content> is slotted here — must flex-fill or list collapses. */
+            ::slotted(*) {
+                flex: 1 1 auto;
+                min-block-size: 0;
+                min-inline-size: 0;
+                block-size: 100%;
+                inline-size: 100%;
+            }
         }
 
         .status { padding: 0.5rem; opacity: 0.8; }
