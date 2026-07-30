@@ -1,12 +1,13 @@
 /*
  * Filename: ContextMenu.ts
  * FullPath: modules/views/explorer-view/src/ts/ContextMenu.ts
- * Change date and time: 13.30.00_29.07.2026
- * Reason for changes: Inline layer stacking so menus beat taskbar even in shadow / late CSS.
+ * Change date and time: 16.52.00_30.07.2026
+ * Reason for changes: Panel elevation via lur.e UnderlyingShadow (shape-matched under layer).
  */
 
 import { MOCElement } from "fest/dom";
 import "fest/icon";
+import { createPanelUnderShadow, type UnderlyingShadow } from "fest/lure";
 import type { FileEntryItem } from "./Operative";
 import { canReceiveIncomingPath } from "./Operative";
 import { resolveOverlayMountPoint } from "boot/shell-slots";
@@ -46,6 +47,29 @@ let menuLayer: HTMLElement | null = null;
 let rootMenu: HTMLElement | null = null;
 let cleanupFns: Array<() => void> = [];
 let menuSeed = 0;
+/** WHY: soft elevation must sit under the glass panel (not on the backdrop-filter host). */
+const menuUnderByEl = new Map<HTMLElement, UnderlyingShadow>();
+
+const destroyMenuUnderShadows = (): void => {
+    for (const shadow of menuUnderByEl.values()) {
+        try {
+            shadow.destroy();
+        } catch {
+            /* ignore */
+        }
+    }
+    menuUnderByEl.clear();
+};
+
+const attachMenuUnderShadow = (menu: HTMLElement): void => {
+    menuUnderByEl.get(menu)?.destroy();
+    menuUnderByEl.set(menu, createPanelUnderShadow(menu));
+};
+
+const detachMenuUnderShadow = (menu: HTMLElement): void => {
+    menuUnderByEl.get(menu)?.destroy();
+    menuUnderByEl.delete(menu);
+};
 
 const submenuByDepth = new Map<number, HTMLElement>();
 const submenuAnchorByDepth = new Map<number, HTMLButtonElement>();
@@ -75,30 +99,24 @@ function stampUnifiedContextMenuPanelChrome(menu: HTMLElement, compact: boolean)
     menu.style.setProperty("border-radius", "14px", IMP_CSS);
     menu.style.setProperty("pointer-events", "auto", IMP_CSS);
     /*
-     * WHY: No backdrop-blur on the menu panel. Chromium + layered env-shell overlays (`isolation: isolate`)
-     * reliably drop Phosphor mask-based ui-icon ::before paint when an ancestor composite uses backdrop-filter.
-     * Slightly stronger opaque fill approximates glass without compositor bugs.
+     * WHY: Soft elevation is on lur.e under-shadow (`.cw-context-menu-under`), not here —
+     * box-shadow on a backdrop-filter host is flattened / clipped by the filter stacking context.
+     * Keep Phosphor-safe: no backdrop-filter on the panel (ancestor blur drops mask paint).
+     * Thin ring stays on the panel (1px outline shadow does not need under-layer).
      */
     menu.style.setProperty("-webkit-backdrop-filter", "none", IMP_CSS);
     menu.style.setProperty("backdrop-filter", "none", IMP_CSS);
+    menu.style.setProperty("box-shadow", "none", IMP_CSS);
     if (light) {
         menu.style.setProperty("border", "1px solid rgba(15, 23, 42, 0.14)", IMP_CSS);
         menu.style.setProperty("background", "rgba(241, 245, 249, 0.98)", IMP_CSS);
         menu.style.setProperty("color", "#0f172a", IMP_CSS);
-        menu.style.setProperty(
-            "box-shadow",
-            "0 14px 36px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06)",
-            IMP_CSS
-        );
+        menu.style.setProperty("outline", "1px solid rgba(15, 23, 42, 0.06)", IMP_CSS);
     } else {
         menu.style.setProperty("border", "1px solid rgba(255, 255, 255, 0.1)", IMP_CSS);
         menu.style.setProperty("background", "rgba(15, 23, 42, 0.97)", IMP_CSS);
         menu.style.setProperty("color", "#e8eaed", IMP_CSS);
-        menu.style.setProperty(
-            "box-shadow",
-            "0 14px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06)",
-            IMP_CSS
-        );
+        menu.style.setProperty("outline", "1px solid rgba(255, 255, 255, 0.06)", IMP_CSS);
     }
 }
 
@@ -199,13 +217,25 @@ const ensureStyle = (): void => {
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(15, 23, 42, 0.97);
             color: #e8eaed;
-            box-shadow:
-                0 14px 36px rgba(0, 0, 0, 0.45),
-                0 0 0 1px rgba(255, 255, 255, 0.06);
+            box-shadow: none;
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
             pointer-events: auto;
             user-select: none;
+        }
+
+        .cw-context-menu-under.underlying-shadow-container,
+        .cw-context-menu-under {
+            pointer-events: none !important;
+            overflow: visible !important;
+            z-index: -1 !important;
+            filter: blur(12px) saturate(1.2) !important;
+        }
+
+        .cw-context-menu-under .underlying-shadow-geometry {
+            background: #000000af !important;
+            border-radius: 14px;
+            overflow: hidden !important;
         }
 
         @media (prefers-color-scheme: light) {
@@ -213,9 +243,11 @@ const ensureStyle = (): void => {
                 border: 1px solid rgba(15, 23, 42, 0.14);
                 background: rgba(241, 245, 249, 0.98);
                 color: #0f172a;
-                box-shadow:
-                    0 14px 36px rgba(15, 23, 42, 0.12),
-                    0 0 0 1px rgba(15, 23, 42, 0.06);
+                box-shadow: none;
+            }
+
+            .cw-context-menu-under .underlying-shadow-geometry {
+                background: #0000001f !important;
             }
         }
 
@@ -481,6 +513,7 @@ const closeSubmenusFromDepth = (depth: number): void => {
     clearTimersFromDepth(depth);
     for (const [key, submenu] of Array.from(submenuByDepth.entries())) {
         if (key >= depth) {
+            detachMenuUnderShadow(submenu);
             submenu.remove();
             submenuByDepth.delete(key);
             submenuAnchorByDepth.delete(key);
@@ -538,9 +571,13 @@ const buildMenuElement = (
             submenu.style.setProperty("position-anchor", anchorName);
             submenu.style.setProperty("position-area", "right span-bottom");
             submenu.style.setProperty("position-try-fallbacks", "flip-inline, flip-block");
-            queueMicrotask(() => placeSubmenuWithFallback(submenu, anchorButton));
+            queueMicrotask(() => {
+                placeSubmenuWithFallback(submenu, anchorButton);
+                attachMenuUnderShadow(submenu);
+            });
         } else {
             placeSubmenuWithFallback(submenu, anchorButton);
+            attachMenuUnderShadow(submenu);
         }
     };
 
@@ -653,6 +690,7 @@ export const closeUnifiedContextMenu = (): void => {
     closeSubmenusFromDepth(1);
     submenuByDepth.clear();
     submenuAnchorByDepth.clear();
+    destroyMenuUnderShadows();
     rootMenu?.remove();
     rootMenu = null;
     menuLayer?.remove();
@@ -694,6 +732,8 @@ export const openUnifiedContextMenu = (request: ContextMenuOpenRequest): void =>
     rootMenu = menu;
     layer.appendChild(menu);
     placeMenu(menu, request.x, request.y);
+    // After place so fixed-bbox under-shadow tracks the final panel rect.
+    attachMenuUnderShadow(menu);
     const hydrateIcons = (): void => {
         if (session !== menuSession || !menu.isConnected) return;
         refreshContextMenuUiIcons(menu);
