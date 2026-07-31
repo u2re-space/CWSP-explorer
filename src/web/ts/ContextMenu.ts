@@ -1,8 +1,8 @@
 /*
  * Filename: ContextMenu.ts
  * FullPath: modules/views/explorer-view/src/ts/ContextMenu.ts
- * Change date and time: 16.52.00_30.07.2026
- * Reason for changes: Panel elevation via lur.e UnderlyingShadow (shape-matched under layer).
+ * Change date and time: 16.45.00_31.07.2026
+ * Reason for changes: Context menu colors from wallpaper --color-* / --u2-color-mod.
  */
 
 import { MOCElement } from "fest/dom";
@@ -88,9 +88,6 @@ const IMP_CSS = "important";
  * Stamping palette + transparent rows avoids “gray slab per row”.
  */
 function stampUnifiedContextMenuPanelChrome(menu: HTMLElement, compact: boolean): void {
-    const light =
-        typeof matchMedia !== "undefined" &&
-        matchMedia("(prefers-color-scheme: light)").matches;
     menu.style.setProperty("position", "fixed", IMP_CSS);
     menu.style.setProperty("box-sizing", "border-box", IMP_CSS);
     menu.style.setProperty("min-width", compact ? "188px" : "220px", IMP_CSS);
@@ -102,22 +99,16 @@ function stampUnifiedContextMenuPanelChrome(menu: HTMLElement, compact: boolean)
      * WHY: Soft elevation is on lur.e under-shadow (`.cw-context-menu-under`), not here —
      * box-shadow on a backdrop-filter host is flattened / clipped by the filter stacking context.
      * Keep Phosphor-safe: no backdrop-filter on the panel (ancestor blur drops mask paint).
-     * Thin ring stays on the panel (1px outline shadow does not need under-layer).
+     * Colors: leave to stylesheet (`--cw-menu-seed` ← wallpaper --color-primary) — do not
+     * stamp slate/hex with !important (that blocked teal nebula theme).
      */
     menu.style.setProperty("-webkit-backdrop-filter", "none", IMP_CSS);
     menu.style.setProperty("backdrop-filter", "none", IMP_CSS);
-    menu.style.setProperty("box-shadow", "none", IMP_CSS);
-    if (light) {
-        menu.style.setProperty("border", "1px solid rgba(15, 23, 42, 0.14)", IMP_CSS);
-        menu.style.setProperty("background", "rgba(241, 245, 249, 0.98)", IMP_CSS);
-        menu.style.setProperty("color", "#0f172a", IMP_CSS);
-        menu.style.setProperty("outline", "1px solid rgba(15, 23, 42, 0.06)", IMP_CSS);
-    } else {
-        menu.style.setProperty("border", "1px solid rgba(255, 255, 255, 0.1)", IMP_CSS);
-        menu.style.setProperty("background", "rgba(15, 23, 42, 0.97)", IMP_CSS);
-        menu.style.setProperty("color", "#e8eaed", IMP_CSS);
-        menu.style.setProperty("outline", "1px solid rgba(255, 255, 255, 0.06)", IMP_CSS);
-    }
+    menu.style.removeProperty("border");
+    menu.style.removeProperty("background");
+    menu.style.removeProperty("color");
+    menu.style.removeProperty("outline");
+    menu.style.removeProperty("box-shadow");
 }
 
 function stampUnifiedContextMenuListChrome(list: HTMLUListElement): void {
@@ -145,9 +136,6 @@ function stampUnifiedContextMenuLiChrome(li: HTMLLIElement): void {
 }
 
 function stampUnifiedContextMenuRowChrome(button: HTMLButtonElement, danger: boolean): void {
-    const light =
-        typeof matchMedia !== "undefined" &&
-        matchMedia("(prefers-color-scheme: light)").matches;
     button.style.setProperty("appearance", "none", IMP_CSS);
     button.style.setProperty("-webkit-appearance", "none", IMP_CSS);
     button.style.setProperty("box-sizing", "border-box", IMP_CSS);
@@ -171,17 +159,16 @@ function stampUnifiedContextMenuRowChrome(button: HTMLButtonElement, danger: boo
     button.style.setProperty("line-height", "1.25", IMP_CSS);
     button.style.setProperty("text-align", "start", IMP_CSS);
     button.style.setProperty("cursor", "pointer", IMP_CSS);
-    button.style.setProperty("background", "none", IMP_CSS);
-    button.style.setProperty("background-color", "transparent", IMP_CSS);
-    button.style.setProperty("background-image", "none", IMP_CSS);
+    /* WHY: Do not stamp background with !important — blocks CSS hover tint from wallpaper primary. */
+    button.style.removeProperty("background");
+    button.style.removeProperty("background-color");
+    button.style.removeProperty("background-image");
     button.style.setProperty("box-shadow", "none", IMP_CSS);
     button.style.setProperty("transition", "none", IMP_CSS);
     if (!danger) {
         button.style.setProperty("color", "inherit", IMP_CSS);
-    } else if (light) {
-        button.style.setProperty("color", "#b91c1c", IMP_CSS);
     } else {
-        button.style.setProperty("color", "#fca5a5", IMP_CSS);
+        button.style.setProperty("color", "var(--color-error, #fca5a5)", IMP_CSS);
     }
 }
 
@@ -206,6 +193,8 @@ const ensureStyle = (): void => {
         }
 
         .cw-context-menu {
+            /* WHY: Menu mounts on body (outside .wf-demo-root) — use :root wallpaper seeds. */
+            --cw-menu-seed: var(--base-color, var(--color-primary, #00a3ad));
             position: fixed;
             box-sizing: border-box;
             min-width: 220px;
@@ -214,10 +203,12 @@ const ensureStyle = (): void => {
             border-radius: 14px;
             color-scheme: light dark;
             font-family: var(--cw-context-menu-font, ui-sans-serif, system-ui, sans-serif);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(15, 23, 42, 0.97);
-            color: #e8eaed;
-            box-shadow: none;
+            border: 1px solid color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 14%, transparent);
+            background: color-mix(in oklab, var(--color-surface-container, --u2-color-mod(var(--cw-menu-seed), 880)) 94%, transparent);
+            color: var(--color-on-surface, --u2-color-mod(var(--cw-menu-seed), 100));
+            box-shadow:
+                var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)),
+                0 0 0 1px color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 8%, transparent);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
             pointer-events: auto;
@@ -240,10 +231,10 @@ const ensureStyle = (): void => {
 
         @media (prefers-color-scheme: light) {
             .cw-context-menu {
-                border: 1px solid rgba(15, 23, 42, 0.14);
-                background: rgba(241, 245, 249, 0.98);
-                color: #0f172a;
-                box-shadow: none;
+                border: 1px solid color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 900) 14%, transparent);
+                background: color-mix(in oklab, var(--color-surface-container, --u2-color-mod(var(--cw-menu-seed), 160)) 96%, transparent);
+                color: var(--color-on-surface, --u2-color-mod(var(--cw-menu-seed), 900));
+                box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16));
             }
 
             .cw-context-menu-under .underlying-shadow-geometry {
@@ -320,7 +311,7 @@ const ensureStyle = (): void => {
         button.cw-context-menu__item:focus-visible,
         .cw-context-menu button.cw-context-menu__item:focus-visible {
             outline: none !important;
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: color-mix(in oklab, var(--color-primary, --u2-color-mod(var(--cw-menu-seed), 550)) 16%, transparent) !important;
         }
 
         @media (prefers-color-scheme: light) {
@@ -328,7 +319,7 @@ const ensureStyle = (): void => {
             .cw-context-menu button.cw-context-menu__item:hover,
             button.cw-context-menu__item:focus-visible,
             .cw-context-menu button.cw-context-menu__item:focus-visible {
-                background: rgba(15, 23, 42, 0.08) !important;
+                background: color-mix(in oklab, var(--color-primary, --u2-color-mod(var(--cw-menu-seed), 550)) 12%, transparent) !important;
             }
         }
 
@@ -339,12 +330,12 @@ const ensureStyle = (): void => {
         }
 
         .cw-context-menu__item--danger {
-            color: #fca5a5 !important;
+            color: var(--color-error, #fca5a5) !important;
         }
 
         @media (prefers-color-scheme: light) {
             .cw-context-menu__item--danger {
-                color: #b91c1c !important;
+                color: var(--color-error, #b91c1c) !important;
             }
         }
 
@@ -410,22 +401,7 @@ const ensureStyle = (): void => {
             --icon-size: 0.85rem !important;
         }
 
-        @supports (color: color-mix(in oklab, white 50%, black)) {
-            .cw-context-menu {
-                border: 1px solid color-mix(in oklab, var(--wf-md-outline-variant, transparent) 100%, transparent);
-                background: color-mix(in oklab, var(--wf-md-surf-container, rgba(30, 41, 59, 0.92)) 96%, transparent);
-                color: var(--wf-md-on-surface, var(--color-on-surface, inherit));
-                box-shadow:
-                    var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)),
-                    0 0 0 1px color-mix(in oklab, var(--wf-md-on-surface, #fff) 7%, transparent);
-            }
-            button.cw-context-menu__item:hover,
-            .cw-context-menu button.cw-context-menu__item:hover,
-            button.cw-context-menu__item:focus-visible,
-            .cw-context-menu button.cw-context-menu__item:focus-visible {
-                background: color-mix(in oklab, var(--wf-md-on-surface, #fff) 8%, transparent) !important;
-            }
-        }
+        /* Surfaces already tokenized above from wallpaper --base-color / --color-*. */
     `;
     document.head.appendChild(style);
 };

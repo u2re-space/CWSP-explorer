@@ -87,35 +87,37 @@ ui-window.explorer-native-window[native-mode] {
         }
 
         /*
-         * Material-like fallbacks when the host omits semantic tokens — split by resolved scheme.
+         * Scheme only remaps surface indices — do NOT override --color-primary.
+         * WHY: WallpaperTheme writes seeds on :root / ui-window; hardcoding #1362c3/#6eb4ff
+         * washed out nebula teal chrome inside the file manager.
          * `applyExplorerColorScheme()` sets `data-explorer-color-scheme` on `.view-explorer`.
          */
         .view-explorer[data-explorer-color-scheme="light"] {
-            --color-surface: #f7f8fc;
-            --color-on-surface: #1a1c1f;
-            --color-on-surface-variant: #44474f;
-            --color-primary: #1362c3;
-            --color-on-primary: #ffffff;
-            --color-outline-variant: #c3c7d1;
-            --color-surface-container: #eaecef;
-            --color-surface-container-high: #e1e4eb;
-            --color-surface-container-highest: #d7dae4;
+            --base-color: var(--color-primary, #00a3ad);
+            --color-surface: --u2-color-mod(var(--base-color), 60);
+            --color-on-surface: --u2-color-mod(var(--base-color), 900);
+            --color-on-surface-variant: --u2-color-mod(var(--base-color), 700);
+            --color-on-primary: --u2-color-mod(var(--base-color), 40);
+            --color-outline-variant: --u2-color-mod(var(--base-color), 300);
+            --color-surface-container: --u2-color-mod(var(--base-color), 160);
+            --color-surface-container-high: --u2-color-mod(var(--base-color), 220);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color), 300);
             --color-error: #ba1a1a;
-            --error-color: #ba1a1a;
+            --error-color: --u2-color-mod(var(--color-error), 550);
         }
 
         .view-explorer[data-explorer-color-scheme="dark"] {
-            --color-surface: #1a1d24;
-            --color-on-surface: #e8eaed;
-            --color-on-surface-variant: #c4c6d0;
-            --color-primary: #6eb4ff;
-            --color-on-primary: #08294a;
-            --color-outline-variant: #5a5f6a;
-            --color-surface-container: #272a31;
-            --color-surface-container-high: #31353d;
-            --color-surface-container-highest: #3b404b;
+            --base-color: var(--color-primary, #00a3ad);
+            --color-surface: --u2-color-mod(var(--base-color), 940);
+            --color-on-surface: --u2-color-mod(var(--base-color), 100);
+            --color-on-surface-variant: --u2-color-mod(var(--base-color), 280);
+            --color-on-primary: --u2-color-mod(var(--base-color), 920);
+            --color-outline-variant: --u2-color-mod(var(--base-color), 640);
+            --color-surface-container: --u2-color-mod(var(--base-color), 860);
+            --color-surface-container-high: --u2-color-mod(var(--base-color), 820);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color), 740);
             --color-error: #ffb4ab;
-            --error-color: #ffb4ab;
+            --error-color: --u2-color-mod(var(--color-error), 480);
         }
     }
 
