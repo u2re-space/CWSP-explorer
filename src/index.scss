@@ -93,29 +93,31 @@ ui-window.explorer-native-window[native-mode] {
          * `applyExplorerColorScheme()` sets `data-explorer-color-scheme` on `.view-explorer`.
          */
         .view-explorer[data-explorer-color-scheme="light"] {
-            --base-color: var(--color-primary, #5a7fff);
-            --color-surface: --u2-color-mod(var(--base-color), 10);
-            --color-on-surface: --u2-color-mod(var(--base-color), 980);
-            --color-on-surface-variant: --u2-color-mod(var(--base-color), 800);
-            --color-on-primary: --u2-color-mod(var(--base-color), 20);
-            --color-outline-variant: --u2-color-mod(var(--base-color), 300);
-            --color-surface-container: --u2-color-mod(var(--base-color), 20);
-            --color-surface-container-high: --u2-color-mod(var(--base-color), 10);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color), 0);
+            --base-color: var(--color-primary, #2e3a64);
+            --base-color-neutralized: color-mix(in oklab, var(--base-color) 60%, gray);
+            --color-surface: --u2-color-mod(var(--base-color-neutralized), 10);
+            --color-on-surface: --u2-color-mod(var(--base-color-neutralized), 980);
+            --color-on-surface-variant: --u2-color-mod(var(--base-color-neutralized), 800);
+            --color-on-primary: --u2-color-mod(var(--base-color-neutralized), 20);
+            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 300);
+            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 20);
+            --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 10);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 0);
             --color-error: #ba1a1a;
-            --error-color: --u2-color-mod(var(--color-error), 550);
+            --error-color: --u2-color-mod(color-mix(in oklab, var(--color-error) 60%, gray), 550);
         }
 
         .view-explorer[data-explorer-color-scheme="dark"] {
-            --base-color: var(--color-primary, #5a7fff);
-            --color-surface: --u2-color-mod(var(--base-color), 980);
-            --color-on-surface: --u2-color-mod(var(--base-color), 10);
-            --color-on-surface-variant: --u2-color-mod(var(--base-color), 20);
-            --color-on-primary: --u2-color-mod(var(--base-color), 80);
-            --color-outline-variant: --u2-color-mod(var(--base-color), 640);
-            --color-surface-container: --u2-color-mod(var(--base-color), 980);
-            --color-surface-container-high: --u2-color-mod(var(--base-color), 990);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color), 1000);
+            --base-color: var(--color-primary, #2e3a64);
+            --base-color-neutralized: color-mix(in oklab, var(--base-color) 60%, gray);
+            --color-surface: --u2-color-mod(var(--base-color-neutralized), 980);
+            --color-on-surface: --u2-color-mod(var(--base-color-neutralized), 10);
+            --color-on-surface-variant: --u2-color-mod(var(--base-color-neutralized), 20);
+            --color-on-primary: --u2-color-mod(var(--base-color-neutralized), 80);
+            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 640);
+            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 980);
+            --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 990);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 1000);
             --color-error: #ffb4ab;
             --error-color: --u2-color-mod(var(--color-error), 480);
         }
