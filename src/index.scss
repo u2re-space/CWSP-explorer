@@ -94,28 +94,28 @@ ui-window.explorer-native-window[native-mode] {
          */
         .view-explorer[data-explorer-color-scheme="light"] {
             --base-color: var(--color-primary, #5a7fff);
-            --color-surface: --u2-color-mod(var(--base-color), 60);
-            --color-on-surface: --u2-color-mod(var(--base-color), 900);
-            --color-on-surface-variant: --u2-color-mod(var(--base-color), 700);
-            --color-on-primary: --u2-color-mod(var(--base-color), 40);
+            --color-surface: --u2-color-mod(var(--base-color), 10);
+            --color-on-surface: --u2-color-mod(var(--base-color), 980);
+            --color-on-surface-variant: --u2-color-mod(var(--base-color), 800);
+            --color-on-primary: --u2-color-mod(var(--base-color), 20);
             --color-outline-variant: --u2-color-mod(var(--base-color), 300);
-            --color-surface-container: --u2-color-mod(var(--base-color), 160);
-            --color-surface-container-high: --u2-color-mod(var(--base-color), 220);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color), 300);
+            --color-surface-container: --u2-color-mod(var(--base-color), 20);
+            --color-surface-container-high: --u2-color-mod(var(--base-color), 10);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color), 0);
             --color-error: #ba1a1a;
             --error-color: --u2-color-mod(var(--color-error), 550);
         }
 
         .view-explorer[data-explorer-color-scheme="dark"] {
             --base-color: var(--color-primary, #5a7fff);
-            --color-surface: --u2-color-mod(var(--base-color), 940);
-            --color-on-surface: --u2-color-mod(var(--base-color), 100);
-            --color-on-surface-variant: --u2-color-mod(var(--base-color), 280);
-            --color-on-primary: --u2-color-mod(var(--base-color), 920);
+            --color-surface: --u2-color-mod(var(--base-color), 980);
+            --color-on-surface: --u2-color-mod(var(--base-color), 10);
+            --color-on-surface-variant: --u2-color-mod(var(--base-color), 20);
+            --color-on-primary: --u2-color-mod(var(--base-color), 80);
             --color-outline-variant: --u2-color-mod(var(--base-color), 640);
-            --color-surface-container: --u2-color-mod(var(--base-color), 860);
-            --color-surface-container-high: --u2-color-mod(var(--base-color), 820);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color), 740);
+            --color-surface-container: --u2-color-mod(var(--base-color), 980);
+            --color-surface-container-high: --u2-color-mod(var(--base-color), 990);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color), 1000);
             --color-error: #ffb4ab;
             --error-color: --u2-color-mod(var(--color-error), 480);
         }
