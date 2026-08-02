@@ -267,6 +267,7 @@
 
             &:hover {
                 background-color: color-mix(in oklab, var(--color-on-surface) 12%, transparent);
+                color: contrast-color(color-mix(in oklab, var(--color-on-surface) 12%, transparent));
             }
 
             &:active {
@@ -297,6 +298,7 @@
             border: none;
             box-shadow: 0 1px 0 color-mix(in oklab, var(--color-on-surface, #fff) 6%, transparent);
             background: color-mix(in oklab, var(--color-on-surface, #fff) 3.5%, transparent);
+            color: contrast-color(color-mix(in oklab, var(--color-on-surface, #fff) 3.5%, transparent));
             font-size: 0.6875rem;
             font-weight: 600;
             letter-spacing: 0.04em;
