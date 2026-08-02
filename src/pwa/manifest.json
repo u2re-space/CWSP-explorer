@@ -10,8 +10,8 @@
         "window-controls-overlay",
         "standalone"
     ],
-    "background_color": "#1a2233",
-    "theme_color": "#1a2233",
+    "background_color": "#cbb8a4",
+    "theme_color": "#cbb8a4",
     "orientation": "natural",
     "categories": ["utilities", "productivity"],
     "icons": [
@@ -69,6 +69,6 @@
     },
     "handle_links": "preferred",
     "launch_handler": {
-        "client_mode": "focus-existing"
+        "client_mode": "navigate-new"
     }
 }

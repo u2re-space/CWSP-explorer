@@ -192,7 +192,11 @@ function stampUnifiedContextMenuRowChrome(button: HTMLButtonElement, danger: boo
     if (!danger) {
         button.style.setProperty("color", "inherit", IMP_CSS);
     } else {
-        button.style.setProperty("color", "var(--color-error, #fca5a5)", IMP_CSS);
+        /* WHY: --color-error can be a washed pink on light panels — pin concrete danger ink. */
+        const dangerInk = resolveContextMenuTheme() === "light" ? "#9f1239" : "#fecaca";
+        button.style.setProperty("color", dangerInk, IMP_CSS);
+        button.style.setProperty("--cw-menu-fg", dangerInk, IMP_CSS);
+        button.style.setProperty("--icon-color", dangerInk, IMP_CSS);
     }
 }
 
@@ -411,17 +415,24 @@ const ensureStyle = (): void => {
         }
 
         .cw-context-menu__item--danger {
-            color: var(--color-error, #fca5a5) !important;
+            color: #fecaca !important;
+            --cw-menu-fg: #fecaca !important;
+            --icon-color: #fecaca !important;
         }
 
         html[data-theme="light"] .cw-context-menu__item--danger,
         .cw-context-menu[data-theme="light"] .cw-context-menu__item--danger {
-            color: var(--color-error, #b91c1c) !important;
+            /* Deep rose — readable on cream/beige menu slabs. */
+            color: #9f1239 !important;
+            --cw-menu-fg: #9f1239 !important;
+            --icon-color: #9f1239 !important;
         }
 
         @media (prefers-color-scheme: light) {
-            html:not([data-theme="dark"]) .cw-context-menu__item--danger {
-                color: var(--color-error, #b91c1c) !important;
+            html:not([data-theme="dark"]) .cw-context-menu:not([data-theme="dark"]) .cw-context-menu__item--danger {
+                color: #9f1239 !important;
+                --cw-menu-fg: #9f1239 !important;
+                --icon-color: #9f1239 !important;
             }
         }
 
