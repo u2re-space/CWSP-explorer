@@ -1,8 +1,8 @@
 /*
  * Filename: ContextMenu.ts
  * FullPath: modules/views/explorer-view/src/ts/ContextMenu.ts
- * Change date and time: 16.45.00_31.07.2026
- * Reason for changes: Context menu colors from wallpaper --color-* / --u2-color-mod.
+ * Change date and time: 09.20.00_02.08.2026
+ * Reason for changes: Light-theme menu ink before Settings (data-theme stamp + concrete --cw-menu-fg).
  */
 
 import { MOCElement } from "fest/dom";
@@ -87,6 +87,27 @@ const IMP_CSS = "important";
  * WHY: Host apps load FL-UI native `button { … !important … }`; CSS files alone lose to style-attribute precedence.
  * Stamping palette + transparent rows avoids “gray slab per row”.
  */
+/**
+ * WHY: Before Settings opens, `html[data-theme]` may lag OS `prefers-color-scheme`.
+ * Stamp the same pin QS/Theme uses so light panels never keep dark-default white ink.
+ */
+function resolveContextMenuTheme(): "light" | "dark" {
+    const root = document.documentElement;
+    const pinned = String(root.getAttribute("data-theme") || "").trim().toLowerCase();
+    if (pinned === "light" || pinned === "dark") return pinned;
+    const scheme = String(root.getAttribute("data-scheme") || "").trim().toLowerCase();
+    if (scheme === "light" || scheme === "dark") return scheme;
+    try {
+        const stored = String(localStorage.getItem("rs-appearance-theme") || "").trim().toLowerCase();
+        if (stored === "light" || stored === "dark") return stored;
+    } catch {
+        // private mode / blocked storage
+    }
+    return typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark";
+}
+
 function stampUnifiedContextMenuPanelChrome(menu: HTMLElement, compact: boolean): void {
     menu.style.setProperty("position", "fixed", IMP_CSS);
     menu.style.setProperty("box-sizing", "border-box", IMP_CSS);
@@ -109,6 +130,9 @@ function stampUnifiedContextMenuPanelChrome(menu: HTMLElement, compact: boolean)
     menu.style.removeProperty("color");
     menu.style.removeProperty("outline");
     menu.style.removeProperty("box-shadow");
+    const theme = resolveContextMenuTheme();
+    menu.dataset.theme = theme;
+    menu.style.setProperty("color-scheme", theme === "light" ? "light only" : "dark only", IMP_CSS);
 }
 
 function stampUnifiedContextMenuListChrome(list: HTMLUListElement): void {
@@ -173,11 +197,17 @@ function stampUnifiedContextMenuRowChrome(button: HTMLButtonElement, danger: boo
 }
 
 const ensureStyle = (): void => {
-    if (styleMounted) return;
+    /*
+     * WHY: Always refresh textContent — HMR / early opens must not keep a stale injected sheet
+     * (old dark-default ink) while `styleMounted` already flipped true in a prior module instance.
+     */
+    let style = document.getElementById("cw-unified-context-menu-style") as HTMLStyleElement | null;
+    if (!style) {
+        style = document.createElement("style");
+        style.id = "cw-unified-context-menu-style";
+        document.head.appendChild(style);
+    }
     styleMounted = true;
-
-    const style = document.createElement("style");
-    style.id = "cw-unified-context-menu-style";
     /*
      * NOTE: Shell apps load FL-UI `patch-global-native-controls` `@layer components { button { … } }` (inline-flex,
      * padded chip chrome, `--color-bg-alt`). Cascade-layer `button` still loses to **unlayered** rules, but some hosts
@@ -194,18 +224,25 @@ const ensureStyle = (): void => {
 
         .cw-context-menu {
             /* WHY: Menu mounts on body (outside .wf-demo-root) — use :root wallpaper seeds. */
-            --cw-menu-seed: var(--base-color, var(--color-primary, #00a3ad));
+            --cw-menu-seed: var(--base-color, var(--color-primary, #5a7fff));
+            /*
+             * Concrete ink tokens — do not rely on late --color-on-surface (white-on-cream
+             * before Settings) or OS prefers-color-scheme alone (app light + OS dark).
+             */
+            --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 100);
+            --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 880);
+            --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 14%, transparent);
             position: fixed;
             box-sizing: border-box;
             min-width: 220px;
             max-width: min(320px, calc(100vw - 24px));
             padding: 0.4rem;
             border-radius: 14px;
-            color-scheme: light dark;
+            color-scheme: dark;
             font-family: var(--cw-context-menu-font, ui-sans-serif, system-ui, sans-serif);
-            border: 1px solid color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 14%, transparent);
-            background: color-mix(in oklab, var(--color-surface-container, --u2-color-mod(var(--cw-menu-seed), 880)) 94%, transparent);
-            color: var(--color-on-surface, --u2-color-mod(var(--cw-menu-seed), 100));
+            border: 1px solid var(--cw-menu-border);
+            background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 94%, transparent);
+            color: var(--cw-menu-fg);
             box-shadow:
                 var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)),
                 0 0 0 1px color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 8%, transparent);
@@ -229,15 +266,50 @@ const ensureStyle = (): void => {
             overflow: hidden !important;
         }
 
+        /* App theme pin (authoritative) — before Settings sheet / OS media. */
+        html[data-theme="light"] .cw-context-menu,
+        .cw-context-menu[data-theme="light"] {
+            color-scheme: light only;
+            --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 900);
+            --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 160);
+            --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 900) 14%, transparent);
+            border-color: var(--cw-menu-border);
+            background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 96%, transparent);
+            color: var(--cw-menu-fg);
+            box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16));
+        }
+
+        html[data-theme="light"] .cw-context-menu-under .underlying-shadow-geometry,
+        .cw-context-menu[data-theme="light"] ~ .cw-context-menu-under .underlying-shadow-geometry,
+        .cw-context-menu-under:has(+ .cw-context-menu[data-theme="light"]) .underlying-shadow-geometry {
+            background: #0000001f !important;
+        }
+
+        html[data-theme="dark"] .cw-context-menu,
+        .cw-context-menu[data-theme="dark"] {
+            color-scheme: dark only;
+            --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 100);
+            --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 880);
+            --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 14%, transparent);
+            border-color: var(--cw-menu-border);
+            background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 94%, transparent);
+            color: var(--cw-menu-fg);
+        }
+
+        /* Auto / no pin: follow OS. */
         @media (prefers-color-scheme: light) {
-            .cw-context-menu {
-                border: 1px solid color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 900) 14%, transparent);
-                background: color-mix(in oklab, var(--color-surface-container, --u2-color-mod(var(--cw-menu-seed), 160)) 96%, transparent);
-                color: var(--color-on-surface, --u2-color-mod(var(--cw-menu-seed), 900));
+            html:not([data-theme="dark"]) .cw-context-menu:not([data-theme="dark"]) {
+                color-scheme: light only;
+                --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 900);
+                --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 160);
+                --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 900) 14%, transparent);
+                border-color: var(--cw-menu-border);
+                background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 96%, transparent);
+                color: var(--cw-menu-fg);
                 box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16));
             }
 
-            .cw-context-menu-under .underlying-shadow-geometry {
+            html:not([data-theme="dark"]) .cw-context-menu-under .underlying-shadow-geometry {
                 background: #0000001f !important;
             }
         }
@@ -314,11 +386,20 @@ const ensureStyle = (): void => {
             background: color-mix(in oklab, var(--color-primary, --u2-color-mod(var(--cw-menu-seed), 550)) 16%, transparent) !important;
         }
 
+        html[data-theme="light"] button.cw-context-menu__item:hover,
+        html[data-theme="light"] .cw-context-menu button.cw-context-menu__item:hover,
+        .cw-context-menu[data-theme="light"] button.cw-context-menu__item:hover,
+        html[data-theme="light"] button.cw-context-menu__item:focus-visible,
+        html[data-theme="light"] .cw-context-menu button.cw-context-menu__item:focus-visible,
+        .cw-context-menu[data-theme="light"] button.cw-context-menu__item:focus-visible {
+            background: color-mix(in oklab, var(--color-primary, --u2-color-mod(var(--cw-menu-seed), 550)) 12%, transparent) !important;
+        }
+
         @media (prefers-color-scheme: light) {
-            button.cw-context-menu__item:hover,
-            .cw-context-menu button.cw-context-menu__item:hover,
-            button.cw-context-menu__item:focus-visible,
-            .cw-context-menu button.cw-context-menu__item:focus-visible {
+            html:not([data-theme="dark"]) button.cw-context-menu__item:hover,
+            html:not([data-theme="dark"]) .cw-context-menu button.cw-context-menu__item:hover,
+            html:not([data-theme="dark"]) button.cw-context-menu__item:focus-visible,
+            html:not([data-theme="dark"]) .cw-context-menu button.cw-context-menu__item:focus-visible {
                 background: color-mix(in oklab, var(--color-primary, --u2-color-mod(var(--cw-menu-seed), 550)) 12%, transparent) !important;
             }
         }
@@ -333,8 +414,13 @@ const ensureStyle = (): void => {
             color: var(--color-error, #fca5a5) !important;
         }
 
+        html[data-theme="light"] .cw-context-menu__item--danger,
+        .cw-context-menu[data-theme="light"] .cw-context-menu__item--danger {
+            color: var(--color-error, #b91c1c) !important;
+        }
+
         @media (prefers-color-scheme: light) {
-            .cw-context-menu__item--danger {
+            html:not([data-theme="dark"]) .cw-context-menu__item--danger {
                 color: var(--color-error, #b91c1c) !important;
             }
         }
@@ -350,7 +436,7 @@ const ensureStyle = (): void => {
 
         /*
          * WHY:
-         * 1) Inherited registered icon-color can be fully transparent — force currentColor.
+         * 1) Inherited registered icon-color can be transparent — pin --cw-menu-fg (not currentColor).
          * 2) Phosphor min-size uses min(var(--icon-size), 100%); when percentage base is cyclic/0,
          *    mask ::before collapses — lock an explicit px box matching --icon-size.
          */
@@ -370,8 +456,9 @@ const ensureStyle = (): void => {
             max-inline-size: var(--icon-size, 1.125rem) !important;
             max-block-size: var(--icon-size, 1.125rem) !important;
             --icon-padding: 0px !important;
-            color: inherit !important;
-            --icon-color: currentColor !important;
+            color: var(--cw-menu-fg, inherit) !important;
+            /* WHY: concrete menu fg — currentColor raced white on light panels before Settings. */
+            --icon-color: var(--cw-menu-fg, --u2-color-mod(var(--cw-menu-seed), 900)) !important;
             overflow: visible !important;
             pointer-events: none !important;
         }
@@ -403,7 +490,6 @@ const ensureStyle = (): void => {
 
         /* Surfaces already tokenized above from wallpaper --base-color / --color-*. */
     `;
-    document.head.appendChild(style);
 };
 
 /** Re-run phosphor hydration after DOM connect (helps IO-deferred raster icons). */
@@ -420,7 +506,8 @@ function refreshContextMenuUiIcons(root: HTMLElement): void {
         // WHY: force paint size before update — cyclic % min-size collapses ::before mask to 0.
         el.style.setProperty("--icon-size", "1.125rem", IMP_CSS);
         el.style.setProperty("--icon-padding", "0px", IMP_CSS);
-        el.style.setProperty("--icon-color", "currentColor", IMP_CSS);
+        el.style.setProperty("--icon-color", "var(--cw-menu-fg)", IMP_CSS);
+        el.style.setProperty("color", "var(--cw-menu-fg)", IMP_CSS);
         el.style.setProperty("width", "1.125rem", IMP_CSS);
         el.style.setProperty("height", "1.125rem", IMP_CSS);
         el.style.setProperty("min-width", "1.125rem", IMP_CSS);
@@ -443,7 +530,8 @@ function appendUiIcon(target: HTMLElement, iconName: string): void {
     // WHY: stamp before connect so first paint has a non-zero box (see Phosphor min(size, 100%)).
     el.style.setProperty("--icon-size", "1.125rem", IMP_CSS);
     el.style.setProperty("--icon-padding", "0px", IMP_CSS);
-    el.style.setProperty("--icon-color", "currentColor", IMP_CSS);
+    el.style.setProperty("--icon-color", "var(--cw-menu-fg)", IMP_CSS);
+    el.style.setProperty("color", "var(--cw-menu-fg)", IMP_CSS);
     el.style.setProperty("width", "1.125rem", IMP_CSS);
     el.style.setProperty("height", "1.125rem", IMP_CSS);
     target.append(el);
