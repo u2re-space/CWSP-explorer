@@ -99,10 +99,10 @@ ui-window.explorer-native-window[native-mode] {
             --color-on-surface: --u2-color-mod(var(--base-color-neutralized), 980);
             --color-on-surface-variant: --u2-color-mod(var(--base-color-neutralized), 800);
             --color-on-primary: --u2-color-mod(var(--base-color-neutralized), 20);
-            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 300);
-            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 20);
+            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 100);
+            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 5);
             --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 10);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 0);
+            --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 20);
             --color-error: #ba1a1a;
             --error-color: --u2-color-mod(color-mix(in oklab, var(--color-error) 60%, gray), 550);
         }
@@ -110,13 +110,13 @@ ui-window.explorer-native-window[native-mode] {
         .view-explorer[data-explorer-color-scheme="dark"] {
             --base-color: var(--color-primary, #2e3a64);
             --base-color-neutralized: color-mix(in oklab, var(--base-color) 60%, gray);
-            --color-surface: --u2-color-mod(var(--base-color-neutralized), 980);
+            --color-surface: --u2-color-mod(var(--base-color-neutralized), 960);
             --color-on-surface: --u2-color-mod(var(--base-color-neutralized), 10);
             --color-on-surface-variant: --u2-color-mod(var(--base-color-neutralized), 20);
             --color-on-primary: --u2-color-mod(var(--base-color-neutralized), 80);
-            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 640);
-            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 980);
-            --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 990);
+            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 900);
+            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 960);
+            --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 980);
             --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 1000);
             --color-error: #ffb4ab;
             --error-color: --u2-color-mod(var(--color-error), 480);
