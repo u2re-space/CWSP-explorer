@@ -1,10 +1,16 @@
 /*
  * Filename: index.scss
  * FullPath: modules/views/explorer-view/src/index.scss
- * Change date and time: 10.22.00_29.07.2026
- * Reason for changes: Light-DOM fill for native-mode demo host (toolbar-only height).
+ * Change date and time: 12.30.00_06.08.2026
+ * Reason for changes: Document canonical SoT for color tokens.
  */
-/* FL-UI file-manager chrome, scoped to the standalone explorer view. */
+/* FL-UI file-manager chrome, scoped to the standalone explorer view.
+ *
+ * NOTE: The `[data-explorer-color-scheme]` `--color-*` remap below is an INTENTIONAL scoped
+ * scheme override for the explorer's independent color-scheme toggle (remaps surface indices,
+ * never `--color-primary`). Canonical color-token source of truth is veela
+ * `core/misc/_tokens.scss`; `--view-*` / `--explorer-*` here are derived from canonical `--color-*`.
+ */
 @use "./scss/explorer" as *;
 @use "./scss/explorer-content" as *;
 @use "./scss/essentials" as *;
@@ -69,11 +75,11 @@ ui-window.explorer-native-window[native-mode] {
         }
 
         .view-explorer {
-            --view-border: color-mix(in oklab, var(--color-outline-variant, #888) 45%, transparent);
-            --view-fg-muted: color-mix(in oklab, var(--color-on-surface, #ccc) 72%, transparent);
-            --view-hover-bg: color-mix(in oklab, var(--color-primary, #3794ff) 12%, transparent);
-            --view-selected-bg: color-mix(in oklab, var(--color-primary, #3794ff) 18%, transparent);
-            --view-selected-border: var(--color-primary, #3794ff);
+            /* ── `--view-*` color defaults owned by veela `core/misc/_tokens.scss`
+             * (`--view-border/fg-muted/hover-bg/selected-bg/selected-border`). Use sites
+             * carry `var(--view-*, <fallback>)` for shadow-DOM self-sufficiency.
+             * `--explorer-*` below are non-color (radius/pad/font), kept local.
+             */
             --explorer-menu-radius: 0.75rem;
             --explorer-menu-pad: 0.35rem;
             /*
