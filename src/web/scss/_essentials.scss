@@ -461,6 +461,7 @@
             display: flex;
             flex-direction: column;
             align-items: stretch;
+            backdrop-filter: blur(10px);
 
             &[data-hidden] {
                 opacity: 0;

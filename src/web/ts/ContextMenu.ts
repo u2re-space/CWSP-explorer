@@ -123,8 +123,8 @@ function stampUnifiedContextMenuPanelChrome(menu: HTMLElement, compact: boolean)
      * Colors: leave to stylesheet (`--cw-menu-seed` ← wallpaper --color-primary) — do not
      * stamp slate/hex with !important (that blocked teal nebula theme).
      */
-    menu.style.setProperty("-webkit-backdrop-filter", "none", IMP_CSS);
-    menu.style.setProperty("backdrop-filter", "none", IMP_CSS);
+    menu.style.setProperty("-webkit-backdrop-filter", "blur(10px)", IMP_CSS);
+    menu.style.setProperty("backdrop-filter", "blur(10px)", IMP_CSS);
     menu.style.removeProperty("border");
     menu.style.removeProperty("background");
     menu.style.removeProperty("color");
@@ -250,8 +250,8 @@ const ensureStyle = (): void => {
             box-shadow:
                 var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)),
                 0 0 0 1px color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 8%, transparent);
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             pointer-events: auto;
             user-select: none;
         }
