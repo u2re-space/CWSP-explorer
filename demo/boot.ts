@@ -10,8 +10,8 @@
  *
  * Test: `npm run dev` here, or CWSP-shell `/explorer?native=1&shell=environment`.
  */
-import "fest/icon";
-import { Windows2 } from "fest/fl-ui";
+import "@fest-lib/icon";
+import { Windows2 } from "@fest-lib/fl-ui";
 import { initPWA } from "core/pwa/pwa-handling";
 import { createExplorerView } from "../src/index";
 import { drainShareTargetIntoExplorer } from "../src/pwa/client-share-drain";

@@ -5,7 +5,7 @@
  */
 
 import type { ShellContext } from "shells/types";
-import { observe } from "fest/object";
+import { observe } from "@fest-lib/object";
 import { StorageKeys, getString, setString } from "core/storage";
 import {
     addSpeedDialItem,

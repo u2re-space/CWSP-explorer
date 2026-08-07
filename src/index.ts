@@ -13,7 +13,7 @@
 
 import type { ViewOptions, ViewLifecycle, BaseViewOptions } from "views/types";
 import { createViewConstructor, ViewBase } from "views/registry";
-import { loadAsAdopted, removeAdopted } from "fest/dom";
+import { loadAsAdopted, removeAdopted } from "@fest-lib/dom";
 import type { FileManager } from "./web/ts/FileManager";
 import type { ExplorerInjectApi } from "./inject";
 import type { LocalFileManager } from "./runtime";

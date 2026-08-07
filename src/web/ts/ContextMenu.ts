@@ -5,9 +5,9 @@
  * Reason for changes: Light-theme menu ink before Settings (data-theme stamp + concrete --cw-menu-fg).
  */
 
-import { MOCElement } from "fest/dom";
-import "fest/icon";
-import { createPanelUnderShadow, type UnderlyingShadow } from "fest/lure";
+import { MOCElement } from "@fest-lib/dom";
+import "@fest-lib/icon";
+import { createPanelUnderShadow, type UnderlyingShadow } from "@fest-lib/lure";
 import type { FileEntryItem } from "./Operative";
 import { canReceiveIncomingPath } from "./Operative";
 import { resolveOverlayMountPoint } from "boot/shell-slots";
