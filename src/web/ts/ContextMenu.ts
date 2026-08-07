@@ -249,9 +249,9 @@ const ensureStyle = (): void => {
             color: var(--cw-menu-fg);
             box-shadow:
                 var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)),
-                0 0 0 1px color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 8%, transparent);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+                0 0 0 1px color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 8%, transparent) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
             pointer-events: auto;
             user-select: none;
         }
@@ -280,7 +280,9 @@ const ensureStyle = (): void => {
             border-color: var(--cw-menu-border);
             background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 96%, transparent);
             color: var(--cw-menu-fg);
-            box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16));
+            box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16)) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
         }
 
         html[data-theme="light"] .cw-context-menu-under .underlying-shadow-geometry,
@@ -298,6 +300,9 @@ const ensureStyle = (): void => {
             border-color: var(--cw-menu-border);
             background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 94%, transparent);
             color: var(--cw-menu-fg);
+            box-shadow: var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
         }
 
         /* Auto / no pin: follow OS. */
@@ -310,7 +315,9 @@ const ensureStyle = (): void => {
                 border-color: var(--cw-menu-border);
                 background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 96%, transparent);
                 color: var(--cw-menu-fg);
-                box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16));
+                box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16)) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
             }
 
             html:not([data-theme="dark"]) .cw-context-menu-under .underlying-shadow-geometry {
