@@ -152,7 +152,7 @@
                 flex-shrink: 0;
                 place-content: center;
                 place-items: center;
-                --icon-size: 100%;
+                --icon-size: 1.35rem;
                 --icon-padding: 0.1rem;
                 color: inherit;
                 --icon-color: currentColor;
@@ -219,7 +219,10 @@
             ui-icon {
                 inline-size: 100%;
                 block-size: 100%;
-                --icon-size: 100%;
+                min-inline-size: 1.35rem;
+                min-block-size: 1.35rem;
+                flex-shrink: 0;
+                --icon-size: 1.35rem;
                 --icon-padding: 0.05rem;
             }
         }
@@ -313,7 +316,8 @@
                 block-size: 1.35rem;
                 min-inline-size: 1.35rem;
                 min-block-size: 1.35rem;
-                --icon-size: 100%;
+                flex-shrink: 0;
+                --icon-size: 1.2rem;
                 --icon-padding: 0.05rem;
                 color: inherit;
                 --icon-color: currentColor;
