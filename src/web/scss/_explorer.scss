@@ -49,6 +49,10 @@
         }
 
         .fm-toolbar {
+            --fm-toolbar-ink: var(--color-on-surface, light-dark(#1a1c1f, #e8eaed));
+            --fm-toolbar-well: color-mix(in oklab, var(--color-on-surface, #fff) 8%, transparent);
+            --icon-color: var(--fm-toolbar-ink);
+
             grid-column: 1 / -1;
             display: grid;
             grid-template-columns: minmax(0px, max-content) minmax(0px, 1fr) minmax(0px, max-content);
@@ -56,17 +60,17 @@
             grid-auto-flow: column;
             place-content: center;
             place-items: center;
-            gap: 0.625rem;
+            gap: 0.5rem;
             border-radius: 0;
-            padding: 0.5rem 0.75rem;
+            padding: 0.5rem 0.65rem;
             line-height: normal;
             background: var(--color-surface, light-dark(#f7f8fc, #1a1d24));
-            /*box-shadow: 0 1px 0 color-mix(in oklab, var(--color-on-surface, #fff) 6%, transparent);*/
-            color: contrast-color(inherit(background-color));
+            color: var(--fm-toolbar-ink);
 
-            button, input {
+            button,
+            input {
                 background-color: transparent;
-                color: var(--color-on-surface);
+                color: var(--fm-toolbar-ink);
             }
 
             input {
@@ -74,16 +78,17 @@
                 block-size: stretch;
                 border: none;
                 outline: none;
-                padding: 0.45rem 0.85rem;
+                padding: 0.5rem 0.95rem;
                 overflow: auto;
-                border-radius: 999px;
+                border-radius: inherit;
                 font: 0.8125rem/1.35 var(--explorer-font-mono, ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace);
-                background: color-mix(in oklab, var(--color-on-surface, #fff) 6%, transparent);
-                color: contrast-color(inherit(background-color));
+                background: transparent;
+                color: var(--fm-toolbar-ink);
+                caret-color: var(--fm-toolbar-ink);
             }
 
             input:focus-visible {
-                box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary, #3794ff) 45%, transparent);
+                box-shadow: none;
             }
 
             .btn {
@@ -91,7 +96,7 @@
                 appearance: none;
                 border: 0;
                 padding: 0;
-                border-radius: 999px;
+                border-radius: 22%;
                 cursor: pointer;
                 inline-size: 2.5rem;
                 block-size: 2.5rem;
@@ -100,17 +105,29 @@
                 align-items: center;
                 justify-content: center;
                 background: transparent;
+                color: var(--fm-toolbar-ink);
+                --icon-color: var(--fm-toolbar-ink);
+
+                @supports (corner-shape: squircle) {
+                    corner-shape: squircle;
+                }
 
                 ui-icon {
-                    inline-size: 1.25rem;
-                    block-size: 1.25rem;
+                    inline-size: 1.5rem;
+                    block-size: 1.5rem;
+                    min-inline-size: 1.5rem;
+                    min-block-size: 1.5rem;
                     flex-shrink: 0;
+                    --icon-size: 100%;
+                    --icon-padding: 0.1rem;
+                    color: var(--fm-toolbar-ink);
+                    --icon-color: var(--fm-toolbar-ink);
                 }
             }
 
             .btn:hover {
-                background: color-mix(in oklab, var(--color-on-surface) 9%, transparent);
-                color: contrast-color(inherit(background-color));
+                background: color-mix(in oklab, var(--color-on-surface) 12%, transparent);
+                color: var(--fm-toolbar-ink);
             }
 
             .btn:active {
@@ -126,7 +143,7 @@
                 display: flex;
                 flex-direction: row;
                 flex-wrap: nowrap;
-                gap: 0.2rem;
+                gap: 0.15rem;
                 block-size: fit-content;
                 min-block-size: stretch;
                 align-items: center;
@@ -139,9 +156,14 @@
             & .fm-toolbar-left,
             & .fm-toolbar-right {
                 padding: 0.2rem;
-                border-radius: 999px;
-                background: color-mix(in oklab, var(--color-on-surface, #fff) 5.5%, transparent);
-                color: contrast-color(inherit(background-color));
+                border-radius: 1rem;
+                background: var(--fm-toolbar-well);
+                color: var(--fm-toolbar-ink);
+                --icon-color: var(--fm-toolbar-ink);
+
+                @supports (corner-shape: squircle) {
+                    corner-shape: squircle;
+                }
             }
 
             & .fm-toolbar-center {
@@ -150,14 +172,19 @@
                 inline-size: stretch;
                 block-size: fit-content;
                 min-block-size: 2.5rem;
-                border-radius: 999px;
+                border-radius: 1.15rem;
                 padding: 0;
                 overflow: hidden;
                 place-content: stretch;
                 place-items: stretch;
                 justify-content: start;
-                background: color-mix(in oklab, var(--color-on-surface, #fff) 5.5%, transparent);
-                color: contrast-color(color-mix(in oklab, var(--color-on-surface, #fff) 5.5%, transparent));
+                background: var(--fm-toolbar-well);
+                color: var(--fm-toolbar-ink);
+                box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-on-surface, #fff) 8%, transparent);
+
+                @supports (corner-shape: squircle) {
+                    corner-shape: squircle;
+                }
 
                 & > * {
                     inline-size: stretch;
@@ -165,9 +192,16 @@
                 }
 
                 & input {
-                    padding-inline: 0.9rem;
+                    padding-inline: 1rem;
                     inline-size: stretch;
                     background: transparent;
+                    color: var(--fm-toolbar-ink);
+                }
+
+                &:focus-within {
+                    box-shadow:
+                        inset 0 0 0 1px color-mix(in oklab, var(--color-primary, #3794ff) 45%, transparent),
+                        0 0 0 2px color-mix(in oklab, var(--color-primary, #3794ff) 28%, transparent);
                 }
             }
 
