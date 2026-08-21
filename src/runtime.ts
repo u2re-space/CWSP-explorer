@@ -219,7 +219,17 @@ function setupExplorerEvents(
     const onFileOpen = async (e: Event) => {
         const detail = (e as CustomEvent<{ item?: ExplorerFileItem; path?: string }>).detail || {};
         const { item, path } = detail;
-        if (item?.kind !== "file" || !item?.file) return;
+        if (item?.kind !== "file") return;
+        if (!item.file) {
+            const loadPath = path || `${explorer?.path || "/"}${item.name || ""}`;
+            try {
+                const { provide } = await import("@fest-lib/lure");
+                item.file = await provide(loadPath);
+            } catch {
+                /* provide() may be absent in some hosts */
+            }
+        }
+        if (!item.file) return;
         const opened = await openFileInViewer(item, path, "window");
         if (!opened) {
             requestOpenView({ viewId: "workcenter", target: "window" });

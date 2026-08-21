@@ -52,6 +52,9 @@
             "@fest-lib/fl-ui": [
                 "../../projects/fl.ui/src/index.ts"
             ],
+            "fl-ui/*": [
+                "../../projects/fl.ui/src/ui/*"
+            ],
             "@fest-lib/image": [
                 "../../projects/image.ts/src/index.ts"
             ],
