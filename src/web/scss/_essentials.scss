@@ -2,7 +2,38 @@
 @use "sass:string";
 
 /* ai-refactor: optimized/refactored at 2026-02-13T00:45:12Z */
-@layer tokens, base, layout, utilities, shells, shell, views, view, viewer, components, ux-layer, markdown, essentials, print, print-breaks, overrides;
+/* INVARIANT: same order as veela `src/scss/_layers.scss`. Do not shorten. */
+@layer
+    ux-normalize,
+    tokens,
+    ux-tokens,
+    base,
+    ux-base,
+    layout,
+    ux-layout,
+    shells,
+    shell,
+    views,
+    view,
+    viewer,
+    components,
+    ux-components,
+    ux-layer,
+    ui-icon,
+    ui-icon-reset,
+    ux-file-manager,
+    ux-file-manager-content,
+    utilities,
+    ux-utilities,
+    theme,
+    ux-theme,
+    markdown,
+    essentials,
+    print,
+    print-breaks,
+    view-transitions,
+    overrides,
+    ux-overrides;
 
 @layer components {
     button,
@@ -396,7 +427,10 @@
     }
 
     @media screen {
-        :root, :host, :scope {
+        ui-window-frame,
+        ui-modal,
+        .ui-grid-item,
+        .ctx-menu {
             --font-family: "InterVariable", "Inter", "Helvetica Neue", "Helvetica", "Calibri", "Roboto", ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
         }
 
