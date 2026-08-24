@@ -17,7 +17,11 @@
     "ssl:link-multi": "mkdir -p certs && ln -sfn ../../../apps/CrossWord/private/https/local/multi.crt certs/multi.crt && ln -sfn ../../../apps/CrossWord/private/https/local/multi.key certs/multi.key",
     "test": "vite build --config vite.config.js --mode test",
     "build": "vite build --config vite.config.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:capacitor:web": "node ../CWSP-document/scripts/run-vite.mjs build --config ../CWSP-document/vite.config.js --mode capacitor-explorer",
+    "build:capacitor": "node ./scripts/build-capacitor.mjs",
+    "sync:capacitor:icons": "node ./scripts/sync-capacitor-android-icons.mjs",
+    "install:capacitor:apk": "node ../../../apps/CWSP-shell/scripts/adb-install-apks.mjs"
   },
   "keywords": [],
   "author": "",

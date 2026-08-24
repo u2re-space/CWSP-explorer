@@ -31,6 +31,9 @@
             "com/config/Settings": [
                 "../../shared/runtime/settings-config.ts"
             ],
+            "com/config/ecosystem-skus": [
+                "../../projects/subsystem/src/other/config/ecosystem-skus.ts"
+            ],
             "@fest-lib/*": [
                 "../../shared/fest/*"
             ],
