@@ -1,4 +1,5 @@
 import { speedDialItems } from "core/store/StateStorage";
+import { publicHrefForView, shouldHandoffViewToSibling } from "com/config/ecosystem-skus";
 import { openUnifiedContextMenu, type ContextMenuEntry } from "./web/ts/ContextMenu";
 
 //
@@ -46,6 +47,13 @@ export const requestOpenView = (request: {
 }): void => {
     const viewId = String(request?.viewId || "").trim().toLowerCase();
     if (!viewId) return;
+    if (shouldHandoffViewToSibling(viewId)) {
+        const href = publicHrefForView(viewId);
+        if (href) {
+            globalThis.location.assign(href);
+            return;
+        }
+    }
     const raw = request?.target || "window";
     const target = raw === "base" ? "immersive" : raw;
     globalThis?.dispatchEvent?.(new CustomEvent("cw:view-open-request", {

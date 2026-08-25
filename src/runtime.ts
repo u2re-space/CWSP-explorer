@@ -25,6 +25,7 @@ import {
     guessNextShortcutCell
 } from "./utils";
 import { sendViewProtocolMessage } from "com/core/UniformViewTransport";
+import { publicHrefForView, shouldHandoffViewToSibling, stashSkuHandoff } from "com/config/ecosystem-skus";
 
 export type LocalFileManager = HTMLElement & {
     path: string;
@@ -67,6 +68,21 @@ function setupExplorerEvents(
         const file = item?.file as File | undefined;
         if (!file || !isTextLikeFile(file)) return false;
         const sourcePath = String(fullPath || "");
+        if (shouldHandoffViewToSibling("viewer")) {
+            try {
+                stashSkuHandoff({
+                    dest: "viewer",
+                    content: await file.text(),
+                    filename: file.name || "",
+                    src: sourcePath
+                });
+            } catch {
+                stashSkuHandoff({ dest: "viewer", filename: file.name || "", src: sourcePath });
+            }
+            const href = publicHrefForView("viewer");
+            if (href) globalThis.location.assign(href);
+            return true;
+        }
         if (target === "base" || target === "immersive") {
             requestOpenView({
                 viewId: "viewer",
@@ -124,6 +140,22 @@ function setupExplorerEvents(
             return;
         }
         const sourcePath = `${explorer?.path || "/"}${item?.name || file.name}`;
+        if (shouldHandoffViewToSibling("workcenter")) {
+            try {
+                const content = isTextLikeFile(file) ? await file.text() : "";
+                stashSkuHandoff({
+                    dest: "workcenter",
+                    content,
+                    filename: file.name || "",
+                    src: sourcePath
+                });
+            } catch {
+                stashSkuHandoff({ dest: "workcenter", filename: file.name || "", src: sourcePath });
+            }
+            const href = publicHrefForView("workcenter");
+            if (href) globalThis.location.assign(href);
+            return;
+        }
         if (mode === "headless") {
             requestOpenView({
                 viewId: "workcenter",
