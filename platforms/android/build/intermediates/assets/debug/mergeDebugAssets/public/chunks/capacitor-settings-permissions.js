@@ -1,5 +1,5 @@
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
-//#region src/frontend/boot/capacitor-settings-permissions.ts
+//#region ../CWSP-document/src/frontend/boot/capacitor-settings-permissions.ts
 var cap = () => {
 	try {
 		const c = globalThis?.Capacitor;

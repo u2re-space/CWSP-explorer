@@ -59,7 +59,7 @@ android {
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['../../../../../apps/CWSP-shell/src/java/space']
+            java.srcDirs = ['../../../CWSP-shell/src/java/space']
             assets.srcDirs = ['src/main/assets']
             res.srcDirs = ['res']
         }

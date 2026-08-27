@@ -1,5 +1,5 @@
-import { fn as JSOX } from "../com/app.js";
-//#region src/shared/other/document/AIResponseParser.ts
+import { Cn as JSOX } from "../com/app.js";
+//#region ../CWSP-document/src/shared/other/document/AIResponseParser.ts
 /**
 * Robust AI Response Parser
 *

@@ -1,4 +1,4 @@
-//#region src/frontend/boot/shell-slots.ts
+//#region ../CWSP-document/src/frontend/boot/shell-slots.ts
 /**
 * Light-DOM `slot` assignments for `cw-shell-*` hosts. Layouts project these into shadow `<slot>` nodes.
 *
@@ -61,10 +61,10 @@ function resolveOverlayMountPoint(anchor) {
 	return document.body;
 }
 //#endregion
-//#region src/frontend/shells/environment/scss/container.scss?inline
+//#region ../CWSP-document/src/frontend/shells/environment/scss/container.scss?inline
 var container_default = ":host{block-size:var(--lv-height,100lvb);box-sizing:border-box;color-scheme:light dark;display:block;isolation:isolate;min-block-size:var(--lv-height,100lvb);overflow:visible;position:relative}.esc-stack{display:grid;grid-template:1fr/1fr}.esc-layer,.esc-stack{box-sizing:border-box;min-block-size:inherit}.esc-layer{grid-area:1/1}.esc-underlying{overflow:visible;pointer-events:none;z-index:0}.esc-main{align-items:stretch;display:flex;flex-direction:column;min-block-size:inherit;pointer-events:auto;z-index:1}.esc-main,.esc-overlays{overflow:visible;position:relative}.esc-overlays{pointer-events:none;z-index:2}";
 //#endregion
-//#region src/frontend/shells/environment/environment-shell-container.ts
+//#region ../CWSP-document/src/frontend/shells/environment/environment-shell-container.ts
 /**
 * Multi-layer environment host: `underlying` (back), default `main` content, `overlay` (front).
 * Aligns with {@link SHELL_SLOT} from `boot/shell-slots` for cross-shell consistency.
@@ -145,7 +145,7 @@ function isEnvironmentShellContainerHost(el) {
 	return el instanceof HTMLElement && el.localName === "env-shell-container";
 }
 //#endregion
-//#region src/frontend/shells/environment/environment-overlay.ts
+//#region ../CWSP-document/src/frontend/shells/environment/environment-overlay.ts
 /**
 * Stacking root for transient UI when the app has no `cw-shell-*` element (typical environment demo).
 * Create once under e.g. `#app` / `.env-shell-root`; mount menus/modals as children (use pointer-events on children).

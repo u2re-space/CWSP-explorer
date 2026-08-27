@@ -1,5 +1,5 @@
-import { Bt as resolveOverlayHost, Dt as placeOverlay, Tt as registerDirectoryRoot, zt as registerTransientOverlay } from "../com/app.js";
-//#region src/frontend/shells/environment/components/explorer/fs-backend.ts
+import { Lt as registerDirectoryRoot, Qt as resolveOverlayHost, Zt as registerTransientOverlay, zt as placeOverlay } from "../com/app.js";
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {
 	let p = String(path || "/").trim() || "/";
 	if (!p.startsWith("/")) p = `/${p}`;
@@ -9,7 +9,7 @@ function normalizeVirtualPath(path, asDirectory = true) {
 	return p;
 }
 //#endregion
-//#region src/frontend/shells/environment/components/explorer/backends/chrome-bookmarks-backend.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/chrome-bookmarks-backend.ts
 var BOOKMARKS_ROOT = "/bookmarks/";
 /**
 * chrome.bookmarks is callback-first historically; modern Chromium returns a
@@ -187,7 +187,34 @@ function createChromeBookmarksBackend(api) {
 	};
 }
 //#endregion
-//#region src/frontend/shells/environment/components/explorer/storage-bridge.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/chrome-downloads-backend.ts
+var DOWNLOADS_ROOT = "/downloads/";
+var fileNameOf = (item) => {
+	const raw = String(item.filename || item.url || "").trim();
+	if (!raw) return `download-${item.id ?? "0"}`;
+	const parts = raw.split(/[/\\]/).filter(Boolean);
+	return parts[parts.length - 1] || raw;
+};
+var createChromeDownloadsBackend = (downloads) => {
+	if (typeof downloads?.search !== "function") return null;
+	return {
+		root: DOWNLOADS_ROOT,
+		writable: false,
+		async list() {
+			const rows = await downloads.search({});
+			return (Array.isArray(rows) ? rows : []).filter((item) => item && item.exists !== false && String(item.state || "") !== "interrupted").map((item) => {
+				const id = String(item.id ?? fileNameOf(item));
+				return {
+					name: fileNameOf(item),
+					kind: "file",
+					path: `${DOWNLOADS_ROOT}${id}`
+				};
+			});
+		}
+	};
+};
+//#endregion
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/storage-bridge.ts
 var api = null;
 var capacitorInvoke = async (channel, payload = {}) => {
 	const plugin = globalThis.Capacitor?.Plugins?.CwsBridge;
@@ -217,7 +244,7 @@ var listNativeStorage = async (root, path = "/") => {
 	return Array.isArray(rows) ? rows : [];
 };
 //#endregion
-//#region src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
 var toEntries = (path, rows) => {
 	const base = normalizeVirtualPath(path, true);
 	return rows.filter((row) => row?.name).map((row) => {
@@ -239,7 +266,98 @@ var createNativeFsBackend = (root) => ({
 	}
 });
 //#endregion
-//#region src/frontend/shells/environment/components/explorer/mounts.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/neutralino-fs-backend.ts
+var DESKTOP_ROOT = "/desktop/";
+var neu = () => {
+	try {
+		return globalThis.Neutralino ?? null;
+	} catch {
+		return null;
+	}
+};
+var isNeutralinoFilesystemAvailable = () => typeof neu()?.filesystem?.readDirectory === "function";
+var resolveNeutralinoHome = async () => {
+	const os = neu()?.os;
+	if (typeof os?.getPath === "function") for (const name of ["home", "documents"]) try {
+		const path = String(await os.getPath(name) || "").trim();
+		if (path) return path;
+	} catch {}
+	return "";
+};
+var joinNative = (home, rel) => {
+	const base = home.replace(/[/\\]+$/, "");
+	const tail = rel.replace(/^[/\\]+/, "").replace(/[/\\]+$/, "");
+	if (!tail) return base || home;
+	const sep = base.includes("\\") ? "\\" : "/";
+	return `${base}${sep}${tail.replace(/[/\\]+/g, sep)}`;
+};
+var virtualToNative = (home, virtualPath, asDirectory) => {
+	const v = normalizeVirtualPath(virtualPath, asDirectory);
+	return joinNative(home, v.startsWith("/desktop/") ? v.slice(9) : v.replace(/^\/+/, ""));
+};
+var createNeutralinoFsBackend = (homePath) => {
+	const fs = neu()?.filesystem;
+	const home = String(homePath || "").trim();
+	if (!home || typeof fs?.readDirectory !== "function") return null;
+	return {
+		root: DESKTOP_ROOT,
+		writable: true,
+		async list(path) {
+			const native = virtualToNative(home, path, true);
+			const rows = await fs.readDirectory(native);
+			const base = normalizeVirtualPath(path, true);
+			return (Array.isArray(rows) ? rows : []).map((row) => {
+				const name = String(row?.entry || "").trim();
+				if (!name || name === "." || name === "..") return null;
+				const kind = String(row?.type || "").toUpperCase() === "DIRECTORY" ? "directory" : "file";
+				return {
+					name,
+					kind,
+					path: `${base}${name}${kind === "directory" ? "/" : ""}`
+				};
+			}).filter((row) => Boolean(row));
+		},
+		async mkdir(path, name) {
+			if (typeof fs.createDirectory !== "function") throw new Error("Neutralino filesystem.createDirectory unavailable");
+			const parent = virtualToNative(home, path, true);
+			const sep = parent.includes("\\") ? "\\" : "/";
+			await fs.createDirectory(`${parent}${sep}${name}`);
+		},
+		async remove(path) {
+			if (typeof fs.remove !== "function") throw new Error("Neutralino filesystem.remove unavailable");
+			await fs.remove(virtualToNative(home, path, false));
+		},
+		async rename(path, newName) {
+			if (typeof fs.move !== "function") throw new Error("Neutralino filesystem.move unavailable");
+			const from = virtualToNative(home, path, false);
+			const parentVirt = normalizeVirtualPath(path, false).replace(/[^/]+$/, "");
+			const dest = virtualToNative(home, `${parentVirt}${newName}`, false);
+			await fs.move(from, dest);
+		},
+		async move(fromPath, toDirPath) {
+			if (typeof fs.move !== "function") throw new Error("Neutralino filesystem.move unavailable");
+			const from = virtualToNative(home, fromPath, false);
+			const name = normalizeVirtualPath(fromPath, false).split("/").filter(Boolean).pop() || "";
+			const dest = virtualToNative(home, `${normalizeVirtualPath(toDirPath, true)}${name}`, false);
+			await fs.move(from, dest);
+		},
+		async writeFile(parentPath, file) {
+			const dest = virtualToNative(home, `${normalizeVirtualPath(parentPath, true)}${file.name}`, false);
+			const bytes = await file.arrayBuffer();
+			if (typeof fs.writeBinaryFile === "function") {
+				await fs.writeBinaryFile(dest, bytes);
+				return;
+			}
+			if (typeof fs.writeFile === "function") {
+				await fs.writeFile(dest, await file.text());
+				return;
+			}
+			throw new Error("Neutralino filesystem write unavailable");
+		}
+	};
+};
+//#endregion
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/mounts.ts
 var MOUNTS_ROOT = "/mounts/";
 var CATALOG_KEY = "cw::explorer::mounts";
 var handles = /* @__PURE__ */ new Map();
@@ -366,7 +484,7 @@ var ensureMountsRootBackend = () => {
 	restoreDirectoryMounts();
 };
 //#endregion
-//#region src/frontend/shells/environment/components/explorer/path-router.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/path-router.ts
 /**
 * INVARIANT: registry keys are normalized directory roots (trailing slash,
 * except `/` itself). Longest-prefix match wins so nested backends (e.g.
@@ -472,10 +590,22 @@ function ensureDefaultFsBackends() {
 			if (backend) registerFsBackend(backend);
 		}
 	}
+	if (!resolveFsBackend("/downloads/")) {
+		const chromeAny = globalThis?.chrome;
+		if (chromeAny?.downloads) {
+			const backend = createChromeDownloadsBackend(chromeAny.downloads);
+			if (backend) registerFsBackend(backend);
+		}
+	}
 	if (isNativeStorageAvailable()) {
 		if (!resolveFsBackend("/sdcard/")) registerFsBackend(createNativeFsBackend("/sdcard/"));
 		if (!resolveFsBackend("/saf/")) registerFsBackend(createNativeFsBackend("/saf/"));
 	}
+	if (isNeutralinoFilesystemAvailable() && !resolveFsBackend("/desktop/")) resolveNeutralinoHome().then((home) => {
+		if (!home || resolveFsBackend("/desktop/")) return;
+		const backend = createNeutralinoFsBackend(home);
+		if (backend) registerFsBackend(backend);
+	});
 	if (!resolveFsBackend("/mounts/")) ensureMountsRootBackend();
 	observeUserFileSystem();
 }
@@ -502,7 +632,7 @@ var observeUserFileSystem = () => {
 };
 ensureDefaultFsBackends();
 //#endregion
-//#region src/frontend/shells/environment/components/explorer/ContextMenu.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/explorer/ContextMenu.ts
 var SUBMENU_HOVER_OPEN_MS = 320;
 var SUBMENU_HOVER_CLOSE_MS = 220;
 var CONTEXT_MENU_LAYER_Z_FALLBACK = "2147483640";

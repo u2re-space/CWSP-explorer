@@ -1,9 +1,9 @@
-import { Ot as CwsBridge } from "./boot-index.js";
-import { J as UIElement_default, Jt as H, Sn as preloadStyle, Y as __decorate, cn as ref, ct as applyWallpaperPaperFromLuma, en as E, qt as defineElement, rn as effect } from "../com/app.js";
+import { J as UIElement_default, Nn as preloadStyle, Y as __decorate, an as H, ct as applyWallpaperPaperFromLuma, dn as E, in as defineElement, mn as effect, yn as ref } from "../com/app.js";
+import { Vt as CwsBridge } from "./boot-index.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
 //#endregion
-//#region src/frontend/shells/environment/components/statusbar/statusbar.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/statusbar/statusbar.ts
 /**
 * WHY: Uses FL-UI `ui-statusbar` (left/center/right slots) — not a parallel component.
 * Reactive network/battery chips are shared via {@link attachShellDeviceStatus} for the desktop taskbar.
@@ -389,7 +389,7 @@ function mountEnvironmentStatusBar(shell, introInnerHtml, device) {
 	};
 }
 //#endregion
-//#region src/frontend/shells/environment/components/statusbar/capacitor-native-safe-area.ts
+//#region ../CWSP-document/src/frontend/shells/environment/components/statusbar/capacitor-native-safe-area.ts
 var CSS_TOP = "--env-native-safe-top";
 var CSS_BOTTOM = "--env-native-safe-bottom";
 var lastTopPx = 0;

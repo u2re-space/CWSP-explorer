@@ -1,5 +1,5 @@
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
-//#region src/frontend/boot/capacitor-clipboard-asset.ts
+//#region ../CWSP-document/src/frontend/boot/capacitor-clipboard-asset.ts
 var installed = false;
 var dataUrlFromAsset = async (asset) => {
 	const data = String(asset.data || "").trim();

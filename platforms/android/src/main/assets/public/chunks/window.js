@@ -1,6 +1,6 @@
 import { n as createEnvironmentShell, t as EnvironmentShell } from "./environment-shell.js";
 import { n as MinimalShell } from "./preview.js";
-//#region src/frontend/ai-slop/window/index.ts
+//#region ../CWSP-document/src/frontend/ai-slop/window/index.ts
 /**
 * `shells/window` path target: window / tabbed hosts (extends {@link MinimalShell}).
 * Environment is {@link ./environment-shell.ts} via `shells/window/environment`.

@@ -1,9 +1,9 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { B as canParseURL, Cn as CORE_ENTITY_EXTRACTION_INSTRUCTION, G as loadSettings } from "../shells/boot-index.js";
-import { fn as JSOX } from "../com/app.js";
+import { Cn as JSOX } from "../com/app.js";
+import { $ as canParseURL, Rn as CORE_ENTITY_EXTRACTION_INSTRUCTION, it as loadSettings } from "../shells/boot-index.js";
 import { n as extractJSONFromAIResponse, t as STRICT_JSON_INSTRUCTIONS } from "./AIResponseParser.js";
 import { t as encode } from "../vendor/@toon-format_toon.js";
-//#region src/shared/service/model/GPT-Config.ts
+//#region ../CWSP-document/src/shared/service/model/GPT-Config.ts
 var typesForKind = {
 	"math": "input_text",
 	"url": "input_image",
@@ -257,7 +257,7 @@ Expected output structure:
 }
 `;
 //#endregion
-//#region src/shared/service/model/GPT-Responses.ts
+//#region ../CWSP-document/src/shared/service/model/GPT-Responses.ts
 var hasFile = () => typeof globalThis.File !== "undefined";
 var hasBlob = () => typeof globalThis.Blob !== "undefined";
 var DEFAULT_REQUEST_TIMEOUTS = {
@@ -988,7 +988,7 @@ function getResponseFormat(format) {
 	].includes(format) ? "json" : "text";
 }
 //#endregion
-//#region src/shared/service/processing/entities.ts
+//#region ../CWSP-document/src/shared/service/processing/entities.ts
 var entities_exports = /* @__PURE__ */ __exportAll({ extractEntities: () => extractEntities });
 var extractEntities = async (data, config) => {
 	try {

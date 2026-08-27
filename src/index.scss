@@ -11,9 +11,9 @@
  * never `--color-primary`). Canonical color-token source of truth is veela
  * `core/misc/_tokens.scss`; `--view-*` / `--explorer-*` here are derived from canonical `--color-*`.
  */
-@use "./scss/explorer" as *;
-@use "./scss/explorer-content" as *;
-@use "./scss/essentials" as *;
+@use "./web/scss/explorer" as *;
+@use "./web/scss/explorer-content" as *;
+@use "./web/scss/essentials" as *;
 
 /*
  * Demo / PWA host: `#app` → `ui-window[native-mode]` → slotted body.

@@ -4,7 +4,7 @@
  * FIND:sku
  * WHY: sibling SKUs have no @capacitor/android of their own — use CWSP-shell's copy.
  */
-def capAndroid = new File(settingsDir, '../../../../../apps/CWSP-shell/node_modules/@capacitor/android/capacitor').canonicalFile
+def capAndroid = new File(settingsDir, '../../../CWSP-shell/node_modules/@capacitor/android/capacitor').canonicalFile
 if (!capAndroid.exists()) {
     throw new GradleException("Unable to find @capacitor/android at ${capAndroid}")
 }

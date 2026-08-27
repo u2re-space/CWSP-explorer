@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./environment-window-views-browser-view.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { an as numberRef, in as booleanRef, rn as effect, vn as __vitePreload, y as tryLaunchSiblingView } from "../com/app.js";
+import { gn as numberRef, hn as booleanRef, kn as __vitePreload, mn as effect, y as tryLaunchSiblingView } from "../com/app.js";
 import { a as SHELL_SLOT, i as isEnvironmentShellContainerHost, o as resolveOverlayMountPoint, s as resolveShellOverlaysMount, t as getOrCreateEnvironmentOverlayMount } from "./environment-environment-overlay.js";
 import { a as setChromeFlyoutShellHost } from "./environment-components-calendar-CalendarFlyout.js";
 import { t as restoreQuickFilters } from "./environment-components-settings-QuickSettings.js";
@@ -33,7 +33,7 @@ function createChromeModel(title, seed = {}) {
 	};
 }
 //#endregion
-//#region src/frontend/shells/environment/window/views/markdown-view-window.ts
+//#region ../CWSP-document/src/frontend/shells/environment/window/views/markdown-view-window.ts
 /**
 * Contract for opening `views/markdown-view` (CwViewViewer) inside `mountWindowFrame`.
 *
@@ -68,7 +68,7 @@ function isMarkdownViewManagedWindowKey(id) {
 	return String(id || "").trim().toLowerCase() === MARKDOWN_VIEW_MANAGED_WINDOW_KEY;
 }
 //#endregion
-//#region src/frontend/shells/environment/window/views/view-mount.ts
+//#region ../CWSP-document/src/frontend/shells/environment/window/views/view-mount.ts
 function isViewLike(x) {
 	return Boolean(x && typeof x === "object" && typeof x.render === "function");
 }
@@ -129,7 +129,7 @@ async function mountViewModule(importer, host, options) {
 	};
 }
 //#endregion
-//#region src/frontend/shells/environment/window/window/mount-ui-window.ts
+//#region ../CWSP-document/src/frontend/shells/environment/window/window/mount-ui-window.ts
 /**
 * WHY: Replaces `.wf-frame` / {@link mountWindowFrame} for environment-shell floating views.
 * Keeps {@link WindowChromeModel} as the reactive bounds source; chrome is `ui-window`.
@@ -625,7 +625,7 @@ function mountUiWindow(host, model, content, onFocus, options = {}) {
 	};
 }
 //#endregion
-//#region src/frontend/shells/environment/workspace-window-layer.ts
+//#region ../CWSP-document/src/frontend/shells/environment/workspace-window-layer.ts
 /** Direct-child managed window tagged via {@link mountUiWindow}'s `managedViewKey`. */
 function findKeyedFrame(workspace, key) {
 	const selKey = typeof CSS !== "undefined" && typeof CSS.escape === "function" ? CSS.escape(key) : key.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
@@ -870,7 +870,8 @@ function createWorkspaceWindowLayer(workspace, options = {}) {
 		if (!id || id === "home") return;
 		if (id === "airpad") return;
 		try {
-			if (document.documentElement.dataset.cwspSku === "launcher") {
+			const native = document.documentElement.dataset.cwspNativeShell === "capacitor" || Boolean(globalThis.Capacitor?.isNativePlatform?.());
+			if (document.documentElement.dataset.cwspSku === "launcher" && native) {
 				tryLaunchSiblingView(id).then((launched) => {
 					if (!launched) openViewWindowContinue(id, opts);
 				});
@@ -1144,7 +1145,7 @@ function createWorkspaceWindowLayer(workspace, options = {}) {
 	};
 }
 //#endregion
-//#region src/frontend/shells/environment/index.ts
+//#region ../CWSP-document/src/frontend/shells/environment/index.ts
 /**
 * environment-shell — public entry for host apps: status bar, taskbar, wallpaper helpers.
 *

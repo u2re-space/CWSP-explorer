@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-//#region src/frontend/boot/capacitor-permissions.ts
+//#region ../CWSP-document/src/frontend/boot/capacitor-permissions.ts
 var capacitor_permissions_exports = /* @__PURE__ */ __exportAll({
 	ensureCapacitorPermissions: () => ensureCapacitorPermissions,
 	isCapacitorNative: () => isCapacitorNative

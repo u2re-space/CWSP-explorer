@@ -1,4 +1,4 @@
-//#region src/shared/other/config/settings/crx-control-pair-modal.ts
+//#region ../CWSP-document/src/shared/other/config/settings/crx-control-pair-modal.ts
 var STYLE_ID = "cwsp-crx-control-pair-modal-style";
 var TOKEN_HINT_KEY = "cwsp-control-public-token-hint";
 var ensureStyle = () => {

@@ -2,8 +2,8 @@
  * Filename: build-capacitor.mjs
  * FullPath: apps/CWSP-explorer/scripts/build-capacitor.mjs
  * FIND:sku
- * Change date and time: 14.08.00_24.08.2026
- * Reason for changes: Assemble explorer APK from projected launcher Gradle + folder web bundle.
+ * Change date and time: 15.40.00_27.08.2026
+ * Reason for changes: Bump platforms/android/version.properties on each APK build.
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -12,12 +12,12 @@ import { fileURLToPath } from "node:url";
 
 const APP_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SHELL_SCRIPTS = [
-    path.resolve(APP_ROOT, "../../../apps/CWSP-shell/scripts"),
-    path.resolve(APP_ROOT, "../CWSP-shell/scripts")
+    path.resolve(APP_ROOT, "../CWSP-shell/scripts"),
+    path.resolve(APP_ROOT, "../../apps/CWSP-shell/scripts")
 ].find((p) => fs.existsSync(p));
 const documentRoot = [
-    path.resolve(APP_ROOT, "../../../apps/CWSP-document"),
-    path.resolve(APP_ROOT, "../CWSP-document")
+    path.resolve(APP_ROOT, "../CWSP-document"),
+    path.resolve(APP_ROOT, "../../apps/CWSP-document")
 ].find((p) => fs.existsSync(p));
 if (!SHELL_SCRIPTS || !documentRoot) {
     throw new Error("cannot resolve CWSP-shell/scripts or CWSP-document from explorer-view");
@@ -45,11 +45,25 @@ function resolveJavaHome() {
 }
 
 run(process.execPath, [path.join(SHELL_SCRIPTS, "project-sibling-sku-android.mjs"), "explorer"], APP_ROOT);
+const noBump =
+    process.argv.includes("--no-bump") || String(process.env.CWSP_CAPACITOR_NO_BUMP || "").trim() === "1";
+if (noBump) {
+    console.log("[build:capacitor] --no-bump — keeping platforms/android/version.properties");
+} else {
+    run(process.execPath, [path.join(SHELL_SCRIPTS, "bump-capacitor-version.mjs"), "--app", APP_ROOT], APP_ROOT);
+}
 run("node", [path.join(APP_ROOT, "scripts/sync-capacitor-android-icons.mjs")], APP_ROOT);
 run(
     "node",
-    [path.join(documentRoot, "scripts/run-vite.mjs"), "build", "--config", "vite.config.js", "--mode", "capacitor-explorer"],
-    documentRoot
+    [
+        path.join(documentRoot, "scripts/run-vite.mjs"),
+        "build",
+        "--config",
+        path.join(APP_ROOT, "vite.config.js"),
+        "--mode",
+        "capacitor"
+    ],
+    APP_ROOT
 );
 run(process.execPath, [path.join(SHELL_SCRIPTS, "sync-sibling-sku-web.mjs"), "explorer"], APP_ROOT);
 

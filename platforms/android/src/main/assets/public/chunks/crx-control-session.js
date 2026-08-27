@@ -1,5 +1,5 @@
-import { vn as __vitePreload } from "../com/app.js";
-//#region src/shared/other/config/settings/crx-control-session.ts
+import { kn as __vitePreload } from "../com/app.js";
+//#region ../CWSP-document/src/shared/other/config/settings/crx-control-session.ts
 /** chrome.storage.local key — never sessionStorage (must survive browser restart). */
 var CRX_CONTROL_SESSION_KEY = "cwsp-control-session-v1";
 var chromeApi = () => {

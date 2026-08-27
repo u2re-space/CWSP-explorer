@@ -1,10 +1,3781 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src2.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../vendor/dompurify.js","../vendor/katex.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/marked-katex-extension.js","../chunks/ShareTargetGateway.js","../chunks/LogSanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../assets/index-DrCWYGbn.js","../chunks/BootLoader.js","../fest/core.js","../chunks/admin-doors.js","../chunks/storage.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src4.js","../chunks/src3.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session.js","../chunks/sw-handling.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../vendor/dompurify.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","../chunks/ShareTargetGateway.js","../chunks/LogSanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/storage.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session.js","../chunks/sw-handling.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
-import { Mt as saveUIState, Tn as fixOrientToScreen, Y as __decorate, _n as normalizeProtocolEnvelope, at as initializeAppCanvasLayer, bn as loadAsAdopted, dn as safe, fn as JSOX, gn as isProtocolEnvelope, hn as createProtocolEnvelope, jt as makeUIState, ln as stringRef, mn as getUnifiedMessaging$2, on as observe, pn as createServiceChannelManager, pt as writeFileSmart, q as UIElement, qt as defineElement, un as makeObjectAssignable, vn as __vitePreload } from "../com/app.js";
+import { Cn as JSOX, Dn as isProtocolEnvelope, En as createProtocolEnvelope, In as fixOrientToScreen, On as normalizeProtocolEnvelope, Sn as safe, Tn as getUnifiedMessaging$2, Tt as writeFileSmart, Ut as makeUIState, Wt as saveUIState, Y as __decorate, _n as observe, at as initializeAppCanvasLayer, bn as stringRef, in as defineElement, jn as loadAsAdopted, kn as __vitePreload, q as UIElement, wn as createServiceChannelManager, xn as makeObjectAssignable } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
+import { f as publicHrefForView, l as isViewLocalToSurface$1, m as shouldHandoffViewToSibling, n as SKU_HUB_PATHS$1, p as readCwspSku$1, s as inferCwspSkuFromLocation$1 } from "./boot-history-base.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { n as core_default, t as scss_default } from "../fest/veela.js";
+//#region ../CWSP-document/src/shared/routing/api/process-api.ts
+var PROCESS_API_PUBLIC_ORIGIN$1 = "https://process.u2re.space";
+var PROCESS_API_PREFIX$1 = "/api/process";
+var PROCESS_API_SUFFIX$1 = {
+	processing: "processing",
+	recognize: "ai/recognize",
+	analyze: "ai/analyze",
+	health: "health"
+};
+var PROCESS_SAME_ORIGIN_HOSTS$1 = /* @__PURE__ */ new Set([
+	"process.u2re.space",
+	"workcenter.u2re.space",
+	"u2re.space",
+	"www.u2re.space"
+]);
+var isExtensionProtocol$1 = (protocol) => protocol === "chrome-extension:" || protocol === "moz-extension:" || protocol === "safari-web-extension:";
+var isCapacitorNative$5 = () => {
+	try {
+		const g = globalThis;
+		return typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform();
+	} catch {
+		return false;
+	}
+};
+/** Hub + process PWAs stay same-origin. CRX / Capacitor / other hosts use the public process API. */
+var needsRemoteProcessApi$1 = () => {
+	try {
+		const protocol = String(globalThis.location?.protocol || "").toLowerCase();
+		if (isExtensionProtocol$1(protocol)) return true;
+		if (isCapacitorNative$5()) return true;
+		const host = String(globalThis.location?.hostname || "").toLowerCase();
+		if (!host) return true;
+		if (PROCESS_SAME_ORIGIN_HOSTS$1.has(host)) return false;
+		if (host === "localhost" || host === "127.0.0.1") return true;
+		return protocol !== "http:" && protocol !== "https:";
+	} catch {
+		return true;
+	}
+};
+var processApiPath$1 = (suffix = "processing") => `${PROCESS_API_PREFIX$1}/${PROCESS_API_SUFFIX$1[suffix]}`;
+var resolveProcessApiUrl$1 = (suffix = "processing") => {
+	const path = processApiPath$1(suffix);
+	return needsRemoteProcessApi$1() ? `${PROCESS_API_PUBLIC_ORIGIN$1}${path}` : path;
+};
+//#endregion
+//#region ../CWSP-document/src/shared/other/config/Names.ts
+/**
+* Centralized naming system for CWSP-shell application
+* Consolidates component names, channel names, route names, etc.
+*/
+/**
+* Broadcast channel names used throughout the application
+*/
+var BROADCAST_CHANNELS$1 = {
+	SHARE_TARGET: "rs-share-target",
+	TOAST: "rs-toast",
+	CLIPBOARD: "rs-clipboard",
+	WORK_CENTER: "rs-workcenter",
+	MARKDOWN_VIEWER: "rs-markdown-viewer",
+	SETTINGS: "rs-settings",
+	GENERAL: "rs-app-general",
+	MINIMAL_APP: "minimal-app",
+	MAIN_APP: "main-app",
+	FILE_EXPLORER: "file-explorer",
+	PRINT_VIEWER: "print-viewer",
+	SETTINGS_VIEWER: "settings-viewer",
+	HISTORY_VIEWER: "history-viewer",
+	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
+	FILE_EXPLORER_CHANNEL: "file-explorer",
+	SETTINGS_CHANNEL: "settings",
+	HISTORY_CHANNEL: "history",
+	PRINT_CHANNEL: "print",
+	SERVICE_WORKCENTER: "rs-service-workcenter",
+	SERVICE_SETTINGS: "rs-service-settings",
+	SERVICE_VIEWER: "rs-service-viewer",
+	SERVICE_EXPLORER: "rs-service-explorer",
+	SERVICE_AIRPAD: "rs-service-airpad",
+	SERVICE_NETWORK: "rs-service-network",
+	SERVICE_PRINT: "rs-service-print",
+	SERVICE_HISTORY: "rs-service-history",
+	SERVICE_EDITOR: "rs-service-editor",
+	SERVICE_HOME: "rs-service-home"
+};
+var viewBroadcastChannelName = (viewId) => {
+	return `rs-view-${normalizeViewId$1(viewId) || "app"}`;
+};
+/**
+* Component and module identifiers
+*/
+var COMPONENTS$1 = {
+	WORK_CENTER: "workcenter",
+	MARKDOWN_VIEWER: "markdown-viewer",
+	MARKDOWN_EDITOR: "markdown-editor",
+	RICH_EDITOR: "rich-editor",
+	SETTINGS: "settings",
+	HISTORY: "history",
+	FILE_PICKER: "file-picker",
+	FILE_EXPLORER: "file-explorer",
+	WORKCENTER_CORE: "workcenter-core",
+	BASIC_WORKCENTER: "basic-workcenter",
+	BASIC_VIEWER: "basic-viewer",
+	BASIC_EXPLORER: "basic-explorer",
+	BASIC_SETTINGS: "basic-settings",
+	BASIC_HISTORY: "basic-history",
+	BASIC_PRINT: "basic-print",
+	AIRPAD: "airpad",
+	NETWORK: "network",
+	HOME: "home",
+	EDITOR: "editor",
+	VIEWER: "viewer",
+	EXPLORER: "explorer",
+	PRINT: "print"
+};
+/**
+* API endpoint paths
+* INVARIANT: PROCESSING resolves at call time so CRX / Capacitor hit process.u2re.space.
+* COMPAT: :443 still accepts POST /api/processing.
+*/
+var API_ENDPOINTS = {
+	get PROCESSING() {
+		return resolveProcessApiUrl$1("processing");
+	},
+	ANALYZE: "/api/analyze",
+	TEST: "/api/test",
+	HEALTH: "/health",
+	ICONS: "/assets/icons",
+	DUOTONE_ICONS: "/assets/icons/duotone",
+	PHOSPHOR_ICONS: "/assets/icons/phosphor",
+	ICON_PROXY: "/api/icon-proxy",
+	SHARE_TARGET: "/share-target",
+	SHARE_TARGET_ALT: "/share_target",
+	LAUNCH_QUEUE: "/launch-queue",
+	SW_CONTENT: "/sw-content",
+	SW_CONTENT_AVAILABLE: "/sw-content/available",
+	CLIPBOARD_PENDING: "/clipboard/pending",
+	CLIPBOARD_CLEAR: "/clipboard/clear"
+};
+/**
+* Location hash identifiers for app navigation
+*/
+var ROUTE_HASHES$1 = {
+	MARKDOWN_VIEWER: "#markdown-viewer",
+	MARKDOWN_EDITOR: "#markdown-editor",
+	RICH_EDITOR: "#rich-editor",
+	SETTINGS: "#settings",
+	HISTORY: "#history",
+	WORKCENTER: "#workcenter",
+	FILE_PICKER: "#file-picker",
+	FILE_EXPLORER: "#file-explorer",
+	PRINT: "#print",
+	AIRPAD: "#airpad",
+	NETWORK: "#network",
+	WORKCENTER_FILES: "#workcenter-files",
+	WORKCENTER_TEXT: "#workcenter-text",
+	WORKCENTER_IMAGES: "#workcenter-images",
+	WORKCENTER_PROCESSING: "#workcenter-processing",
+	SHARE_TARGET_TEXT: "#share-target-text",
+	SHARE_TARGET_FILES: "#share-target-files",
+	SHARE_TARGET_URL: "#share-target-url",
+	SHARE_TARGET_IMAGE: "#share-target-image"
+};
+/**
+* Content type identifiers
+*/
+var CONTENT_TYPES = {
+	TEXT: "text",
+	URL: "url",
+	FILE: "file",
+	IMAGE: "image",
+	MARKDOWN: "markdown",
+	HTML: "html",
+	JSON: "json",
+	PDF: "pdf",
+	AUDIO: "audio",
+	VIDEO: "video",
+	OTHER: "other"
+};
+/**
+* Destination identifiers for unified messaging
+*/
+var DESTINATIONS$1 = {
+	WORKCENTER: "workcenter",
+	CLIPBOARD: "clipboard",
+	VIEWER: "viewer",
+	MARKDOWN_VIEWER: "markdown-viewer",
+	SETTINGS: "settings",
+	HISTORY: "history",
+	EXPLORER: "explorer",
+	FILE_EXPLORER: "file-explorer",
+	PRINT: "print",
+	PRINT_VIEWER: "print-viewer",
+	EDITOR: "editor",
+	AIRPAD: "airpad",
+	HOME: "home",
+	BASIC_APP: "basic-app",
+	MAIN_APP: "main-app"
+};
+var CANONICAL_VIEW_IDS$1 = [
+	"viewer",
+	"workcenter",
+	"explorer",
+	"editor",
+	"settings",
+	"history",
+	"home",
+	"airpad",
+	"print"
+];
+/**
+* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
+* `basic-*` destinations. Keep alias resolution centralized here so transports,
+* views, and workers can agree on one canonical target vocabulary.
+*/
+var DESTINATION_ALIASES$1 = {
+	viewer: [
+		DESTINATIONS$1.VIEWER,
+		DESTINATIONS$1.MARKDOWN_VIEWER,
+		COMPONENTS$1.BASIC_VIEWER
+	],
+	workcenter: [
+		DESTINATIONS$1.WORKCENTER,
+		COMPONENTS$1.BASIC_WORKCENTER,
+		COMPONENTS$1.WORKCENTER_CORE
+	],
+	explorer: [
+		DESTINATIONS$1.EXPLORER,
+		DESTINATIONS$1.FILE_EXPLORER,
+		COMPONENTS$1.BASIC_EXPLORER
+	],
+	editor: [
+		DESTINATIONS$1.EDITOR,
+		COMPONENTS$1.MARKDOWN_EDITOR,
+		COMPONENTS$1.RICH_EDITOR
+	],
+	settings: [
+		DESTINATIONS$1.SETTINGS,
+		BROADCAST_CHANNELS$1.SETTINGS_CHANNEL,
+		COMPONENTS$1.BASIC_SETTINGS
+	],
+	history: [
+		DESTINATIONS$1.HISTORY,
+		BROADCAST_CHANNELS$1.HISTORY_CHANNEL,
+		COMPONENTS$1.BASIC_HISTORY
+	],
+	print: [
+		DESTINATIONS$1.PRINT,
+		DESTINATIONS$1.PRINT_VIEWER,
+		COMPONENTS$1.BASIC_PRINT
+	],
+	airpad: [DESTINATIONS$1.AIRPAD],
+	home: [DESTINATIONS$1.HOME],
+	clipboard: [DESTINATIONS$1.CLIPBOARD],
+	"basic-app": [DESTINATIONS$1.BASIC_APP],
+	"main-app": [DESTINATIONS$1.MAIN_APP]
+};
+var DESTINATION_LOOKUP$1 = Object.entries(DESTINATION_ALIASES$1).reduce((out, [canonical, aliases]) => {
+	out[canonical] = canonical;
+	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
+	return out;
+}, {});
+var normalizeDestination$1 = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return "";
+	return DESTINATION_LOOKUP$1[raw] || raw;
+};
+var getDestinationAliases$1 = (value) => {
+	const canonical = normalizeDestination$1(value);
+	if (!canonical) return [];
+	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES$1[canonical] || []])];
+};
+var normalizeViewId$1 = (value) => {
+	const canonical = normalizeDestination$1(value);
+	if (CANONICAL_VIEW_IDS$1.includes(canonical)) return canonical;
+	return "viewer";
+};
+var getBroadcastChannelForDestination = (value) => {
+	switch (normalizeDestination$1(value)) {
+		case "viewer": return BROADCAST_CHANNELS$1.MARKDOWN_VIEWER;
+		case "workcenter": return BROADCAST_CHANNELS$1.WORK_CENTER;
+		case "explorer": return BROADCAST_CHANNELS$1.FILE_EXPLORER;
+		case "settings": return BROADCAST_CHANNELS$1.SETTINGS;
+		case "history": return BROADCAST_CHANNELS$1.HISTORY_VIEWER;
+		case "print": return BROADCAST_CHANNELS$1.PRINT_VIEWER;
+		case "clipboard": return BROADCAST_CHANNELS$1.CLIPBOARD;
+		case "main-app": return BROADCAST_CHANNELS$1.MAIN_APP;
+		case "basic-app": return BROADCAST_CHANNELS$1.MINIMAL_APP;
+		default: return null;
+	}
+};
+var createDestinationChannelMappings = () => {
+	const mappings = {};
+	for (const canonical of Object.keys(DESTINATION_ALIASES$1)) {
+		const channel = getBroadcastChannelForDestination(canonical);
+		if (!channel) continue;
+		for (const alias of getDestinationAliases$1(canonical)) mappings[alias] = channel;
+	}
+	return mappings;
+};
+BROADCAST_CHANNELS$1.SERVICE_WORKCENTER, BROADCAST_CHANNELS$1.SERVICE_SETTINGS, BROADCAST_CHANNELS$1.SERVICE_VIEWER, BROADCAST_CHANNELS$1.SERVICE_EXPLORER, BROADCAST_CHANNELS$1.SERVICE_AIRPAD, BROADCAST_CHANNELS$1.SERVICE_NETWORK, BROADCAST_CHANNELS$1.SERVICE_PRINT, BROADCAST_CHANNELS$1.SERVICE_HISTORY, BROADCAST_CHANNELS$1.SERVICE_EDITOR, BROADCAST_CHANNELS$1.SERVICE_HOME;
+ROUTE_HASHES$1.WORKCENTER, ROUTE_HASHES$1.SETTINGS, ROUTE_HASHES$1.MARKDOWN_VIEWER, ROUTE_HASHES$1.FILE_EXPLORER, ROUTE_HASHES$1.NETWORK, ROUTE_HASHES$1.PRINT, ROUTE_HASHES$1.HISTORY, ROUTE_HASHES$1.MARKDOWN_EDITOR;
+//#endregion
+//#region ../CWSP-document/src/shared/routing/channel/ServiceChannels.ts
+/**
+* Service Channels for CWSP-shell
+* Extends fest/uniform ServiceChannelManager with app-specific configuration
+*/
+var SERVICE_CHANNEL_CONFIG = {
+	workcenter: {
+		broadcastName: BROADCAST_CHANNELS$1.WORK_CENTER,
+		routeHash: ROUTE_HASHES$1.WORKCENTER,
+		component: COMPONENTS$1.WORK_CENTER,
+		description: "AI work center for processing files and content"
+	},
+	settings: {
+		broadcastName: BROADCAST_CHANNELS$1.SETTINGS,
+		routeHash: ROUTE_HASHES$1.SETTINGS,
+		component: COMPONENTS$1.SETTINGS,
+		description: "Application settings and configuration"
+	},
+	airpad: {
+		broadcastName: BROADCAST_CHANNELS$1.SERVICE_AIRPAD,
+		routeHash: ROUTE_HASHES$1.AIRPAD,
+		component: COMPONENTS$1.AIRPAD,
+		description: "AirPad remote trackpad/keyboard + clipboard"
+	},
+	network: {
+		broadcastName: BROADCAST_CHANNELS$1.SERVICE_NETWORK,
+		routeHash: ROUTE_HASHES$1.NETWORK,
+		component: COMPONENTS$1.NETWORK,
+		description: "CWSP network status, probes, and endpoint routing"
+	},
+	viewer: {
+		broadcastName: BROADCAST_CHANNELS$1.MARKDOWN_VIEWER,
+		routeHash: ROUTE_HASHES$1.MARKDOWN_VIEWER,
+		component: COMPONENTS$1.MARKDOWN_VIEWER,
+		description: "Content viewer for markdown and files"
+	},
+	explorer: {
+		broadcastName: BROADCAST_CHANNELS$1.FILE_EXPLORER,
+		routeHash: ROUTE_HASHES$1.FILE_EXPLORER,
+		component: COMPONENTS$1.FILE_EXPLORER,
+		description: "File explorer and browser"
+	},
+	print: {
+		broadcastName: BROADCAST_CHANNELS$1.PRINT_CHANNEL,
+		routeHash: ROUTE_HASHES$1.PRINT,
+		component: COMPONENTS$1.BASIC_PRINT,
+		description: "Print preview and export"
+	},
+	history: {
+		broadcastName: BROADCAST_CHANNELS$1.HISTORY_CHANNEL,
+		routeHash: ROUTE_HASHES$1.HISTORY,
+		component: COMPONENTS$1.HISTORY,
+		description: "Action history and undo/redo"
+	},
+	editor: {
+		broadcastName: "rs-editor",
+		routeHash: ROUTE_HASHES$1.MARKDOWN_EDITOR,
+		component: COMPONENTS$1.MARKDOWN_EDITOR,
+		description: "Content editor"
+	},
+	home: {
+		broadcastName: "rs-home",
+		routeHash: "#home",
+		component: "home",
+		description: "Home/landing view"
+	}
+};
+var appServiceChannelManager = null;
+/**
+* Get the app-configured ServiceChannelManager
+*/
+function getServiceChannels() {
+	if (!appServiceChannelManager) appServiceChannelManager = createServiceChannelManager({
+		channels: SERVICE_CHANNEL_CONFIG,
+		logPrefix: "[ServiceChannels]"
+	});
+	return appServiceChannelManager;
+}
+var serviceChannels = getServiceChannels();
+//#endregion
+//#region ../../modules/projects/subsystem/src/routing/api/process-api.ts
+var PROCESS_API_PUBLIC_ORIGIN = "https://process.u2re.space";
+var PROCESS_API_PREFIX = "/api/process";
+var PROCESS_API_SUFFIX = {
+	processing: "processing",
+	recognize: "ai/recognize",
+	analyze: "ai/analyze",
+	health: "health"
+};
+var PROCESS_SAME_ORIGIN_HOSTS = /* @__PURE__ */ new Set([
+	"process.u2re.space",
+	"workcenter.u2re.space",
+	"u2re.space",
+	"www.u2re.space"
+]);
+var isExtensionProtocol = (protocol) => protocol === "chrome-extension:" || protocol === "moz-extension:" || protocol === "safari-web-extension:";
+var isCapacitorNative$4 = () => {
+	try {
+		const g = globalThis;
+		return typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform();
+	} catch {
+		return false;
+	}
+};
+/** Hub + process PWAs stay same-origin. CRX / Capacitor / other hosts use the public process API. */
+var needsRemoteProcessApi = () => {
+	try {
+		const protocol = String(globalThis.location?.protocol || "").toLowerCase();
+		if (isExtensionProtocol(protocol)) return true;
+		if (isCapacitorNative$4()) return true;
+		const host = String(globalThis.location?.hostname || "").toLowerCase();
+		if (!host) return true;
+		if (PROCESS_SAME_ORIGIN_HOSTS.has(host)) return false;
+		if (host === "localhost" || host === "127.0.0.1") return true;
+		return protocol !== "http:" && protocol !== "https:";
+	} catch {
+		return true;
+	}
+};
+var processApiPath = (suffix = "processing") => `${PROCESS_API_PREFIX}/${PROCESS_API_SUFFIX[suffix]}`;
+var resolveProcessApiUrl = (suffix = "processing") => {
+	const path = processApiPath(suffix);
+	return needsRemoteProcessApi() ? `${PROCESS_API_PUBLIC_ORIGIN}${path}` : path;
+};
+//#endregion
+//#region ../../modules/projects/subsystem/src/service/instructions/core.ts
+var AI_INSTRUCTIONS$1 = {
+	SOLVE_AND_ANSWER: `
+Solve equations, answer questions, and explain mathematical or logical problems from the provided content.
+
+For equations and math problems:
+- Show step-by-step solutions
+- Provide final answers clearly marked
+- Explain reasoning for each step
+
+For general questions:
+- Provide accurate, well-reasoned answers
+- Include relevant context and explanations
+- If multiple interpretations possible, address them
+
+For quizzes and tests:
+- Show the correct answer with explanation
+- Explain why other options are incorrect
+
+Always respond in the specified language and format results clearly.
+`,
+	WRITE_CODE: `
+Write clean, efficient, and well-documented code based on the provided description, requirements, or image.
+
+Code requirements:
+- Use appropriate programming language for the task
+- Follow language-specific best practices and conventions
+- Include proper error handling
+- Add meaningful comments and documentation
+- Make code readable and maintainable
+
+If generating from an image or visual description:
+- Analyze the visual elements and requirements
+- Implement the described functionality
+- Ensure code compiles and runs correctly
+
+Always respond in the specified language and provide complete, working code.
+`,
+	EXTRACT_CSS: `
+Extract and generate clean, modern CSS from the provided content, image, or description.
+
+CSS requirements:
+- Use modern CSS features and best practices
+- Generate semantic, maintainable stylesheets
+- Include responsive design considerations
+- Use appropriate selectors and specificity
+- Follow CSS naming conventions
+- Optimize for performance and maintainability
+
+If extracting from an image:
+- Analyze the visual design and layout
+- Generate corresponding CSS rules
+- Identify colors, fonts, spacing, and layout
+- Create reusable CSS classes and components
+
+Always respond in the specified language and provide complete, working CSS.
+`,
+	RECOGNIZE_CONTENT: `
+Recognize and extract information from images, documents, or other visual content.
+
+Recognition requirements:
+- Identify text content accurately
+- Extract structured information
+- Recognize tables, forms, and structured data
+- Preserve formatting where possible
+- Handle different languages and scripts
+- Provide confidence scores for extracted content
+
+For document analysis:
+- Extract key information and metadata
+- Identify document type and structure
+- Recognize important sections and headings
+
+For image analysis:
+- Describe visual content
+- Extract text from images (OCR)
+- Identify objects, scenes, and visual elements
+
+Always respond in the specified language and format extracted information clearly.
+`,
+	CONVERT_DATA: `
+Convert data between different formats while preserving structure and meaning.
+
+Conversion requirements:
+- Maintain data integrity and relationships
+- Preserve formatting and structure where possible
+- Handle different data types appropriately
+- Provide clear mapping between source and target formats
+- Validate conversion accuracy
+
+Supported conversions:
+- CSV ↔ JSON ↔ XML
+- Markdown ↔ HTML
+- Text ↔ Structured data
+- Image data ↔ Text representations
+
+Ensure accurate, lossless conversion where possible.
+`,
+	EXTRACT_ENTITIES: `
+Extract named entities, keywords, and structured information from content.
+
+Entity extraction requirements:
+- Identify people, organizations, locations
+- Extract dates, numbers, and measurements
+- Find keywords and important terms
+- Recognize relationships and connections
+- Provide confidence scores and context
+
+Output structured data with:
+- Entity types and values
+- Position and context information
+- Confidence scores
+- Relationship mappings
+
+Focus on accuracy and comprehensive coverage.
+`,
+	TRANSLATE_TO_LANGUAGE: `
+Translate content to the specified target language while preserving meaning, tone, and formatting.
+
+Translation requirements:
+- Maintain original meaning and intent
+- Preserve formatting, structure, and markdown syntax
+- Adapt cultural references appropriately
+- Use natural, fluent language in the target language
+- Handle technical terms, proper names, and brand names correctly
+- Maintain appropriate formality and tone
+- Preserve code blocks, mathematical expressions, and technical content
+
+For content already in the target language:
+- Provide natural rephrasing or improvement
+- Enhance clarity and readability
+- Maintain professional quality
+
+Supported languages:
+- English (en)
+- Russian (ru)
+- Other languages as requested
+
+Ensure high-quality, natural translations that feel native to the target language.
+`,
+	GENERAL_PROCESSING: `
+Process and analyze content using appropriate AI capabilities.
+
+General processing requirements:
+- Understand context and intent
+- Provide relevant analysis or transformation
+- Use appropriate tools and methods
+- Maintain content quality and accuracy
+- Adapt to different content types and requirements
+
+Focus on providing useful, accurate results that meet user needs.
+`,
+	CRX_SOLVE_AND_ANSWER: `
+Solve the problem or answer the question presented in the content.
+
+Auto-detect the type of content:
+- Mathematical equation/expression → Solve step-by-step
+- Quiz/test question → Provide correct answer
+- Homework problem → Solve and explain
+- General question → Answer with explanation
+
+Format output as:
+
+**Problem/Question:**
+<recognized content - use $KaTeX$ for math>
+
+**Solution/Answer:**
+<step-by-step solution or direct answer>
+
+**Explanation:**
+<clear explanation of the reasoning>
+
+---
+
+For MATH problems:
+- Use single $ for inline math: $x = 5$
+- Use double $$ for display equations: $$\\int_0^1 f(x) dx$$
+- Show all intermediate steps
+- Simplify the final answer
+- For systems: solve all variables
+- For inequalities: use interval notation
+
+For MULTIPLE CHOICE:
+- Identify correct option (A, B, C, D)
+- Explain why it's correct
+- Note why others are wrong
+
+For TRUE/FALSE:
+- State True or False clearly
+- Provide justification
+
+For SHORT ANSWER/ESSAY:
+- Provide concise, complete answer
+- Include key facts and reasoning
+
+For CODING problems:
+- Write the solution code
+- Explain the logic
+
+If multiple problems/questions present, solve each separately.
+If unsolvable or unclear, explain why.
+`,
+	CRX_WRITE_CODE: `
+You are an expert software developer. Analyze the provided content and generate high-quality, working code.
+
+Code Generation Requirements:
+- Choose the best programming language for the task
+- Write clean, efficient, and well-documented code
+- Include proper error handling and input validation
+- Add meaningful comments explaining complex logic
+- Follow language-specific best practices and conventions
+- Ensure code is readable, maintainable, and follows standard patterns
+
+For each code generation task:
+1. **Analyze Requirements**: Understand what the code needs to do
+2. **Choose Language**: Select appropriate programming language
+3. **Design Solution**: Plan the code structure and logic
+4. **Write Code**: Provide complete, working code with comments
+5. **Explain Logic**: Describe how the code works and key decisions
+
+Provide complete, runnable code that solves the described problem.
+`,
+	CRX_EXTRACT_CSS: `
+You are an expert CSS developer. Analyze the provided content and extract/generate the corresponding CSS styles.
+
+CSS Extraction Requirements:
+- Analyze visual elements, layout, and design patterns
+- Generate modern, clean CSS using current standards
+- Use semantic class names and proper CSS architecture
+- Include responsive design considerations
+- Optimize for performance and maintainability
+- Follow CSS best practices and conventions
+
+For CSS extraction:
+1. **Analyze Design**: Identify colors, typography, spacing, layout
+2. **Generate Rules**: Create appropriate CSS rules and selectors
+3. **Organize Code**: Group related styles logically
+4. **Add Comments**: Explain complex or important style decisions
+5. **Ensure Compatibility**: Use widely supported CSS properties
+
+Provide complete, well-organized CSS that recreates the described design.
+`
+};
+AI_INSTRUCTIONS$1.SOLVE_AND_ANSWER;
+AI_INSTRUCTIONS$1.WRITE_CODE;
+AI_INSTRUCTIONS$1.EXTRACT_CSS;
+AI_INSTRUCTIONS$1.RECOGNIZE_CONTENT;
+AI_INSTRUCTIONS$1.CONVERT_DATA;
+AI_INSTRUCTIONS$1.EXTRACT_ENTITIES;
+AI_INSTRUCTIONS$1.TRANSLATE_TO_LANGUAGE;
+AI_INSTRUCTIONS$1.GENERAL_PROCESSING;
+AI_INSTRUCTIONS$1.CRX_SOLVE_AND_ANSWER;
+AI_INSTRUCTIONS$1.CRX_WRITE_CODE;
+AI_INSTRUCTIONS$1.CRX_EXTRACT_CSS;
+//#endregion
+//#region ../../modules/projects/subsystem/src/routing/channel/UnifiedAIConfig.ts
+var processApiUrl$1 = () => resolveProcessApiUrl("processing");
+var UNIFIED_PROCESSING_RULES$1 = {
+	"share-target": {
+		processingUrl: processApiUrl$1(),
+		contentAction: {
+			onResult: "write-clipboard",
+			onAccept: "attach-to-associated",
+			doProcess: "instantly",
+			openApp: true
+		},
+		supportedContentTypes: [
+			"text",
+			"markdown",
+			"image",
+			"url"
+		],
+		defaultOverrideFactors: []
+	},
+	"launch-queue": {
+		processingUrl: processApiUrl$1(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-associated",
+			doProcess: "manually",
+			openApp: true
+		},
+		supportedContentTypes: [
+			"file",
+			"blob",
+			"text",
+			"markdown",
+			"image"
+		],
+		defaultOverrideFactors: []
+	},
+	"crx-snip": {
+		processingUrl: processApiUrl$1(),
+		contentAction: {
+			onResult: "write-clipboard",
+			onAccept: "attach-to-associated",
+			doProcess: "instantly",
+			openApp: false
+		},
+		supportedContentTypes: ["text", "image"],
+		defaultOverrideFactors: ["force-processing"]
+	},
+	"paste": {
+		processingUrl: processApiUrl$1(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-associated",
+			doProcess: "manually",
+			openApp: false
+		},
+		supportedContentTypes: [
+			"text",
+			"markdown",
+			"image"
+		],
+		defaultOverrideFactors: [],
+		associationOverrides: {
+			"text": ["user-action"],
+			"markdown": ["user-action"]
+		}
+	},
+	"drop": {
+		processingUrl: processApiUrl$1(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-associated",
+			doProcess: "manually",
+			openApp: false
+		},
+		supportedContentTypes: [
+			"file",
+			"blob",
+			"text",
+			"markdown",
+			"image"
+		],
+		defaultOverrideFactors: [],
+		associationOverrides: {
+			"file": ["user-action"],
+			"blob": ["user-action"]
+		}
+	},
+	"button-attach-workcenter": {
+		processingUrl: processApiUrl$1(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-workcenter",
+			doProcess: "manually",
+			openApp: false
+		},
+		supportedContentTypes: [
+			"text",
+			"markdown",
+			"image",
+			"file"
+		],
+		defaultOverrideFactors: ["explicit-workcenter"],
+		associationOverrides: {
+			"markdown": ["explicit-workcenter"],
+			"text": ["explicit-workcenter"],
+			"image": ["explicit-workcenter"],
+			"file": ["explicit-workcenter"]
+		}
+	}
+};
+Object.fromEntries(Object.entries(UNIFIED_PROCESSING_RULES$1).map(([key, config]) => [key, {
+	processingUrl: config.processingUrl,
+	contentAction: config.contentAction,
+	...config.supportedContentTypes && { supportedContentTypes: config.supportedContentTypes }
+}]));
+//#endregion
+//#region ../../modules/projects/subsystem/src/routing/channel/ContentAssociations.ts
+var normalizeContentType = (t) => {
+	const v = String(t || "").toLowerCase().trim();
+	if (!v) return CONTENT_TYPES.OTHER;
+	if (v === "md") return CONTENT_TYPES.MARKDOWN;
+	if (v === "markdown") return CONTENT_TYPES.MARKDOWN;
+	if (v === "txt") return CONTENT_TYPES.TEXT;
+	if (v === "text") return CONTENT_TYPES.TEXT;
+	if (v === "url") return CONTENT_TYPES.URL;
+	if (v === "image") return CONTENT_TYPES.IMAGE;
+	if (v === "file" || v === "blob") return CONTENT_TYPES.FILE;
+	if (v === "pdf") return CONTENT_TYPES.PDF;
+	if (v === "html") return CONTENT_TYPES.HTML;
+	if (v === "json") return CONTENT_TYPES.JSON;
+	if (v === "base64") return CONTENT_TYPES.FILE;
+	if (new Set(Object.values(CONTENT_TYPES)).has(v)) return v;
+	return CONTENT_TYPES.OTHER;
+};
+var coerceOverrideFactors = (factors) => {
+	const out = [];
+	const list = Array.isArray(factors) ? factors : [];
+	for (const f of list) {
+		const v = String(f || "").trim();
+		if (!v) continue;
+		out.push(v);
+	}
+	return out;
+};
+var pickExplicitDestination = (factors) => {
+	if (factors.includes("explicit-explorer")) return "explorer";
+	if (factors.includes("explicit-workcenter")) return "workcenter";
+	if (factors.includes("explicit-viewer")) return "viewer";
+	return null;
+};
+var defaultDestinationForType = (normalizedContentType) => {
+	switch (normalizedContentType) {
+		case CONTENT_TYPES.TEXT:
+		case CONTENT_TYPES.MARKDOWN:
+		case CONTENT_TYPES.HTML:
+		case CONTENT_TYPES.JSON: return "viewer";
+		case CONTENT_TYPES.URL: return "workcenter";
+		case CONTENT_TYPES.IMAGE:
+		case CONTENT_TYPES.PDF:
+		case CONTENT_TYPES.FILE:
+		case CONTENT_TYPES.OTHER:
+		default: return "workcenter";
+	}
+};
+var mergeRuleOverrideFactors = (intent, normalizedContentType) => {
+	const base = coerceOverrideFactors(intent.overrideFactors);
+	const src = String(intent.processingSource || "").trim();
+	if (!src) return base;
+	const rule = UNIFIED_PROCESSING_RULES$1[src];
+	if (!rule) return base;
+	const merged = [];
+	merged.push(...rule.defaultOverrideFactors || []);
+	const perType = rule.associationOverrides?.[normalizedContentType] || rule.associationOverrides?.[String(intent.contentType || "")] || [];
+	merged.push(...perType);
+	merged.push(...base);
+	return merged;
+};
+function resolveAssociation(intent) {
+	const normalizedContentType = normalizeContentType(intent.contentType);
+	const mergedFactors = mergeRuleOverrideFactors(intent, normalizedContentType);
+	const explicit = pickExplicitDestination(mergedFactors);
+	if (explicit) return {
+		destination: explicit,
+		normalizedContentType,
+		overrideFactors: mergedFactors
+	};
+	return {
+		destination: defaultDestinationForType(normalizedContentType),
+		normalizedContentType,
+		overrideFactors: mergedFactors
+	};
+}
+function resolveAssociationPipeline(intent) {
+	const primary = resolveAssociation(intent);
+	const factors = primary.overrideFactors;
+	const pipeline = [];
+	if (factors.includes("explicit-explorer")) pipeline.push("explorer");
+	if (factors.includes("explicit-workcenter")) pipeline.push("workcenter");
+	if (factors.includes("explicit-viewer")) pipeline.push("viewer");
+	if (pipeline.length === 0) pipeline.push(primary.destination);
+	if ((factors.includes("force-attachment") || factors.includes("force-processing")) && !pipeline.includes("workcenter")) pipeline.push("workcenter");
+	const unique = [];
+	for (const d of pipeline) if (!unique.includes(d)) unique.push(d);
+	return {
+		...primary,
+		pipeline: unique
+	};
+}
+//#endregion
+//#region ../../modules/projects/subsystem/src/routing/channel/UniformInterop.ts
+/**
+* Shared interop helpers for CWSP-shell transport envelopes.
+*
+* WHY: the main thread, service worker, CRX runtime, and native/worker bridges
+* all need the same destination, protocol, and envelope normalization without
+* each importing the full `fest/uniform` runtime graph.
+*/
+var PROTOCOL_ALIASES$1 = {
+	"chrome-runtime": "chrome",
+	"chrome-tabs": "chrome",
+	"chrome-port": "chrome",
+	"chrome-external": "chrome",
+	"service-worker": "worker",
+	"service-worker:http": "worker",
+	"service": "worker",
+	"sw": "worker",
+	"broadcast-channel": "broadcast",
+	"broadcastchannel": "broadcast",
+	"websocket": "socket",
+	"ws": "socket",
+	"socket-io": "socket",
+	"socketio": "socket"
+};
+var TRANSPORT_ALIASES$1 = {
+	"service": "service-worker",
+	"service-worker:http": "service-worker",
+	"sw": "service-worker",
+	"ws": "websocket",
+	"socket": "websocket",
+	"socketio": "socket-io",
+	"chrome": "chrome-runtime"
+};
+var PURPOSES$1 = /* @__PURE__ */ new Set([
+	"invoke",
+	"mail",
+	"attach",
+	"deliver",
+	"defer"
+]);
+var randomId$1 = () => {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+	return `interop_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+};
+var normalizePurpose$1 = (value) => {
+	const raw = Array.isArray(value) ? value : value ? [value] : ["mail"];
+	const deduped = [];
+	for (const entry of raw) if (PURPOSES$1.has(entry) && !deduped.includes(entry)) deduped.push(entry);
+	return deduped.length > 0 ? deduped : ["mail"];
+};
+/**
+* Normalize the protocol family advertised in envelopes and bridge packets.
+*/
+var normalizeInteropProtocolName$1 = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return "unknown";
+	return PROTOCOL_ALIASES$1[raw] || raw;
+};
+/**
+* Normalize transport hints to one transport taxonomy for diagnostics and docs.
+*/
+var normalizeInteropTransportName$1 = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return void 0;
+	return TRANSPORT_ALIASES$1[raw] || raw;
+};
+/**
+* Create one shared envelope shape that can be used by main-thread, SW, and CRX
+* adapters before converting to `fest/uniform` runtime objects.
+*/
+var createInteropEnvelope$1 = (input) => {
+	const id = String(input.id || input.uuid || "").trim() || randomId$1();
+	const source = String(input.source || input.sender || input.srcChannel || "interop").trim() || "interop";
+	const destination = normalizeDestination$1(input.destination || input.target);
+	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination$1(entry)).filter(Boolean))] : destination ? getDestinationAliases$1(destination) : [];
+	const payload = input.payload ?? input.data;
+	const timestamp = Number(input.timestamp ?? Date.now()) || Date.now();
+	return {
+		id,
+		uuid: id,
+		type: String(input.type || "request"),
+		source,
+		sender: String(input.sender || source),
+		destination: destination || void 0,
+		target: destination || void 0,
+		contentType: input.contentType ? String(input.contentType) : void 0,
+		data: payload,
+		payload,
+		metadata: {
+			timestamp,
+			...input.metadata || {}
+		},
+		purpose: normalizePurpose$1(input.purpose),
+		protocol: normalizeInteropProtocolName$1(input.protocol),
+		transport: normalizeInteropTransportName$1(input.transport),
+		redirect: Boolean(input.redirect),
+		flags: { ...input.flags || {} },
+		op: String(input.op || (String(input.type || "").startsWith("response:") ? "response" : "deliver")),
+		timestamp,
+		srcChannel: String(input.srcChannel || source),
+		dstChannel: input.dstChannel ?? (destination || void 0),
+		destinations,
+		ids: {
+			byId: source,
+			from: source,
+			sender: source,
+			destinations,
+			...input.ids || {}
+		},
+		urls: Array.isArray(input.urls) ? [...input.urls] : [],
+		tokens: Array.isArray(input.tokens) ? [...input.tokens] : [],
+		toRoles: Array.isArray(input.toRoles) ? [...input.toRoles] : [],
+		tabId: input.tabId,
+		frameId: input.frameId,
+		status: typeof input.status === "number" ? input.status : void 0,
+		result: input.result,
+		results: input.results,
+		error: input.error
+	};
+};
+/**
+* Map an envelope-like payload into the app's unified-message shape.
+*/
+var toUnifiedInteropMessage$1 = (input) => {
+	const envelope = createInteropEnvelope$1(input);
+	return {
+		id: envelope.id,
+		type: envelope.type,
+		source: envelope.source,
+		destination: envelope.destination,
+		contentType: envelope.contentType,
+		data: envelope.data,
+		metadata: {
+			...envelope.metadata,
+			protocol: envelope.protocol,
+			transport: envelope.transport,
+			sender: envelope.sender,
+			srcChannel: envelope.srcChannel,
+			dstChannel: envelope.dstChannel,
+			destinations: envelope.destinations,
+			ids: envelope.ids,
+			flags: envelope.flags,
+			status: envelope.status,
+			error: envelope.error
+		}
+	};
+};
+//#endregion
+//#region ../../modules/projects/subsystem/src/routing/channel/UnifiedMessaging.ts
+/**
+* Unified Messaging System for CWSP-shell
+* Extends fest/uniform messaging with app-specific configuration
+*/
+var UnifiedMessaging_exports = /* @__PURE__ */ __exportAll({
+	createMessageWithOverrides: () => createMessageWithOverrides,
+	createProtocolEnvelope: () => createProtocolEnvelope,
+	enqueuePendingMessage: () => enqueuePendingMessage,
+	getUnifiedMessaging: () => getUnifiedMessaging$1,
+	hasPendingMessages: () => hasPendingMessages,
+	initializeComponent: () => initializeComponent$1,
+	processInitialContent: () => processInitialContent,
+	registerComponent: () => registerComponent$1,
+	replayQueuedMessagesForDestination: () => replayQueuedMessagesForDestination,
+	sendMessage: () => sendMessage,
+	sendProtocolMessage: () => sendProtocolMessage,
+	unifiedMessaging: () => unifiedMessaging$1
+});
+var APP_CHANNEL_MAPPINGS$1 = {
+	...createDestinationChannelMappings(),
+	[DESTINATIONS$1.WORKCENTER]: BROADCAST_CHANNELS$1.WORK_CENTER,
+	[DESTINATIONS$1.CLIPBOARD]: BROADCAST_CHANNELS$1.CLIPBOARD
+};
+var appMessagingInstance$1 = null;
+/**
+* Get the app-configured UnifiedMessagingManager
+*/
+function getUnifiedMessaging$1() {
+	if (!appMessagingInstance$1) appMessagingInstance$1 = getUnifiedMessaging$2({
+		channelMappings: APP_CHANNEL_MAPPINGS$1,
+		queueOptions: {
+			dbName: "CWSP-shellMessageQueue",
+			storeName: "messages",
+			maxRetries: 3,
+			defaultExpirationMs: 864e5
+		},
+		pendingStoreOptions: {
+			storageKey: "rs-unified-messaging-pending",
+			maxMessages: 200,
+			defaultTTLMs: 864e5
+		}
+	});
+	return appMessagingInstance$1;
+}
+var unifiedMessaging$1 = getUnifiedMessaging$1();
+/**
+* Send a message using the app-configured manager
+*/
+function sendMessage(message) {
+	return unifiedMessaging$1.sendMessage(toUnifiedInteropMessage$1({
+		...message,
+		source: message.source ?? "unified-messaging"
+	}));
+}
+function sendProtocolMessage(message) {
+	const interop = createInteropEnvelope$1({
+		...message,
+		source: message.source ?? "crossword-unified-messaging",
+		protocol: message.protocol ?? "window",
+		purpose: message.purpose ?? "mail",
+		srcChannel: message.srcChannel ?? message.source ?? "crossword-unified-messaging",
+		dstChannel: message.dstChannel ?? message.destination
+	});
+	const envelope = createProtocolEnvelope({
+		...interop,
+		source: interop.source,
+		destination: interop.destination,
+		data: interop.data,
+		payload: interop.payload,
+		metadata: interop.metadata,
+		protocol: interop.protocol,
+		purpose: interop.purpose,
+		srcChannel: interop.srcChannel,
+		dstChannel: interop.dstChannel,
+		redirect: interop.redirect,
+		flags: interop.flags,
+		op: interop.op,
+		timestamp: interop.timestamp,
+		result: interop.result,
+		error: interop.error ? String(interop.error) : void 0
+	});
+	return unifiedMessaging$1.sendMessage(envelope);
+}
+function initializeComponent$1(componentId) {
+	return unifiedMessaging$1.initializeComponent(componentId);
+}
+function hasPendingMessages(destination) {
+	return unifiedMessaging$1.hasPendingMessages(normalizeDestination$1(destination) || destination);
+}
+function enqueuePendingMessage(destination, message) {
+	const dest = normalizeDestination$1(destination) || String(destination ?? "").trim();
+	if (!dest || !message) return;
+	unifiedMessaging$1.enqueuePendingMessage(dest, message);
+}
+/**
+* Replay IndexedDB-backed queued messages for a destination (mail/deferred pipeline).
+* Safe after handlers register — implicit view bridge calls this post-bind.
+*/
+function replayQueuedMessagesForDestination(destination) {
+	return unifiedMessaging$1.processQueuedMessages(destination);
+}
+function registerComponent$1(componentId, destination) {
+	unifiedMessaging$1.registerComponent(componentId, normalizeDestination$1(destination) || destination);
+}
+function processInitialContent(content) {
+	const contentType = String(content?.contentType ?? content?.type ?? CONTENT_TYPES.OTHER);
+	const contentMetadata = content?.metadata ?? {};
+	const resolved = resolveAssociationPipeline({
+		contentType,
+		context: content?.context,
+		processingSource: content?.processingSource,
+		overrideFactors: content?.overrideFactors ?? contentMetadata.overrideFactors
+	});
+	const payload = content?.content ?? content?.data ?? content;
+	const meta = contentMetadata;
+	const source = String(content?.source ?? meta?.source ?? "content-association");
+	const tasks = resolved.pipeline.map((dest) => {
+		if (dest === DESTINATIONS$1.VIEWER) return sendMessage({
+			type: "content-view",
+			source,
+			destination: DESTINATIONS$1.VIEWER,
+			contentType: resolved.normalizedContentType,
+			data: {
+				content: payload?.text ?? payload?.content ?? payload,
+				text: payload?.text,
+				filename: payload?.filename ?? meta?.filename
+			},
+			metadata: {
+				...meta,
+				overrideFactors: resolved.overrideFactors,
+				context: content?.context,
+				processingSource: content?.processingSource
+			}
+		});
+		if (dest === DESTINATIONS$1.EXPLORER) return sendMessage({
+			type: "content-explorer",
+			source,
+			destination: DESTINATIONS$1.EXPLORER,
+			contentType: resolved.normalizedContentType,
+			data: {
+				action: "save",
+				...payload
+			},
+			metadata: {
+				...meta,
+				overrideFactors: resolved.overrideFactors,
+				context: content?.context,
+				processingSource: content?.processingSource
+			}
+		});
+		return sendMessage({
+			type: "content-share",
+			source,
+			destination: DESTINATIONS$1.WORKCENTER,
+			contentType: resolved.normalizedContentType,
+			data: payload,
+			metadata: {
+				...meta,
+				overrideFactors: resolved.overrideFactors,
+				context: content?.context,
+				processingSource: content?.processingSource
+			}
+		});
+	});
+	return Promise.allSettled(tasks).then(() => {});
+}
+function createMessageWithOverrides(type, source, contentType, data, overrideFactors = [], processingSource) {
+	const resolved = resolveAssociation({
+		contentType,
+		context: processingSource,
+		processingSource,
+		overrideFactors
+	});
+	return {
+		id: crypto.randomUUID(),
+		type,
+		source,
+		destination: resolved.destination === DESTINATIONS$1.VIEWER ? DESTINATIONS$1.VIEWER : resolved.destination === DESTINATIONS$1.EXPLORER ? DESTINATIONS$1.EXPLORER : DESTINATIONS$1.WORKCENTER,
+		contentType,
+		data,
+		metadata: {
+			timestamp: Date.now(),
+			overrideFactors,
+			processingSource,
+			priority: "normal"
+		}
+	};
+}
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/view-message-routing.ts
+var VIEW_MESSAGE_FALLBACKS = {
+	viewer: [
+		"content-view",
+		"content-load",
+		"markdown-content"
+	],
+	workcenter: [
+		"content-attach",
+		"file-attach",
+		"share-target-input",
+		"content-share"
+	],
+	explorer: [
+		"file-save",
+		"navigate-path",
+		"content-explorer"
+	],
+	editor: ["content-load", "content-edit"],
+	settings: ["settings-update"],
+	history: ["history-update"],
+	home: ["home-update"],
+	print: ["content-view"]
+};
+var inferViewDestination = (viewId) => {
+	return normalizeViewId$1(viewId);
+};
+var selectMessageTypeForView = (view, incomingType) => {
+	const checks = [incomingType, ...VIEW_MESSAGE_FALLBACKS[view.id] || []];
+	for (const type of checks) {
+		if (!type) continue;
+		if (!view.canHandleMessage || view.canHandleMessage(type)) return type;
+	}
+	return null;
+};
+var mapUnifiedMessageToView = (view, message) => {
+	const selectedType = selectMessageTypeForView(view, message.type);
+	if (!selectedType) return null;
+	const id = typeof message.id === "string" && message.id.trim() ? message.id : void 0;
+	return {
+		...id ? { id } : {},
+		type: selectedType,
+		data: message.data,
+		metadata: message.metadata
+	};
+};
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/view-api.ts
+/**
+* View-scoped POST API + BroadcastChannel bridge.
+* - Production: service worker intercepts POST /{view} and fans out to clients.
+* - Dev (no SW): Vite middleware returns devRelay JSON; this module posts to rs-view-* locally.
+*/
+function subscribeViewChannel(viewId, handler) {
+	if (typeof BroadcastChannel === "undefined") return () => {};
+	const bc = new BroadcastChannel(viewBroadcastChannelName(normalizeViewId$1(viewId)));
+	bc.addEventListener("message", handler);
+	return () => {
+		bc.removeEventListener("message", handler);
+		bc.close();
+	};
+}
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/view-inbound-timing.ts
+function getViewHTMLElement(view) {
+	try {
+		if (typeof HTMLElement !== "undefined" && view instanceof HTMLElement) return view;
+	} catch {}
+	return null;
+}
+function payloadRecordContainsRenderableFiles(payload) {
+	if (!payload || typeof payload !== "object") return false;
+	const rec = payload;
+	const hasFileLike = (v) => typeof File !== "undefined" && v instanceof File || typeof Blob !== "undefined" && v instanceof Blob;
+	if (hasFileLike(rec.file) || hasFileLike(rec.blob)) return true;
+	const files = rec.files;
+	if (Array.isArray(files) && files.some((x) => hasFileLike(x))) return true;
+	const attachments = rec.attachments;
+	if (Array.isArray(attachments)) for (const a of attachments) {
+		if (!a || typeof a !== "object") continue;
+		const data = a.data;
+		if (hasFileLike(data)) return true;
+	}
+	return false;
+}
+function payloadContainsRenderableFilesDeep(payload) {
+	if (!payload || typeof payload !== "object") return false;
+	const rec = payload;
+	if (payloadRecordContainsRenderableFiles(rec)) return true;
+	const nested = rec.data;
+	if (nested && typeof nested === "object" && payloadRecordContainsRenderableFiles(nested)) return true;
+	const topAtt = rec.attachments;
+	if (Array.isArray(topAtt)) for (const a of topAtt) {
+		if (!a || typeof a !== "object") continue;
+		const data = a.data;
+		if (typeof File !== "undefined" && data instanceof File || typeof Blob !== "undefined" && data instanceof Blob) return true;
+	}
+	return false;
+}
+var FILE_INGRESS_TYPES = /* @__PURE__ */ new Set([
+	"content-share",
+	"share-target-input",
+	"share-target-result",
+	"content-attach",
+	"file-attach"
+]);
+/** Narrow heuristic: ingress that carries blobs/files benefits from delayed delivery. */
+function shouldDeferIngressForRenderableFiles(message, mappedType) {
+	if (!FILE_INGRESS_TYPES.has(String(mappedType || "").toLowerCase())) return false;
+	return payloadContainsRenderableFilesDeep(message);
+}
+/** Lightweight control handlers — skipping timing fences keeps sliders/toggles responsive. */
+var SKIP_UNIFIED_INGRESS_TIMING = /* @__PURE__ */ new Set([
+	"settings-update",
+	"history-update",
+	"home-update"
+]);
+/**
+* Most unified ingress paths should settle the host before calling `handleMessage`.
+* WHY: Applies to viewer, Work Center attachments, explorer saves, staged mail, … not launch-queue-only.
+*/
+function shouldDeferUnifiedIngressUntilStable(_message, mappedType) {
+	return !SKIP_UNIFIED_INGRESS_TIMING.has(String(mappedType || "").toLowerCase());
+}
+/** One frame + microtask — enough when the viewer host and sinks already exist (common for launch-queue bursts). */
+async function quickPaintFence() {
+	await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+	await new Promise((resolve) => queueMicrotask(resolve));
+}
+/**
+* Softer barrier when the DOM still needs layout (first paint / route change): double RAF without an extra idle delay.
+*/
+async function stepPaintFenceModerate() {
+	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+	await new Promise((resolve) => queueMicrotask(resolve));
+}
+var MO_CONNECTED_MS = 220;
+var MO_SINK_MS = 280;
+/** Cap how long we wait on enter transitions so a burst of opens still reaches the latest file quickly. */
+var ANIM_CAP_DEFAULT_MS = 160;
+var ANIM_CAP_HOT_PATH_MS = 90;
+/** Minimal shell (no HTMLElement view host): one frame before mutating viewer state — was too slow with full fence. */
+async function settleIngressPaintForMinimalShell() {
+	await quickPaintFence();
+}
+async function waitUntilViewConnectedToDocument(view, timeoutMs = MO_CONNECTED_MS) {
+	const el = getViewHTMLElement(view);
+	if (!el) return;
+	if (el.isConnected) return;
+	const rootEl = typeof document !== "undefined" && document.documentElement instanceof HTMLElement ? document.documentElement : null;
+	if (!rootEl) return;
+	await new Promise((resolve) => {
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			try {
+				mo.disconnect();
+			} catch {}
+			clearTimeout(tid);
+			resolve();
+		};
+		const mo = new MutationObserver(() => {
+			if (el.isConnected) finish();
+		});
+		mo.observe(rootEl, {
+			childList: true,
+			subtree: true
+		});
+		const tid = setTimeout(finish, timeoutMs);
+	});
+}
+var RENDER_SINK_SELECTORS = ["[data-render-target]", "[data-raw-target]"];
+function shallowSinkPresent(host) {
+	for (const sel of RENDER_SINK_SELECTORS) try {
+		if (host.querySelector(sel)) return true;
+		if (host.shadowRoot?.querySelector(sel)) return true;
+	} catch {}
+	return false;
+}
+function needsRenderableSinkWait(mappedType, message) {
+	const mt = String(mappedType || "").toLowerCase();
+	if (mt === "content-load" || mt === "markdown-content" || mt === "content-view") return true;
+	return shouldDeferIngressForRenderableFiles(message, mappedType);
+}
+async function waitForRenderableSinkMounted(view, timeoutMs = MO_SINK_MS) {
+	const el = getViewHTMLElement(view);
+	if (!el) return;
+	if (shallowSinkPresent(el)) return;
+	await new Promise((resolve) => {
+		let done = false;
+		const observers = [];
+		const finish = () => {
+			if (done) return;
+			done = true;
+			for (const ob of observers) try {
+				ob.disconnect();
+			} catch {}
+			clearTimeout(tid);
+			resolve();
+		};
+		const onMut = () => {
+			if (shallowSinkPresent(el)) finish();
+		};
+		const watch = (root) => {
+			const mo = new MutationObserver(onMut);
+			mo.observe(root, {
+				childList: true,
+				subtree: true
+			});
+			observers.push(mo);
+		};
+		watch(el);
+		if (el.shadowRoot) watch(el.shadowRoot);
+		const tid = setTimeout(finish, timeoutMs);
+		onMut();
+	});
+}
+async function waitRunningSubtreeAnimations(view, hangMs = ANIM_CAP_DEFAULT_MS) {
+	const el = getViewHTMLElement(view);
+	if (!el?.isConnected) return;
+	try {
+		const getAnims = typeof el.getAnimations === "function" ? el.getAnimations.bind(el) : null;
+		const anims = getAnims ? getAnims({ subtree: true }).filter((a) => a.playState === "running") : [];
+		if (anims.length === 0) return;
+		await Promise.race([Promise.all(anims.map((a) => typeof a?.finished?.then === "function" ? a.finished.catch(() => void 0) : Promise.resolve())), new Promise((resolve) => setTimeout(resolve, hangMs))]);
+	} catch {}
+}
+/** Full settle pipeline before `handleMessage` on HTMLElement-backed hosts. */
+async function settleIngressTargetBeforeDelivery(view, message, mappedType) {
+	const el = getViewHTMLElement(view);
+	const needSink = needsRenderableSinkWait(mappedType, message);
+	if (Boolean(el?.isConnected && (!needSink || shallowSinkPresent(el)))) {
+		await quickPaintFence();
+		await waitRunningSubtreeAnimations(view, ANIM_CAP_HOT_PATH_MS);
+		return;
+	}
+	await stepPaintFenceModerate();
+	await waitUntilViewConnectedToDocument(view, MO_CONNECTED_MS);
+	if (needSink) await waitForRenderableSinkMounted(view, MO_SINK_MS);
+	await waitRunningSubtreeAnimations(view, ANIM_CAP_DEFAULT_MS);
+	await quickPaintFence();
+}
+var ingressDeliveryChains = /* @__PURE__ */ new WeakMap();
+/** Serialize ingress bursts per concrete View identity (HTMLElement instance). */
+function scheduleSerialViewIngressDelivery(view, task) {
+	const next = (ingressDeliveryChains.get(view) ?? Promise.resolve()).then(() => task()).catch((err) => {
+		console.warn("[ViewIngress] delivery failed:", view?.id, err);
+	});
+	ingressDeliveryChains.set(view, next);
+	return next;
+}
+//#endregion
+//#region ../../modules/projects/subsystem/src/other/config/Names.ts
+/**
+* Broadcast channel names used throughout the application
+*/
+var BROADCAST_CHANNELS = {
+	SHARE_TARGET: "rs-share-target",
+	TOAST: "rs-toast",
+	CLIPBOARD: "rs-clipboard",
+	WORK_CENTER: "rs-workcenter",
+	MARKDOWN_VIEWER: "rs-markdown-viewer",
+	SETTINGS: "rs-settings",
+	GENERAL: "rs-app-general",
+	MINIMAL_APP: "minimal-app",
+	MAIN_APP: "main-app",
+	FILE_EXPLORER: "file-explorer",
+	PRINT_VIEWER: "print-viewer",
+	SETTINGS_VIEWER: "settings-viewer",
+	HISTORY_VIEWER: "history-viewer",
+	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
+	FILE_EXPLORER_CHANNEL: "file-explorer",
+	SETTINGS_CHANNEL: "settings",
+	HISTORY_CHANNEL: "history",
+	PRINT_CHANNEL: "print",
+	SERVICE_WORKCENTER: "rs-service-workcenter",
+	SERVICE_SETTINGS: "rs-service-settings",
+	SERVICE_VIEWER: "rs-service-viewer",
+	SERVICE_EXPLORER: "rs-service-explorer",
+	SERVICE_AIRPAD: "rs-service-airpad",
+	SERVICE_NETWORK: "rs-service-network",
+	SERVICE_PRINT: "rs-service-print",
+	SERVICE_HISTORY: "rs-service-history",
+	SERVICE_EDITOR: "rs-service-editor",
+	SERVICE_HOME: "rs-service-home"
+};
+/**
+* Component and module identifiers
+*/
+var COMPONENTS = {
+	WORK_CENTER: "workcenter",
+	MARKDOWN_VIEWER: "markdown-viewer",
+	MARKDOWN_EDITOR: "markdown-editor",
+	RICH_EDITOR: "rich-editor",
+	SETTINGS: "settings",
+	HISTORY: "history",
+	FILE_PICKER: "file-picker",
+	FILE_EXPLORER: "file-explorer",
+	WORKCENTER_CORE: "workcenter-core",
+	BASIC_WORKCENTER: "basic-workcenter",
+	BASIC_VIEWER: "basic-viewer",
+	BASIC_EXPLORER: "basic-explorer",
+	BASIC_SETTINGS: "basic-settings",
+	BASIC_HISTORY: "basic-history",
+	BASIC_PRINT: "basic-print",
+	AIRPAD: "airpad",
+	NETWORK: "network",
+	HOME: "home",
+	EDITOR: "editor",
+	VIEWER: "viewer",
+	EXPLORER: "explorer",
+	PRINT: "print"
+};
+/**
+* Location hash identifiers for app navigation
+*/
+var ROUTE_HASHES = {
+	MARKDOWN_VIEWER: "#markdown-viewer",
+	MARKDOWN_EDITOR: "#markdown-editor",
+	RICH_EDITOR: "#rich-editor",
+	SETTINGS: "#settings",
+	HISTORY: "#history",
+	WORKCENTER: "#workcenter",
+	FILE_PICKER: "#file-picker",
+	FILE_EXPLORER: "#file-explorer",
+	PRINT: "#print",
+	AIRPAD: "#airpad",
+	NETWORK: "#network",
+	WORKCENTER_FILES: "#workcenter-files",
+	WORKCENTER_TEXT: "#workcenter-text",
+	WORKCENTER_IMAGES: "#workcenter-images",
+	WORKCENTER_PROCESSING: "#workcenter-processing",
+	SHARE_TARGET_TEXT: "#share-target-text",
+	SHARE_TARGET_FILES: "#share-target-files",
+	SHARE_TARGET_URL: "#share-target-url",
+	SHARE_TARGET_IMAGE: "#share-target-image"
+};
+/**
+* Destination identifiers for unified messaging
+*/
+var DESTINATIONS = {
+	WORKCENTER: "workcenter",
+	CLIPBOARD: "clipboard",
+	VIEWER: "viewer",
+	MARKDOWN_VIEWER: "markdown-viewer",
+	SETTINGS: "settings",
+	HISTORY: "history",
+	EXPLORER: "explorer",
+	FILE_EXPLORER: "file-explorer",
+	PRINT: "print",
+	PRINT_VIEWER: "print-viewer",
+	EDITOR: "editor",
+	AIRPAD: "airpad",
+	HOME: "home",
+	BASIC_APP: "basic-app",
+	MAIN_APP: "main-app"
+};
+var CANONICAL_VIEW_IDS = [
+	"viewer",
+	"workcenter",
+	"explorer",
+	"editor",
+	"settings",
+	"history",
+	"home",
+	"airpad",
+	"print"
+];
+/**
+* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
+* `basic-*` destinations. Keep alias resolution centralized here so transports,
+* views, and workers can agree on one canonical target vocabulary.
+*/
+var DESTINATION_ALIASES = {
+	viewer: [
+		DESTINATIONS.VIEWER,
+		DESTINATIONS.MARKDOWN_VIEWER,
+		COMPONENTS.BASIC_VIEWER
+	],
+	workcenter: [
+		DESTINATIONS.WORKCENTER,
+		COMPONENTS.BASIC_WORKCENTER,
+		COMPONENTS.WORKCENTER_CORE
+	],
+	explorer: [
+		DESTINATIONS.EXPLORER,
+		DESTINATIONS.FILE_EXPLORER,
+		COMPONENTS.BASIC_EXPLORER
+	],
+	editor: [
+		DESTINATIONS.EDITOR,
+		COMPONENTS.MARKDOWN_EDITOR,
+		COMPONENTS.RICH_EDITOR
+	],
+	settings: [
+		DESTINATIONS.SETTINGS,
+		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
+		COMPONENTS.BASIC_SETTINGS
+	],
+	history: [
+		DESTINATIONS.HISTORY,
+		BROADCAST_CHANNELS.HISTORY_CHANNEL,
+		COMPONENTS.BASIC_HISTORY
+	],
+	print: [
+		DESTINATIONS.PRINT,
+		DESTINATIONS.PRINT_VIEWER,
+		COMPONENTS.BASIC_PRINT
+	],
+	airpad: [DESTINATIONS.AIRPAD],
+	home: [DESTINATIONS.HOME],
+	clipboard: [DESTINATIONS.CLIPBOARD],
+	"basic-app": [DESTINATIONS.BASIC_APP],
+	"main-app": [DESTINATIONS.MAIN_APP]
+};
+var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
+	out[canonical] = canonical;
+	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
+	return out;
+}, {});
+var normalizeDestination = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return "";
+	return DESTINATION_LOOKUP[raw] || raw;
+};
+var getDestinationAliases = (value) => {
+	const canonical = normalizeDestination(value);
+	if (!canonical) return [];
+	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES[canonical] || []])];
+};
+var matchesDestination = (candidate, expected) => Boolean(normalizeDestination(candidate) && normalizeDestination(candidate) === normalizeDestination(expected));
+var normalizeViewId = (value) => {
+	const canonical = normalizeDestination(value);
+	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
+	return "viewer";
+};
+BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
+ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
+//#endregion
+//#region ../CWSP-document/src/shared/routing/channel/ShareTargetGateway.ts
+var SHARE_CACHE_NAME = "share-target-data";
+var SHARE_CACHE_KEY = "/share-target-data";
+var SHARE_FILES_MANIFEST_KEY = "/share-target-files";
+var SHARE_FILE_PREFIX = "/share-target-file/";
+var hasCaches = () => typeof globalThis !== "undefined" && "caches" in globalThis;
+/** Persist the last share-target payload so the app can recover it after navigation or cold start. */
+var storeShareTargetPayloadToCache = async (payload) => {
+	if (!hasCaches()) return false;
+	const files = Array.isArray(payload.files) ? payload.files : [];
+	const meta = payload.meta ?? {};
+	try {
+		const cache = await caches.open(SHARE_CACHE_NAME);
+		const timestamp = Number(meta?.timestamp) || Date.now();
+		await cache.put(SHARE_CACHE_KEY, new Response(JSON.stringify({
+			...meta,
+			title: meta?.title,
+			text: meta?.text,
+			url: meta?.url,
+			sharedUrl: meta?.sharedUrl,
+			source: meta?.source || "share-target",
+			route: meta?.route || meta?.source || "share-target",
+			timestamp,
+			fileCount: files.length,
+			imageCount: files.filter((f) => (f?.type || "").toLowerCase().startsWith("image/")).length
+		}), { headers: { "Content-Type": "application/json" } }));
+		const fileManifest = [];
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+			const key = `${SHARE_FILE_PREFIX}${timestamp}-${i}`;
+			const headers = new Headers();
+			headers.set("Content-Type", file.type || "application/octet-stream");
+			headers.set("X-File-Name", encodeURIComponent(file.name || `file-${i}`));
+			headers.set("X-File-Size", String(file.size || 0));
+			headers.set("X-File-LastModified", String(file.lastModified ?? 0));
+			await cache.put(key, new Response(file, { headers }));
+			fileManifest.push({
+				key,
+				name: file.name || `file-${i}`,
+				type: file.type || "application/octet-stream",
+				size: file.size || 0,
+				lastModified: file.lastModified ?? void 0
+			});
+		}
+		await cache.put(SHARE_FILES_MANIFEST_KEY, new Response(JSON.stringify({
+			files: fileManifest,
+			timestamp
+		}), { headers: { "Content-Type": "application/json" } }));
+		return true;
+	} catch (error) {
+		console.warn("[ShareTargetGateway] Failed to store payload to cache:", error);
+		return false;
+	}
+};
+/**
+* Rehydrate the cached share-target payload and optionally clear the consumed
+* cache entries so they are not replayed on the next app load.
+*/
+var consumeCachedShareTargetPayload = async (opts = {}) => {
+	const clear = opts.clear !== false;
+	if (!hasCaches()) return null;
+	try {
+		const cache = await caches.open(SHARE_CACHE_NAME);
+		const metaResp = await cache.match(SHARE_CACHE_KEY);
+		const manifestResp = await cache.match(SHARE_FILES_MANIFEST_KEY);
+		if (!metaResp && !manifestResp) return null;
+		const meta = metaResp ? await metaResp.json().catch(() => null) : null;
+		const manifest = manifestResp ? await manifestResp.json().catch(() => null) : null;
+		const fileMeta = Array.isArray(manifest?.files) ? manifest.files : [];
+		const files = [];
+		for (const fm of fileMeta) {
+			const fileKey = typeof fm?.key === "string" ? fm.key.trim() : String(fm?.key ?? "").trim();
+			if (!fileKey) continue;
+			const response = await cache.match(fileKey);
+			if (!response) continue;
+			const blob = await response.blob();
+			files.push(new File([blob], fm.name || "shared-file", {
+				type: fm.type || blob.type || "application/octet-stream",
+				lastModified: Number(fm.lastModified) || Date.now()
+			}));
+		}
+		if (clear) {
+			await cache.delete(SHARE_CACHE_KEY).catch(() => {});
+			await cache.delete(SHARE_FILES_MANIFEST_KEY).catch(() => {});
+			for (const fm of fileMeta) if (fm?.key) await cache.delete(fm.key).catch(() => {});
+		}
+		return {
+			meta: meta || {},
+			files,
+			fileMeta
+		};
+	} catch (error) {
+		console.warn("[ShareTargetGateway] Failed to consume cached payload:", error);
+		return null;
+	}
+};
+/**
+* Convert the staged cache payload back into a share/launch transfer object that
+* the foreground pipeline can route without caring whether the ingress was
+* share-target, launch-queue, or another staged producer.
+*/
+var buildShareDataFromCachedPayload = (payload) => {
+	const meta = payload?.meta || {};
+	const files = Array.isArray(payload?.files) ? payload.files : [];
+	const fileMeta = Array.isArray(payload?.fileMeta) ? payload.fileMeta : [];
+	const manifestName = typeof fileMeta[0]?.name === "string" && fileMeta[0].name.trim().length > 0 ? fileMeta[0].name.trim() : void 0;
+	const rawHint = meta.hint;
+	const baseHint = rawHint && typeof rawHint === "object" && !Array.isArray(rawHint) ? { ...rawHint } : {};
+	let hintOut = Object.keys(baseHint).length > 0 ? { ...baseHint } : void 0;
+	if (manifestName && !files.length) {
+		if (!(typeof baseHint.filename === "string" ? String(baseHint.filename).trim() : "")) hintOut = {
+			...hintOut || baseHint,
+			filename: manifestName
+		};
+	}
+	const out = {
+		...meta,
+		title: typeof meta.title === "string" ? meta.title : void 0,
+		text: typeof meta.text === "string" ? meta.text : void 0,
+		url: typeof meta.url === "string" ? meta.url : void 0,
+		sharedUrl: typeof meta.sharedUrl === "string" ? meta.sharedUrl : void 0,
+		source: typeof meta.source === "string" ? meta.source : "share-target",
+		route: typeof meta.route === "string" ? meta.route : typeof meta.source === "string" ? meta.source : "share-target",
+		timestamp: Number(meta.timestamp || Date.now()),
+		files,
+		fileCount: files.length || Number(meta.fileCount || 0),
+		imageCount: Number(meta.imageCount || files.filter((file) => (file?.type || "").toLowerCase().startsWith("image/")).length)
+	};
+	if (hintOut !== void 0) out.hint = hintOut;
+	return out;
+};
+var CORE_ENTITY_EXTRACTION_INSTRUCTION = `
+Extract structured entity data from the provided content.
+
+Entity types to detect:
+- task: jobs, actions, to-do items
+- event: meetings, appointments, occurrences
+- person: contacts, people mentions
+- place: locations, addresses, venues
+- service: products, offerings
+- item: goods, objects, inventory
+- factor: conditions, circumstances
+- bonus: promotions, discounts, codes
+
+For each entity found, extract:
+- type: entity type from list above
+- id: suggested unique identifier
+- name: machine-readable name
+- title: human-readable title
+- kind: specific subtype
+- properties: relevant attributes
+- description: markdown description
+
+CRITICAL OUTPUT FORMAT: Return ONLY valid JSON. No markdown code blocks, no explanations, no prose.
+Your response must start with { and end with }.
+
+Expected output structure:
+{
+    "entities": [...],
+    "keywords": [...],
+    "short_description": "markdown summary",
+    "extraction_confidence": 0.0-1.0
+}
+`;
+var AI_INSTRUCTIONS = {
+	SOLVE_AND_ANSWER: `
+Solve equations, answer questions, and explain mathematical or logical problems from the provided content.
+
+For equations and math problems:
+- Show step-by-step solutions
+- Provide final answers clearly marked
+- Explain reasoning for each step
+
+For general questions:
+- Provide accurate, well-reasoned answers
+- Include relevant context and explanations
+- If multiple interpretations possible, address them
+
+For quizzes and tests:
+- Show the correct answer with explanation
+- Explain why other options are incorrect
+
+Always respond in the specified language and format results clearly.
+`,
+	WRITE_CODE: `
+Write clean, efficient, and well-documented code based on the provided description, requirements, or image.
+
+Code requirements:
+- Use appropriate programming language for the task
+- Follow language-specific best practices and conventions
+- Include proper error handling
+- Add meaningful comments and documentation
+- Make code readable and maintainable
+
+If generating from an image or visual description:
+- Analyze the visual elements and requirements
+- Implement the described functionality
+- Ensure code compiles and runs correctly
+
+Always respond in the specified language and provide complete, working code.
+`,
+	EXTRACT_CSS: `
+Extract and generate clean, modern CSS from the provided content, image, or description.
+
+CSS requirements:
+- Use modern CSS features and best practices
+- Generate semantic, maintainable stylesheets
+- Include responsive design considerations
+- Use appropriate selectors and specificity
+- Follow CSS naming conventions
+- Optimize for performance and maintainability
+
+If extracting from an image:
+- Analyze the visual design and layout
+- Generate corresponding CSS rules
+- Identify colors, fonts, spacing, and layout
+- Create reusable CSS classes and components
+
+Always respond in the specified language and provide complete, working CSS.
+`,
+	RECOGNIZE_CONTENT: `
+Recognize and extract information from images, documents, or other visual content.
+
+Recognition requirements:
+- Identify text content accurately
+- Extract structured information
+- Recognize tables, forms, and structured data
+- Preserve formatting where possible
+- Handle different languages and scripts
+- Provide confidence scores for extracted content
+
+For document analysis:
+- Extract key information and metadata
+- Identify document type and structure
+- Recognize important sections and headings
+
+For image analysis:
+- Describe visual content
+- Extract text from images (OCR)
+- Identify objects, scenes, and visual elements
+
+Always respond in the specified language and format extracted information clearly.
+`,
+	CONVERT_DATA: `
+Convert data between different formats while preserving structure and meaning.
+
+Conversion requirements:
+- Maintain data integrity and relationships
+- Preserve formatting and structure where possible
+- Handle different data types appropriately
+- Provide clear mapping between source and target formats
+- Validate conversion accuracy
+
+Supported conversions:
+- CSV ↔ JSON ↔ XML
+- Markdown ↔ HTML
+- Text ↔ Structured data
+- Image data ↔ Text representations
+
+Ensure accurate, lossless conversion where possible.
+`,
+	EXTRACT_ENTITIES: `
+Extract named entities, keywords, and structured information from content.
+
+Entity extraction requirements:
+- Identify people, organizations, locations
+- Extract dates, numbers, and measurements
+- Find keywords and important terms
+- Recognize relationships and connections
+- Provide confidence scores and context
+
+Output structured data with:
+- Entity types and values
+- Position and context information
+- Confidence scores
+- Relationship mappings
+
+Focus on accuracy and comprehensive coverage.
+`,
+	TRANSLATE_TO_LANGUAGE: `
+Translate content to the specified target language while preserving meaning, tone, and formatting.
+
+Translation requirements:
+- Maintain original meaning and intent
+- Preserve formatting, structure, and markdown syntax
+- Adapt cultural references appropriately
+- Use natural, fluent language in the target language
+- Handle technical terms, proper names, and brand names correctly
+- Maintain appropriate formality and tone
+- Preserve code blocks, mathematical expressions, and technical content
+
+For content already in the target language:
+- Provide natural rephrasing or improvement
+- Enhance clarity and readability
+- Maintain professional quality
+
+Supported languages:
+- English (en)
+- Russian (ru)
+- Other languages as requested
+
+Ensure high-quality, natural translations that feel native to the target language.
+`,
+	GENERAL_PROCESSING: `
+Process and analyze content using appropriate AI capabilities.
+
+General processing requirements:
+- Understand context and intent
+- Provide relevant analysis or transformation
+- Use appropriate tools and methods
+- Maintain content quality and accuracy
+- Adapt to different content types and requirements
+
+Focus on providing useful, accurate results that meet user needs.
+`,
+	CRX_SOLVE_AND_ANSWER: `
+Solve the problem or answer the question presented in the content.
+
+Auto-detect the type of content:
+- Mathematical equation/expression → Solve step-by-step
+- Quiz/test question → Provide correct answer
+- Homework problem → Solve and explain
+- General question → Answer with explanation
+
+Format output as:
+
+**Problem/Question:**
+<recognized content - use $KaTeX$ for math>
+
+**Solution/Answer:**
+<step-by-step solution or direct answer>
+
+**Explanation:**
+<clear explanation of the reasoning>
+
+---
+
+For MATH problems:
+- Use single $ for inline math: $x = 5$
+- Use double $$ for display equations: $$\\int_0^1 f(x) dx$$
+- Show all intermediate steps
+- Simplify the final answer
+- For systems: solve all variables
+- For inequalities: use interval notation
+
+For MULTIPLE CHOICE:
+- Identify correct option (A, B, C, D)
+- Explain why it's correct
+- Note why others are wrong
+
+For TRUE/FALSE:
+- State True or False clearly
+- Provide justification
+
+For SHORT ANSWER/ESSAY:
+- Provide concise, complete answer
+- Include key facts and reasoning
+
+For CODING problems:
+- Write the solution code
+- Explain the logic
+
+If multiple problems/questions present, solve each separately.
+If unsolvable or unclear, explain why.
+`,
+	CRX_WRITE_CODE: `
+You are an expert software developer. Analyze the provided content and generate high-quality, working code.
+
+Code Generation Requirements:
+- Choose the best programming language for the task
+- Write clean, efficient, and well-documented code
+- Include proper error handling and input validation
+- Add meaningful comments explaining complex logic
+- Follow language-specific best practices and conventions
+- Ensure code is readable, maintainable, and follows standard patterns
+
+For each code generation task:
+1. **Analyze Requirements**: Understand what the code needs to do
+2. **Choose Language**: Select appropriate programming language
+3. **Design Solution**: Plan the code structure and logic
+4. **Write Code**: Provide complete, working code with comments
+5. **Explain Logic**: Describe how the code works and key decisions
+
+Provide complete, runnable code that solves the described problem.
+`,
+	CRX_EXTRACT_CSS: `
+You are an expert CSS developer. Analyze the provided content and extract/generate the corresponding CSS styles.
+
+CSS Extraction Requirements:
+- Analyze visual elements, layout, and design patterns
+- Generate modern, clean CSS using current standards
+- Use semantic class names and proper CSS architecture
+- Include responsive design considerations
+- Optimize for performance and maintainability
+- Follow CSS best practices and conventions
+
+For CSS extraction:
+1. **Analyze Design**: Identify colors, typography, spacing, layout
+2. **Generate Rules**: Create appropriate CSS rules and selectors
+3. **Organize Code**: Group related styles logically
+4. **Add Comments**: Explain complex or important style decisions
+5. **Ensure Compatibility**: Use widely supported CSS properties
+
+Provide complete, well-organized CSS that recreates the described design.
+`
+};
+AI_INSTRUCTIONS.SOLVE_AND_ANSWER;
+AI_INSTRUCTIONS.WRITE_CODE;
+AI_INSTRUCTIONS.EXTRACT_CSS;
+AI_INSTRUCTIONS.RECOGNIZE_CONTENT;
+AI_INSTRUCTIONS.CONVERT_DATA;
+AI_INSTRUCTIONS.EXTRACT_ENTITIES;
+AI_INSTRUCTIONS.TRANSLATE_TO_LANGUAGE;
+AI_INSTRUCTIONS.GENERAL_PROCESSING;
+AI_INSTRUCTIONS.CRX_SOLVE_AND_ANSWER;
+AI_INSTRUCTIONS.CRX_WRITE_CODE;
+AI_INSTRUCTIONS.CRX_EXTRACT_CSS;
+//#endregion
+//#region ../CWSP-document/src/shared/service/instructions/templates.ts
+var templates_exports = /* @__PURE__ */ __exportAll({ DEFAULT_INSTRUCTION_TEMPLATES: () => DEFAULT_INSTRUCTION_TEMPLATES });
+var DEFAULT_INSTRUCTION_TEMPLATES = [
+	{
+		label: "Markdown & KaTeX",
+		instruction: `Format the output as GitHub-compatible Markdown with KaTeX.
+
+Structure rules:
+- Use headings for structure:
+  - Main sections: start from ### (H3) minimum
+  - Subsections: #### / ##### when needed
+- Avoid long paragraphs: prefer lists and sub-lists.
+
+KaTeX / math rules:
+- Prefer inline formulas: $...$ (use this most of the time).
+- Avoid $$...$$ blocks; only use block math if strictly necessary.
+  - Prefer block math as \\[ ... \\] instead of $$...$$.
+- Inside KaTeX, write a vertical bar as \\| (example: $A \\| B$).
+
+Tables:
+- Use strict GitHub Markdown table syntax.
+- Inside table cells:
+  - Use <br> for line breaks (no real newlines inside cells).
+  - If source data uses ';' as a separator, replace ';' with <br>.
+
+Colon / key-value formatting:
+- For "key: value" style lines, make the part before ':' bold:
+  - **Key**: value
+
+General:
+- Use bullet lists (-) or numbered steps (1., 2., 3.) where appropriate.
+- Keep formatting consistent and readable in dark themes.
+- Preserve meaning and math accuracy.`,
+		enabled: true,
+		order: 0
+	},
+	{
+		label: "Solve & Answer",
+		instruction: `Solve problems or answer questions. Auto-detect the type:
+• Math equations → Solve step-by-step with KaTeX
+• Quiz/test questions → Provide correct answer with explanation
+• Homework problems → Solve and explain reasoning
+
+Format:
+**Problem/Question:** <content, use $KaTeX$ for math>
+**Solution/Answer:** <step-by-step or direct answer>
+**Explanation:** <clear reasoning>
+
+For multiple choice: identify correct option + explain why.
+For math: prefer $inline$; avoid $$block$$ and prefer \\[block\\] only if strictly necessary.
+Show all work and simplify the final answer.`,
+		enabled: true,
+		order: 1
+	},
+	{
+		label: "Solve with Graphics",
+		instruction: `Solve problems and generate visual representations when applicable.
+
+For functions, graphs, diagrams, geometric shapes, or data visualizations:
+Generate inline SVG code as a data URI: \`![Graph](data:image/svg+xml,<encoded_svg>)\`
+
+SVG Generation Rules:
+1. Use encodeURIComponent() encoding for the SVG content
+2. Keep SVG minimal but accurate (viewBox, paths, text labels)
+3. Use appropriate colors: #2563eb (blue) for main, #dc2626 (red) for secondary
+4. Include axis labels, grid lines, and legends where helpful
+5. Size: viewBox="0 0 400 300" for standard graphs
+
+When to generate SVG:
+• Function plots: y = f(x), parametric curves, polar plots
+• Geometric diagrams: triangles, circles, angles, constructions
+• Data charts: bar, line, pie charts
+• Flowcharts and simple diagrams
+• Number lines and coordinate systems
+
+Format:
+**Problem:** <description>
+**Solution:** <step-by-step with $KaTeX$>
+**Visualization:**
+![<title>](data:image/svg+xml,<encodeURIComponent_svg>)
+
+Always provide both the mathematical solution AND the visual when graphics are suitable.`,
+		enabled: true,
+		order: 2
+	},
+	{
+		label: "Write code",
+		instruction: `Generate code based on the recognized request/description.
+
+Format:
+**Request:** <what the code should do>
+**Language:** <programming language>
+**Code:**
+\`\`\`<lang>
+<code>
+\`\`\`
+
+Write clean, functional code with meaningful names and brief comments.`,
+		enabled: true,
+		order: 3
+	},
+	{
+		label: "Extract CSS",
+		instruction: `Generate CSS that matches the visual appearance of the content.
+
+Extract:
+- Colors (oklch, hex, rgb)
+- Typography (font, size, weight)
+- Spacing (padding, margin, gap)
+- Layout (flex, grid)
+- Effects (shadow, radius, gradients)
+
+Use CSS custom properties and modern syntax.
+Include responsive considerations.`,
+		enabled: true,
+		order: 4
+	},
+	{
+		label: "Generate Diagram",
+		instruction: `Generate SVG diagrams, charts, or visual representations from descriptions.
+
+Output as inline data URI: ![<title>](data:image/svg+xml,<encoded_svg>)
+
+Diagram Types:
+• Flowcharts: processes, algorithms, decision trees
+• Charts: bar, line, pie, scatter plots
+• Diagrams: UML, ER, network, architecture
+• Graphs: mathematical functions, data visualization
+• Geometric: shapes, constructions, proofs
+
+SVG Requirements:
+1. Use encodeURIComponent() for the SVG string
+2. viewBox="0 0 600 400" (adjust as needed)
+3. Clean, minimal SVG with proper structure
+4. Colors: #3b82f6 primary, #10b981 secondary, #f59e0b accent
+5. Include labels, arrows, and legends
+6. Use <text> for readable annotations
+
+Example output format:
+**Diagram:** <description>
+![<title>](data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20300%22%3E...%3C%2Fsvg%3E)`,
+		enabled: true,
+		order: 5
+	},
+	{
+		label: "Extract contacts",
+		instruction: "Focus on extracting contact information: phone numbers, emails, addresses, and names. Format phone numbers in E.164 format.",
+		enabled: true,
+		order: 6
+	},
+	{
+		label: "Summarize content",
+		instruction: "Provide a brief summary of the recognized content. Include key points and main takeaways.",
+		enabled: true,
+		order: 7
+	},
+	{
+		label: "Extract URLs and links",
+		instruction: "Focus on extracting all URLs, links, and web addresses. Validate and normalize them.",
+		enabled: true,
+		order: 8
+	},
+	{
+		label: "Code extraction",
+		instruction: "Focus on extracting code snippets. Detect the programming language and format appropriately with syntax highlighting markers.",
+		enabled: true,
+		order: 9
+	},
+	{
+		label: "Table extraction",
+		instruction: "Focus on extracting tabular data. Format as proper Markdown tables with headers.",
+		enabled: true,
+		order: 10
+	}
+];
+//#endregion
+//#region ../CWSP-document/src/shared/routing/channel/UnifiedAIConfig.ts
+var processApiUrl = () => resolveProcessApiUrl$1("processing");
+var UNIFIED_PROCESSING_RULES = {
+	"share-target": {
+		processingUrl: processApiUrl(),
+		contentAction: {
+			onResult: "write-clipboard",
+			onAccept: "attach-to-associated",
+			doProcess: "instantly",
+			openApp: true
+		},
+		supportedContentTypes: [
+			"text",
+			"markdown",
+			"image",
+			"url"
+		],
+		defaultOverrideFactors: []
+	},
+	"launch-queue": {
+		processingUrl: processApiUrl(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-associated",
+			doProcess: "manually",
+			openApp: true
+		},
+		supportedContentTypes: [
+			"file",
+			"blob",
+			"text",
+			"markdown",
+			"image"
+		],
+		defaultOverrideFactors: []
+	},
+	"crx-snip": {
+		processingUrl: processApiUrl(),
+		contentAction: {
+			onResult: "write-clipboard",
+			onAccept: "attach-to-associated",
+			doProcess: "instantly",
+			openApp: false
+		},
+		supportedContentTypes: ["text", "image"],
+		defaultOverrideFactors: ["force-processing"]
+	},
+	"paste": {
+		processingUrl: processApiUrl(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-associated",
+			doProcess: "manually",
+			openApp: false
+		},
+		supportedContentTypes: [
+			"text",
+			"markdown",
+			"image"
+		],
+		defaultOverrideFactors: [],
+		associationOverrides: {
+			"text": ["user-action"],
+			"markdown": ["user-action"]
+		}
+	},
+	"drop": {
+		processingUrl: processApiUrl(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-associated",
+			doProcess: "manually",
+			openApp: false
+		},
+		supportedContentTypes: [
+			"file",
+			"blob",
+			"text",
+			"markdown",
+			"image"
+		],
+		defaultOverrideFactors: [],
+		associationOverrides: {
+			"file": ["user-action"],
+			"blob": ["user-action"]
+		}
+	},
+	"button-attach-workcenter": {
+		processingUrl: processApiUrl(),
+		contentAction: {
+			onResult: "none",
+			onAccept: "attach-to-workcenter",
+			doProcess: "manually",
+			openApp: false
+		},
+		supportedContentTypes: [
+			"text",
+			"markdown",
+			"image",
+			"file"
+		],
+		defaultOverrideFactors: ["explicit-workcenter"],
+		associationOverrides: {
+			"markdown": ["explicit-workcenter"],
+			"text": ["explicit-workcenter"],
+			"image": ["explicit-workcenter"],
+			"file": ["explicit-workcenter"]
+		}
+	}
+};
+Object.fromEntries(Object.entries(UNIFIED_PROCESSING_RULES).map(([key, config]) => [key, {
+	processingUrl: config.processingUrl,
+	contentAction: config.contentAction,
+	...config.supportedContentTypes && { supportedContentTypes: config.supportedContentTypes }
+}]));
+//#endregion
+//#region ../CWSP-document/src/shared/routing/channel/UniformInterop.ts
+/**
+* Shared interop helpers for CWSP-shell transport envelopes.
+*
+* WHY: the main thread, service worker, CRX runtime, and native/worker bridges
+* all need the same destination, protocol, and envelope normalization without
+* each importing the full `fest/uniform` runtime graph.
+*/
+var PROTOCOL_ALIASES = {
+	"chrome-runtime": "chrome",
+	"chrome-tabs": "chrome",
+	"chrome-port": "chrome",
+	"chrome-external": "chrome",
+	"service-worker": "worker",
+	"service-worker:http": "worker",
+	"service": "worker",
+	"sw": "worker",
+	"broadcast-channel": "broadcast",
+	"broadcastchannel": "broadcast",
+	"websocket": "socket",
+	"ws": "socket",
+	"socket-io": "socket",
+	"socketio": "socket"
+};
+var TRANSPORT_ALIASES = {
+	"service": "service-worker",
+	"service-worker:http": "service-worker",
+	"sw": "service-worker",
+	"ws": "websocket",
+	"socket": "websocket",
+	"socketio": "socket-io",
+	"chrome": "chrome-runtime"
+};
+var PURPOSES = /* @__PURE__ */ new Set([
+	"invoke",
+	"mail",
+	"attach",
+	"deliver",
+	"defer"
+]);
+var randomId = () => {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+	return `interop_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+};
+var normalizePurpose = (value) => {
+	const raw = Array.isArray(value) ? value : value ? [value] : ["mail"];
+	const deduped = [];
+	for (const entry of raw) if (PURPOSES.has(entry) && !deduped.includes(entry)) deduped.push(entry);
+	return deduped.length > 0 ? deduped : ["mail"];
+};
+/**
+* Normalize the protocol family advertised in envelopes and bridge packets.
+*/
+var normalizeInteropProtocolName = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return "unknown";
+	return PROTOCOL_ALIASES[raw] || raw;
+};
+/**
+* Normalize transport hints to one transport taxonomy for diagnostics and docs.
+*/
+var normalizeInteropTransportName = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return void 0;
+	return TRANSPORT_ALIASES[raw] || raw;
+};
+/**
+* Create one shared envelope shape that can be used by main-thread, SW, and CRX
+* adapters before converting to `fest/uniform` runtime objects.
+*/
+var createInteropEnvelope = (input) => {
+	const id = String(input.id || input.uuid || "").trim() || randomId();
+	const source = String(input.source || input.sender || input.srcChannel || "interop").trim() || "interop";
+	const destination = normalizeDestination$1(input.destination || input.target);
+	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination$1(entry)).filter(Boolean))] : destination ? getDestinationAliases$1(destination) : [];
+	const payload = input.payload ?? input.data;
+	const timestamp = Number(input.timestamp ?? Date.now()) || Date.now();
+	return {
+		id,
+		uuid: id,
+		type: String(input.type || "request"),
+		source,
+		sender: String(input.sender || source),
+		destination: destination || void 0,
+		target: destination || void 0,
+		contentType: input.contentType ? String(input.contentType) : void 0,
+		data: payload,
+		payload,
+		metadata: {
+			timestamp,
+			...input.metadata || {}
+		},
+		purpose: normalizePurpose(input.purpose),
+		protocol: normalizeInteropProtocolName(input.protocol),
+		transport: normalizeInteropTransportName(input.transport),
+		redirect: Boolean(input.redirect),
+		flags: { ...input.flags || {} },
+		op: String(input.op || (String(input.type || "").startsWith("response:") ? "response" : "deliver")),
+		timestamp,
+		srcChannel: String(input.srcChannel || source),
+		dstChannel: input.dstChannel ?? (destination || void 0),
+		destinations,
+		ids: {
+			byId: source,
+			from: source,
+			sender: source,
+			destinations,
+			...input.ids || {}
+		},
+		urls: Array.isArray(input.urls) ? [...input.urls] : [],
+		tokens: Array.isArray(input.tokens) ? [...input.tokens] : [],
+		toRoles: Array.isArray(input.toRoles) ? [...input.toRoles] : [],
+		tabId: input.tabId,
+		frameId: input.frameId,
+		status: typeof input.status === "number" ? input.status : void 0,
+		result: input.result,
+		results: input.results,
+		error: input.error
+	};
+};
+/**
+* Map an envelope-like payload into the app's unified-message shape.
+*/
+var toUnifiedInteropMessage = (input) => {
+	const envelope = createInteropEnvelope(input);
+	return {
+		id: envelope.id,
+		type: envelope.type,
+		source: envelope.source,
+		destination: envelope.destination,
+		contentType: envelope.contentType,
+		data: envelope.data,
+		metadata: {
+			...envelope.metadata,
+			protocol: envelope.protocol,
+			transport: envelope.transport,
+			sender: envelope.sender,
+			srcChannel: envelope.srcChannel,
+			dstChannel: envelope.dstChannel,
+			destinations: envelope.destinations,
+			ids: envelope.ids,
+			flags: envelope.flags,
+			status: envelope.status,
+			error: envelope.error
+		}
+	};
+};
+//#endregion
+//#region ../CWSP-document/src/shared/routing/channel/UnifiedMessaging.ts
+/**
+* Unified Messaging System for CWSP-shell
+* Extends fest/uniform messaging with app-specific configuration
+*/
+var APP_CHANNEL_MAPPINGS = {
+	...createDestinationChannelMappings(),
+	[DESTINATIONS$1.WORKCENTER]: BROADCAST_CHANNELS$1.WORK_CENTER,
+	[DESTINATIONS$1.CLIPBOARD]: BROADCAST_CHANNELS$1.CLIPBOARD
+};
+var appMessagingInstance = null;
+/**
+* Get the app-configured UnifiedMessagingManager
+*/
+function getUnifiedMessaging() {
+	if (!appMessagingInstance) appMessagingInstance = getUnifiedMessaging$2({
+		channelMappings: APP_CHANNEL_MAPPINGS,
+		queueOptions: {
+			dbName: "CWSP-shellMessageQueue",
+			storeName: "messages",
+			maxRetries: 3,
+			defaultExpirationMs: 864e5
+		},
+		pendingStoreOptions: {
+			storageKey: "rs-unified-messaging-pending",
+			maxMessages: 200,
+			defaultTTLMs: 864e5
+		}
+	});
+	return appMessagingInstance;
+}
+var unifiedMessaging = getUnifiedMessaging();
+/**
+* Register a handler using the app-configured manager
+*/
+function registerHandler(destination, handler) {
+	const aliases = getDestinationAliases$1(destination);
+	const names = aliases.length > 0 ? aliases : [normalizeDestination$1(destination) || destination];
+	for (const name of names) unifiedMessaging.registerHandler(name, handler);
+}
+function unregisterHandler(destination, handler) {
+	const aliases = getDestinationAliases$1(destination);
+	const names = aliases.length > 0 ? aliases : [normalizeDestination$1(destination) || destination];
+	for (const name of names) unifiedMessaging.unregisterHandler(name, handler);
+}
+function initializeComponent(componentId) {
+	return unifiedMessaging.initializeComponent(componentId);
+}
+function registerComponent(componentId, destination) {
+	unifiedMessaging.registerComponent(componentId, normalizeDestination$1(destination) || destination);
+}
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/channel-mixin.ts
+/**
+* Burst opens (recent list, launch queue replay): supersede older queued work so only the latest
+* payload pays settle + paint (serial queue still orders; skipped tasks exit cheaply).
+*/
+var ingressSupersedeGeneration = /* @__PURE__ */ new WeakMap();
+var bumpIngressGeneration = (view) => {
+	const next = (ingressSupersedeGeneration.get(view) ?? 0) + 1;
+	ingressSupersedeGeneration.set(view, next);
+	return next;
+};
+/** Mirrors {@link dispatchViewTransfer} + BroadcastChannel can deliver the same ingress twice; ReplayGuard only covers the manager path. */
+var recentViewIngressByMessageId = /* @__PURE__ */ new Map();
+var INGRESS_DEDUP_MS = 600;
+/** Attached to routed view messages so views can discard stale async work after `await` (file read, fetch). */
+var UNIFIED_INGRESS_STAMP_META = "__ingressStamp";
+/** True when newer ingress has bumped the counter vs this delivery's stamp (`handleMessage` should no-op). */
+function ingressStampWasSuperseded(view, stamp) {
+	if (typeof stamp !== "number" || !Number.isFinite(stamp)) return false;
+	return (ingressSupersedeGeneration.get(view) ?? 0) !== stamp;
+}
+function stampMappedMessageForIngressDelivery(mapped, generation) {
+	const prevMeta = mapped.metadata && typeof mapped.metadata === "object" && !Array.isArray(mapped.metadata) ? mapped.metadata : {};
+	return {
+		...mapped,
+		metadata: {
+			...prevMeta,
+			[UNIFIED_INGRESS_STAMP_META]: generation
+		}
+	};
+}
+var pruneViewIngressDedup = (now) => {
+	for (const [k, t] of recentViewIngressByMessageId) if (now - t > INGRESS_DEDUP_MS) recentViewIngressByMessageId.delete(k);
+};
+var deliverUnifiedMessageToView = async (view, message) => {
+	const mid = typeof message.id === "string" ? message.id.trim() : "";
+	if (mid) {
+		const dest = normalizeViewId(inferViewDestination(String(view.id || "")));
+		const now = Date.now();
+		pruneViewIngressDedup(now);
+		const dedupKey = `${dest}::${mid}`;
+		const prev = recentViewIngressByMessageId.get(dedupKey);
+		if (prev !== void 0 && now - prev < INGRESS_DEDUP_MS) return;
+		recentViewIngressByMessageId.set(dedupKey, now);
+	}
+	const mapped = mapUnifiedMessageToView(view, message);
+	if (!mapped) return;
+	const ingressCheck = validateIngressBeforeViewHandle(message, mapped.type);
+	if (!ingressCheck.ok) {
+		console.warn("[ViewIngress] Skipped malformed envelope:", ingressCheck.reason, mapped.type);
+		return;
+	}
+	const generation = bumpIngressGeneration(view);
+	await scheduleSerialViewIngressDelivery(view, async () => {
+		if (ingressSupersedeGeneration.get(view) !== generation) return;
+		if (shouldDeferUnifiedIngressUntilStable(message, mapped.type)) await settleIngressTargetBeforeDelivery(view, message, mapped.type);
+		if (ingressSupersedeGeneration.get(view) !== generation) return;
+		await view.handleMessage?.(stampMappedMessageForIngressDelivery(mapped, generation));
+	});
+};
+function bindViewReceiveChannel(view, options = {}) {
+	if (!view.handleMessage) return () => {};
+	const destination = options.destination || inferViewDestination(String(view.id || ""));
+	const componentId = options.componentId || `view:${view.id}`;
+	const receiveDestinations = getDestinationAliases(destination);
+	const handler = {
+		canHandle: (message) => matchesDestination(message.destination, destination),
+		handle: async (message) => {
+			await deliverUnifiedMessageToView(view, message);
+		}
+	};
+	const pendingSeen = /* @__PURE__ */ new Set();
+	for (const alias of receiveDestinations) {
+		const aliasComponentId = `${componentId}:${alias}`;
+		registerComponent(aliasComponentId, alias);
+		registerHandler(alias, handler);
+		const pending = initializeComponent(aliasComponentId);
+		if (pending.length > 0) for (const message of pending) {
+			if (pendingSeen.has(message.id)) continue;
+			pendingSeen.add(message.id);
+			handler.handle(message);
+		}
+	}
+	const viewChannelCleanup = subscribeViewChannel(normalizeViewId(destination), (event) => {
+		const payload = event.data;
+		if (!payload || typeof payload !== "object") return;
+		if (payload.type === "view-transfer" && payload.message && typeof payload.message === "object") {
+			deliverUnifiedMessageToView(view, toUnifiedInteropMessage(payload.message));
+			return;
+		}
+		if (payload.type === "view-post") {
+			const viewId = normalizeViewId(payload.viewId);
+			if (viewId !== normalizeViewId(String(view.id || destination))) return;
+			const vm = {
+				id: typeof payload.id === "string" ? String(payload.id) : crypto.randomUUID(),
+				type: "view-post",
+				destination: viewId,
+				source: "view-channel",
+				data: {
+					bodyText: String(payload.bodyText || ""),
+					contentType: String(payload.contentType || ""),
+					viewId
+				},
+				metadata: {
+					source: "view-channel",
+					destination: viewId
+				}
+			};
+			const generation = bumpIngressGeneration(view);
+			scheduleSerialViewIngressDelivery(view, async () => {
+				if (ingressSupersedeGeneration.get(view) !== generation) return;
+				if (shouldDeferUnifiedIngressUntilStable(vm, "view-post")) await settleIngressTargetBeforeDelivery(view, vm, "view-post");
+				if (ingressSupersedeGeneration.get(view) !== generation) return;
+				await view.handleMessage?.(stampMappedMessageForIngressDelivery({
+					type: "view-post",
+					data: {
+						bodyText: String(payload.bodyText || ""),
+						contentType: String(payload.contentType || ""),
+						viewId
+					},
+					metadata: vm.metadata
+				}, generation));
+			});
+		}
+	});
+	return () => {
+		for (const alias of receiveDestinations) unregisterHandler(alias, handler);
+		viewChannelCleanup();
+	};
+}
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/implicit-view-bridge.ts
+/** Narrow structural check — imperative APIs (`handleMessage`, `addFiles`, …) stay on the element. */
+function isImplicitViewMessagingHost(node) {
+	if (!node || typeof node !== "object") return false;
+	const el = node;
+	return typeof el.handleMessage === "function" && typeof el.id === "string" && el.id.trim().length > 0;
+}
+var STAGED_UNIFIED_SELECTOR = "[data-cw-unified-pending], [data-cw-unified-mail], [data-cw-unified-defer-flush]";
+function parseJsonObject(raw) {
+	if (!raw?.trim()) return null;
+	try {
+		const v = JSON.parse(raw);
+		return v && typeof v === "object" ? v : null;
+	} catch {
+		return null;
+	}
+}
+function buildUnifiedMessageFromStaging(rec) {
+	const destination = normalizeDestination$1(String(rec.destination ?? "")) || String(rec.destination ?? "").trim();
+	if (!destination) return null;
+	return {
+		id: typeof rec.id === "string" ? rec.id : crypto.randomUUID(),
+		type: String(rec.type || "content-share"),
+		source: typeof rec.source === "string" ? rec.source : "dom-staged-unified",
+		destination,
+		contentType: typeof rec.contentType === "string" ? rec.contentType : void 0,
+		data: rec.data ?? rec.payload ?? {},
+		metadata: {
+			timestamp: Date.now(),
+			...typeof rec.metadata === "object" && rec.metadata ? rec.metadata : {}
+		}
+	};
+}
+function readDeferFlushDestination(el) {
+	const raw = el.getAttribute("data-cw-unified-defer-flush");
+	if (!raw?.trim()) return null;
+	const trimmed = raw.trim();
+	if (trimmed.startsWith("{")) {
+		const d = parseJsonObject(trimmed)?.destination;
+		return typeof d === "string" ? d : null;
+	}
+	return trimmed;
+}
+function consumeDeferFlush(el) {
+	const destRaw = readDeferFlushDestination(el);
+	if (!destRaw) return;
+	replayQueuedMessagesForDestination(normalizeDestination$1(destRaw) || normalizeViewId$1(destRaw)).catch(() => void 0);
+	el.removeAttribute("data-cw-unified-defer-flush");
+}
+function consumePending(el) {
+	const rec = parseJsonObject(el.getAttribute("data-cw-unified-pending"));
+	if (!rec) return;
+	const msg = buildUnifiedMessageFromStaging(rec);
+	if (!msg?.destination) return;
+	enqueuePendingMessage(msg.destination, msg);
+	el.removeAttribute("data-cw-unified-pending");
+}
+function consumeMail(el) {
+	const rec = parseJsonObject(el.getAttribute("data-cw-unified-mail"));
+	if (!rec) return;
+	const destination = normalizeDestination$1(String(rec.destination || "")) || String(rec.destination || "").trim();
+	if (!destination) return;
+	sendProtocolMessage({
+		type: String(rec.type || "dispatch"),
+		destination,
+		source: typeof rec.source === "string" ? rec.source : "dom-staged-mail",
+		data: rec.data ?? rec.payload ?? {},
+		contentType: typeof rec.contentType === "string" ? rec.contentType : void 0,
+		metadata: typeof rec.metadata === "object" && rec.metadata ? rec.metadata : {},
+		purpose: Array.isArray(rec.purpose) ? rec.purpose : typeof rec.purpose === "string" ? [rec.purpose] : ["mail", "deliver"],
+		op: typeof rec.op === "string" ? rec.op : "deliver",
+		protocol: typeof rec.protocol === "string" ? rec.protocol : void 0
+	}).catch(() => void 0);
+	el.removeAttribute("data-cw-unified-mail");
+}
+/**
+* Applies staged envelope markers inside `scope` (scope element + subtree via querySelectorAll).
+* Intended for MutationObserver added subtrees and shell-injected payloads.
+*/
+function processStagedUnifiedMarkers(scope) {
+	const matched = /* @__PURE__ */ new Set();
+	if (scope.matches("[data-cw-unified-pending], [data-cw-unified-mail], [data-cw-unified-defer-flush]")) matched.add(scope);
+	for (const n of scope.querySelectorAll(STAGED_UNIFIED_SELECTOR)) matched.add(n);
+	for (const el of matched) {
+		if (!el.isConnected) continue;
+		consumeDeferFlush(el);
+		consumePending(el);
+		consumeMail(el);
+	}
+}
+function flushDeferredTransportForView(view, explicitDestination) {
+	const dest = explicitDestination || inferViewDestination(String(view.id || ""));
+	const aliases = getDestinationAliases$1(dest);
+	const targets = /* @__PURE__ */ new Set();
+	for (const x of [dest, ...aliases]) {
+		const n = normalizeDestination$1(x) || String(x || "").trim();
+		if (n) targets.add(normalizeViewId$1(n));
+	}
+	(async () => {
+		for (const t of targets) try {
+			await replayQueuedMessagesForDestination(t);
+		} catch {}
+	})();
+}
+var cleanupByView = /* @__PURE__ */ new WeakMap();
+/** Last bound element per canonical destination — avoids duplicate UnifiedMessaging handlers. */
+var activeHostByDestination = /* @__PURE__ */ new Map();
+function sealCleanup(view, destinationKey, inner) {
+	let disposed = false;
+	return () => {
+		if (disposed) return;
+		disposed = true;
+		inner();
+		cleanupByView.delete(view);
+		if (activeHostByDestination.get(destinationKey) === view) activeHostByDestination.delete(destinationKey);
+	};
+}
+/**
+* Single receive-channel binding per live view instance; replaces any prior binding for the same destination id.
+* Safe to call from {@link ViewRegistry.load} and from DOM discovery.
+*/
+function attachImplicitViewMessaging(view, options = {}) {
+	if (!view.handleMessage) return () => {};
+	const existing = cleanupByView.get(view);
+	if (existing) return existing;
+	const destination = options.destination || inferViewDestination(String(view.id || ""));
+	const destinationKey = normalizeViewId$1(destination);
+	const displaced = activeHostByDestination.get(destinationKey);
+	if (displaced && displaced !== view) cleanupByView.get(displaced)?.();
+	const inner = bindViewReceiveChannel(view, {
+		...options,
+		destination
+	});
+	flushDeferredTransportForView(view, destination);
+	const cleanup = sealCleanup(view, destinationKey, inner);
+	cleanupByView.set(view, cleanup);
+	activeHostByDestination.set(destinationKey, view);
+	return cleanup;
+}
+function detachImplicitViewMessaging(view) {
+	cleanupByView.get(view)?.();
+}
+function walkSubtreeNodes(entry, visit) {
+	const stack = [entry];
+	while (stack.length) {
+		const cur = stack.pop();
+		if (cur.nodeType === Node.ELEMENT_NODE) {
+			const el = cur;
+			visit(el);
+			const sr = el.shadowRoot;
+			if (sr) for (let i = sr.childNodes.length - 1; i >= 0; i--) stack.push(sr.childNodes[i]);
+			for (let i = el.childNodes.length - 1; i >= 0; i--) stack.push(el.childNodes[i]);
+		}
+	}
+}
+function observeMutationRoot(observer, observed, node) {
+	if (observed.has(node)) return;
+	observed.add(node);
+	observer.observe(node, {
+		childList: true,
+		subtree: true
+	});
+}
+/**
+* Starts observing DOM mutations; binds messaging hosts when connected and tears down when disconnected.
+*/
+function startImplicitViewMessagingBridge(options = {}) {
+	const root = options.root instanceof Document ? options.root.documentElement : options.root ?? document.documentElement;
+	if (!root || typeof MutationObserver === "undefined") return () => {};
+	const observedRoots = /* @__PURE__ */ new WeakSet();
+	let scanConnect = () => {};
+	const scanDisconnect = (node) => {
+		walkSubtreeNodes(node, (el) => {
+			if (!isImplicitViewMessagingHost(el)) return;
+			if (!el.isConnected) detachImplicitViewMessaging(el);
+		});
+	};
+	const observer = new MutationObserver((records) => {
+		for (const rec of records) {
+			rec.addedNodes.forEach(scanConnect);
+			rec.removedNodes.forEach(scanDisconnect);
+		}
+	});
+	scanConnect = (node) => {
+		if (node.nodeType === Node.ELEMENT_NODE) {
+			const host = node;
+			if (host.isConnected) processStagedUnifiedMarkers(host);
+		}
+		walkSubtreeNodes(node, (el) => {
+			if (el.shadowRoot) observeMutationRoot(observer, observedRoots, el.shadowRoot);
+			if (!el.isConnected || !isImplicitViewMessagingHost(el)) return;
+			attachImplicitViewMessaging(el);
+		});
+	};
+	observeMutationRoot(observer, observedRoots, root);
+	scanConnect(root);
+	return () => {
+		observer.disconnect();
+		walkSubtreeNodes(root, (el) => {
+			if (isImplicitViewMessagingHost(el)) detachImplicitViewMessaging(el);
+		});
+	};
+}
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/views.ts
+var VIEW_ENABLED_VIEWER$1 = "viewer";
+var VIEW_ENABLED_EDITOR$1 = "editor";
+var VIEW_ENABLED_WORKCENTER$1 = "workcenter";
+var VIEW_ENABLED_EXPLORER$1 = "explorer";
+var VIEW_ENABLED_SETTINGS$1 = "settings";
+var VIEW_ENABLED_HISTORY$1 = "history";
+var VIEW_ENABLED_HOME$1 = "home";
+var VIEW_ENABLED_PRINT$1 = "print";
+/** CWSP connection / probe diagnostics — primary Capacitor (CWSAndroid) home view. */
+var VIEW_ENABLED_NETWORK$1 = "network";
+var DEFAULT_VIEW_ID = "viewer";
+var VIEW_FLAGS$1 = {
+	network: VIEW_ENABLED_NETWORK$1,
+	settings: VIEW_ENABLED_SETTINGS$1,
+	viewer: VIEW_ENABLED_VIEWER$1,
+	editor: VIEW_ENABLED_EDITOR$1,
+	workcenter: VIEW_ENABLED_WORKCENTER$1,
+	explorer: VIEW_ENABLED_EXPLORER$1,
+	history: VIEW_ENABLED_HISTORY$1,
+	home: VIEW_ENABLED_HOME$1,
+	print: VIEW_ENABLED_PRINT$1
+};
+/**
+* Optional per-build allowlist: `VITE_ENABLED_VIEWS="network,settings"` restricts
+* which views are enabled (e.g. the Capacitor CWSAndroid shell: Network + Settings
+* only). When unset, all flagged views are enabled. Read from Vite env first,
+* then Node env, guarded for non-bundled (tsx) contexts.
+*/
+var readEnabledViewsAllowlist$1 = () => {
+	let raw = "";
+	try {
+		const search = globalThis?.location?.search;
+		if (search) {
+			const params = new URLSearchParams(search);
+			raw = String(params.get("views") || params.get("enabledViews") || "");
+		}
+	} catch {}
+	if (!raw) try {
+		raw = String(globalThis?.localStorage?.getItem?.("rs-enabled-views") ?? "");
+	} catch {}
+	if (!raw) try {
+		raw = String("minimal,explorer,settings,history");
+	} catch {}
+	if (!raw) try {
+		raw = String({}.VITE_ENABLED_VIEWS ?? "");
+	} catch {}
+	const list = raw.split(/[\s,;]+/).map((entry) => entry.trim().toLowerCase()).filter(Boolean);
+	if (!list.length) return null;
+	list.push("settings");
+	try {
+		const search = globalThis?.location?.search;
+		if (search && new URLSearchParams(search).get("views")) globalThis?.localStorage?.setItem?.("rs-enabled-views", Array.from(new Set(list)).join(","));
+	} catch {}
+	return new Set(list);
+};
+var ENABLED_VIEWS_ALLOWLIST$1 = readEnabledViewsAllowlist$1();
+/**
+* Build-time gate: the host bundler (CWSP-shell Vite) replaces `__RS_VIEW_<ID>__`
+* with a boolean from `VITE_ENABLED_VIEWS`. `typeof` is safe for undeclared
+* globals (returns "undefined") so non-bundled/tsx contexts fall back to enabled.
+*/
+var BUILD_VIEW_FLAGS$1 = {
+	viewer: false,
+	editor: false,
+	workcenter: false,
+	explorer: true,
+	settings: true,
+	history: true,
+	home: false,
+	print: false,
+	network: false
+};
+var buildAllows$1 = (viewId) => BUILD_VIEW_FLAGS$1[String(viewId).toLowerCase()] !== false;
+var runtimeAllows$1 = (viewId) => !ENABLED_VIEWS_ALLOWLIST$1 || ENABLED_VIEWS_ALLOWLIST$1.has(String(viewId).toLowerCase());
+var isViewAllowed$1 = (viewId) => buildAllows$1(viewId) && runtimeAllows$1(viewId);
+var ENABLED_VIEW_IDS$1 = Object.entries(VIEW_FLAGS$1).filter(([viewId, enabled]) => Boolean(enabled) && isViewAllowed$1(viewId) && isViewLocalToSurface$1(viewId)).map(([viewId]) => viewId);
+var isEnabledView = (viewId) => {
+	return Boolean(VIEW_FLAGS$1[viewId]) && isViewAllowed$1(viewId) && isViewLocalToSurface$1(viewId);
+};
+var pickEnabledView = (preferred = DEFAULT_VIEW_ID, fallback = DEFAULT_VIEW_ID) => {
+	if (isEnabledView(preferred)) return preferred;
+	if (isEnabledView(fallback)) return fallback;
+	if (ENABLED_VIEW_IDS$1.length > 0) return ENABLED_VIEW_IDS$1[0];
+	return "viewer";
+};
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/registry.ts
+/**
+* View factories usually return custom elements; some legacy modules return a plain
+* object implementing `View` (render/lifecycle/id). Accept both for shell compatibility.
+*/
+function createWebComponentViewAdapter(viewInstance) {
+	if (viewInstance instanceof HTMLElement) return viewInstance;
+	const legacy = viewInstance;
+	if (legacy && typeof legacy.render === "function" && typeof legacy.id === "string") return legacy;
+	throw new Error("View factory must return an HTMLElement or a legacy view with render() and id");
+}
+/** Registry for shell modules plus the single live shell instances cached at runtime. */
+var ShellRegistryClass = class {
+	shells = /* @__PURE__ */ new Map();
+	loadedShells = /* @__PURE__ */ new Map();
+	/** COMPAT: `base` resolves to immersive chromeless module (`cw-shell-immersive`). */
+	resolveShellRegistrationKey(id) {
+		return id === "base" ? "immersive" : id;
+	}
+	/**
+	* Register a shell
+	*/
+	register(registration) {
+		this.shells.set(registration.id, registration);
+	}
+	/**
+	* Get a shell registration
+	*/
+	get(id) {
+		return this.shells.get(this.resolveShellRegistrationKey(id));
+	}
+	/**
+	* Get all registered shells
+	*/
+	getAll() {
+		return Array.from(this.shells.values());
+	}
+	/**
+	* Load and instantiate a shell
+	*/
+	async load(id, container) {
+		const resolved = this.resolveShellRegistrationKey(id);
+		const cached = this.loadedShells.get(resolved);
+		if (cached) return cached;
+		const registration = this.shells.get(resolved);
+		if (!registration) throw new Error(`Shell not found: ${resolved}`);
+		const module = await registration.loader();
+		const factory = module.default || module.createShell;
+		if (typeof factory !== "function") throw new Error(`Invalid shell module: ${resolved}`);
+		const shell = factory(container);
+		this.loadedShells.set(resolved, shell);
+		return shell;
+	}
+	/**
+	* Unload a shell
+	*/
+	unload(id) {
+		const resolved = this.resolveShellRegistrationKey(id);
+		const shell = this.loadedShells.get(resolved);
+		if (shell) {
+			shell.unmount();
+			this.loadedShells.delete(resolved);
+		}
+	}
+	/**
+	* Check if a shell is loaded
+	*/
+	isLoaded(id) {
+		return this.loadedShells.has(this.resolveShellRegistrationKey(id));
+	}
+	/**
+	* Get a loaded shell instance
+	*/
+	getLoaded(id) {
+		return this.loadedShells.get(this.resolveShellRegistrationKey(id));
+	}
+};
+var ShellRegistry = new ShellRegistryClass();
+var ViewRegistry = new class ViewRegistryClass {
+	/** COMPAT: Modules often default-export a CE class (`CwViewExplorer`) — must be invoked with `new`. */
+	static isCustomElementClassCtor(fn) {
+		if (typeof fn !== "function") return false;
+		try {
+			const proto = fn.prototype;
+			return proto != null && typeof HTMLElement !== "undefined" && HTMLElement.prototype.isPrototypeOf(proto);
+		} catch {
+			return false;
+		}
+	}
+	resolveViewFactory(module) {
+		const candidates = [
+			module?.default,
+			module?.createView,
+			module?.createAirpadView,
+			module?.createWorkCenterView,
+			module?.createViewerView,
+			module?.createExplorerView,
+			module?.createSettingsView,
+			module?.createNetworkView,
+			module?.createHistoryView,
+			module?.createHomeView
+		];
+		for (const candidate of candidates) {
+			if (typeof candidate !== "function") continue;
+			if (ViewRegistryClass.isCustomElementClassCtor(candidate)) {
+				const Ctor = candidate;
+				return ((options) => new Ctor(options));
+			}
+			return candidate;
+		}
+		const values = Object.values(module || {});
+		for (const value of values) if (typeof value === "function" && value.prototype && typeof value.prototype.render === "function") {
+			const ViewClass = value;
+			return (options) => new ViewClass(options);
+		}
+		return null;
+	}
+	views = /* @__PURE__ */ new Map();
+	loadedViews = /* @__PURE__ */ new Map();
+	viewReceiveCleanup = /* @__PURE__ */ new Map();
+	/**
+	* Register a view
+	*/
+	register(registration) {
+		this.views.set(registration.id, registration);
+	}
+	/**
+	* Get a view registration
+	*/
+	get(id) {
+		return this.views.get(id);
+	}
+	/**
+	* Get all registered views
+	*/
+	getAll() {
+		return Array.from(this.views.values());
+	}
+	/**
+	* Load and instantiate a view
+	*/
+	async load(id, options) {
+		const cached = this.loadedViews.get(id);
+		if (cached) return cached;
+		const registration = this.views.get(id);
+		if (!registration) throw new Error(`View not found: ${id}`);
+		const module = await registration.loader();
+		const factory = this.resolveViewFactory(module);
+		if (!factory) throw new Error(`Invalid view module: ${id}`);
+		const view = createWebComponentViewAdapter(await factory(options));
+		const previousCleanup = this.viewReceiveCleanup.get(id);
+		if (previousCleanup) {
+			previousCleanup();
+			this.viewReceiveCleanup.delete(id);
+		}
+		this.loadedViews.set(id, view);
+		this.viewReceiveCleanup.set(id, attachImplicitViewMessaging(view, {
+			destination: String(id),
+			componentId: `view:${id}`
+		}));
+		return view;
+	}
+	/**
+	* Unload a view (clear cache)
+	*/
+	unload(id) {
+		const view = this.loadedViews.get(id);
+		if (view?.lifecycle?.onUnmount) view.lifecycle.onUnmount();
+		const receiveCleanup = this.viewReceiveCleanup.get(id);
+		if (receiveCleanup) {
+			receiveCleanup();
+			this.viewReceiveCleanup.delete(id);
+		}
+		this.loadedViews.delete(id);
+	}
+	/**
+	* Check if a view is loaded
+	*/
+	isLoaded(id) {
+		return this.loadedViews.has(id);
+	}
+	/**
+	* Get a loaded view instance
+	*/
+	getLoaded(id) {
+		return this.loadedViews.get(id);
+	}
+	/**
+	* Warm the dynamic import for a view module (no instance, no receive-channel bind).
+	* Safe to call from idle prefetch; failures are ignored.
+	*/
+	prefetchModule(id) {
+		const registration = this.views.get(id);
+		if (!registration) return;
+		registration.loader().catch(() => {});
+	}
+}();
+/** Register the built-in shell modules that the boot/routing layer can request. */
+function registerDefaultShells() {
+	ShellRegistry.register({
+		id: "immersive",
+		name: "Immersive",
+		description: "Chromeless immersive shell (standalone pages, extensions, embedded); legacy boot id `base` aliases here.",
+		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)
+	});
+	ShellRegistry.register({
+		id: "minimal",
+		name: "Minimal",
+		description: "Minimal toolbar-based navigation",
+		loader: () => __vitePreload(() => import("../chunks/preview.js").then((n) => n.t), __vite__mapDeps([7,2,1,3,4,5,6]), import.meta.url)
+	});
+	ShellRegistry.register({
+		id: "content",
+		name: "Content",
+		description: "CRX content shell with overlay-focused layering",
+		loader: () => __vitePreload(() => import("../chunks/src3.js"), __vite__mapDeps([8,0,1,2,3,4,5,6]), import.meta.url)
+	});
+	ShellRegistry.register({
+		id: "immersive",
+		name: "Immersive",
+		description: "Chromeless immersive host (extensions / embedded)",
+		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)
+	});
+	ShellRegistry.register({
+		id: "window",
+		name: "Window",
+		description: "Window-capable shell (multi-view)",
+		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([9,10,1,2,5,4,3,6,11,12,13,14,15,16,17,18,19,7]), import.meta.url)
+	});
+	ShellRegistry.register({
+		id: "tabbed",
+		name: "Tabbed",
+		description: "Tabbed window shell",
+		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([20,9,10,1,2,5,4,3,6,11,12,13,14,15,16,17,18,19,7]), import.meta.url)
+	});
+	ShellRegistry.register({
+		id: "environment",
+		name: "Environment",
+		description: "Desktop/launcher shell: wallpaper, Speed Dial, taskbar, ui-window",
+		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([21,10,1,2,5,4,3,6,11,12,13,14,15,16,17,18,19]), import.meta.url)
+	});
+}
+/** Register the built-in views that are enabled by current feature flags. */
+function registerDefaultViews() {
+	ViewRegistry.register({
+		id: "viewer",
+		name: "Viewer",
+		icon: "eye",
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([22,1,2,4,23,24,25]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "workcenter",
+		name: "Work Center",
+		icon: "lightning",
+		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([26,1,2,4,27,23,28,29,30,31,32,33,34,35,36,37,38,39,40,41,24]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "settings",
+		name: "Settings",
+		icon: "gear",
+		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([42,1,2,4,43,44,25,23,24,45,34,33,46]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "network",
+		name: "Network",
+		icon: "wifi-high",
+		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([47,1,2,48]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "history",
+		name: "History",
+		icon: "clock-counter-clockwise",
+		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([49,1,2,25,4,23,24,50]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "explorer",
+		name: "Explorer",
+		icon: "folder",
+		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([51,1,2,4,25,23,24,46]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "editor",
+		name: "Editor",
+		icon: "pencil",
+		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([52,1,2,4,25,23,24]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "home",
+		name: "Home",
+		icon: "house",
+		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([53,1,2,25,4,23,24,54]), import.meta.url)
+	});
+	ViewRegistry.register({
+		id: "print",
+		name: "Print",
+		icon: "printer",
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([22,1,2,4,23,24,25]), import.meta.url)
+	});
+}
+var defaultTheme = {
+	id: "auto",
+	name: "Auto",
+	colorScheme: "auto"
+};
+var lightTheme = {
+	id: "light",
+	name: "Light",
+	colorScheme: "light"
+};
+var darkTheme = {
+	id: "dark",
+	name: "Dark",
+	colorScheme: "dark"
+};
+/**
+* Populate both registries during boot before any shell or view is resolved.
+*/
+function initializeRegistries() {
+	registerDefaultShells();
+	registerDefaultViews();
+}
+//#endregion
+//#region ../CWSP-document/src/shared/routing/core/layer-manager.ts
+/**
+* Unified layer hierarchy - ORDER MATTERS!
+*
+* Layers are declared in this order to ensure:
+* 1. Reset/normalize come first (lowest specificity wins)
+* 2. Tokens (CSS custom properties) are available early
+* 3. Runtime provides base component styles
+* 4. Shell styles can override runtime
+* 5. View styles can override shell
+* 6. Overrides (theme, print, a11y) win last
+*/
+var LAYER_HIERARCHY = [
+	{
+		name: "ux-normalize",
+		category: "system",
+		order: 0,
+		description: "Veela normalize layer"
+	},
+	{
+		name: "layer.reset",
+		category: "system",
+		order: 0,
+		description: "CSS reset rules"
+	},
+	{
+		name: "layer.normalize",
+		category: "system",
+		order: 10,
+		description: "Normalize browser defaults"
+	},
+	{
+		name: "tokens",
+		category: "system",
+		order: 20,
+		description: "Legacy tokens layer"
+	},
+	{
+		name: "ux-tokens",
+		category: "system",
+		order: 20,
+		description: "Veela token layer"
+	},
+	{
+		name: "layer.tokens",
+		category: "system",
+		order: 20,
+		description: "CSS custom properties (variables)"
+	},
+	{
+		name: "base",
+		category: "system",
+		order: 30,
+		description: "Legacy base layer"
+	},
+	{
+		name: "ux-base",
+		category: "system",
+		order: 30,
+		description: "Veela base layer"
+	},
+	{
+		name: "layout",
+		category: "system",
+		order: 40,
+		description: "Legacy layout layer"
+	},
+	{
+		name: "ux-layout",
+		category: "system",
+		order: 40,
+		description: "Veela layout layer"
+	},
+	{
+		name: "components",
+		category: "system",
+		order: 50,
+		description: "Legacy components layer"
+	},
+	{
+		name: "ux-components",
+		category: "system",
+		order: 50,
+		description: "Veela components layer"
+	},
+	{
+		name: "utilities",
+		category: "system",
+		order: 60,
+		description: "Legacy utilities layer"
+	},
+	{
+		name: "ux-utilities",
+		category: "system",
+		order: 60,
+		description: "Veela utilities layer"
+	},
+	{
+		name: "ux-theme",
+		category: "system",
+		order: 70,
+		description: "Veela theme layer"
+	},
+	{
+		name: "ux-overrides",
+		category: "system",
+		order: 80,
+		description: "Veela overrides layer"
+	},
+	{
+		name: "layer.properties.shell",
+		category: "system",
+		order: 30,
+		description: "Shell context custom properties"
+	},
+	{
+		name: "layer.properties.views",
+		category: "system",
+		order: 35,
+		description: "View context custom properties"
+	},
+	{
+		name: "layer.runtime.base",
+		category: "runtime",
+		order: 100,
+		description: "Veela runtime base styles"
+	},
+	{
+		name: "layer.runtime.components",
+		category: "runtime",
+		order: 110,
+		description: "Reusable component styles"
+	},
+	{
+		name: "layer.runtime.forms",
+		category: "runtime",
+		order: 115,
+		description: "Form element base styles"
+	},
+	{
+		name: "layer.runtime.utilities",
+		category: "runtime",
+		order: 120,
+		description: "Utility classes"
+	},
+	{
+		name: "layer.runtime.animations",
+		category: "runtime",
+		order: 130,
+		description: "Keyframes and animation definitions"
+	},
+	{
+		name: "layer.boot",
+		category: "runtime",
+		order: 140,
+		description: "Boot/choice screen styles"
+	},
+	{
+		name: "boot.tokens",
+		category: "runtime",
+		order: 142,
+		description: "Boot tokens layer"
+	},
+	{
+		name: "boot.base",
+		category: "runtime",
+		order: 144,
+		description: "Boot base layer"
+	},
+	{
+		name: "boot.components",
+		category: "runtime",
+		order: 146,
+		description: "Boot components layer"
+	},
+	{
+		name: "boot.responsive",
+		category: "runtime",
+		order: 148,
+		description: "Boot responsive adjustments"
+	},
+	{
+		name: "layer.shell.common",
+		category: "shell",
+		order: 200,
+		description: "Shared shell styles"
+	},
+	{
+		name: "shell.tokens",
+		category: "shell",
+		order: 202,
+		description: "Legacy shell tokens"
+	},
+	{
+		name: "shell.base",
+		category: "shell",
+		order: 204,
+		description: "Legacy shell base"
+	},
+	{
+		name: "shell.components",
+		category: "shell",
+		order: 206,
+		description: "Legacy shell components"
+	},
+	{
+		name: "shell.utilities",
+		category: "shell",
+		order: 208,
+		description: "Legacy shell utilities"
+	},
+	{
+		name: "shell.overrides",
+		category: "shell",
+		order: 209,
+		description: "Legacy shell overrides"
+	},
+	{
+		name: "layer.shell.raw",
+		category: "shell",
+		order: 210,
+		description: "Raw shell (minimal)"
+	},
+	{
+		name: "layer.shell.minimal",
+		category: "shell",
+		order: 220,
+		description: "Minimal shell (toolbar navigation)"
+	},
+	{
+		name: "layer.shell.minimal.layout",
+		category: "shell",
+		order: 222,
+		description: "Minimal shell layout rules"
+	},
+	{
+		name: "layer.shell.minimal.components",
+		category: "shell",
+		order: 224,
+		description: "Minimal shell component styles"
+	},
+	{
+		name: "layer.shell.window",
+		category: "shell",
+		order: 226,
+		description: "Window shell (desktop/process frames)"
+	},
+	{
+		name: "layer.shell.faint",
+		category: "shell",
+		order: 230,
+		description: "Faint shell (tabbed sidebar)"
+	},
+	{
+		name: "layer.shell.faint.layout",
+		category: "shell",
+		order: 232,
+		description: "Faint shell layout"
+	},
+	{
+		name: "layer.shell.faint.sidebar",
+		category: "shell",
+		order: 234,
+		description: "Faint shell sidebar"
+	},
+	{
+		name: "layer.shell.faint.toolbar",
+		category: "shell",
+		order: 236,
+		description: "Faint shell toolbar"
+	},
+	{
+		name: "layer.shell.faint.forms",
+		category: "shell",
+		order: 238,
+		description: "Faint shell form components"
+	},
+	{
+		name: "layer.view.common",
+		category: "view",
+		order: 300,
+		description: "Shared view styles"
+	},
+	{
+		name: "layer.view.viewer",
+		category: "view",
+		order: 310,
+		description: "Markdown viewer"
+	},
+	{
+		name: "layer.view.workcenter",
+		category: "view",
+		order: 320,
+		description: "Work center (AI prompts)"
+	},
+	{
+		name: "layer.view.workcenter.keyframes",
+		category: "view",
+		order: 322,
+		description: "Work center animations"
+	},
+	{
+		name: "view.workcenter",
+		category: "view",
+		order: 324,
+		description: "Work center styles (legacy name)"
+	},
+	{
+		name: "view.workcenter.animations",
+		category: "view",
+		order: 326,
+		description: "Work center animations (legacy name)"
+	},
+	{
+		name: "layer.view.settings",
+		category: "view",
+		order: 330,
+		description: "Settings view"
+	},
+	{
+		name: "layer.view.explorer",
+		category: "view",
+		order: 340,
+		description: "File explorer"
+	},
+	{
+		name: "layer.view.history",
+		category: "view",
+		order: 350,
+		description: "History view"
+	},
+	{
+		name: "layer.view.editor",
+		category: "view",
+		order: 360,
+		description: "Editor view"
+	},
+	{
+		name: "layer.view.editor.markdown",
+		category: "view",
+		order: 362,
+		description: "Markdown editor sublayer"
+	},
+	{
+		name: "layer.view.editor.quill",
+		category: "view",
+		order: 364,
+		description: "Quill editor sublayer"
+	},
+	{
+		name: "layer.view.home",
+		category: "view",
+		order: 380,
+		description: "Home/landing view"
+	},
+	{
+		name: "layer.view.print",
+		category: "view",
+		order: 390,
+		description: "Print view"
+	},
+	{
+		name: "view-explorer",
+		category: "view",
+		order: 392,
+		description: "Explorer legacy layered scope"
+	},
+	{
+		name: "view-transitions",
+		category: "override",
+		order: 850,
+		description: "View Transition API named targets and keyframes"
+	},
+	{
+		name: "layer.override.theme",
+		category: "override",
+		order: 900,
+		description: "Theme customizations"
+	},
+	{
+		name: "layer.override.print",
+		category: "override",
+		order: 910,
+		description: "Print media styles"
+	},
+	{
+		name: "layer.override.a11y",
+		category: "override",
+		order: 920,
+		description: "Accessibility enhancements"
+	}
+];
+var _initialized = false;
+/**
+* Initialize CSS layer order
+*
+* MUST be called before any other styles are loaded to ensure
+* the cascade layer order is established correctly.
+*
+* This function is idempotent - calling it multiple times is safe.
+*
+* @example
+* ```ts
+* // In application entry point
+* import { initializeLayers } from './shared/layer-manager';
+*
+* async function main() {
+*     // Initialize layers FIRST
+*     initializeLayers();
+*
+*     // Then load styles
+*     await loadStyleSystem('vl-advanced');
+*     // ...
+* }
+* ```
+*/
+function initializeLayers() {
+	if (_initialized) {
+		console.debug("[LayerManager] Already initialized");
+		return;
+	}
+	if (typeof document === "undefined") {
+		console.warn("[LayerManager] No document available (SSR context?)");
+		return;
+	}
+	const layerNames = [...LAYER_HIERARCHY].sort((a, b) => a.order - b.order).map((l) => l.name);
+	const layerRule = `@layer ${layerNames.join(", ")};`;
+	const style = document.createElement("style");
+	style.id = "css-layer-init";
+	style.setAttribute("data-layer-manager", "true");
+	style.textContent = layerRule;
+	const head = document.head;
+	head.insertBefore(style, head.firstChild);
+	_initialized = true;
+	console.log(`[LayerManager] Initialized ${layerNames.length} layers`);
+}
+//#endregion
 //#region ../../node_modules/@capacitor/core/dist/index.js
+var dist_exports = /* @__PURE__ */ __exportAll({
+	Capacitor: () => Capacitor,
+	CapacitorException: () => CapacitorException,
+	ExceptionCode: () => ExceptionCode,
+	SystemBarType: () => SystemBarType,
+	SystemBars: () => SystemBars,
+	SystemBarsStyle: () => SystemBarsStyle,
+	WebPlugin: () => WebPlugin,
+	buildRequestInit: () => buildRequestInit,
+	registerPlugin: () => registerPlugin
+});
 /*! Capacitor: https://capacitorjs.com/ - MIT License */
 var ExceptionCode;
 (function(ExceptionCode) {
@@ -513,3670 +4284,6 @@ var SystemBarsPluginWeb = class extends WebPlugin {
 	}
 };
 var SystemBars = registerPlugin("SystemBars", { web: () => new SystemBarsPluginWeb() });
-//#endregion
-//#region src/shared/other/config/Names.ts
-/**
-* Centralized naming system for CWSP-shell application
-* Consolidates component names, channel names, route names, etc.
-*/
-/**
-* Broadcast channel names used throughout the application
-*/
-var BROADCAST_CHANNELS$1 = {
-	SHARE_TARGET: "rs-share-target",
-	TOAST: "rs-toast",
-	CLIPBOARD: "rs-clipboard",
-	WORK_CENTER: "rs-workcenter",
-	MARKDOWN_VIEWER: "rs-markdown-viewer",
-	SETTINGS: "rs-settings",
-	GENERAL: "rs-app-general",
-	MINIMAL_APP: "minimal-app",
-	MAIN_APP: "main-app",
-	FILE_EXPLORER: "file-explorer",
-	PRINT_VIEWER: "print-viewer",
-	SETTINGS_VIEWER: "settings-viewer",
-	HISTORY_VIEWER: "history-viewer",
-	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
-	FILE_EXPLORER_CHANNEL: "file-explorer",
-	SETTINGS_CHANNEL: "settings",
-	HISTORY_CHANNEL: "history",
-	PRINT_CHANNEL: "print",
-	SERVICE_WORKCENTER: "rs-service-workcenter",
-	SERVICE_SETTINGS: "rs-service-settings",
-	SERVICE_VIEWER: "rs-service-viewer",
-	SERVICE_EXPLORER: "rs-service-explorer",
-	SERVICE_AIRPAD: "rs-service-airpad",
-	SERVICE_NETWORK: "rs-service-network",
-	SERVICE_PRINT: "rs-service-print",
-	SERVICE_HISTORY: "rs-service-history",
-	SERVICE_EDITOR: "rs-service-editor",
-	SERVICE_HOME: "rs-service-home"
-};
-var viewBroadcastChannelName = (viewId) => {
-	return `rs-view-${normalizeViewId$1(viewId) || "app"}`;
-};
-/**
-* Component and module identifiers
-*/
-var COMPONENTS$1 = {
-	WORK_CENTER: "workcenter",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	MARKDOWN_EDITOR: "markdown-editor",
-	RICH_EDITOR: "rich-editor",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	FILE_PICKER: "file-picker",
-	FILE_EXPLORER: "file-explorer",
-	WORKCENTER_CORE: "workcenter-core",
-	BASIC_WORKCENTER: "basic-workcenter",
-	BASIC_VIEWER: "basic-viewer",
-	BASIC_EXPLORER: "basic-explorer",
-	BASIC_SETTINGS: "basic-settings",
-	BASIC_HISTORY: "basic-history",
-	BASIC_PRINT: "basic-print",
-	AIRPAD: "airpad",
-	NETWORK: "network",
-	HOME: "home",
-	EDITOR: "editor",
-	VIEWER: "viewer",
-	EXPLORER: "explorer",
-	PRINT: "print"
-};
-/**
-* API endpoint paths
-*/
-var API_ENDPOINTS = {
-	PROCESSING: "/api/processing",
-	ANALYZE: "/api/analyze",
-	TEST: "/api/test",
-	HEALTH: "/health",
-	ICONS: "/assets/icons",
-	DUOTONE_ICONS: "/assets/icons/duotone",
-	PHOSPHOR_ICONS: "/assets/icons/phosphor",
-	ICON_PROXY: "/api/icon-proxy",
-	SHARE_TARGET: "/share-target",
-	SHARE_TARGET_ALT: "/share_target",
-	LAUNCH_QUEUE: "/launch-queue",
-	SW_CONTENT: "/sw-content",
-	SW_CONTENT_AVAILABLE: "/sw-content/available",
-	CLIPBOARD_PENDING: "/clipboard/pending",
-	CLIPBOARD_CLEAR: "/clipboard/clear"
-};
-/**
-* Location hash identifiers for app navigation
-*/
-var ROUTE_HASHES$1 = {
-	MARKDOWN_VIEWER: "#markdown-viewer",
-	MARKDOWN_EDITOR: "#markdown-editor",
-	RICH_EDITOR: "#rich-editor",
-	SETTINGS: "#settings",
-	HISTORY: "#history",
-	WORKCENTER: "#workcenter",
-	FILE_PICKER: "#file-picker",
-	FILE_EXPLORER: "#file-explorer",
-	PRINT: "#print",
-	AIRPAD: "#airpad",
-	NETWORK: "#network",
-	WORKCENTER_FILES: "#workcenter-files",
-	WORKCENTER_TEXT: "#workcenter-text",
-	WORKCENTER_IMAGES: "#workcenter-images",
-	WORKCENTER_PROCESSING: "#workcenter-processing",
-	SHARE_TARGET_TEXT: "#share-target-text",
-	SHARE_TARGET_FILES: "#share-target-files",
-	SHARE_TARGET_URL: "#share-target-url",
-	SHARE_TARGET_IMAGE: "#share-target-image"
-};
-/**
-* Content type identifiers
-*/
-var CONTENT_TYPES = {
-	TEXT: "text",
-	URL: "url",
-	FILE: "file",
-	IMAGE: "image",
-	MARKDOWN: "markdown",
-	HTML: "html",
-	JSON: "json",
-	PDF: "pdf",
-	AUDIO: "audio",
-	VIDEO: "video",
-	OTHER: "other"
-};
-/**
-* Destination identifiers for unified messaging
-*/
-var DESTINATIONS$1 = {
-	WORKCENTER: "workcenter",
-	CLIPBOARD: "clipboard",
-	VIEWER: "viewer",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	EXPLORER: "explorer",
-	FILE_EXPLORER: "file-explorer",
-	PRINT: "print",
-	PRINT_VIEWER: "print-viewer",
-	EDITOR: "editor",
-	AIRPAD: "airpad",
-	HOME: "home",
-	BASIC_APP: "basic-app",
-	MAIN_APP: "main-app"
-};
-var CANONICAL_VIEW_IDS$1 = [
-	"viewer",
-	"workcenter",
-	"explorer",
-	"editor",
-	"settings",
-	"history",
-	"home",
-	"airpad",
-	"print"
-];
-/**
-* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
-* `basic-*` destinations. Keep alias resolution centralized here so transports,
-* views, and workers can agree on one canonical target vocabulary.
-*/
-var DESTINATION_ALIASES$1 = {
-	viewer: [
-		DESTINATIONS$1.VIEWER,
-		DESTINATIONS$1.MARKDOWN_VIEWER,
-		COMPONENTS$1.BASIC_VIEWER
-	],
-	workcenter: [
-		DESTINATIONS$1.WORKCENTER,
-		COMPONENTS$1.BASIC_WORKCENTER,
-		COMPONENTS$1.WORKCENTER_CORE
-	],
-	explorer: [
-		DESTINATIONS$1.EXPLORER,
-		DESTINATIONS$1.FILE_EXPLORER,
-		COMPONENTS$1.BASIC_EXPLORER
-	],
-	editor: [
-		DESTINATIONS$1.EDITOR,
-		COMPONENTS$1.MARKDOWN_EDITOR,
-		COMPONENTS$1.RICH_EDITOR
-	],
-	settings: [
-		DESTINATIONS$1.SETTINGS,
-		BROADCAST_CHANNELS$1.SETTINGS_CHANNEL,
-		COMPONENTS$1.BASIC_SETTINGS
-	],
-	history: [
-		DESTINATIONS$1.HISTORY,
-		BROADCAST_CHANNELS$1.HISTORY_CHANNEL,
-		COMPONENTS$1.BASIC_HISTORY
-	],
-	print: [
-		DESTINATIONS$1.PRINT,
-		DESTINATIONS$1.PRINT_VIEWER,
-		COMPONENTS$1.BASIC_PRINT
-	],
-	airpad: [DESTINATIONS$1.AIRPAD],
-	home: [DESTINATIONS$1.HOME],
-	clipboard: [DESTINATIONS$1.CLIPBOARD],
-	"basic-app": [DESTINATIONS$1.BASIC_APP],
-	"main-app": [DESTINATIONS$1.MAIN_APP]
-};
-var DESTINATION_LOOKUP$1 = Object.entries(DESTINATION_ALIASES$1).reduce((out, [canonical, aliases]) => {
-	out[canonical] = canonical;
-	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
-	return out;
-}, {});
-var normalizeDestination$1 = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "";
-	return DESTINATION_LOOKUP$1[raw] || raw;
-};
-var getDestinationAliases$1 = (value) => {
-	const canonical = normalizeDestination$1(value);
-	if (!canonical) return [];
-	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES$1[canonical] || []])];
-};
-var normalizeViewId$1 = (value) => {
-	const canonical = normalizeDestination$1(value);
-	if (CANONICAL_VIEW_IDS$1.includes(canonical)) return canonical;
-	return "viewer";
-};
-var getBroadcastChannelForDestination = (value) => {
-	switch (normalizeDestination$1(value)) {
-		case "viewer": return BROADCAST_CHANNELS$1.MARKDOWN_VIEWER;
-		case "workcenter": return BROADCAST_CHANNELS$1.WORK_CENTER;
-		case "explorer": return BROADCAST_CHANNELS$1.FILE_EXPLORER;
-		case "settings": return BROADCAST_CHANNELS$1.SETTINGS;
-		case "history": return BROADCAST_CHANNELS$1.HISTORY_VIEWER;
-		case "print": return BROADCAST_CHANNELS$1.PRINT_VIEWER;
-		case "clipboard": return BROADCAST_CHANNELS$1.CLIPBOARD;
-		case "main-app": return BROADCAST_CHANNELS$1.MAIN_APP;
-		case "basic-app": return BROADCAST_CHANNELS$1.MINIMAL_APP;
-		default: return null;
-	}
-};
-var createDestinationChannelMappings = () => {
-	const mappings = {};
-	for (const canonical of Object.keys(DESTINATION_ALIASES$1)) {
-		const channel = getBroadcastChannelForDestination(canonical);
-		if (!channel) continue;
-		for (const alias of getDestinationAliases$1(canonical)) mappings[alias] = channel;
-	}
-	return mappings;
-};
-BROADCAST_CHANNELS$1.SERVICE_WORKCENTER, BROADCAST_CHANNELS$1.SERVICE_SETTINGS, BROADCAST_CHANNELS$1.SERVICE_VIEWER, BROADCAST_CHANNELS$1.SERVICE_EXPLORER, BROADCAST_CHANNELS$1.SERVICE_AIRPAD, BROADCAST_CHANNELS$1.SERVICE_NETWORK, BROADCAST_CHANNELS$1.SERVICE_PRINT, BROADCAST_CHANNELS$1.SERVICE_HISTORY, BROADCAST_CHANNELS$1.SERVICE_EDITOR, BROADCAST_CHANNELS$1.SERVICE_HOME;
-ROUTE_HASHES$1.WORKCENTER, ROUTE_HASHES$1.SETTINGS, ROUTE_HASHES$1.MARKDOWN_VIEWER, ROUTE_HASHES$1.FILE_EXPLORER, ROUTE_HASHES$1.NETWORK, ROUTE_HASHES$1.PRINT, ROUTE_HASHES$1.HISTORY, ROUTE_HASHES$1.MARKDOWN_EDITOR;
-//#endregion
-//#region src/shared/routing/channel/ServiceChannels.ts
-/**
-* Service Channels for CWSP-shell
-* Extends fest/uniform ServiceChannelManager with app-specific configuration
-*/
-var SERVICE_CHANNEL_CONFIG = {
-	workcenter: {
-		broadcastName: BROADCAST_CHANNELS$1.WORK_CENTER,
-		routeHash: ROUTE_HASHES$1.WORKCENTER,
-		component: COMPONENTS$1.WORK_CENTER,
-		description: "AI work center for processing files and content"
-	},
-	settings: {
-		broadcastName: BROADCAST_CHANNELS$1.SETTINGS,
-		routeHash: ROUTE_HASHES$1.SETTINGS,
-		component: COMPONENTS$1.SETTINGS,
-		description: "Application settings and configuration"
-	},
-	airpad: {
-		broadcastName: BROADCAST_CHANNELS$1.SERVICE_AIRPAD,
-		routeHash: ROUTE_HASHES$1.AIRPAD,
-		component: COMPONENTS$1.AIRPAD,
-		description: "AirPad remote trackpad/keyboard + clipboard"
-	},
-	network: {
-		broadcastName: BROADCAST_CHANNELS$1.SERVICE_NETWORK,
-		routeHash: ROUTE_HASHES$1.NETWORK,
-		component: COMPONENTS$1.NETWORK,
-		description: "CWSP network status, probes, and endpoint routing"
-	},
-	viewer: {
-		broadcastName: BROADCAST_CHANNELS$1.MARKDOWN_VIEWER,
-		routeHash: ROUTE_HASHES$1.MARKDOWN_VIEWER,
-		component: COMPONENTS$1.MARKDOWN_VIEWER,
-		description: "Content viewer for markdown and files"
-	},
-	explorer: {
-		broadcastName: BROADCAST_CHANNELS$1.FILE_EXPLORER,
-		routeHash: ROUTE_HASHES$1.FILE_EXPLORER,
-		component: COMPONENTS$1.FILE_EXPLORER,
-		description: "File explorer and browser"
-	},
-	print: {
-		broadcastName: BROADCAST_CHANNELS$1.PRINT_CHANNEL,
-		routeHash: ROUTE_HASHES$1.PRINT,
-		component: COMPONENTS$1.BASIC_PRINT,
-		description: "Print preview and export"
-	},
-	history: {
-		broadcastName: BROADCAST_CHANNELS$1.HISTORY_CHANNEL,
-		routeHash: ROUTE_HASHES$1.HISTORY,
-		component: COMPONENTS$1.HISTORY,
-		description: "Action history and undo/redo"
-	},
-	editor: {
-		broadcastName: "rs-editor",
-		routeHash: ROUTE_HASHES$1.MARKDOWN_EDITOR,
-		component: COMPONENTS$1.MARKDOWN_EDITOR,
-		description: "Content editor"
-	},
-	home: {
-		broadcastName: "rs-home",
-		routeHash: "#home",
-		component: "home",
-		description: "Home/landing view"
-	}
-};
-var appServiceChannelManager = null;
-/**
-* Get the app-configured ServiceChannelManager
-*/
-function getServiceChannels() {
-	if (!appServiceChannelManager) appServiceChannelManager = createServiceChannelManager({
-		channels: SERVICE_CHANNEL_CONFIG,
-		logPrefix: "[ServiceChannels]"
-	});
-	return appServiceChannelManager;
-}
-var serviceChannels = getServiceChannels();
-//#endregion
-//#region ../../modules/projects/subsystem/src/service/instructions/core.ts
-var AI_INSTRUCTIONS$1 = {
-	SOLVE_AND_ANSWER: `
-Solve equations, answer questions, and explain mathematical or logical problems from the provided content.
-
-For equations and math problems:
-- Show step-by-step solutions
-- Provide final answers clearly marked
-- Explain reasoning for each step
-
-For general questions:
-- Provide accurate, well-reasoned answers
-- Include relevant context and explanations
-- If multiple interpretations possible, address them
-
-For quizzes and tests:
-- Show the correct answer with explanation
-- Explain why other options are incorrect
-
-Always respond in the specified language and format results clearly.
-`,
-	WRITE_CODE: `
-Write clean, efficient, and well-documented code based on the provided description, requirements, or image.
-
-Code requirements:
-- Use appropriate programming language for the task
-- Follow language-specific best practices and conventions
-- Include proper error handling
-- Add meaningful comments and documentation
-- Make code readable and maintainable
-
-If generating from an image or visual description:
-- Analyze the visual elements and requirements
-- Implement the described functionality
-- Ensure code compiles and runs correctly
-
-Always respond in the specified language and provide complete, working code.
-`,
-	EXTRACT_CSS: `
-Extract and generate clean, modern CSS from the provided content, image, or description.
-
-CSS requirements:
-- Use modern CSS features and best practices
-- Generate semantic, maintainable stylesheets
-- Include responsive design considerations
-- Use appropriate selectors and specificity
-- Follow CSS naming conventions
-- Optimize for performance and maintainability
-
-If extracting from an image:
-- Analyze the visual design and layout
-- Generate corresponding CSS rules
-- Identify colors, fonts, spacing, and layout
-- Create reusable CSS classes and components
-
-Always respond in the specified language and provide complete, working CSS.
-`,
-	RECOGNIZE_CONTENT: `
-Recognize and extract information from images, documents, or other visual content.
-
-Recognition requirements:
-- Identify text content accurately
-- Extract structured information
-- Recognize tables, forms, and structured data
-- Preserve formatting where possible
-- Handle different languages and scripts
-- Provide confidence scores for extracted content
-
-For document analysis:
-- Extract key information and metadata
-- Identify document type and structure
-- Recognize important sections and headings
-
-For image analysis:
-- Describe visual content
-- Extract text from images (OCR)
-- Identify objects, scenes, and visual elements
-
-Always respond in the specified language and format extracted information clearly.
-`,
-	CONVERT_DATA: `
-Convert data between different formats while preserving structure and meaning.
-
-Conversion requirements:
-- Maintain data integrity and relationships
-- Preserve formatting and structure where possible
-- Handle different data types appropriately
-- Provide clear mapping between source and target formats
-- Validate conversion accuracy
-
-Supported conversions:
-- CSV ↔ JSON ↔ XML
-- Markdown ↔ HTML
-- Text ↔ Structured data
-- Image data ↔ Text representations
-
-Ensure accurate, lossless conversion where possible.
-`,
-	EXTRACT_ENTITIES: `
-Extract named entities, keywords, and structured information from content.
-
-Entity extraction requirements:
-- Identify people, organizations, locations
-- Extract dates, numbers, and measurements
-- Find keywords and important terms
-- Recognize relationships and connections
-- Provide confidence scores and context
-
-Output structured data with:
-- Entity types and values
-- Position and context information
-- Confidence scores
-- Relationship mappings
-
-Focus on accuracy and comprehensive coverage.
-`,
-	TRANSLATE_TO_LANGUAGE: `
-Translate content to the specified target language while preserving meaning, tone, and formatting.
-
-Translation requirements:
-- Maintain original meaning and intent
-- Preserve formatting, structure, and markdown syntax
-- Adapt cultural references appropriately
-- Use natural, fluent language in the target language
-- Handle technical terms, proper names, and brand names correctly
-- Maintain appropriate formality and tone
-- Preserve code blocks, mathematical expressions, and technical content
-
-For content already in the target language:
-- Provide natural rephrasing or improvement
-- Enhance clarity and readability
-- Maintain professional quality
-
-Supported languages:
-- English (en)
-- Russian (ru)
-- Other languages as requested
-
-Ensure high-quality, natural translations that feel native to the target language.
-`,
-	GENERAL_PROCESSING: `
-Process and analyze content using appropriate AI capabilities.
-
-General processing requirements:
-- Understand context and intent
-- Provide relevant analysis or transformation
-- Use appropriate tools and methods
-- Maintain content quality and accuracy
-- Adapt to different content types and requirements
-
-Focus on providing useful, accurate results that meet user needs.
-`,
-	CRX_SOLVE_AND_ANSWER: `
-Solve the problem or answer the question presented in the content.
-
-Auto-detect the type of content:
-- Mathematical equation/expression → Solve step-by-step
-- Quiz/test question → Provide correct answer
-- Homework problem → Solve and explain
-- General question → Answer with explanation
-
-Format output as:
-
-**Problem/Question:**
-<recognized content - use $KaTeX$ for math>
-
-**Solution/Answer:**
-<step-by-step solution or direct answer>
-
-**Explanation:**
-<clear explanation of the reasoning>
-
----
-
-For MATH problems:
-- Use single $ for inline math: $x = 5$
-- Use double $$ for display equations: $$\\int_0^1 f(x) dx$$
-- Show all intermediate steps
-- Simplify the final answer
-- For systems: solve all variables
-- For inequalities: use interval notation
-
-For MULTIPLE CHOICE:
-- Identify correct option (A, B, C, D)
-- Explain why it's correct
-- Note why others are wrong
-
-For TRUE/FALSE:
-- State True or False clearly
-- Provide justification
-
-For SHORT ANSWER/ESSAY:
-- Provide concise, complete answer
-- Include key facts and reasoning
-
-For CODING problems:
-- Write the solution code
-- Explain the logic
-
-If multiple problems/questions present, solve each separately.
-If unsolvable or unclear, explain why.
-`,
-	CRX_WRITE_CODE: `
-You are an expert software developer. Analyze the provided content and generate high-quality, working code.
-
-Code Generation Requirements:
-- Choose the best programming language for the task
-- Write clean, efficient, and well-documented code
-- Include proper error handling and input validation
-- Add meaningful comments explaining complex logic
-- Follow language-specific best practices and conventions
-- Ensure code is readable, maintainable, and follows standard patterns
-
-For each code generation task:
-1. **Analyze Requirements**: Understand what the code needs to do
-2. **Choose Language**: Select appropriate programming language
-3. **Design Solution**: Plan the code structure and logic
-4. **Write Code**: Provide complete, working code with comments
-5. **Explain Logic**: Describe how the code works and key decisions
-
-Provide complete, runnable code that solves the described problem.
-`,
-	CRX_EXTRACT_CSS: `
-You are an expert CSS developer. Analyze the provided content and extract/generate the corresponding CSS styles.
-
-CSS Extraction Requirements:
-- Analyze visual elements, layout, and design patterns
-- Generate modern, clean CSS using current standards
-- Use semantic class names and proper CSS architecture
-- Include responsive design considerations
-- Optimize for performance and maintainability
-- Follow CSS best practices and conventions
-
-For CSS extraction:
-1. **Analyze Design**: Identify colors, typography, spacing, layout
-2. **Generate Rules**: Create appropriate CSS rules and selectors
-3. **Organize Code**: Group related styles logically
-4. **Add Comments**: Explain complex or important style decisions
-5. **Ensure Compatibility**: Use widely supported CSS properties
-
-Provide complete, well-organized CSS that recreates the described design.
-`
-};
-AI_INSTRUCTIONS$1.SOLVE_AND_ANSWER;
-AI_INSTRUCTIONS$1.WRITE_CODE;
-AI_INSTRUCTIONS$1.EXTRACT_CSS;
-AI_INSTRUCTIONS$1.RECOGNIZE_CONTENT;
-AI_INSTRUCTIONS$1.CONVERT_DATA;
-AI_INSTRUCTIONS$1.EXTRACT_ENTITIES;
-AI_INSTRUCTIONS$1.TRANSLATE_TO_LANGUAGE;
-AI_INSTRUCTIONS$1.GENERAL_PROCESSING;
-AI_INSTRUCTIONS$1.CRX_SOLVE_AND_ANSWER;
-AI_INSTRUCTIONS$1.CRX_WRITE_CODE;
-AI_INSTRUCTIONS$1.CRX_EXTRACT_CSS;
-//#endregion
-//#region ../../modules/projects/subsystem/src/routing/channel/UnifiedAIConfig.ts
-var UNIFIED_PROCESSING_RULES$1 = {
-	"share-target": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "write-clipboard",
-			onAccept: "attach-to-associated",
-			doProcess: "instantly",
-			openApp: true
-		},
-		supportedContentTypes: [
-			"text",
-			"markdown",
-			"image",
-			"url"
-		],
-		defaultOverrideFactors: []
-	},
-	"launch-queue": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-associated",
-			doProcess: "manually",
-			openApp: true
-		},
-		supportedContentTypes: [
-			"file",
-			"blob",
-			"text",
-			"markdown",
-			"image"
-		],
-		defaultOverrideFactors: []
-	},
-	"crx-snip": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "write-clipboard",
-			onAccept: "attach-to-associated",
-			doProcess: "instantly",
-			openApp: false
-		},
-		supportedContentTypes: ["text", "image"],
-		defaultOverrideFactors: ["force-processing"]
-	},
-	"paste": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-associated",
-			doProcess: "manually",
-			openApp: false
-		},
-		supportedContentTypes: [
-			"text",
-			"markdown",
-			"image"
-		],
-		defaultOverrideFactors: [],
-		associationOverrides: {
-			"text": ["user-action"],
-			"markdown": ["user-action"]
-		}
-	},
-	"drop": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-associated",
-			doProcess: "manually",
-			openApp: false
-		},
-		supportedContentTypes: [
-			"file",
-			"blob",
-			"text",
-			"markdown",
-			"image"
-		],
-		defaultOverrideFactors: [],
-		associationOverrides: {
-			"file": ["user-action"],
-			"blob": ["user-action"]
-		}
-	},
-	"button-attach-workcenter": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-workcenter",
-			doProcess: "manually",
-			openApp: false
-		},
-		supportedContentTypes: [
-			"text",
-			"markdown",
-			"image",
-			"file"
-		],
-		defaultOverrideFactors: ["explicit-workcenter"],
-		associationOverrides: {
-			"markdown": ["explicit-workcenter"],
-			"text": ["explicit-workcenter"],
-			"image": ["explicit-workcenter"],
-			"file": ["explicit-workcenter"]
-		}
-	}
-};
-Object.fromEntries(Object.entries(UNIFIED_PROCESSING_RULES$1).map(([key, config]) => [key, {
-	processingUrl: config.processingUrl,
-	contentAction: config.contentAction,
-	...config.supportedContentTypes && { supportedContentTypes: config.supportedContentTypes }
-}]));
-//#endregion
-//#region ../../modules/projects/subsystem/src/routing/channel/ContentAssociations.ts
-var normalizeContentType = (t) => {
-	const v = String(t || "").toLowerCase().trim();
-	if (!v) return CONTENT_TYPES.OTHER;
-	if (v === "md") return CONTENT_TYPES.MARKDOWN;
-	if (v === "markdown") return CONTENT_TYPES.MARKDOWN;
-	if (v === "txt") return CONTENT_TYPES.TEXT;
-	if (v === "text") return CONTENT_TYPES.TEXT;
-	if (v === "url") return CONTENT_TYPES.URL;
-	if (v === "image") return CONTENT_TYPES.IMAGE;
-	if (v === "file" || v === "blob") return CONTENT_TYPES.FILE;
-	if (v === "pdf") return CONTENT_TYPES.PDF;
-	if (v === "html") return CONTENT_TYPES.HTML;
-	if (v === "json") return CONTENT_TYPES.JSON;
-	if (v === "base64") return CONTENT_TYPES.FILE;
-	if (new Set(Object.values(CONTENT_TYPES)).has(v)) return v;
-	return CONTENT_TYPES.OTHER;
-};
-var coerceOverrideFactors = (factors) => {
-	const out = [];
-	const list = Array.isArray(factors) ? factors : [];
-	for (const f of list) {
-		const v = String(f || "").trim();
-		if (!v) continue;
-		out.push(v);
-	}
-	return out;
-};
-var pickExplicitDestination = (factors) => {
-	if (factors.includes("explicit-explorer")) return "explorer";
-	if (factors.includes("explicit-workcenter")) return "workcenter";
-	if (factors.includes("explicit-viewer")) return "viewer";
-	return null;
-};
-var defaultDestinationForType = (normalizedContentType) => {
-	switch (normalizedContentType) {
-		case CONTENT_TYPES.TEXT:
-		case CONTENT_TYPES.MARKDOWN:
-		case CONTENT_TYPES.HTML:
-		case CONTENT_TYPES.JSON: return "viewer";
-		case CONTENT_TYPES.URL: return "workcenter";
-		case CONTENT_TYPES.IMAGE:
-		case CONTENT_TYPES.PDF:
-		case CONTENT_TYPES.FILE:
-		case CONTENT_TYPES.OTHER:
-		default: return "workcenter";
-	}
-};
-var mergeRuleOverrideFactors = (intent, normalizedContentType) => {
-	const base = coerceOverrideFactors(intent.overrideFactors);
-	const src = String(intent.processingSource || "").trim();
-	if (!src) return base;
-	const rule = UNIFIED_PROCESSING_RULES$1[src];
-	if (!rule) return base;
-	const merged = [];
-	merged.push(...rule.defaultOverrideFactors || []);
-	const perType = rule.associationOverrides?.[normalizedContentType] || rule.associationOverrides?.[String(intent.contentType || "")] || [];
-	merged.push(...perType);
-	merged.push(...base);
-	return merged;
-};
-function resolveAssociation(intent) {
-	const normalizedContentType = normalizeContentType(intent.contentType);
-	const mergedFactors = mergeRuleOverrideFactors(intent, normalizedContentType);
-	const explicit = pickExplicitDestination(mergedFactors);
-	if (explicit) return {
-		destination: explicit,
-		normalizedContentType,
-		overrideFactors: mergedFactors
-	};
-	return {
-		destination: defaultDestinationForType(normalizedContentType),
-		normalizedContentType,
-		overrideFactors: mergedFactors
-	};
-}
-function resolveAssociationPipeline(intent) {
-	const primary = resolveAssociation(intent);
-	const factors = primary.overrideFactors;
-	const pipeline = [];
-	if (factors.includes("explicit-explorer")) pipeline.push("explorer");
-	if (factors.includes("explicit-workcenter")) pipeline.push("workcenter");
-	if (factors.includes("explicit-viewer")) pipeline.push("viewer");
-	if (pipeline.length === 0) pipeline.push(primary.destination);
-	if ((factors.includes("force-attachment") || factors.includes("force-processing")) && !pipeline.includes("workcenter")) pipeline.push("workcenter");
-	const unique = [];
-	for (const d of pipeline) if (!unique.includes(d)) unique.push(d);
-	return {
-		...primary,
-		pipeline: unique
-	};
-}
-//#endregion
-//#region ../../modules/projects/subsystem/src/routing/channel/UniformInterop.ts
-/**
-* Shared interop helpers for CWSP-shell transport envelopes.
-*
-* WHY: the main thread, service worker, CRX runtime, and native/worker bridges
-* all need the same destination, protocol, and envelope normalization without
-* each importing the full `fest/uniform` runtime graph.
-*/
-var PROTOCOL_ALIASES$1 = {
-	"chrome-runtime": "chrome",
-	"chrome-tabs": "chrome",
-	"chrome-port": "chrome",
-	"chrome-external": "chrome",
-	"service-worker": "worker",
-	"service-worker:http": "worker",
-	"service": "worker",
-	"sw": "worker",
-	"broadcast-channel": "broadcast",
-	"broadcastchannel": "broadcast",
-	"websocket": "socket",
-	"ws": "socket",
-	"socket-io": "socket",
-	"socketio": "socket"
-};
-var TRANSPORT_ALIASES$1 = {
-	"service": "service-worker",
-	"service-worker:http": "service-worker",
-	"sw": "service-worker",
-	"ws": "websocket",
-	"socket": "websocket",
-	"socketio": "socket-io",
-	"chrome": "chrome-runtime"
-};
-var PURPOSES$1 = /* @__PURE__ */ new Set([
-	"invoke",
-	"mail",
-	"attach",
-	"deliver",
-	"defer"
-]);
-var randomId$1 = () => {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-	return `interop_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-};
-var normalizePurpose$1 = (value) => {
-	const raw = Array.isArray(value) ? value : value ? [value] : ["mail"];
-	const deduped = [];
-	for (const entry of raw) if (PURPOSES$1.has(entry) && !deduped.includes(entry)) deduped.push(entry);
-	return deduped.length > 0 ? deduped : ["mail"];
-};
-/**
-* Normalize the protocol family advertised in envelopes and bridge packets.
-*/
-var normalizeInteropProtocolName$1 = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "unknown";
-	return PROTOCOL_ALIASES$1[raw] || raw;
-};
-/**
-* Normalize transport hints to one transport taxonomy for diagnostics and docs.
-*/
-var normalizeInteropTransportName$1 = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return void 0;
-	return TRANSPORT_ALIASES$1[raw] || raw;
-};
-/**
-* Create one shared envelope shape that can be used by main-thread, SW, and CRX
-* adapters before converting to `fest/uniform` runtime objects.
-*/
-var createInteropEnvelope$1 = (input) => {
-	const id = String(input.id || input.uuid || "").trim() || randomId$1();
-	const source = String(input.source || input.sender || input.srcChannel || "interop").trim() || "interop";
-	const destination = normalizeDestination$1(input.destination || input.target);
-	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination$1(entry)).filter(Boolean))] : destination ? getDestinationAliases$1(destination) : [];
-	const payload = input.payload ?? input.data;
-	const timestamp = Number(input.timestamp ?? Date.now()) || Date.now();
-	return {
-		id,
-		uuid: id,
-		type: String(input.type || "request"),
-		source,
-		sender: String(input.sender || source),
-		destination: destination || void 0,
-		target: destination || void 0,
-		contentType: input.contentType ? String(input.contentType) : void 0,
-		data: payload,
-		payload,
-		metadata: {
-			timestamp,
-			...input.metadata || {}
-		},
-		purpose: normalizePurpose$1(input.purpose),
-		protocol: normalizeInteropProtocolName$1(input.protocol),
-		transport: normalizeInteropTransportName$1(input.transport),
-		redirect: Boolean(input.redirect),
-		flags: { ...input.flags || {} },
-		op: String(input.op || (String(input.type || "").startsWith("response:") ? "response" : "deliver")),
-		timestamp,
-		srcChannel: String(input.srcChannel || source),
-		dstChannel: input.dstChannel ?? (destination || void 0),
-		destinations,
-		ids: {
-			byId: source,
-			from: source,
-			sender: source,
-			destinations,
-			...input.ids || {}
-		},
-		urls: Array.isArray(input.urls) ? [...input.urls] : [],
-		tokens: Array.isArray(input.tokens) ? [...input.tokens] : [],
-		toRoles: Array.isArray(input.toRoles) ? [...input.toRoles] : [],
-		tabId: input.tabId,
-		frameId: input.frameId,
-		status: typeof input.status === "number" ? input.status : void 0,
-		result: input.result,
-		results: input.results,
-		error: input.error
-	};
-};
-/**
-* Map an envelope-like payload into the app's unified-message shape.
-*/
-var toUnifiedInteropMessage$1 = (input) => {
-	const envelope = createInteropEnvelope$1(input);
-	return {
-		id: envelope.id,
-		type: envelope.type,
-		source: envelope.source,
-		destination: envelope.destination,
-		contentType: envelope.contentType,
-		data: envelope.data,
-		metadata: {
-			...envelope.metadata,
-			protocol: envelope.protocol,
-			transport: envelope.transport,
-			sender: envelope.sender,
-			srcChannel: envelope.srcChannel,
-			dstChannel: envelope.dstChannel,
-			destinations: envelope.destinations,
-			ids: envelope.ids,
-			flags: envelope.flags,
-			status: envelope.status,
-			error: envelope.error
-		}
-	};
-};
-//#endregion
-//#region ../../modules/projects/subsystem/src/routing/channel/UnifiedMessaging.ts
-/**
-* Unified Messaging System for CWSP-shell
-* Extends fest/uniform messaging with app-specific configuration
-*/
-var UnifiedMessaging_exports = /* @__PURE__ */ __exportAll({
-	createMessageWithOverrides: () => createMessageWithOverrides,
-	createProtocolEnvelope: () => createProtocolEnvelope,
-	enqueuePendingMessage: () => enqueuePendingMessage,
-	getUnifiedMessaging: () => getUnifiedMessaging$1,
-	hasPendingMessages: () => hasPendingMessages,
-	initializeComponent: () => initializeComponent$1,
-	processInitialContent: () => processInitialContent,
-	registerComponent: () => registerComponent$1,
-	replayQueuedMessagesForDestination: () => replayQueuedMessagesForDestination,
-	sendMessage: () => sendMessage,
-	sendProtocolMessage: () => sendProtocolMessage,
-	unifiedMessaging: () => unifiedMessaging$1
-});
-var APP_CHANNEL_MAPPINGS$1 = {
-	...createDestinationChannelMappings(),
-	[DESTINATIONS$1.WORKCENTER]: BROADCAST_CHANNELS$1.WORK_CENTER,
-	[DESTINATIONS$1.CLIPBOARD]: BROADCAST_CHANNELS$1.CLIPBOARD
-};
-var appMessagingInstance$1 = null;
-/**
-* Get the app-configured UnifiedMessagingManager
-*/
-function getUnifiedMessaging$1() {
-	if (!appMessagingInstance$1) appMessagingInstance$1 = getUnifiedMessaging$2({
-		channelMappings: APP_CHANNEL_MAPPINGS$1,
-		queueOptions: {
-			dbName: "CWSP-shellMessageQueue",
-			storeName: "messages",
-			maxRetries: 3,
-			defaultExpirationMs: 864e5
-		},
-		pendingStoreOptions: {
-			storageKey: "rs-unified-messaging-pending",
-			maxMessages: 200,
-			defaultTTLMs: 864e5
-		}
-	});
-	return appMessagingInstance$1;
-}
-var unifiedMessaging$1 = getUnifiedMessaging$1();
-/**
-* Send a message using the app-configured manager
-*/
-function sendMessage(message) {
-	return unifiedMessaging$1.sendMessage(toUnifiedInteropMessage$1({
-		...message,
-		source: message.source ?? "unified-messaging"
-	}));
-}
-function sendProtocolMessage(message) {
-	const interop = createInteropEnvelope$1({
-		...message,
-		source: message.source ?? "crossword-unified-messaging",
-		protocol: message.protocol ?? "window",
-		purpose: message.purpose ?? "mail",
-		srcChannel: message.srcChannel ?? message.source ?? "crossword-unified-messaging",
-		dstChannel: message.dstChannel ?? message.destination
-	});
-	const envelope = createProtocolEnvelope({
-		...interop,
-		source: interop.source,
-		destination: interop.destination,
-		data: interop.data,
-		payload: interop.payload,
-		metadata: interop.metadata,
-		protocol: interop.protocol,
-		purpose: interop.purpose,
-		srcChannel: interop.srcChannel,
-		dstChannel: interop.dstChannel,
-		redirect: interop.redirect,
-		flags: interop.flags,
-		op: interop.op,
-		timestamp: interop.timestamp,
-		result: interop.result,
-		error: interop.error ? String(interop.error) : void 0
-	});
-	return unifiedMessaging$1.sendMessage(envelope);
-}
-function initializeComponent$1(componentId) {
-	return unifiedMessaging$1.initializeComponent(componentId);
-}
-function hasPendingMessages(destination) {
-	return unifiedMessaging$1.hasPendingMessages(normalizeDestination$1(destination) || destination);
-}
-function enqueuePendingMessage(destination, message) {
-	const dest = normalizeDestination$1(destination) || String(destination ?? "").trim();
-	if (!dest || !message) return;
-	unifiedMessaging$1.enqueuePendingMessage(dest, message);
-}
-/**
-* Replay IndexedDB-backed queued messages for a destination (mail/deferred pipeline).
-* Safe after handlers register — implicit view bridge calls this post-bind.
-*/
-function replayQueuedMessagesForDestination(destination) {
-	return unifiedMessaging$1.processQueuedMessages(destination);
-}
-function registerComponent$1(componentId, destination) {
-	unifiedMessaging$1.registerComponent(componentId, normalizeDestination$1(destination) || destination);
-}
-function processInitialContent(content) {
-	const contentType = String(content?.contentType ?? content?.type ?? CONTENT_TYPES.OTHER);
-	const contentMetadata = content?.metadata ?? {};
-	const resolved = resolveAssociationPipeline({
-		contentType,
-		context: content?.context,
-		processingSource: content?.processingSource,
-		overrideFactors: content?.overrideFactors ?? contentMetadata.overrideFactors
-	});
-	const payload = content?.content ?? content?.data ?? content;
-	const meta = contentMetadata;
-	const source = String(content?.source ?? meta?.source ?? "content-association");
-	const tasks = resolved.pipeline.map((dest) => {
-		if (dest === DESTINATIONS$1.VIEWER) return sendMessage({
-			type: "content-view",
-			source,
-			destination: DESTINATIONS$1.VIEWER,
-			contentType: resolved.normalizedContentType,
-			data: {
-				content: payload?.text ?? payload?.content ?? payload,
-				text: payload?.text,
-				filename: payload?.filename ?? meta?.filename
-			},
-			metadata: {
-				...meta,
-				overrideFactors: resolved.overrideFactors,
-				context: content?.context,
-				processingSource: content?.processingSource
-			}
-		});
-		if (dest === DESTINATIONS$1.EXPLORER) return sendMessage({
-			type: "content-explorer",
-			source,
-			destination: DESTINATIONS$1.EXPLORER,
-			contentType: resolved.normalizedContentType,
-			data: {
-				action: "save",
-				...payload
-			},
-			metadata: {
-				...meta,
-				overrideFactors: resolved.overrideFactors,
-				context: content?.context,
-				processingSource: content?.processingSource
-			}
-		});
-		return sendMessage({
-			type: "content-share",
-			source,
-			destination: DESTINATIONS$1.WORKCENTER,
-			contentType: resolved.normalizedContentType,
-			data: payload,
-			metadata: {
-				...meta,
-				overrideFactors: resolved.overrideFactors,
-				context: content?.context,
-				processingSource: content?.processingSource
-			}
-		});
-	});
-	return Promise.allSettled(tasks).then(() => {});
-}
-function createMessageWithOverrides(type, source, contentType, data, overrideFactors = [], processingSource) {
-	const resolved = resolveAssociation({
-		contentType,
-		context: processingSource,
-		processingSource,
-		overrideFactors
-	});
-	return {
-		id: crypto.randomUUID(),
-		type,
-		source,
-		destination: resolved.destination === DESTINATIONS$1.VIEWER ? DESTINATIONS$1.VIEWER : resolved.destination === DESTINATIONS$1.EXPLORER ? DESTINATIONS$1.EXPLORER : DESTINATIONS$1.WORKCENTER,
-		contentType,
-		data,
-		metadata: {
-			timestamp: Date.now(),
-			overrideFactors,
-			processingSource,
-			priority: "normal"
-		}
-	};
-}
-//#endregion
-//#region src/shared/routing/core/view-message-routing.ts
-var VIEW_MESSAGE_FALLBACKS = {
-	viewer: [
-		"content-view",
-		"content-load",
-		"markdown-content"
-	],
-	workcenter: [
-		"content-attach",
-		"file-attach",
-		"share-target-input",
-		"content-share"
-	],
-	explorer: [
-		"file-save",
-		"navigate-path",
-		"content-explorer"
-	],
-	editor: ["content-load", "content-edit"],
-	settings: ["settings-update"],
-	history: ["history-update"],
-	home: ["home-update"],
-	print: ["content-view"]
-};
-var inferViewDestination = (viewId) => {
-	return normalizeViewId$1(viewId);
-};
-var selectMessageTypeForView = (view, incomingType) => {
-	const checks = [incomingType, ...VIEW_MESSAGE_FALLBACKS[view.id] || []];
-	for (const type of checks) {
-		if (!type) continue;
-		if (!view.canHandleMessage || view.canHandleMessage(type)) return type;
-	}
-	return null;
-};
-var mapUnifiedMessageToView = (view, message) => {
-	const selectedType = selectMessageTypeForView(view, message.type);
-	if (!selectedType) return null;
-	const id = typeof message.id === "string" && message.id.trim() ? message.id : void 0;
-	return {
-		...id ? { id } : {},
-		type: selectedType,
-		data: message.data,
-		metadata: message.metadata
-	};
-};
-//#endregion
-//#region src/shared/routing/core/view-api.ts
-/**
-* View-scoped POST API + BroadcastChannel bridge.
-* - Production: service worker intercepts POST /{view} and fans out to clients.
-* - Dev (no SW): Vite middleware returns devRelay JSON; this module posts to rs-view-* locally.
-*/
-function subscribeViewChannel(viewId, handler) {
-	if (typeof BroadcastChannel === "undefined") return () => {};
-	const bc = new BroadcastChannel(viewBroadcastChannelName(normalizeViewId$1(viewId)));
-	bc.addEventListener("message", handler);
-	return () => {
-		bc.removeEventListener("message", handler);
-		bc.close();
-	};
-}
-//#endregion
-//#region src/shared/routing/core/view-inbound-timing.ts
-function getViewHTMLElement(view) {
-	try {
-		if (typeof HTMLElement !== "undefined" && view instanceof HTMLElement) return view;
-	} catch {}
-	return null;
-}
-function payloadRecordContainsRenderableFiles(payload) {
-	if (!payload || typeof payload !== "object") return false;
-	const rec = payload;
-	const hasFileLike = (v) => typeof File !== "undefined" && v instanceof File || typeof Blob !== "undefined" && v instanceof Blob;
-	if (hasFileLike(rec.file) || hasFileLike(rec.blob)) return true;
-	const files = rec.files;
-	if (Array.isArray(files) && files.some((x) => hasFileLike(x))) return true;
-	const attachments = rec.attachments;
-	if (Array.isArray(attachments)) for (const a of attachments) {
-		if (!a || typeof a !== "object") continue;
-		const data = a.data;
-		if (hasFileLike(data)) return true;
-	}
-	return false;
-}
-function payloadContainsRenderableFilesDeep(payload) {
-	if (!payload || typeof payload !== "object") return false;
-	const rec = payload;
-	if (payloadRecordContainsRenderableFiles(rec)) return true;
-	const nested = rec.data;
-	if (nested && typeof nested === "object" && payloadRecordContainsRenderableFiles(nested)) return true;
-	const topAtt = rec.attachments;
-	if (Array.isArray(topAtt)) for (const a of topAtt) {
-		if (!a || typeof a !== "object") continue;
-		const data = a.data;
-		if (typeof File !== "undefined" && data instanceof File || typeof Blob !== "undefined" && data instanceof Blob) return true;
-	}
-	return false;
-}
-var FILE_INGRESS_TYPES = /* @__PURE__ */ new Set([
-	"content-share",
-	"share-target-input",
-	"share-target-result",
-	"content-attach",
-	"file-attach"
-]);
-/** Narrow heuristic: ingress that carries blobs/files benefits from delayed delivery. */
-function shouldDeferIngressForRenderableFiles(message, mappedType) {
-	if (!FILE_INGRESS_TYPES.has(String(mappedType || "").toLowerCase())) return false;
-	return payloadContainsRenderableFilesDeep(message);
-}
-/** Lightweight control handlers — skipping timing fences keeps sliders/toggles responsive. */
-var SKIP_UNIFIED_INGRESS_TIMING = /* @__PURE__ */ new Set([
-	"settings-update",
-	"history-update",
-	"home-update"
-]);
-/**
-* Most unified ingress paths should settle the host before calling `handleMessage`.
-* WHY: Applies to viewer, Work Center attachments, explorer saves, staged mail, … not launch-queue-only.
-*/
-function shouldDeferUnifiedIngressUntilStable(_message, mappedType) {
-	return !SKIP_UNIFIED_INGRESS_TIMING.has(String(mappedType || "").toLowerCase());
-}
-/** One frame + microtask — enough when the viewer host and sinks already exist (common for launch-queue bursts). */
-async function quickPaintFence() {
-	await new Promise((resolve) => requestAnimationFrame(() => resolve()));
-	await new Promise((resolve) => queueMicrotask(resolve));
-}
-/**
-* Softer barrier when the DOM still needs layout (first paint / route change): double RAF without an extra idle delay.
-*/
-async function stepPaintFenceModerate() {
-	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-	await new Promise((resolve) => queueMicrotask(resolve));
-}
-var MO_CONNECTED_MS = 220;
-var MO_SINK_MS = 280;
-/** Cap how long we wait on enter transitions so a burst of opens still reaches the latest file quickly. */
-var ANIM_CAP_DEFAULT_MS = 160;
-var ANIM_CAP_HOT_PATH_MS = 90;
-/** Minimal shell (no HTMLElement view host): one frame before mutating viewer state — was too slow with full fence. */
-async function settleIngressPaintForMinimalShell() {
-	await quickPaintFence();
-}
-async function waitUntilViewConnectedToDocument(view, timeoutMs = MO_CONNECTED_MS) {
-	const el = getViewHTMLElement(view);
-	if (!el) return;
-	if (el.isConnected) return;
-	const rootEl = typeof document !== "undefined" && document.documentElement instanceof HTMLElement ? document.documentElement : null;
-	if (!rootEl) return;
-	await new Promise((resolve) => {
-		let done = false;
-		const finish = () => {
-			if (done) return;
-			done = true;
-			try {
-				mo.disconnect();
-			} catch {}
-			clearTimeout(tid);
-			resolve();
-		};
-		const mo = new MutationObserver(() => {
-			if (el.isConnected) finish();
-		});
-		mo.observe(rootEl, {
-			childList: true,
-			subtree: true
-		});
-		const tid = setTimeout(finish, timeoutMs);
-	});
-}
-var RENDER_SINK_SELECTORS = ["[data-render-target]", "[data-raw-target]"];
-function shallowSinkPresent(host) {
-	for (const sel of RENDER_SINK_SELECTORS) try {
-		if (host.querySelector(sel)) return true;
-		if (host.shadowRoot?.querySelector(sel)) return true;
-	} catch {}
-	return false;
-}
-function needsRenderableSinkWait(mappedType, message) {
-	const mt = String(mappedType || "").toLowerCase();
-	if (mt === "content-load" || mt === "markdown-content" || mt === "content-view") return true;
-	return shouldDeferIngressForRenderableFiles(message, mappedType);
-}
-async function waitForRenderableSinkMounted(view, timeoutMs = MO_SINK_MS) {
-	const el = getViewHTMLElement(view);
-	if (!el) return;
-	if (shallowSinkPresent(el)) return;
-	await new Promise((resolve) => {
-		let done = false;
-		const observers = [];
-		const finish = () => {
-			if (done) return;
-			done = true;
-			for (const ob of observers) try {
-				ob.disconnect();
-			} catch {}
-			clearTimeout(tid);
-			resolve();
-		};
-		const onMut = () => {
-			if (shallowSinkPresent(el)) finish();
-		};
-		const watch = (root) => {
-			const mo = new MutationObserver(onMut);
-			mo.observe(root, {
-				childList: true,
-				subtree: true
-			});
-			observers.push(mo);
-		};
-		watch(el);
-		if (el.shadowRoot) watch(el.shadowRoot);
-		const tid = setTimeout(finish, timeoutMs);
-		onMut();
-	});
-}
-async function waitRunningSubtreeAnimations(view, hangMs = ANIM_CAP_DEFAULT_MS) {
-	const el = getViewHTMLElement(view);
-	if (!el?.isConnected) return;
-	try {
-		const getAnims = typeof el.getAnimations === "function" ? el.getAnimations.bind(el) : null;
-		const anims = getAnims ? getAnims({ subtree: true }).filter((a) => a.playState === "running") : [];
-		if (anims.length === 0) return;
-		await Promise.race([Promise.all(anims.map((a) => typeof a?.finished?.then === "function" ? a.finished.catch(() => void 0) : Promise.resolve())), new Promise((resolve) => setTimeout(resolve, hangMs))]);
-	} catch {}
-}
-/** Full settle pipeline before `handleMessage` on HTMLElement-backed hosts. */
-async function settleIngressTargetBeforeDelivery(view, message, mappedType) {
-	const el = getViewHTMLElement(view);
-	const needSink = needsRenderableSinkWait(mappedType, message);
-	if (Boolean(el?.isConnected && (!needSink || shallowSinkPresent(el)))) {
-		await quickPaintFence();
-		await waitRunningSubtreeAnimations(view, ANIM_CAP_HOT_PATH_MS);
-		return;
-	}
-	await stepPaintFenceModerate();
-	await waitUntilViewConnectedToDocument(view, MO_CONNECTED_MS);
-	if (needSink) await waitForRenderableSinkMounted(view, MO_SINK_MS);
-	await waitRunningSubtreeAnimations(view, ANIM_CAP_DEFAULT_MS);
-	await quickPaintFence();
-}
-var ingressDeliveryChains = /* @__PURE__ */ new WeakMap();
-/** Serialize ingress bursts per concrete View identity (HTMLElement instance). */
-function scheduleSerialViewIngressDelivery(view, task) {
-	const next = (ingressDeliveryChains.get(view) ?? Promise.resolve()).then(() => task()).catch((err) => {
-		console.warn("[ViewIngress] delivery failed:", view?.id, err);
-	});
-	ingressDeliveryChains.set(view, next);
-	return next;
-}
-//#endregion
-//#region ../../modules/projects/subsystem/src/other/config/Names.ts
-/**
-* Centralized naming system for CWSP-shell application
-* Consolidates component names, channel names, route names, etc.
-*/
-/**
-* Broadcast channel names used throughout the application
-*/
-var BROADCAST_CHANNELS = {
-	SHARE_TARGET: "rs-share-target",
-	TOAST: "rs-toast",
-	CLIPBOARD: "rs-clipboard",
-	WORK_CENTER: "rs-workcenter",
-	MARKDOWN_VIEWER: "rs-markdown-viewer",
-	SETTINGS: "rs-settings",
-	GENERAL: "rs-app-general",
-	MINIMAL_APP: "minimal-app",
-	MAIN_APP: "main-app",
-	FILE_EXPLORER: "file-explorer",
-	PRINT_VIEWER: "print-viewer",
-	SETTINGS_VIEWER: "settings-viewer",
-	HISTORY_VIEWER: "history-viewer",
-	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
-	FILE_EXPLORER_CHANNEL: "file-explorer",
-	SETTINGS_CHANNEL: "settings",
-	HISTORY_CHANNEL: "history",
-	PRINT_CHANNEL: "print",
-	SERVICE_WORKCENTER: "rs-service-workcenter",
-	SERVICE_SETTINGS: "rs-service-settings",
-	SERVICE_VIEWER: "rs-service-viewer",
-	SERVICE_EXPLORER: "rs-service-explorer",
-	SERVICE_AIRPAD: "rs-service-airpad",
-	SERVICE_NETWORK: "rs-service-network",
-	SERVICE_PRINT: "rs-service-print",
-	SERVICE_HISTORY: "rs-service-history",
-	SERVICE_EDITOR: "rs-service-editor",
-	SERVICE_HOME: "rs-service-home"
-};
-/**
-* Component and module identifiers
-*/
-var COMPONENTS = {
-	WORK_CENTER: "workcenter",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	MARKDOWN_EDITOR: "markdown-editor",
-	RICH_EDITOR: "rich-editor",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	FILE_PICKER: "file-picker",
-	FILE_EXPLORER: "file-explorer",
-	WORKCENTER_CORE: "workcenter-core",
-	BASIC_WORKCENTER: "basic-workcenter",
-	BASIC_VIEWER: "basic-viewer",
-	BASIC_EXPLORER: "basic-explorer",
-	BASIC_SETTINGS: "basic-settings",
-	BASIC_HISTORY: "basic-history",
-	BASIC_PRINT: "basic-print",
-	AIRPAD: "airpad",
-	NETWORK: "network",
-	HOME: "home",
-	EDITOR: "editor",
-	VIEWER: "viewer",
-	EXPLORER: "explorer",
-	PRINT: "print"
-};
-/**
-* Location hash identifiers for app navigation
-*/
-var ROUTE_HASHES = {
-	MARKDOWN_VIEWER: "#markdown-viewer",
-	MARKDOWN_EDITOR: "#markdown-editor",
-	RICH_EDITOR: "#rich-editor",
-	SETTINGS: "#settings",
-	HISTORY: "#history",
-	WORKCENTER: "#workcenter",
-	FILE_PICKER: "#file-picker",
-	FILE_EXPLORER: "#file-explorer",
-	PRINT: "#print",
-	AIRPAD: "#airpad",
-	NETWORK: "#network",
-	WORKCENTER_FILES: "#workcenter-files",
-	WORKCENTER_TEXT: "#workcenter-text",
-	WORKCENTER_IMAGES: "#workcenter-images",
-	WORKCENTER_PROCESSING: "#workcenter-processing",
-	SHARE_TARGET_TEXT: "#share-target-text",
-	SHARE_TARGET_FILES: "#share-target-files",
-	SHARE_TARGET_URL: "#share-target-url",
-	SHARE_TARGET_IMAGE: "#share-target-image"
-};
-/**
-* Destination identifiers for unified messaging
-*/
-var DESTINATIONS = {
-	WORKCENTER: "workcenter",
-	CLIPBOARD: "clipboard",
-	VIEWER: "viewer",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	EXPLORER: "explorer",
-	FILE_EXPLORER: "file-explorer",
-	PRINT: "print",
-	PRINT_VIEWER: "print-viewer",
-	EDITOR: "editor",
-	AIRPAD: "airpad",
-	HOME: "home",
-	BASIC_APP: "basic-app",
-	MAIN_APP: "main-app"
-};
-var CANONICAL_VIEW_IDS = [
-	"viewer",
-	"workcenter",
-	"explorer",
-	"editor",
-	"settings",
-	"history",
-	"home",
-	"airpad",
-	"print"
-];
-/**
-* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
-* `basic-*` destinations. Keep alias resolution centralized here so transports,
-* views, and workers can agree on one canonical target vocabulary.
-*/
-var DESTINATION_ALIASES = {
-	viewer: [
-		DESTINATIONS.VIEWER,
-		DESTINATIONS.MARKDOWN_VIEWER,
-		COMPONENTS.BASIC_VIEWER
-	],
-	workcenter: [
-		DESTINATIONS.WORKCENTER,
-		COMPONENTS.BASIC_WORKCENTER,
-		COMPONENTS.WORKCENTER_CORE
-	],
-	explorer: [
-		DESTINATIONS.EXPLORER,
-		DESTINATIONS.FILE_EXPLORER,
-		COMPONENTS.BASIC_EXPLORER
-	],
-	editor: [
-		DESTINATIONS.EDITOR,
-		COMPONENTS.MARKDOWN_EDITOR,
-		COMPONENTS.RICH_EDITOR
-	],
-	settings: [
-		DESTINATIONS.SETTINGS,
-		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
-		COMPONENTS.BASIC_SETTINGS
-	],
-	history: [
-		DESTINATIONS.HISTORY,
-		BROADCAST_CHANNELS.HISTORY_CHANNEL,
-		COMPONENTS.BASIC_HISTORY
-	],
-	print: [
-		DESTINATIONS.PRINT,
-		DESTINATIONS.PRINT_VIEWER,
-		COMPONENTS.BASIC_PRINT
-	],
-	airpad: [DESTINATIONS.AIRPAD],
-	home: [DESTINATIONS.HOME],
-	clipboard: [DESTINATIONS.CLIPBOARD],
-	"basic-app": [DESTINATIONS.BASIC_APP],
-	"main-app": [DESTINATIONS.MAIN_APP]
-};
-var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
-	out[canonical] = canonical;
-	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
-	return out;
-}, {});
-var normalizeDestination = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "";
-	return DESTINATION_LOOKUP[raw] || raw;
-};
-var getDestinationAliases = (value) => {
-	const canonical = normalizeDestination(value);
-	if (!canonical) return [];
-	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES[canonical] || []])];
-};
-var matchesDestination = (candidate, expected) => Boolean(normalizeDestination(candidate) && normalizeDestination(candidate) === normalizeDestination(expected));
-var normalizeViewId = (value) => {
-	const canonical = normalizeDestination(value);
-	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
-	return "viewer";
-};
-BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
-ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
-//#endregion
-//#region src/shared/routing/channel/ShareTargetGateway.ts
-var SHARE_CACHE_NAME = "share-target-data";
-var SHARE_CACHE_KEY = "/share-target-data";
-var SHARE_FILES_MANIFEST_KEY = "/share-target-files";
-var SHARE_FILE_PREFIX = "/share-target-file/";
-var hasCaches = () => typeof globalThis !== "undefined" && "caches" in globalThis;
-/** Persist the last share-target payload so the app can recover it after navigation or cold start. */
-var storeShareTargetPayloadToCache = async (payload) => {
-	if (!hasCaches()) return false;
-	const files = Array.isArray(payload.files) ? payload.files : [];
-	const meta = payload.meta ?? {};
-	try {
-		const cache = await caches.open(SHARE_CACHE_NAME);
-		const timestamp = Number(meta?.timestamp) || Date.now();
-		await cache.put(SHARE_CACHE_KEY, new Response(JSON.stringify({
-			...meta,
-			title: meta?.title,
-			text: meta?.text,
-			url: meta?.url,
-			sharedUrl: meta?.sharedUrl,
-			source: meta?.source || "share-target",
-			route: meta?.route || meta?.source || "share-target",
-			timestamp,
-			fileCount: files.length,
-			imageCount: files.filter((f) => (f?.type || "").toLowerCase().startsWith("image/")).length
-		}), { headers: { "Content-Type": "application/json" } }));
-		const fileManifest = [];
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-			const key = `${SHARE_FILE_PREFIX}${timestamp}-${i}`;
-			const headers = new Headers();
-			headers.set("Content-Type", file.type || "application/octet-stream");
-			headers.set("X-File-Name", encodeURIComponent(file.name || `file-${i}`));
-			headers.set("X-File-Size", String(file.size || 0));
-			headers.set("X-File-LastModified", String(file.lastModified ?? 0));
-			await cache.put(key, new Response(file, { headers }));
-			fileManifest.push({
-				key,
-				name: file.name || `file-${i}`,
-				type: file.type || "application/octet-stream",
-				size: file.size || 0,
-				lastModified: file.lastModified ?? void 0
-			});
-		}
-		await cache.put(SHARE_FILES_MANIFEST_KEY, new Response(JSON.stringify({
-			files: fileManifest,
-			timestamp
-		}), { headers: { "Content-Type": "application/json" } }));
-		return true;
-	} catch (error) {
-		console.warn("[ShareTargetGateway] Failed to store payload to cache:", error);
-		return false;
-	}
-};
-/**
-* Rehydrate the cached share-target payload and optionally clear the consumed
-* cache entries so they are not replayed on the next app load.
-*/
-var consumeCachedShareTargetPayload = async (opts = {}) => {
-	const clear = opts.clear !== false;
-	if (!hasCaches()) return null;
-	try {
-		const cache = await caches.open(SHARE_CACHE_NAME);
-		const metaResp = await cache.match(SHARE_CACHE_KEY);
-		const manifestResp = await cache.match(SHARE_FILES_MANIFEST_KEY);
-		if (!metaResp && !manifestResp) return null;
-		const meta = metaResp ? await metaResp.json().catch(() => null) : null;
-		const manifest = manifestResp ? await manifestResp.json().catch(() => null) : null;
-		const fileMeta = Array.isArray(manifest?.files) ? manifest.files : [];
-		const files = [];
-		for (const fm of fileMeta) {
-			const fileKey = typeof fm?.key === "string" ? fm.key.trim() : String(fm?.key ?? "").trim();
-			if (!fileKey) continue;
-			const response = await cache.match(fileKey);
-			if (!response) continue;
-			const blob = await response.blob();
-			files.push(new File([blob], fm.name || "shared-file", {
-				type: fm.type || blob.type || "application/octet-stream",
-				lastModified: Number(fm.lastModified) || Date.now()
-			}));
-		}
-		if (clear) {
-			await cache.delete(SHARE_CACHE_KEY).catch(() => {});
-			await cache.delete(SHARE_FILES_MANIFEST_KEY).catch(() => {});
-			for (const fm of fileMeta) if (fm?.key) await cache.delete(fm.key).catch(() => {});
-		}
-		return {
-			meta: meta || {},
-			files,
-			fileMeta
-		};
-	} catch (error) {
-		console.warn("[ShareTargetGateway] Failed to consume cached payload:", error);
-		return null;
-	}
-};
-/**
-* Convert the staged cache payload back into a share/launch transfer object that
-* the foreground pipeline can route without caring whether the ingress was
-* share-target, launch-queue, or another staged producer.
-*/
-var buildShareDataFromCachedPayload = (payload) => {
-	const meta = payload?.meta || {};
-	const files = Array.isArray(payload?.files) ? payload.files : [];
-	const fileMeta = Array.isArray(payload?.fileMeta) ? payload.fileMeta : [];
-	const manifestName = typeof fileMeta[0]?.name === "string" && fileMeta[0].name.trim().length > 0 ? fileMeta[0].name.trim() : void 0;
-	const rawHint = meta.hint;
-	const baseHint = rawHint && typeof rawHint === "object" && !Array.isArray(rawHint) ? { ...rawHint } : {};
-	let hintOut = Object.keys(baseHint).length > 0 ? { ...baseHint } : void 0;
-	if (manifestName && !files.length) {
-		if (!(typeof baseHint.filename === "string" ? String(baseHint.filename).trim() : "")) hintOut = {
-			...hintOut || baseHint,
-			filename: manifestName
-		};
-	}
-	const out = {
-		...meta,
-		title: typeof meta.title === "string" ? meta.title : void 0,
-		text: typeof meta.text === "string" ? meta.text : void 0,
-		url: typeof meta.url === "string" ? meta.url : void 0,
-		sharedUrl: typeof meta.sharedUrl === "string" ? meta.sharedUrl : void 0,
-		source: typeof meta.source === "string" ? meta.source : "share-target",
-		route: typeof meta.route === "string" ? meta.route : typeof meta.source === "string" ? meta.source : "share-target",
-		timestamp: Number(meta.timestamp || Date.now()),
-		files,
-		fileCount: files.length || Number(meta.fileCount || 0),
-		imageCount: Number(meta.imageCount || files.filter((file) => (file?.type || "").toLowerCase().startsWith("image/")).length)
-	};
-	if (hintOut !== void 0) out.hint = hintOut;
-	return out;
-};
-var CORE_ENTITY_EXTRACTION_INSTRUCTION = `
-Extract structured entity data from the provided content.
-
-Entity types to detect:
-- task: jobs, actions, to-do items
-- event: meetings, appointments, occurrences
-- person: contacts, people mentions
-- place: locations, addresses, venues
-- service: products, offerings
-- item: goods, objects, inventory
-- factor: conditions, circumstances
-- bonus: promotions, discounts, codes
-
-For each entity found, extract:
-- type: entity type from list above
-- id: suggested unique identifier
-- name: machine-readable name
-- title: human-readable title
-- kind: specific subtype
-- properties: relevant attributes
-- description: markdown description
-
-CRITICAL OUTPUT FORMAT: Return ONLY valid JSON. No markdown code blocks, no explanations, no prose.
-Your response must start with { and end with }.
-
-Expected output structure:
-{
-    "entities": [...],
-    "keywords": [...],
-    "short_description": "markdown summary",
-    "extraction_confidence": 0.0-1.0
-}
-`;
-var AI_INSTRUCTIONS = {
-	SOLVE_AND_ANSWER: `
-Solve equations, answer questions, and explain mathematical or logical problems from the provided content.
-
-For equations and math problems:
-- Show step-by-step solutions
-- Provide final answers clearly marked
-- Explain reasoning for each step
-
-For general questions:
-- Provide accurate, well-reasoned answers
-- Include relevant context and explanations
-- If multiple interpretations possible, address them
-
-For quizzes and tests:
-- Show the correct answer with explanation
-- Explain why other options are incorrect
-
-Always respond in the specified language and format results clearly.
-`,
-	WRITE_CODE: `
-Write clean, efficient, and well-documented code based on the provided description, requirements, or image.
-
-Code requirements:
-- Use appropriate programming language for the task
-- Follow language-specific best practices and conventions
-- Include proper error handling
-- Add meaningful comments and documentation
-- Make code readable and maintainable
-
-If generating from an image or visual description:
-- Analyze the visual elements and requirements
-- Implement the described functionality
-- Ensure code compiles and runs correctly
-
-Always respond in the specified language and provide complete, working code.
-`,
-	EXTRACT_CSS: `
-Extract and generate clean, modern CSS from the provided content, image, or description.
-
-CSS requirements:
-- Use modern CSS features and best practices
-- Generate semantic, maintainable stylesheets
-- Include responsive design considerations
-- Use appropriate selectors and specificity
-- Follow CSS naming conventions
-- Optimize for performance and maintainability
-
-If extracting from an image:
-- Analyze the visual design and layout
-- Generate corresponding CSS rules
-- Identify colors, fonts, spacing, and layout
-- Create reusable CSS classes and components
-
-Always respond in the specified language and provide complete, working CSS.
-`,
-	RECOGNIZE_CONTENT: `
-Recognize and extract information from images, documents, or other visual content.
-
-Recognition requirements:
-- Identify text content accurately
-- Extract structured information
-- Recognize tables, forms, and structured data
-- Preserve formatting where possible
-- Handle different languages and scripts
-- Provide confidence scores for extracted content
-
-For document analysis:
-- Extract key information and metadata
-- Identify document type and structure
-- Recognize important sections and headings
-
-For image analysis:
-- Describe visual content
-- Extract text from images (OCR)
-- Identify objects, scenes, and visual elements
-
-Always respond in the specified language and format extracted information clearly.
-`,
-	CONVERT_DATA: `
-Convert data between different formats while preserving structure and meaning.
-
-Conversion requirements:
-- Maintain data integrity and relationships
-- Preserve formatting and structure where possible
-- Handle different data types appropriately
-- Provide clear mapping between source and target formats
-- Validate conversion accuracy
-
-Supported conversions:
-- CSV ↔ JSON ↔ XML
-- Markdown ↔ HTML
-- Text ↔ Structured data
-- Image data ↔ Text representations
-
-Ensure accurate, lossless conversion where possible.
-`,
-	EXTRACT_ENTITIES: `
-Extract named entities, keywords, and structured information from content.
-
-Entity extraction requirements:
-- Identify people, organizations, locations
-- Extract dates, numbers, and measurements
-- Find keywords and important terms
-- Recognize relationships and connections
-- Provide confidence scores and context
-
-Output structured data with:
-- Entity types and values
-- Position and context information
-- Confidence scores
-- Relationship mappings
-
-Focus on accuracy and comprehensive coverage.
-`,
-	TRANSLATE_TO_LANGUAGE: `
-Translate content to the specified target language while preserving meaning, tone, and formatting.
-
-Translation requirements:
-- Maintain original meaning and intent
-- Preserve formatting, structure, and markdown syntax
-- Adapt cultural references appropriately
-- Use natural, fluent language in the target language
-- Handle technical terms, proper names, and brand names correctly
-- Maintain appropriate formality and tone
-- Preserve code blocks, mathematical expressions, and technical content
-
-For content already in the target language:
-- Provide natural rephrasing or improvement
-- Enhance clarity and readability
-- Maintain professional quality
-
-Supported languages:
-- English (en)
-- Russian (ru)
-- Other languages as requested
-
-Ensure high-quality, natural translations that feel native to the target language.
-`,
-	GENERAL_PROCESSING: `
-Process and analyze content using appropriate AI capabilities.
-
-General processing requirements:
-- Understand context and intent
-- Provide relevant analysis or transformation
-- Use appropriate tools and methods
-- Maintain content quality and accuracy
-- Adapt to different content types and requirements
-
-Focus on providing useful, accurate results that meet user needs.
-`,
-	CRX_SOLVE_AND_ANSWER: `
-Solve the problem or answer the question presented in the content.
-
-Auto-detect the type of content:
-- Mathematical equation/expression → Solve step-by-step
-- Quiz/test question → Provide correct answer
-- Homework problem → Solve and explain
-- General question → Answer with explanation
-
-Format output as:
-
-**Problem/Question:**
-<recognized content - use $KaTeX$ for math>
-
-**Solution/Answer:**
-<step-by-step solution or direct answer>
-
-**Explanation:**
-<clear explanation of the reasoning>
-
----
-
-For MATH problems:
-- Use single $ for inline math: $x = 5$
-- Use double $$ for display equations: $$\\int_0^1 f(x) dx$$
-- Show all intermediate steps
-- Simplify the final answer
-- For systems: solve all variables
-- For inequalities: use interval notation
-
-For MULTIPLE CHOICE:
-- Identify correct option (A, B, C, D)
-- Explain why it's correct
-- Note why others are wrong
-
-For TRUE/FALSE:
-- State True or False clearly
-- Provide justification
-
-For SHORT ANSWER/ESSAY:
-- Provide concise, complete answer
-- Include key facts and reasoning
-
-For CODING problems:
-- Write the solution code
-- Explain the logic
-
-If multiple problems/questions present, solve each separately.
-If unsolvable or unclear, explain why.
-`,
-	CRX_WRITE_CODE: `
-You are an expert software developer. Analyze the provided content and generate high-quality, working code.
-
-Code Generation Requirements:
-- Choose the best programming language for the task
-- Write clean, efficient, and well-documented code
-- Include proper error handling and input validation
-- Add meaningful comments explaining complex logic
-- Follow language-specific best practices and conventions
-- Ensure code is readable, maintainable, and follows standard patterns
-
-For each code generation task:
-1. **Analyze Requirements**: Understand what the code needs to do
-2. **Choose Language**: Select appropriate programming language
-3. **Design Solution**: Plan the code structure and logic
-4. **Write Code**: Provide complete, working code with comments
-5. **Explain Logic**: Describe how the code works and key decisions
-
-Provide complete, runnable code that solves the described problem.
-`,
-	CRX_EXTRACT_CSS: `
-You are an expert CSS developer. Analyze the provided content and extract/generate the corresponding CSS styles.
-
-CSS Extraction Requirements:
-- Analyze visual elements, layout, and design patterns
-- Generate modern, clean CSS using current standards
-- Use semantic class names and proper CSS architecture
-- Include responsive design considerations
-- Optimize for performance and maintainability
-- Follow CSS best practices and conventions
-
-For CSS extraction:
-1. **Analyze Design**: Identify colors, typography, spacing, layout
-2. **Generate Rules**: Create appropriate CSS rules and selectors
-3. **Organize Code**: Group related styles logically
-4. **Add Comments**: Explain complex or important style decisions
-5. **Ensure Compatibility**: Use widely supported CSS properties
-
-Provide complete, well-organized CSS that recreates the described design.
-`
-};
-AI_INSTRUCTIONS.SOLVE_AND_ANSWER;
-AI_INSTRUCTIONS.WRITE_CODE;
-AI_INSTRUCTIONS.EXTRACT_CSS;
-AI_INSTRUCTIONS.RECOGNIZE_CONTENT;
-AI_INSTRUCTIONS.CONVERT_DATA;
-AI_INSTRUCTIONS.EXTRACT_ENTITIES;
-AI_INSTRUCTIONS.TRANSLATE_TO_LANGUAGE;
-AI_INSTRUCTIONS.GENERAL_PROCESSING;
-AI_INSTRUCTIONS.CRX_SOLVE_AND_ANSWER;
-AI_INSTRUCTIONS.CRX_WRITE_CODE;
-AI_INSTRUCTIONS.CRX_EXTRACT_CSS;
-//#endregion
-//#region src/shared/service/instructions/templates.ts
-var templates_exports = /* @__PURE__ */ __exportAll({ DEFAULT_INSTRUCTION_TEMPLATES: () => DEFAULT_INSTRUCTION_TEMPLATES });
-var DEFAULT_INSTRUCTION_TEMPLATES = [
-	{
-		label: "Markdown & KaTeX",
-		instruction: `Format the output as GitHub-compatible Markdown with KaTeX.
-
-Structure rules:
-- Use headings for structure:
-  - Main sections: start from ### (H3) minimum
-  - Subsections: #### / ##### when needed
-- Avoid long paragraphs: prefer lists and sub-lists.
-
-KaTeX / math rules:
-- Prefer inline formulas: $...$ (use this most of the time).
-- Avoid $$...$$ blocks; only use block math if strictly necessary.
-  - Prefer block math as \\[ ... \\] instead of $$...$$.
-- Inside KaTeX, write a vertical bar as \\| (example: $A \\| B$).
-
-Tables:
-- Use strict GitHub Markdown table syntax.
-- Inside table cells:
-  - Use <br> for line breaks (no real newlines inside cells).
-  - If source data uses ';' as a separator, replace ';' with <br>.
-
-Colon / key-value formatting:
-- For "key: value" style lines, make the part before ':' bold:
-  - **Key**: value
-
-General:
-- Use bullet lists (-) or numbered steps (1., 2., 3.) where appropriate.
-- Keep formatting consistent and readable in dark themes.
-- Preserve meaning and math accuracy.`,
-		enabled: true,
-		order: 0
-	},
-	{
-		label: "Solve & Answer",
-		instruction: `Solve problems or answer questions. Auto-detect the type:
-• Math equations → Solve step-by-step with KaTeX
-• Quiz/test questions → Provide correct answer with explanation
-• Homework problems → Solve and explain reasoning
-
-Format:
-**Problem/Question:** <content, use $KaTeX$ for math>
-**Solution/Answer:** <step-by-step or direct answer>
-**Explanation:** <clear reasoning>
-
-For multiple choice: identify correct option + explain why.
-For math: prefer $inline$; avoid $$block$$ and prefer \\[block\\] only if strictly necessary.
-Show all work and simplify the final answer.`,
-		enabled: true,
-		order: 1
-	},
-	{
-		label: "Solve with Graphics",
-		instruction: `Solve problems and generate visual representations when applicable.
-
-For functions, graphs, diagrams, geometric shapes, or data visualizations:
-Generate inline SVG code as a data URI: \`![Graph](data:image/svg+xml,<encoded_svg>)\`
-
-SVG Generation Rules:
-1. Use encodeURIComponent() encoding for the SVG content
-2. Keep SVG minimal but accurate (viewBox, paths, text labels)
-3. Use appropriate colors: #2563eb (blue) for main, #dc2626 (red) for secondary
-4. Include axis labels, grid lines, and legends where helpful
-5. Size: viewBox="0 0 400 300" for standard graphs
-
-When to generate SVG:
-• Function plots: y = f(x), parametric curves, polar plots
-• Geometric diagrams: triangles, circles, angles, constructions
-• Data charts: bar, line, pie charts
-• Flowcharts and simple diagrams
-• Number lines and coordinate systems
-
-Format:
-**Problem:** <description>
-**Solution:** <step-by-step with $KaTeX$>
-**Visualization:**
-![<title>](data:image/svg+xml,<encodeURIComponent_svg>)
-
-Always provide both the mathematical solution AND the visual when graphics are suitable.`,
-		enabled: true,
-		order: 2
-	},
-	{
-		label: "Write code",
-		instruction: `Generate code based on the recognized request/description.
-
-Format:
-**Request:** <what the code should do>
-**Language:** <programming language>
-**Code:**
-\`\`\`<lang>
-<code>
-\`\`\`
-
-Write clean, functional code with meaningful names and brief comments.`,
-		enabled: true,
-		order: 3
-	},
-	{
-		label: "Extract CSS",
-		instruction: `Generate CSS that matches the visual appearance of the content.
-
-Extract:
-- Colors (oklch, hex, rgb)
-- Typography (font, size, weight)
-- Spacing (padding, margin, gap)
-- Layout (flex, grid)
-- Effects (shadow, radius, gradients)
-
-Use CSS custom properties and modern syntax.
-Include responsive considerations.`,
-		enabled: true,
-		order: 4
-	},
-	{
-		label: "Generate Diagram",
-		instruction: `Generate SVG diagrams, charts, or visual representations from descriptions.
-
-Output as inline data URI: ![<title>](data:image/svg+xml,<encoded_svg>)
-
-Diagram Types:
-• Flowcharts: processes, algorithms, decision trees
-• Charts: bar, line, pie, scatter plots
-• Diagrams: UML, ER, network, architecture
-• Graphs: mathematical functions, data visualization
-• Geometric: shapes, constructions, proofs
-
-SVG Requirements:
-1. Use encodeURIComponent() for the SVG string
-2. viewBox="0 0 600 400" (adjust as needed)
-3. Clean, minimal SVG with proper structure
-4. Colors: #3b82f6 primary, #10b981 secondary, #f59e0b accent
-5. Include labels, arrows, and legends
-6. Use <text> for readable annotations
-
-Example output format:
-**Diagram:** <description>
-![<title>](data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20300%22%3E...%3C%2Fsvg%3E)`,
-		enabled: true,
-		order: 5
-	},
-	{
-		label: "Extract contacts",
-		instruction: "Focus on extracting contact information: phone numbers, emails, addresses, and names. Format phone numbers in E.164 format.",
-		enabled: true,
-		order: 6
-	},
-	{
-		label: "Summarize content",
-		instruction: "Provide a brief summary of the recognized content. Include key points and main takeaways.",
-		enabled: true,
-		order: 7
-	},
-	{
-		label: "Extract URLs and links",
-		instruction: "Focus on extracting all URLs, links, and web addresses. Validate and normalize them.",
-		enabled: true,
-		order: 8
-	},
-	{
-		label: "Code extraction",
-		instruction: "Focus on extracting code snippets. Detect the programming language and format appropriately with syntax highlighting markers.",
-		enabled: true,
-		order: 9
-	},
-	{
-		label: "Table extraction",
-		instruction: "Focus on extracting tabular data. Format as proper Markdown tables with headers.",
-		enabled: true,
-		order: 10
-	}
-];
-Object.fromEntries(Object.entries({
-	"share-target": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "write-clipboard",
-			onAccept: "attach-to-associated",
-			doProcess: "instantly",
-			openApp: true
-		},
-		supportedContentTypes: [
-			"text",
-			"markdown",
-			"image",
-			"url"
-		],
-		defaultOverrideFactors: []
-	},
-	"launch-queue": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-associated",
-			doProcess: "manually",
-			openApp: true
-		},
-		supportedContentTypes: [
-			"file",
-			"blob",
-			"text",
-			"markdown",
-			"image"
-		],
-		defaultOverrideFactors: []
-	},
-	"crx-snip": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "write-clipboard",
-			onAccept: "attach-to-associated",
-			doProcess: "instantly",
-			openApp: false
-		},
-		supportedContentTypes: ["text", "image"],
-		defaultOverrideFactors: ["force-processing"]
-	},
-	"paste": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-associated",
-			doProcess: "manually",
-			openApp: false
-		},
-		supportedContentTypes: [
-			"text",
-			"markdown",
-			"image"
-		],
-		defaultOverrideFactors: [],
-		associationOverrides: {
-			"text": ["user-action"],
-			"markdown": ["user-action"]
-		}
-	},
-	"drop": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-associated",
-			doProcess: "manually",
-			openApp: false
-		},
-		supportedContentTypes: [
-			"file",
-			"blob",
-			"text",
-			"markdown",
-			"image"
-		],
-		defaultOverrideFactors: [],
-		associationOverrides: {
-			"file": ["user-action"],
-			"blob": ["user-action"]
-		}
-	},
-	"button-attach-workcenter": {
-		processingUrl: "/api/processing",
-		contentAction: {
-			onResult: "none",
-			onAccept: "attach-to-workcenter",
-			doProcess: "manually",
-			openApp: false
-		},
-		supportedContentTypes: [
-			"text",
-			"markdown",
-			"image",
-			"file"
-		],
-		defaultOverrideFactors: ["explicit-workcenter"],
-		associationOverrides: {
-			"markdown": ["explicit-workcenter"],
-			"text": ["explicit-workcenter"],
-			"image": ["explicit-workcenter"],
-			"file": ["explicit-workcenter"]
-		}
-	}
-}).map(([key, config]) => [key, {
-	processingUrl: config.processingUrl,
-	contentAction: config.contentAction,
-	...config.supportedContentTypes && { supportedContentTypes: config.supportedContentTypes }
-}]));
-//#endregion
-//#region src/shared/routing/channel/UniformInterop.ts
-/**
-* Shared interop helpers for CWSP-shell transport envelopes.
-*
-* WHY: the main thread, service worker, CRX runtime, and native/worker bridges
-* all need the same destination, protocol, and envelope normalization without
-* each importing the full `fest/uniform` runtime graph.
-*/
-var PROTOCOL_ALIASES = {
-	"chrome-runtime": "chrome",
-	"chrome-tabs": "chrome",
-	"chrome-port": "chrome",
-	"chrome-external": "chrome",
-	"service-worker": "worker",
-	"service-worker:http": "worker",
-	"service": "worker",
-	"sw": "worker",
-	"broadcast-channel": "broadcast",
-	"broadcastchannel": "broadcast",
-	"websocket": "socket",
-	"ws": "socket",
-	"socket-io": "socket",
-	"socketio": "socket"
-};
-var TRANSPORT_ALIASES = {
-	"service": "service-worker",
-	"service-worker:http": "service-worker",
-	"sw": "service-worker",
-	"ws": "websocket",
-	"socket": "websocket",
-	"socketio": "socket-io",
-	"chrome": "chrome-runtime"
-};
-var PURPOSES = /* @__PURE__ */ new Set([
-	"invoke",
-	"mail",
-	"attach",
-	"deliver",
-	"defer"
-]);
-var randomId = () => {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-	return `interop_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-};
-var normalizePurpose = (value) => {
-	const raw = Array.isArray(value) ? value : value ? [value] : ["mail"];
-	const deduped = [];
-	for (const entry of raw) if (PURPOSES.has(entry) && !deduped.includes(entry)) deduped.push(entry);
-	return deduped.length > 0 ? deduped : ["mail"];
-};
-/**
-* Normalize the protocol family advertised in envelopes and bridge packets.
-*/
-var normalizeInteropProtocolName = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "unknown";
-	return PROTOCOL_ALIASES[raw] || raw;
-};
-/**
-* Normalize transport hints to one transport taxonomy for diagnostics and docs.
-*/
-var normalizeInteropTransportName = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return void 0;
-	return TRANSPORT_ALIASES[raw] || raw;
-};
-/**
-* Create one shared envelope shape that can be used by main-thread, SW, and CRX
-* adapters before converting to `fest/uniform` runtime objects.
-*/
-var createInteropEnvelope = (input) => {
-	const id = String(input.id || input.uuid || "").trim() || randomId();
-	const source = String(input.source || input.sender || input.srcChannel || "interop").trim() || "interop";
-	const destination = normalizeDestination$1(input.destination || input.target);
-	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination$1(entry)).filter(Boolean))] : destination ? getDestinationAliases$1(destination) : [];
-	const payload = input.payload ?? input.data;
-	const timestamp = Number(input.timestamp ?? Date.now()) || Date.now();
-	return {
-		id,
-		uuid: id,
-		type: String(input.type || "request"),
-		source,
-		sender: String(input.sender || source),
-		destination: destination || void 0,
-		target: destination || void 0,
-		contentType: input.contentType ? String(input.contentType) : void 0,
-		data: payload,
-		payload,
-		metadata: {
-			timestamp,
-			...input.metadata || {}
-		},
-		purpose: normalizePurpose(input.purpose),
-		protocol: normalizeInteropProtocolName(input.protocol),
-		transport: normalizeInteropTransportName(input.transport),
-		redirect: Boolean(input.redirect),
-		flags: { ...input.flags || {} },
-		op: String(input.op || (String(input.type || "").startsWith("response:") ? "response" : "deliver")),
-		timestamp,
-		srcChannel: String(input.srcChannel || source),
-		dstChannel: input.dstChannel ?? (destination || void 0),
-		destinations,
-		ids: {
-			byId: source,
-			from: source,
-			sender: source,
-			destinations,
-			...input.ids || {}
-		},
-		urls: Array.isArray(input.urls) ? [...input.urls] : [],
-		tokens: Array.isArray(input.tokens) ? [...input.tokens] : [],
-		toRoles: Array.isArray(input.toRoles) ? [...input.toRoles] : [],
-		tabId: input.tabId,
-		frameId: input.frameId,
-		status: typeof input.status === "number" ? input.status : void 0,
-		result: input.result,
-		results: input.results,
-		error: input.error
-	};
-};
-/**
-* Map an envelope-like payload into the app's unified-message shape.
-*/
-var toUnifiedInteropMessage = (input) => {
-	const envelope = createInteropEnvelope(input);
-	return {
-		id: envelope.id,
-		type: envelope.type,
-		source: envelope.source,
-		destination: envelope.destination,
-		contentType: envelope.contentType,
-		data: envelope.data,
-		metadata: {
-			...envelope.metadata,
-			protocol: envelope.protocol,
-			transport: envelope.transport,
-			sender: envelope.sender,
-			srcChannel: envelope.srcChannel,
-			dstChannel: envelope.dstChannel,
-			destinations: envelope.destinations,
-			ids: envelope.ids,
-			flags: envelope.flags,
-			status: envelope.status,
-			error: envelope.error
-		}
-	};
-};
-//#endregion
-//#region src/shared/routing/channel/UnifiedMessaging.ts
-/**
-* Unified Messaging System for CWSP-shell
-* Extends fest/uniform messaging with app-specific configuration
-*/
-var APP_CHANNEL_MAPPINGS = {
-	...createDestinationChannelMappings(),
-	[DESTINATIONS$1.WORKCENTER]: BROADCAST_CHANNELS$1.WORK_CENTER,
-	[DESTINATIONS$1.CLIPBOARD]: BROADCAST_CHANNELS$1.CLIPBOARD
-};
-var appMessagingInstance = null;
-/**
-* Get the app-configured UnifiedMessagingManager
-*/
-function getUnifiedMessaging() {
-	if (!appMessagingInstance) appMessagingInstance = getUnifiedMessaging$2({
-		channelMappings: APP_CHANNEL_MAPPINGS,
-		queueOptions: {
-			dbName: "CWSP-shellMessageQueue",
-			storeName: "messages",
-			maxRetries: 3,
-			defaultExpirationMs: 864e5
-		},
-		pendingStoreOptions: {
-			storageKey: "rs-unified-messaging-pending",
-			maxMessages: 200,
-			defaultTTLMs: 864e5
-		}
-	});
-	return appMessagingInstance;
-}
-var unifiedMessaging = getUnifiedMessaging();
-/**
-* Register a handler using the app-configured manager
-*/
-function registerHandler(destination, handler) {
-	const aliases = getDestinationAliases$1(destination);
-	const names = aliases.length > 0 ? aliases : [normalizeDestination$1(destination) || destination];
-	for (const name of names) unifiedMessaging.registerHandler(name, handler);
-}
-function unregisterHandler(destination, handler) {
-	const aliases = getDestinationAliases$1(destination);
-	const names = aliases.length > 0 ? aliases : [normalizeDestination$1(destination) || destination];
-	for (const name of names) unifiedMessaging.unregisterHandler(name, handler);
-}
-function initializeComponent(componentId) {
-	return unifiedMessaging.initializeComponent(componentId);
-}
-function registerComponent(componentId, destination) {
-	unifiedMessaging.registerComponent(componentId, normalizeDestination$1(destination) || destination);
-}
-//#endregion
-//#region src/shared/routing/core/channel-mixin.ts
-/**
-* Burst opens (recent list, launch queue replay): supersede older queued work so only the latest
-* payload pays settle + paint (serial queue still orders; skipped tasks exit cheaply).
-*/
-var ingressSupersedeGeneration = /* @__PURE__ */ new WeakMap();
-var bumpIngressGeneration = (view) => {
-	const next = (ingressSupersedeGeneration.get(view) ?? 0) + 1;
-	ingressSupersedeGeneration.set(view, next);
-	return next;
-};
-/** Mirrors {@link dispatchViewTransfer} + BroadcastChannel can deliver the same ingress twice; ReplayGuard only covers the manager path. */
-var recentViewIngressByMessageId = /* @__PURE__ */ new Map();
-var INGRESS_DEDUP_MS = 600;
-/** Attached to routed view messages so views can discard stale async work after `await` (file read, fetch). */
-var UNIFIED_INGRESS_STAMP_META = "__ingressStamp";
-/** True when newer ingress has bumped the counter vs this delivery's stamp (`handleMessage` should no-op). */
-function ingressStampWasSuperseded(view, stamp) {
-	if (typeof stamp !== "number" || !Number.isFinite(stamp)) return false;
-	return (ingressSupersedeGeneration.get(view) ?? 0) !== stamp;
-}
-function stampMappedMessageForIngressDelivery(mapped, generation) {
-	const prevMeta = mapped.metadata && typeof mapped.metadata === "object" && !Array.isArray(mapped.metadata) ? mapped.metadata : {};
-	return {
-		...mapped,
-		metadata: {
-			...prevMeta,
-			[UNIFIED_INGRESS_STAMP_META]: generation
-		}
-	};
-}
-var pruneViewIngressDedup = (now) => {
-	for (const [k, t] of recentViewIngressByMessageId) if (now - t > INGRESS_DEDUP_MS) recentViewIngressByMessageId.delete(k);
-};
-var deliverUnifiedMessageToView = async (view, message) => {
-	const mid = typeof message.id === "string" ? message.id.trim() : "";
-	if (mid) {
-		const dest = normalizeViewId(inferViewDestination(String(view.id || "")));
-		const now = Date.now();
-		pruneViewIngressDedup(now);
-		const dedupKey = `${dest}::${mid}`;
-		const prev = recentViewIngressByMessageId.get(dedupKey);
-		if (prev !== void 0 && now - prev < INGRESS_DEDUP_MS) return;
-		recentViewIngressByMessageId.set(dedupKey, now);
-	}
-	const mapped = mapUnifiedMessageToView(view, message);
-	if (!mapped) return;
-	const ingressCheck = validateIngressBeforeViewHandle(message, mapped.type);
-	if (!ingressCheck.ok) {
-		console.warn("[ViewIngress] Skipped malformed envelope:", ingressCheck.reason, mapped.type);
-		return;
-	}
-	const generation = bumpIngressGeneration(view);
-	await scheduleSerialViewIngressDelivery(view, async () => {
-		if (ingressSupersedeGeneration.get(view) !== generation) return;
-		if (shouldDeferUnifiedIngressUntilStable(message, mapped.type)) await settleIngressTargetBeforeDelivery(view, message, mapped.type);
-		if (ingressSupersedeGeneration.get(view) !== generation) return;
-		await view.handleMessage?.(stampMappedMessageForIngressDelivery(mapped, generation));
-	});
-};
-function bindViewReceiveChannel(view, options = {}) {
-	if (!view.handleMessage) return () => {};
-	const destination = options.destination || inferViewDestination(String(view.id || ""));
-	const componentId = options.componentId || `view:${view.id}`;
-	const receiveDestinations = getDestinationAliases(destination);
-	const handler = {
-		canHandle: (message) => matchesDestination(message.destination, destination),
-		handle: async (message) => {
-			await deliverUnifiedMessageToView(view, message);
-		}
-	};
-	const pendingSeen = /* @__PURE__ */ new Set();
-	for (const alias of receiveDestinations) {
-		const aliasComponentId = `${componentId}:${alias}`;
-		registerComponent(aliasComponentId, alias);
-		registerHandler(alias, handler);
-		const pending = initializeComponent(aliasComponentId);
-		if (pending.length > 0) for (const message of pending) {
-			if (pendingSeen.has(message.id)) continue;
-			pendingSeen.add(message.id);
-			handler.handle(message);
-		}
-	}
-	const viewChannelCleanup = subscribeViewChannel(normalizeViewId(destination), (event) => {
-		const payload = event.data;
-		if (!payload || typeof payload !== "object") return;
-		if (payload.type === "view-transfer" && payload.message && typeof payload.message === "object") {
-			deliverUnifiedMessageToView(view, toUnifiedInteropMessage(payload.message));
-			return;
-		}
-		if (payload.type === "view-post") {
-			const viewId = normalizeViewId(payload.viewId);
-			if (viewId !== normalizeViewId(String(view.id || destination))) return;
-			const vm = {
-				id: typeof payload.id === "string" ? String(payload.id) : crypto.randomUUID(),
-				type: "view-post",
-				destination: viewId,
-				source: "view-channel",
-				data: {
-					bodyText: String(payload.bodyText || ""),
-					contentType: String(payload.contentType || ""),
-					viewId
-				},
-				metadata: {
-					source: "view-channel",
-					destination: viewId
-				}
-			};
-			const generation = bumpIngressGeneration(view);
-			scheduleSerialViewIngressDelivery(view, async () => {
-				if (ingressSupersedeGeneration.get(view) !== generation) return;
-				if (shouldDeferUnifiedIngressUntilStable(vm, "view-post")) await settleIngressTargetBeforeDelivery(view, vm, "view-post");
-				if (ingressSupersedeGeneration.get(view) !== generation) return;
-				await view.handleMessage?.(stampMappedMessageForIngressDelivery({
-					type: "view-post",
-					data: {
-						bodyText: String(payload.bodyText || ""),
-						contentType: String(payload.contentType || ""),
-						viewId
-					},
-					metadata: vm.metadata
-				}, generation));
-			});
-		}
-	});
-	return () => {
-		for (const alias of receiveDestinations) unregisterHandler(alias, handler);
-		viewChannelCleanup();
-	};
-}
-//#endregion
-//#region src/shared/routing/core/implicit-view-bridge.ts
-/** Narrow structural check — imperative APIs (`handleMessage`, `addFiles`, …) stay on the element. */
-function isImplicitViewMessagingHost(node) {
-	if (!node || typeof node !== "object") return false;
-	const el = node;
-	return typeof el.handleMessage === "function" && typeof el.id === "string" && el.id.trim().length > 0;
-}
-var STAGED_UNIFIED_SELECTOR = "[data-cw-unified-pending], [data-cw-unified-mail], [data-cw-unified-defer-flush]";
-function parseJsonObject(raw) {
-	if (!raw?.trim()) return null;
-	try {
-		const v = JSON.parse(raw);
-		return v && typeof v === "object" ? v : null;
-	} catch {
-		return null;
-	}
-}
-function buildUnifiedMessageFromStaging(rec) {
-	const destination = normalizeDestination$1(String(rec.destination ?? "")) || String(rec.destination ?? "").trim();
-	if (!destination) return null;
-	return {
-		id: typeof rec.id === "string" ? rec.id : crypto.randomUUID(),
-		type: String(rec.type || "content-share"),
-		source: typeof rec.source === "string" ? rec.source : "dom-staged-unified",
-		destination,
-		contentType: typeof rec.contentType === "string" ? rec.contentType : void 0,
-		data: rec.data ?? rec.payload ?? {},
-		metadata: {
-			timestamp: Date.now(),
-			...typeof rec.metadata === "object" && rec.metadata ? rec.metadata : {}
-		}
-	};
-}
-function readDeferFlushDestination(el) {
-	const raw = el.getAttribute("data-cw-unified-defer-flush");
-	if (!raw?.trim()) return null;
-	const trimmed = raw.trim();
-	if (trimmed.startsWith("{")) {
-		const d = parseJsonObject(trimmed)?.destination;
-		return typeof d === "string" ? d : null;
-	}
-	return trimmed;
-}
-function consumeDeferFlush(el) {
-	const destRaw = readDeferFlushDestination(el);
-	if (!destRaw) return;
-	replayQueuedMessagesForDestination(normalizeDestination$1(destRaw) || normalizeViewId$1(destRaw)).catch(() => void 0);
-	el.removeAttribute("data-cw-unified-defer-flush");
-}
-function consumePending(el) {
-	const rec = parseJsonObject(el.getAttribute("data-cw-unified-pending"));
-	if (!rec) return;
-	const msg = buildUnifiedMessageFromStaging(rec);
-	if (!msg?.destination) return;
-	enqueuePendingMessage(msg.destination, msg);
-	el.removeAttribute("data-cw-unified-pending");
-}
-function consumeMail(el) {
-	const rec = parseJsonObject(el.getAttribute("data-cw-unified-mail"));
-	if (!rec) return;
-	const destination = normalizeDestination$1(String(rec.destination || "")) || String(rec.destination || "").trim();
-	if (!destination) return;
-	sendProtocolMessage({
-		type: String(rec.type || "dispatch"),
-		destination,
-		source: typeof rec.source === "string" ? rec.source : "dom-staged-mail",
-		data: rec.data ?? rec.payload ?? {},
-		contentType: typeof rec.contentType === "string" ? rec.contentType : void 0,
-		metadata: typeof rec.metadata === "object" && rec.metadata ? rec.metadata : {},
-		purpose: Array.isArray(rec.purpose) ? rec.purpose : typeof rec.purpose === "string" ? [rec.purpose] : ["mail", "deliver"],
-		op: typeof rec.op === "string" ? rec.op : "deliver",
-		protocol: typeof rec.protocol === "string" ? rec.protocol : void 0
-	}).catch(() => void 0);
-	el.removeAttribute("data-cw-unified-mail");
-}
-/**
-* Applies staged envelope markers inside `scope` (scope element + subtree via querySelectorAll).
-* Intended for MutationObserver added subtrees and shell-injected payloads.
-*/
-function processStagedUnifiedMarkers(scope) {
-	const matched = /* @__PURE__ */ new Set();
-	if (scope.matches("[data-cw-unified-pending], [data-cw-unified-mail], [data-cw-unified-defer-flush]")) matched.add(scope);
-	for (const n of scope.querySelectorAll(STAGED_UNIFIED_SELECTOR)) matched.add(n);
-	for (const el of matched) {
-		if (!el.isConnected) continue;
-		consumeDeferFlush(el);
-		consumePending(el);
-		consumeMail(el);
-	}
-}
-function flushDeferredTransportForView(view, explicitDestination) {
-	const dest = explicitDestination || inferViewDestination(String(view.id || ""));
-	const aliases = getDestinationAliases$1(dest);
-	const targets = /* @__PURE__ */ new Set();
-	for (const x of [dest, ...aliases]) {
-		const n = normalizeDestination$1(x) || String(x || "").trim();
-		if (n) targets.add(normalizeViewId$1(n));
-	}
-	(async () => {
-		for (const t of targets) try {
-			await replayQueuedMessagesForDestination(t);
-		} catch {}
-	})();
-}
-var cleanupByView = /* @__PURE__ */ new WeakMap();
-/** Last bound element per canonical destination — avoids duplicate UnifiedMessaging handlers. */
-var activeHostByDestination = /* @__PURE__ */ new Map();
-function sealCleanup(view, destinationKey, inner) {
-	let disposed = false;
-	return () => {
-		if (disposed) return;
-		disposed = true;
-		inner();
-		cleanupByView.delete(view);
-		if (activeHostByDestination.get(destinationKey) === view) activeHostByDestination.delete(destinationKey);
-	};
-}
-/**
-* Single receive-channel binding per live view instance; replaces any prior binding for the same destination id.
-* Safe to call from {@link ViewRegistry.load} and from DOM discovery.
-*/
-function attachImplicitViewMessaging(view, options = {}) {
-	if (!view.handleMessage) return () => {};
-	const existing = cleanupByView.get(view);
-	if (existing) return existing;
-	const destination = options.destination || inferViewDestination(String(view.id || ""));
-	const destinationKey = normalizeViewId$1(destination);
-	const displaced = activeHostByDestination.get(destinationKey);
-	if (displaced && displaced !== view) cleanupByView.get(displaced)?.();
-	const inner = bindViewReceiveChannel(view, {
-		...options,
-		destination
-	});
-	flushDeferredTransportForView(view, destination);
-	const cleanup = sealCleanup(view, destinationKey, inner);
-	cleanupByView.set(view, cleanup);
-	activeHostByDestination.set(destinationKey, view);
-	return cleanup;
-}
-function detachImplicitViewMessaging(view) {
-	cleanupByView.get(view)?.();
-}
-function walkSubtreeNodes(entry, visit) {
-	const stack = [entry];
-	while (stack.length) {
-		const cur = stack.pop();
-		if (cur.nodeType === Node.ELEMENT_NODE) {
-			const el = cur;
-			visit(el);
-			const sr = el.shadowRoot;
-			if (sr) for (let i = sr.childNodes.length - 1; i >= 0; i--) stack.push(sr.childNodes[i]);
-			for (let i = el.childNodes.length - 1; i >= 0; i--) stack.push(el.childNodes[i]);
-		}
-	}
-}
-function observeMutationRoot(observer, observed, node) {
-	if (observed.has(node)) return;
-	observed.add(node);
-	observer.observe(node, {
-		childList: true,
-		subtree: true
-	});
-}
-/**
-* Starts observing DOM mutations; binds messaging hosts when connected and tears down when disconnected.
-*/
-function startImplicitViewMessagingBridge(options = {}) {
-	const root = options.root instanceof Document ? options.root.documentElement : options.root ?? document.documentElement;
-	if (!root || typeof MutationObserver === "undefined") return () => {};
-	const observedRoots = /* @__PURE__ */ new WeakSet();
-	let scanConnect = () => {};
-	const scanDisconnect = (node) => {
-		walkSubtreeNodes(node, (el) => {
-			if (!isImplicitViewMessagingHost(el)) return;
-			if (!el.isConnected) detachImplicitViewMessaging(el);
-		});
-	};
-	const observer = new MutationObserver((records) => {
-		for (const rec of records) {
-			rec.addedNodes.forEach(scanConnect);
-			rec.removedNodes.forEach(scanDisconnect);
-		}
-	});
-	scanConnect = (node) => {
-		if (node.nodeType === Node.ELEMENT_NODE) {
-			const host = node;
-			if (host.isConnected) processStagedUnifiedMarkers(host);
-		}
-		walkSubtreeNodes(node, (el) => {
-			if (el.shadowRoot) observeMutationRoot(observer, observedRoots, el.shadowRoot);
-			if (!el.isConnected || !isImplicitViewMessagingHost(el)) return;
-			attachImplicitViewMessaging(el);
-		});
-	};
-	observeMutationRoot(observer, observedRoots, root);
-	scanConnect(root);
-	return () => {
-		observer.disconnect();
-		walkSubtreeNodes(root, (el) => {
-			if (isImplicitViewMessagingHost(el)) detachImplicitViewMessaging(el);
-		});
-	};
-}
-//#endregion
-//#region src/shared/routing/core/views.ts
-var VIEW_ENABLED_VIEWER = "viewer";
-var VIEW_ENABLED_EDITOR = "editor";
-var VIEW_ENABLED_WORKCENTER = "workcenter";
-var VIEW_ENABLED_EXPLORER = "explorer";
-var VIEW_ENABLED_SETTINGS = "settings";
-var VIEW_ENABLED_HISTORY = "history";
-var VIEW_ENABLED_HOME = "home";
-var VIEW_ENABLED_PRINT = "print";
-/** CWSP connection / probe diagnostics — primary Capacitor (CWSAndroid) home view. */
-var VIEW_ENABLED_NETWORK = "network";
-var DEFAULT_VIEW_ID = "viewer";
-var VIEW_FLAGS = {
-	network: VIEW_ENABLED_NETWORK,
-	settings: VIEW_ENABLED_SETTINGS,
-	viewer: VIEW_ENABLED_VIEWER,
-	editor: VIEW_ENABLED_EDITOR,
-	workcenter: VIEW_ENABLED_WORKCENTER,
-	explorer: VIEW_ENABLED_EXPLORER,
-	history: VIEW_ENABLED_HISTORY,
-	home: VIEW_ENABLED_HOME,
-	print: VIEW_ENABLED_PRINT
-};
-/**
-* Optional per-build allowlist: `VITE_ENABLED_VIEWS="network,settings"` restricts
-* which views are enabled (e.g. the Capacitor CWSAndroid shell: Network + Settings
-* only). When unset, all flagged views are enabled. Read from Vite env first,
-* then Node env, guarded for non-bundled (tsx) contexts.
-*/
-var readEnabledViewsAllowlist = () => {
-	let raw = "";
-	try {
-		const search = globalThis?.location?.search;
-		if (search) {
-			const params = new URLSearchParams(search);
-			raw = String(params.get("views") || params.get("enabledViews") || "");
-		}
-	} catch {}
-	if (!raw) try {
-		raw = String(globalThis?.localStorage?.getItem?.("rs-enabled-views") ?? "");
-	} catch {}
-	if (!raw) try {
-		raw = String("minimal,explorer,settings");
-	} catch {}
-	if (!raw) try {
-		raw = String({}.VITE_ENABLED_VIEWS ?? "");
-	} catch {}
-	const list = raw.split(/[\s,;]+/).map((entry) => entry.trim().toLowerCase()).filter(Boolean);
-	if (!list.length) return null;
-	list.push("settings");
-	try {
-		const search = globalThis?.location?.search;
-		if (search && new URLSearchParams(search).get("views")) globalThis?.localStorage?.setItem?.("rs-enabled-views", Array.from(new Set(list)).join(","));
-	} catch {}
-	return new Set(list);
-};
-var ENABLED_VIEWS_ALLOWLIST = readEnabledViewsAllowlist();
-/**
-* Build-time gate: the host bundler (CWSP-shell Vite) replaces `__RS_VIEW_<ID>__`
-* with a boolean from `VITE_ENABLED_VIEWS`. `typeof` is safe for undeclared
-* globals (returns "undefined") so non-bundled/tsx contexts fall back to enabled.
-*/
-var BUILD_VIEW_FLAGS = {
-	viewer: false,
-	editor: false,
-	workcenter: false,
-	explorer: true,
-	settings: true,
-	history: false,
-	home: false,
-	print: false,
-	network: false
-};
-var buildAllows = (viewId) => BUILD_VIEW_FLAGS[String(viewId).toLowerCase()] !== false;
-var runtimeAllows = (viewId) => !ENABLED_VIEWS_ALLOWLIST || ENABLED_VIEWS_ALLOWLIST.has(String(viewId).toLowerCase());
-var isViewAllowed = (viewId) => buildAllows(viewId) && runtimeAllows(viewId);
-var ENABLED_VIEW_IDS = Object.entries(VIEW_FLAGS).filter(([viewId, enabled]) => Boolean(enabled) && isViewAllowed(viewId)).map(([viewId]) => viewId);
-var isEnabledView = (viewId) => {
-	return Boolean(VIEW_FLAGS[viewId]) && isViewAllowed(viewId);
-};
-var pickEnabledView = (preferred = DEFAULT_VIEW_ID, fallback = DEFAULT_VIEW_ID) => {
-	if (isEnabledView(preferred)) return preferred;
-	if (isEnabledView(fallback)) return fallback;
-	if (ENABLED_VIEW_IDS.length > 0) return ENABLED_VIEW_IDS[0];
-	return "viewer";
-};
-//#endregion
-//#region src/shared/routing/core/registry.ts
-/**
-* View factories usually return custom elements; some legacy modules return a plain
-* object implementing `View` (render/lifecycle/id). Accept both for shell compatibility.
-*/
-function createWebComponentViewAdapter(viewInstance) {
-	if (viewInstance instanceof HTMLElement) return viewInstance;
-	const legacy = viewInstance;
-	if (legacy && typeof legacy.render === "function" && typeof legacy.id === "string") return legacy;
-	throw new Error("View factory must return an HTMLElement or a legacy view with render() and id");
-}
-/** Registry for shell modules plus the single live shell instances cached at runtime. */
-var ShellRegistryClass = class {
-	shells = /* @__PURE__ */ new Map();
-	loadedShells = /* @__PURE__ */ new Map();
-	/** COMPAT: `base` resolves to immersive chromeless module (`cw-shell-immersive`). */
-	resolveShellRegistrationKey(id) {
-		return id === "base" ? "immersive" : id;
-	}
-	/**
-	* Register a shell
-	*/
-	register(registration) {
-		this.shells.set(registration.id, registration);
-	}
-	/**
-	* Get a shell registration
-	*/
-	get(id) {
-		return this.shells.get(this.resolveShellRegistrationKey(id));
-	}
-	/**
-	* Get all registered shells
-	*/
-	getAll() {
-		return Array.from(this.shells.values());
-	}
-	/**
-	* Load and instantiate a shell
-	*/
-	async load(id, container) {
-		const resolved = this.resolveShellRegistrationKey(id);
-		const cached = this.loadedShells.get(resolved);
-		if (cached) return cached;
-		const registration = this.shells.get(resolved);
-		if (!registration) throw new Error(`Shell not found: ${resolved}`);
-		const module = await registration.loader();
-		const factory = module.default || module.createShell;
-		if (typeof factory !== "function") throw new Error(`Invalid shell module: ${resolved}`);
-		const shell = factory(container);
-		this.loadedShells.set(resolved, shell);
-		return shell;
-	}
-	/**
-	* Unload a shell
-	*/
-	unload(id) {
-		const resolved = this.resolveShellRegistrationKey(id);
-		const shell = this.loadedShells.get(resolved);
-		if (shell) {
-			shell.unmount();
-			this.loadedShells.delete(resolved);
-		}
-	}
-	/**
-	* Check if a shell is loaded
-	*/
-	isLoaded(id) {
-		return this.loadedShells.has(this.resolveShellRegistrationKey(id));
-	}
-	/**
-	* Get a loaded shell instance
-	*/
-	getLoaded(id) {
-		return this.loadedShells.get(this.resolveShellRegistrationKey(id));
-	}
-};
-var ShellRegistry = new ShellRegistryClass();
-var ViewRegistry = new class ViewRegistryClass {
-	/** COMPAT: Modules often default-export a CE class (`CwViewExplorer`) — must be invoked with `new`. */
-	static isCustomElementClassCtor(fn) {
-		if (typeof fn !== "function") return false;
-		try {
-			const proto = fn.prototype;
-			return proto != null && typeof HTMLElement !== "undefined" && HTMLElement.prototype.isPrototypeOf(proto);
-		} catch {
-			return false;
-		}
-	}
-	resolveViewFactory(module) {
-		const candidates = [
-			module?.default,
-			module?.createView,
-			module?.createAirpadView,
-			module?.createWorkCenterView,
-			module?.createViewerView,
-			module?.createExplorerView,
-			module?.createSettingsView,
-			module?.createNetworkView,
-			module?.createHistoryView,
-			module?.createHomeView
-		];
-		for (const candidate of candidates) {
-			if (typeof candidate !== "function") continue;
-			if (ViewRegistryClass.isCustomElementClassCtor(candidate)) {
-				const Ctor = candidate;
-				return ((options) => new Ctor(options));
-			}
-			return candidate;
-		}
-		const values = Object.values(module || {});
-		for (const value of values) if (typeof value === "function" && value.prototype && typeof value.prototype.render === "function") {
-			const ViewClass = value;
-			return (options) => new ViewClass(options);
-		}
-		return null;
-	}
-	views = /* @__PURE__ */ new Map();
-	loadedViews = /* @__PURE__ */ new Map();
-	viewReceiveCleanup = /* @__PURE__ */ new Map();
-	/**
-	* Register a view
-	*/
-	register(registration) {
-		this.views.set(registration.id, registration);
-	}
-	/**
-	* Get a view registration
-	*/
-	get(id) {
-		return this.views.get(id);
-	}
-	/**
-	* Get all registered views
-	*/
-	getAll() {
-		return Array.from(this.views.values());
-	}
-	/**
-	* Load and instantiate a view
-	*/
-	async load(id, options) {
-		const cached = this.loadedViews.get(id);
-		if (cached) return cached;
-		const registration = this.views.get(id);
-		if (!registration) throw new Error(`View not found: ${id}`);
-		const module = await registration.loader();
-		const factory = this.resolveViewFactory(module);
-		if (!factory) throw new Error(`Invalid view module: ${id}`);
-		const view = createWebComponentViewAdapter(await factory(options));
-		const previousCleanup = this.viewReceiveCleanup.get(id);
-		if (previousCleanup) {
-			previousCleanup();
-			this.viewReceiveCleanup.delete(id);
-		}
-		this.loadedViews.set(id, view);
-		this.viewReceiveCleanup.set(id, attachImplicitViewMessaging(view, {
-			destination: String(id),
-			componentId: `view:${id}`
-		}));
-		return view;
-	}
-	/**
-	* Unload a view (clear cache)
-	*/
-	unload(id) {
-		const view = this.loadedViews.get(id);
-		if (view?.lifecycle?.onUnmount) view.lifecycle.onUnmount();
-		const receiveCleanup = this.viewReceiveCleanup.get(id);
-		if (receiveCleanup) {
-			receiveCleanup();
-			this.viewReceiveCleanup.delete(id);
-		}
-		this.loadedViews.delete(id);
-	}
-	/**
-	* Check if a view is loaded
-	*/
-	isLoaded(id) {
-		return this.loadedViews.has(id);
-	}
-	/**
-	* Get a loaded view instance
-	*/
-	getLoaded(id) {
-		return this.loadedViews.get(id);
-	}
-	/**
-	* Warm the dynamic import for a view module (no instance, no receive-channel bind).
-	* Safe to call from idle prefetch; failures are ignored.
-	*/
-	prefetchModule(id) {
-		const registration = this.views.get(id);
-		if (!registration) return;
-		registration.loader().catch(() => {});
-	}
-}();
-/** Register the built-in shell modules that the boot/routing layer can request. */
-function registerDefaultShells() {
-	ShellRegistry.register({
-		id: "immersive",
-		name: "Immersive",
-		description: "Chromeless immersive shell (standalone pages, extensions, embedded); legacy boot id `base` aliases here.",
-		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url)
-	});
-	ShellRegistry.register({
-		id: "minimal",
-		name: "Minimal",
-		description: "Minimal toolbar-based navigation",
-		loader: () => __vitePreload(() => import("../chunks/preview.js").then((n) => n.t), __vite__mapDeps([6,2,1,3,4,5]), import.meta.url)
-	});
-	ShellRegistry.register({
-		id: "content",
-		name: "Content",
-		description: "CRX content shell with overlay-focused layering",
-		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([7,0,1,2,3,4,5]), import.meta.url)
-	});
-	ShellRegistry.register({
-		id: "immersive",
-		name: "Immersive",
-		description: "Chromeless immersive host (extensions / embedded)",
-		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url)
-	});
-	ShellRegistry.register({
-		id: "window",
-		name: "Window",
-		description: "Window-capable shell (multi-view)",
-		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([8,9,1,2,4,3,5,10,11,12,13,14,15,16,17,18,6]), import.meta.url)
-	});
-	ShellRegistry.register({
-		id: "tabbed",
-		name: "Tabbed",
-		description: "Tabbed window shell",
-		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([19,8,9,1,2,4,3,5,10,11,12,13,14,15,16,17,18,6]), import.meta.url)
-	});
-	ShellRegistry.register({
-		id: "environment",
-		name: "Environment",
-		description: "Desktop/launcher shell: wallpaper, Speed Dial, taskbar, ui-window",
-		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([20,9,1,2,4,3,5,10,11,12,13,14,15,16,17,18]), import.meta.url)
-	});
-}
-/** Register the built-in views that are enabled by current feature flags. */
-function registerDefaultViews() {
-	ViewRegistry.register({
-		id: "viewer",
-		name: "Viewer",
-		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([21,1,2,22,23,24,25]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "workcenter",
-		name: "Work Center",
-		icon: "lightning",
-		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([26,1,2,27,22,24,28,29,30,31,32,33,34,35,36,37,38,39,40,23]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "settings",
-		name: "Settings",
-		icon: "gear",
-		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([41,1,2,42,43,44,45,46,4,25,22,23,24,47,33,32,48]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "network",
-		name: "Network",
-		icon: "wifi-high",
-		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([49,1,2,50]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "history",
-		name: "History",
-		icon: "clock-counter-clockwise",
-		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([51,1,2,25,22,23,24,52]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "explorer",
-		name: "Explorer",
-		icon: "folder",
-		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([53,1,2,5,25,22,23,24,48]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "editor",
-		name: "Editor",
-		icon: "pencil",
-		loader: () => __vitePreload(() => import("../chunks/src3.js"), __vite__mapDeps([54,1,2,25,22,23,24]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "home",
-		name: "Home",
-		icon: "house",
-		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([55,1,2,25,22,23,24,56]), import.meta.url)
-	});
-	ViewRegistry.register({
-		id: "print",
-		name: "Print",
-		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([21,1,2,22,23,24,25]), import.meta.url)
-	});
-}
-var defaultTheme = {
-	id: "auto",
-	name: "Auto",
-	colorScheme: "auto"
-};
-var lightTheme = {
-	id: "light",
-	name: "Light",
-	colorScheme: "light"
-};
-var darkTheme = {
-	id: "dark",
-	name: "Dark",
-	colorScheme: "dark"
-};
-/**
-* Populate both registries during boot before any shell or view is resolved.
-*/
-function initializeRegistries() {
-	registerDefaultShells();
-	registerDefaultViews();
-}
-//#endregion
-//#region src/shared/routing/core/layer-manager.ts
-/**
-* Unified layer hierarchy - ORDER MATTERS!
-*
-* Layers are declared in this order to ensure:
-* 1. Reset/normalize come first (lowest specificity wins)
-* 2. Tokens (CSS custom properties) are available early
-* 3. Runtime provides base component styles
-* 4. Shell styles can override runtime
-* 5. View styles can override shell
-* 6. Overrides (theme, print, a11y) win last
-*/
-var LAYER_HIERARCHY = [
-	{
-		name: "ux-normalize",
-		category: "system",
-		order: 0,
-		description: "Veela normalize layer"
-	},
-	{
-		name: "layer.reset",
-		category: "system",
-		order: 0,
-		description: "CSS reset rules"
-	},
-	{
-		name: "layer.normalize",
-		category: "system",
-		order: 10,
-		description: "Normalize browser defaults"
-	},
-	{
-		name: "tokens",
-		category: "system",
-		order: 20,
-		description: "Legacy tokens layer"
-	},
-	{
-		name: "ux-tokens",
-		category: "system",
-		order: 20,
-		description: "Veela token layer"
-	},
-	{
-		name: "layer.tokens",
-		category: "system",
-		order: 20,
-		description: "CSS custom properties (variables)"
-	},
-	{
-		name: "base",
-		category: "system",
-		order: 30,
-		description: "Legacy base layer"
-	},
-	{
-		name: "ux-base",
-		category: "system",
-		order: 30,
-		description: "Veela base layer"
-	},
-	{
-		name: "layout",
-		category: "system",
-		order: 40,
-		description: "Legacy layout layer"
-	},
-	{
-		name: "ux-layout",
-		category: "system",
-		order: 40,
-		description: "Veela layout layer"
-	},
-	{
-		name: "components",
-		category: "system",
-		order: 50,
-		description: "Legacy components layer"
-	},
-	{
-		name: "ux-components",
-		category: "system",
-		order: 50,
-		description: "Veela components layer"
-	},
-	{
-		name: "utilities",
-		category: "system",
-		order: 60,
-		description: "Legacy utilities layer"
-	},
-	{
-		name: "ux-utilities",
-		category: "system",
-		order: 60,
-		description: "Veela utilities layer"
-	},
-	{
-		name: "ux-theme",
-		category: "system",
-		order: 70,
-		description: "Veela theme layer"
-	},
-	{
-		name: "ux-overrides",
-		category: "system",
-		order: 80,
-		description: "Veela overrides layer"
-	},
-	{
-		name: "layer.properties.shell",
-		category: "system",
-		order: 30,
-		description: "Shell context custom properties"
-	},
-	{
-		name: "layer.properties.views",
-		category: "system",
-		order: 35,
-		description: "View context custom properties"
-	},
-	{
-		name: "layer.runtime.base",
-		category: "runtime",
-		order: 100,
-		description: "Veela runtime base styles"
-	},
-	{
-		name: "layer.runtime.components",
-		category: "runtime",
-		order: 110,
-		description: "Reusable component styles"
-	},
-	{
-		name: "layer.runtime.forms",
-		category: "runtime",
-		order: 115,
-		description: "Form element base styles"
-	},
-	{
-		name: "layer.runtime.utilities",
-		category: "runtime",
-		order: 120,
-		description: "Utility classes"
-	},
-	{
-		name: "layer.runtime.animations",
-		category: "runtime",
-		order: 130,
-		description: "Keyframes and animation definitions"
-	},
-	{
-		name: "layer.boot",
-		category: "runtime",
-		order: 140,
-		description: "Boot/choice screen styles"
-	},
-	{
-		name: "boot.tokens",
-		category: "runtime",
-		order: 142,
-		description: "Boot tokens layer"
-	},
-	{
-		name: "boot.base",
-		category: "runtime",
-		order: 144,
-		description: "Boot base layer"
-	},
-	{
-		name: "boot.components",
-		category: "runtime",
-		order: 146,
-		description: "Boot components layer"
-	},
-	{
-		name: "boot.responsive",
-		category: "runtime",
-		order: 148,
-		description: "Boot responsive adjustments"
-	},
-	{
-		name: "layer.shell.common",
-		category: "shell",
-		order: 200,
-		description: "Shared shell styles"
-	},
-	{
-		name: "shell.tokens",
-		category: "shell",
-		order: 202,
-		description: "Legacy shell tokens"
-	},
-	{
-		name: "shell.base",
-		category: "shell",
-		order: 204,
-		description: "Legacy shell base"
-	},
-	{
-		name: "shell.components",
-		category: "shell",
-		order: 206,
-		description: "Legacy shell components"
-	},
-	{
-		name: "shell.utilities",
-		category: "shell",
-		order: 208,
-		description: "Legacy shell utilities"
-	},
-	{
-		name: "shell.overrides",
-		category: "shell",
-		order: 209,
-		description: "Legacy shell overrides"
-	},
-	{
-		name: "layer.shell.raw",
-		category: "shell",
-		order: 210,
-		description: "Raw shell (minimal)"
-	},
-	{
-		name: "layer.shell.minimal",
-		category: "shell",
-		order: 220,
-		description: "Minimal shell (toolbar navigation)"
-	},
-	{
-		name: "layer.shell.minimal.layout",
-		category: "shell",
-		order: 222,
-		description: "Minimal shell layout rules"
-	},
-	{
-		name: "layer.shell.minimal.components",
-		category: "shell",
-		order: 224,
-		description: "Minimal shell component styles"
-	},
-	{
-		name: "layer.shell.window",
-		category: "shell",
-		order: 226,
-		description: "Window shell (desktop/process frames)"
-	},
-	{
-		name: "layer.shell.faint",
-		category: "shell",
-		order: 230,
-		description: "Faint shell (tabbed sidebar)"
-	},
-	{
-		name: "layer.shell.faint.layout",
-		category: "shell",
-		order: 232,
-		description: "Faint shell layout"
-	},
-	{
-		name: "layer.shell.faint.sidebar",
-		category: "shell",
-		order: 234,
-		description: "Faint shell sidebar"
-	},
-	{
-		name: "layer.shell.faint.toolbar",
-		category: "shell",
-		order: 236,
-		description: "Faint shell toolbar"
-	},
-	{
-		name: "layer.shell.faint.forms",
-		category: "shell",
-		order: 238,
-		description: "Faint shell form components"
-	},
-	{
-		name: "layer.view.common",
-		category: "view",
-		order: 300,
-		description: "Shared view styles"
-	},
-	{
-		name: "layer.view.viewer",
-		category: "view",
-		order: 310,
-		description: "Markdown viewer"
-	},
-	{
-		name: "layer.view.workcenter",
-		category: "view",
-		order: 320,
-		description: "Work center (AI prompts)"
-	},
-	{
-		name: "layer.view.workcenter.keyframes",
-		category: "view",
-		order: 322,
-		description: "Work center animations"
-	},
-	{
-		name: "view.workcenter",
-		category: "view",
-		order: 324,
-		description: "Work center styles (legacy name)"
-	},
-	{
-		name: "view.workcenter.animations",
-		category: "view",
-		order: 326,
-		description: "Work center animations (legacy name)"
-	},
-	{
-		name: "layer.view.settings",
-		category: "view",
-		order: 330,
-		description: "Settings view"
-	},
-	{
-		name: "layer.view.explorer",
-		category: "view",
-		order: 340,
-		description: "File explorer"
-	},
-	{
-		name: "layer.view.history",
-		category: "view",
-		order: 350,
-		description: "History view"
-	},
-	{
-		name: "layer.view.editor",
-		category: "view",
-		order: 360,
-		description: "Editor view"
-	},
-	{
-		name: "layer.view.editor.markdown",
-		category: "view",
-		order: 362,
-		description: "Markdown editor sublayer"
-	},
-	{
-		name: "layer.view.editor.quill",
-		category: "view",
-		order: 364,
-		description: "Quill editor sublayer"
-	},
-	{
-		name: "layer.view.home",
-		category: "view",
-		order: 380,
-		description: "Home/landing view"
-	},
-	{
-		name: "layer.view.print",
-		category: "view",
-		order: 390,
-		description: "Print view"
-	},
-	{
-		name: "view-explorer",
-		category: "view",
-		order: 392,
-		description: "Explorer legacy layered scope"
-	},
-	{
-		name: "view-transitions",
-		category: "override",
-		order: 850,
-		description: "View Transition API named targets and keyframes"
-	},
-	{
-		name: "layer.override.theme",
-		category: "override",
-		order: 900,
-		description: "Theme customizations"
-	},
-	{
-		name: "layer.override.print",
-		category: "override",
-		order: 910,
-		description: "Print media styles"
-	},
-	{
-		name: "layer.override.a11y",
-		category: "override",
-		order: 920,
-		description: "Accessibility enhancements"
-	}
-];
-var _initialized = false;
-/**
-* Initialize CSS layer order
-*
-* MUST be called before any other styles are loaded to ensure
-* the cascade layer order is established correctly.
-*
-* This function is idempotent - calling it multiple times is safe.
-*
-* @example
-* ```ts
-* // In application entry point
-* import { initializeLayers } from './shared/layer-manager';
-*
-* async function main() {
-*     // Initialize layers FIRST
-*     initializeLayers();
-*
-*     // Then load styles
-*     await loadStyleSystem('vl-advanced');
-*     // ...
-* }
-* ```
-*/
-function initializeLayers() {
-	if (_initialized) {
-		console.debug("[LayerManager] Already initialized");
-		return;
-	}
-	if (typeof document === "undefined") {
-		console.warn("[LayerManager] No document available (SSR context?)");
-		return;
-	}
-	const layerNames = [...LAYER_HIERARCHY].sort((a, b) => a.order - b.order).map((l) => l.name);
-	const layerRule = `@layer ${layerNames.join(", ")};`;
-	const style = document.createElement("style");
-	style.id = "css-layer-init";
-	style.setAttribute("data-layer-manager", "true");
-	style.textContent = layerRule;
-	const head = document.head;
-	head.insertBefore(style, head.firstChild);
-	_initialized = true;
-	console.log(`[LayerManager] Initialized ${layerNames.length} layers`);
-}
 //#endregion
 //#region ../../modules/projects/cwsp-shared/src/multi-value-list.ts
 /**
@@ -5006,7 +5113,7 @@ function appSettingsShellToNativeExtras(appSettings) {
 	return out;
 }
 //#endregion
-//#region src/shared/routing/native/cws-bridge.ts
+//#region ../CWSP-document/src/shared/routing/native/cws-bridge.ts
 var cws_bridge_exports = /* @__PURE__ */ __exportAll({
 	CwsBridge: () => CwsBridge$1,
 	fetchCwsShellInfo: () => fetchCwsShellInfo$1,
@@ -5323,7 +5430,7 @@ async function patchNativeUnifiedSettingsDetailed$1(appSettings) {
 	}
 }
 //#endregion
-//#region src/shared/other/config/SettingsTypes.ts
+//#region ../CWSP-document/src/shared/other/config/SettingsTypes.ts
 var BUILTIN_AI_MODELS = ["gpt-5.6-luna"];
 var defaultSpeechLanguage$1 = () => {
 	const fallback = "en-US";
@@ -6952,7 +7059,7 @@ var readControlSessionToken$1 = () => {
 var readCrxControlSessionTokenAsync$1 = async () => {
 	if (!isChromeExtensionPage$1()) return "";
 	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([57,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
+		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([55,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
 	} catch {
 		return "";
 	}
@@ -7021,7 +7128,7 @@ var webnativeControl$1 = async (path, init) => {
 			const g = globalThis;
 			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
 			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([57,1,2]), import.meta.url).catch(() => void 0);
+			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([55,1,2]), import.meta.url).catch(() => void 0);
 			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
 				status: res.status,
 				path
@@ -7346,9 +7453,9 @@ var isControlSpaRelayUrl$1 = (url) => {
 	try {
 		const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 		const host = new URL(withScheme).hostname.toLowerCase();
-		return host === "cwsp.u2re.space" || host === "www.cwsp.u2re.space" || host === "md.u2re.space" || host === "www.md.u2re.space";
+		return host === "cwsp.u2re.space" || host === "www.cwsp.u2re.space" || host === "transfer.u2re.space" || host === "www.transfer.u2re.space" || host === "md.u2re.space" || host === "www.md.u2re.space";
 	} catch {
-		return /cwsp\.u2re\.space|md\.u2re\.space/i.test(raw);
+		return /cwsp\.u2re\.space|transfer\.u2re\.space|md\.u2re\.space/i.test(raw);
 	}
 };
 /**
@@ -8406,7 +8513,7 @@ var DEFAULT_SETTINGS = {
 	}
 };
 //#endregion
-//#region src/shared/other/config/Settings.ts
+//#region ../CWSP-document/src/shared/other/config/Settings.ts
 var Settings_exports = /* @__PURE__ */ __exportAll({
 	DB_NAME: () => DB_NAME,
 	SETTINGS_KEY: () => SETTINGS_KEY,
@@ -8659,7 +8766,7 @@ var readControlSessionToken = () => {
 var readCrxControlSessionTokenAsync = async () => {
 	if (!isChromeExtensionPage()) return "";
 	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([57,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
+		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([55,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
 	} catch {
 		return "";
 	}
@@ -8728,7 +8835,7 @@ var webnativeControl = async (path, init) => {
 			const g = globalThis;
 			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
 			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([57,1,2]), import.meta.url).catch(() => void 0);
+			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([55,1,2]), import.meta.url).catch(() => void 0);
 			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
 				status: res.status,
 				path
@@ -9066,9 +9173,9 @@ var isControlSpaRelayUrl = (url) => {
 	try {
 		const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 		const host = new URL(withScheme).hostname.toLowerCase();
-		return host === "cwsp.u2re.space" || host === "www.cwsp.u2re.space" || host === "md.u2re.space" || host === "www.md.u2re.space";
+		return host === "cwsp.u2re.space" || host === "www.cwsp.u2re.space" || host === "transfer.u2re.space" || host === "www.transfer.u2re.space" || host === "md.u2re.space" || host === "www.md.u2re.space";
 	} catch {
-		return /cwsp\.u2re\.space|md\.u2re\.space/i.test(raw);
+		return /cwsp\.u2re\.space|transfer\.u2re\.space|md\.u2re\.space/i.test(raw);
 	}
 };
 /**
@@ -10028,7 +10135,7 @@ if (!isContentScriptContext()) {
 	})();
 }
 //#endregion
-//#region src/shared/other/utils/Runtime.ts
+//#region ../CWSP-document/src/shared/other/utils/Runtime.ts
 /**
 * Runtime-safe helpers for mixed environments
 * (window, service worker, worker, extension contexts).
@@ -10055,7 +10162,7 @@ var scheduleFrame = (cb) => {
 	globalThis.setTimeout(cb, 0);
 };
 //#endregion
-//#region src/shared/store/StateStorage.ts
+//#region ../CWSP-document/src/shared/store/StateStorage.ts
 /**
 * Persistent UI/workspace state for the home speed-dial surface.
 *
@@ -10952,7 +11059,7 @@ async function loadStyleSystem(styleId) {
 	console.log(`[Styles] Style system ${config.name} loaded`);
 }
 //#endregion
-//#region src/shared/routing/native/capacitor-clipboard.ts
+//#region ../CWSP-document/src/shared/routing/native/capacitor-clipboard.ts
 /**
 * Capacitor clipboard read/write with supernotes fork first, then official plugin.
 * @see https://capacitorjs.com/docs/apis/clipboard
@@ -10996,7 +11103,7 @@ async function writeCapacitorClipboardText(text) {
 	}
 }
 //#endregion
-//#region src/shared/routing/native/clipboard-device.ts
+//#region ../CWSP-document/src/shared/routing/native/clipboard-device.ts
 /**
 * Device clipboard I/O: desktop control host → CwsBridge Java → Capacitor → Web API.
 *
@@ -11711,7 +11818,7 @@ var isHighFrequencyInputPacket = (packet) => {
 	return op === "move" || op === "mouse:move" || op === "scroll" || op === "mouse:scroll";
 };
 //#endregion
-//#region src/shared/routing/core/app-layers.ts
+//#region ../CWSP-document/src/shared/routing/core/app-layers.ts
 var ensureAppLayers = (mountElement, options = {}) => {
 	const enableOrientLayer = options.enableOrientLayer !== false;
 	const enableCanvasLayer = options.enableCanvasLayer !== false;
@@ -11849,7 +11956,7 @@ var ensureAppLayers = (mountElement, options = {}) => {
 	};
 };
 //#endregion
-//#region src/shared/routing/core/view-transitions.ts
+//#region ../CWSP-document/src/shared/routing/core/view-transitions.ts
 /**
 * Canonical view order used to determine navigation direction.
 * Earlier index = "back", later index = "forward".
@@ -11942,7 +12049,7 @@ async function withViewTransition(update, options = {}) {
 	transition.finished.catch(() => {});
 }
 //#endregion
-//#region src/shared/other/utils/appearance-base-color.ts
+//#region ../CWSP-document/src/shared/other/utils/appearance-base-color.ts
 /**
 * Resolve `--color-primary` / `--base-color` for veela.
 * INVARIANT: one seed writer. WallpaperTheme may cache extracts but must not
@@ -12213,7 +12320,7 @@ var resolveAppearanceBaseColor = async (appearance) => {
 	};
 };
 //#endregion
-//#region src/shared/other/utils/Theme.ts
+//#region ../CWSP-document/src/shared/other/utils/Theme.ts
 var Theme_exports = /* @__PURE__ */ __exportAll({
 	applyTheme: () => applyTheme,
 	bindQuickSettingsThemePersistence: () => bindQuickSettingsThemePersistence,
@@ -12463,7 +12570,7 @@ var initTheme = async () => {
 	}
 };
 //#endregion
-//#region src/shared/routing/core/view-prefetch.ts
+//#region ../CWSP-document/src/shared/routing/core/view-prefetch.ts
 /**
 * Low-priority prefetch of view chunks after the focused view is interactive.
 */
@@ -12476,7 +12583,7 @@ function scheduleIdle(fn, timeoutMs) {
 * without competing with the active view's work.
 */
 function scheduleViewModulePrefetch(currentViewId) {
-	const others = ENABLED_VIEW_IDS.filter((id) => id !== currentViewId);
+	const others = ENABLED_VIEW_IDS$1.filter((id) => id !== currentViewId);
 	if (others.length === 0) return;
 	let index = 0;
 	const step = () => {
@@ -12488,14 +12595,249 @@ function scheduleViewModulePrefetch(currentViewId) {
 	scheduleIdle(step, 2500);
 }
 //#endregion
+//#region ../CWSP-document/src/shared/other/config/settings/settings-shell-profile.ts
+var skuFromCtx = (ctx) => {
+	if (ctx.sku) return ctx.sku;
+	return inferCwspSkuFromLocation$1() || readCwspSku$1();
+};
+/**
+* Resolve tabs from `data-cwsp-sku` first.
+* WHY: Capacitor without desktop views used to mean transfer (cwsp-mobile). After the
+* launcher drops explorer/viewer it would incorrectly inherit the CWSP tab.
+*/
+var resolveSettingsShellProfile = (ctx) => {
+	if (ctx.isExtension || ctx.surface === "crx") return "extension";
+	const sku = skuFromCtx(ctx);
+	if (sku === "launcher") return "environment";
+	if (sku === "transfer") return "cwsp-mobile";
+	if (sku === "explorer") return "explorer";
+	if (sku === "document") return "document";
+	if (sku === "process") return "process";
+	if (sku === "crx") return "extension";
+	if (ctx.surface === "markdown") return "markdown";
+	if (ctx.surface === "environment") return "environment";
+	if (ctx.surface === "capacitor" || ctx.surface === "native") {
+		if (!(isEnabledView("workcenter") || isEnabledView("viewer") || isEnabledView("explorer"))) return "cwsp-mobile";
+	}
+	return "full";
+};
+var CWSP_MOBILE_HIDDEN_BUILTIN_TABS = [
+	"appearance",
+	"markdown",
+	"ai",
+	"mcp",
+	"server",
+	"instructions",
+	"extension"
+];
+/**
+* CRX options page: drop built-in Extension (NTP) — folded into contributed `crx`
+* tab — and Server (CWSP tab owns hub/endpoint).
+*/
+var EXTENSION_HIDDEN_BUILTIN_TABS = ["extension", "server"];
+/** VDS md.u2re.space PWA: no Server / Extension (Control/CRX own those). */
+var MARKDOWN_HIDDEN_BUILTIN_TABS = ["server", "extension"];
+/** Capacitor document: print / read / edit only — AI lives on process. */
+var DOCUMENT_HIDDEN_BUILTIN_TABS = [
+	"server",
+	"extension",
+	"cwsp",
+	"ai",
+	"mcp",
+	"instructions"
+];
+/** Process APK / WorkCenter: AI + MCP + instructions; no print Markdown / Control. */
+var PROCESS_HIDDEN_BUILTIN_TABS = [
+	"server",
+	"extension",
+	"cwsp",
+	"markdown"
+];
+/**
+* Launcher / environment desktop: Appearance + Workspace + self-APK Updates.
+* INVARIANT: print/read/edit live on document; AI/WorkCenter on process; Control on transfer.
+* NOTE: `cwsp` is contributed (not built-in); same DOM selectors still remove the tab/panel.
+*/
+var ENVIRONMENT_HIDDEN_BUILTIN_TABS = [
+	"server",
+	"extension",
+	"cwsp",
+	"markdown",
+	"ai",
+	"mcp",
+	"instructions"
+];
+/** Explorer APK: no document/control tabs. Storage UI stays in the explorer view. */
+var EXPLORER_HIDDEN_BUILTIN_TABS = [
+	"markdown",
+	"ai",
+	"mcp",
+	"server",
+	"instructions",
+	"extension",
+	"cwsp"
+];
+/** Remove host-variant built-in tabs that the profile replaces or folds elsewhere. */
+var pruneBuiltInSettingsTabs = (root, profile) => {
+	const hidden = profile === "cwsp-mobile" ? CWSP_MOBILE_HIDDEN_BUILTIN_TABS : profile === "extension" ? EXTENSION_HIDDEN_BUILTIN_TABS : profile === "markdown" ? MARKDOWN_HIDDEN_BUILTIN_TABS : profile === "document" ? DOCUMENT_HIDDEN_BUILTIN_TABS : profile === "process" ? PROCESS_HIDDEN_BUILTIN_TABS : profile === "environment" ? ENVIRONMENT_HIDDEN_BUILTIN_TABS : profile === "explorer" ? EXPLORER_HIDDEN_BUILTIN_TABS : null;
+	if (!hidden) return;
+	for (const tab of hidden) {
+		root.querySelector(`[data-tab-panel="${tab}"]`)?.remove();
+		root.querySelector(`[data-action="switch-settings-tab"][data-tab="${tab}"]`)?.remove();
+	}
+};
+var defaultSettingsTabForProfile = (profile) => {
+	if (profile === "cwsp-mobile") return "cwsp";
+	if (profile === "extension") return "crx";
+	if (profile === "markdown" || profile === "document") return "markdown";
+	if (profile === "process") return "ai";
+	if (profile === "environment") return "appearance";
+	if (profile === "explorer") return "appearance";
+	return "ai";
+};
+var hasBuiltInSettingsPanel = (root, panelId) => Boolean(root.querySelector(`[data-tab-panel="${panelId}"]`));
+var HUB_SETTINGS_ALIASES$1 = {
+	"": "hub",
+	hub: "hub",
+	shell: "hub",
+	explorer: "explorer",
+	cwsp: "transfer",
+	transfer: "transfer",
+	viewer: "document",
+	markdown: "document",
+	document: "document",
+	md: "document",
+	process: "process",
+	workcenter: "process"
+};
+/** Canonical path segment for a hub settings section (`hub` → no extra segment). */
+var hubSettingsSectionPath$1 = (section) => {
+	if (section === "hub") return "";
+	if (section === "document") return "markdown";
+	return section;
+};
+var canonicalHubSettingsSection$1 = (raw) => {
+	return HUB_SETTINGS_ALIASES$1[String(raw || "").trim().toLowerCase()] || "hub";
+};
+var isCentralHubHost = () => {
+	try {
+		const sku = inferCwspSkuFromLocation$1();
+		if (sku && sku !== "launcher" && sku !== "crx") return false;
+		const host = String(globalThis.location?.hostname || "").toLowerCase();
+		if (host === "u2re.space" || host === "www.u2re.space") return true;
+		if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
+		if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
+		return String(document.documentElement?.dataset?.cwspSurface || "").toLowerCase() === "vds-main";
+	} catch {
+		return false;
+	}
+};
+/**
+* Hub `/settings` and `/settings/{area}` only. `/explorer/settings` stays the explorer module.
+* WHY: sibling path mounts set a history base; those are not the central settings tree.
+*/
+var resolveEffectiveHubSettingsSection = () => {
+	if (!isCentralHubHost()) return null;
+	try {
+		const base = String(document.documentElement?.dataset?.cwspRouterBase || "").replace(/\/+$/, "");
+		if (base && base !== "/") return null;
+		const segs = (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean);
+		if (segs[0]?.toLowerCase() !== "settings") return null;
+		return canonicalHubSettingsSection$1(segs[1] || "");
+	} catch {
+		return null;
+	}
+};
+var skuForHubSettingsSection = (section) => {
+	if (section === "explorer") return "explorer";
+	if (section === "transfer") return "transfer";
+	if (section === "document") return "document";
+	if (section === "process") return "process";
+	return "launcher";
+};
+var SIBLING_HUB_SETTINGS_SECTIONS$1 = [
+	"explorer",
+	"document",
+	"process",
+	"transfer"
+];
+var ALL_HUB_SETTINGS_SECTIONS$1 = ["hub", ...SIBLING_HUB_SETTINGS_SECTIONS$1];
+/**
+* Hub shows every area. Launcher Android shows Shell plus installed sibling APKs only.
+* Empty → hide the area nav (no extra tabs).
+*/
+var visibleHubSettingsSections = (mode, installedSiblings) => {
+	if (mode === "hub") return ALL_HUB_SETTINGS_SECTIONS$1.slice();
+	if (mode === "launcher") {
+		if (!installedSiblings) return [];
+		const sibs = SIBLING_HUB_SETTINGS_SECTIONS$1.filter((s) => installedSiblings.includes(s));
+		return sibs.length ? ["hub", ...sibs] : [];
+	}
+	return [];
+};
+var rememberSettingsAreaSection = (section) => {
+	try {
+		document.documentElement.dataset.cwspSettingsSection = section;
+	} catch {}
+};
+var readSettingsAreaSection = () => {
+	try {
+		const raw = String(document.documentElement?.dataset?.cwspSettingsSection || "").trim();
+		return raw ? canonicalHubSettingsSection$1(raw) : "";
+	} catch {
+		return "";
+	}
+};
+//#endregion
 //#region ../../modules/projects/subsystem/src/boot/history-base.ts
 var KNOWN_PATH_MOUNTS = [
 	"cwsp",
+	"transfer",
 	"markdown",
+	"document",
+	"viewer",
 	"explorer",
 	"workcenter",
+	"process",
 	"kvm"
 ];
+/** Dedicated PWA hosts — app lives at `/`. Hub/LAN keep `/markdown` `/viewer` path mounts. */
+var DEDICATED_SKU_HOSTS = [
+	"md.u2re.space",
+	"www.md.u2re.space",
+	"explorer.u2re.space",
+	"www.explorer.u2re.space",
+	"process.u2re.space",
+	"workcenter.u2re.space",
+	"cwsp.u2re.space",
+	"www.cwsp.u2re.space",
+	"transfer.u2re.space"
+];
+function isDedicatedSkuHost(hostname) {
+	try {
+		const host = String(hostname ?? globalThis.location?.hostname ?? "").toLowerCase();
+		return DEDICATED_SKU_HOSTS.includes(host);
+	} catch {
+		return false;
+	}
+}
+function isKnownPathMountSegment(segment) {
+	return KNOWN_PATH_MOUNTS.includes(String(segment || "").toLowerCase());
+}
+/**
+* On a named SKU host, `/viewer` `/markdown` `/explorer` … are Fastify aliases of `/`, not view routes.
+* WHY: minimal path-routing wrote `/viewer?shell=minimal` → 302 `/viewer/` → 302 `/` → bootloop.
+*/
+function pathForSkuHostView(viewPath) {
+	let path = String(viewPath || "/").trim() || "/";
+	if (!path.startsWith("/")) path = `/${path}`;
+	if (!isDedicatedSkuHost()) return path;
+	const seg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	if (!seg || !isKnownPathMountSegment(seg)) return path;
+	const sku = inferCwspSkuFromLocation$1();
+	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS$1[sku]?.includes(seg) ? "/" : path;
+	return "/";
+}
 /**
 * Router base path without trailing slash ("" at domain root, "/cwsp" on IP path mount).
 * WHY: absolute `/network` history entries drop the Fastify debugPath prefix and 404 on reload.
@@ -12509,6 +12851,7 @@ function getHistoryBasePath() {
 			const origin = globalThis.location?.origin || "http://localhost";
 			return new URL(baseHref, origin).pathname.replace(/\/+$/, "") || "";
 		}
+		if (isDedicatedSkuHost()) return "";
 		const pathname = String(globalThis.location?.pathname || "/");
 		const re = new RegExp(`^/(${KNOWN_PATH_MOUNTS.join("|")})(?:/|$)`, "i");
 		const m = pathname.match(re);
@@ -12523,6 +12866,9 @@ function withHistoryBase(pathname) {
 	if (!path.startsWith("/")) path = `/${path}`;
 	if (!base) return path;
 	if (path === base || path.startsWith(`${base}/`)) return path;
+	const pathSeg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	const baseSeg = base.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	if (baseSeg && pathSeg && isKnownPathMountSegment(baseSeg) && isKnownPathMountSegment(pathSeg) && pathSeg !== baseSeg) return path;
 	if (path === "/") return `${base}/`;
 	return `${base}${path}`;
 }
@@ -14675,6 +15021,245 @@ async function applyHubSocketFromSettings(settings) {
 	initWebSocket(null);
 	connectWS();
 }
+//#endregion
+//#region ../../modules/projects/subsystem/src/other/config/ecosystem-skus.ts
+var ecosystem_skus_exports = /* @__PURE__ */ __exportAll({
+	CWSP_SKU_HANDOFF_KEY: () => CWSP_SKU_HANDOFF_KEY,
+	ECOSYSTEM_SKUS: () => ECOSYSTEM_SKUS,
+	HUB_PUBLIC_HOSTS: () => HUB_PUBLIC_HOSTS,
+	SKU_HUB_PATHS: () => SKU_HUB_PATHS,
+	SKU_LOCAL_NAV_VIEWS: () => SKU_LOCAL_NAV_VIEWS,
+	SKU_PUBLIC_HOSTS: () => SKU_PUBLIC_HOSTS,
+	VIEW_TO_SIBLING_SKU: () => VIEW_TO_SIBLING_SKU,
+	androidPackageForSku: () => androidPackageForSku,
+	applyCwspSku: () => applyCwspSku,
+	ensureCwspSkuFromLocation: () => ensureCwspSkuFromLocation,
+	inferCwspSkuFromLocation: () => inferCwspSkuFromLocation,
+	isCwspNativeHost: () => isCwspNativeHost,
+	isCwspSku: () => isCwspSku,
+	isHubPublicHost: () => isHubPublicHost,
+	isViewLocalToSurface: () => isViewLocalToSurface,
+	readCwspSku: () => readCwspSku,
+	siblingSkuForView: () => siblingSkuForView,
+	skuForHubPathSegment: () => skuForHubPathSegment
+});
+var ECOSYSTEM_SKUS = {
+	launcher: {
+		sku: "launcher",
+		androidPackage: "space.u2re.cw",
+		scheme: "space.u2re.cw",
+		phosphorIcon: "cross",
+		defaultView: "home",
+		shell: "environment",
+		apkManifest: "latest-launcher.json",
+		apkName: "cwsp-launcher.apk"
+	},
+	transfer: {
+		sku: "transfer",
+		androidPackage: "space.u2re.cwsp",
+		scheme: "space.u2re.cwsp",
+		phosphorIcon: "drone",
+		defaultView: "network",
+		shell: "minimal",
+		apkManifest: "latest.json",
+		apkName: "cwsp.apk"
+	},
+	explorer: {
+		sku: "explorer",
+		androidPackage: "space.u2re.explorer",
+		scheme: "space.u2re.explorer",
+		phosphorIcon: "folder",
+		defaultView: "explorer",
+		shell: "minimal",
+		apkManifest: "latest-explorer.json",
+		apkName: "cwsp-explorer.apk"
+	},
+	document: {
+		sku: "document",
+		androidPackage: "space.u2re.document",
+		scheme: "space.u2re.document",
+		phosphorIcon: "books",
+		defaultView: "viewer",
+		shell: "minimal",
+		apkManifest: "latest-document.json",
+		apkName: "cwsp-document.apk"
+	},
+	process: {
+		sku: "process",
+		androidPackage: "space.u2re.process",
+		scheme: "space.u2re.process",
+		phosphorIcon: "magic-wand",
+		defaultView: "workcenter",
+		shell: "minimal",
+		apkManifest: "latest-process.json",
+		apkName: "cwsp-process.apk"
+	},
+	crx: {
+		sku: "crx",
+		androidPackage: null,
+		scheme: "chrome-extension",
+		phosphorIcon: "cross",
+		defaultView: "home",
+		shell: "environment",
+		apkManifest: "",
+		apkName: ""
+	}
+};
+var SKU_SET = new Set(Object.keys(ECOSYSTEM_SKUS));
+/** Views that leave the launcher APK and open a sibling SKU. */
+var VIEW_TO_SIBLING_SKU = {
+	explorer: "explorer",
+	viewer: "document",
+	editor: "document",
+	markdown: "document",
+	print: "document",
+	workcenter: "process",
+	network: "transfer"
+};
+var isCwspSku = (value) => typeof value === "string" && SKU_SET.has(value);
+var readCwspSku = () => {
+	try {
+		const raw = String(document.documentElement?.dataset?.cwspSku || "").trim().toLowerCase();
+		return isCwspSku(raw) ? raw : "";
+	} catch {
+		return "";
+	}
+};
+/** Stamp `data-cwsp-sku` so Settings / openView / APK update resolve the same host. */
+var applyCwspSku = (sku) => {
+	try {
+		document.documentElement.dataset.cwspSku = sku;
+		const rec = ECOSYSTEM_SKUS[sku];
+		if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
+	} catch {}
+};
+var siblingSkuForView = (view) => {
+	return VIEW_TO_SIBLING_SKU[String(view || "").trim().toLowerCase()] || null;
+};
+var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
+var SKU_PUBLIC_HOSTS = {
+	document: ["md.u2re.space", "www.md.u2re.space"],
+	explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
+	process: ["process.u2re.space", "workcenter.u2re.space"],
+	transfer: [
+		"cwsp.u2re.space",
+		"www.cwsp.u2re.space",
+		"transfer.u2re.space"
+	]
+};
+/** Hub/LAN Fastify prefixes — never nest (`/viewer/explorer`). */
+var SKU_HUB_PATHS = {
+	document: [
+		"markdown",
+		"document",
+		"viewer"
+	],
+	explorer: [
+		"explorer",
+		"files",
+		"fm"
+	],
+	process: ["workcenter", "process"],
+	transfer: ["cwsp", "transfer"]
+};
+/** Specialized chrome. Empty list = hub/CRX keeps every view. */
+var SKU_LOCAL_NAV_VIEWS = {
+	launcher: [],
+	crx: [],
+	document: [
+		"viewer",
+		"editor",
+		"print",
+		"settings",
+		"history"
+	],
+	explorer: [
+		"explorer",
+		"settings",
+		"history"
+	],
+	process: [
+		"workcenter",
+		"settings",
+		"history"
+	],
+	transfer: [
+		"network",
+		"settings",
+		"history"
+	]
+};
+var currentHostname = () => {
+	try {
+		return String(globalThis.location?.hostname || "").toLowerCase();
+	} catch {
+		return "";
+	}
+};
+var firstPathSegment = () => {
+	try {
+		return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
+	} catch {
+		return "";
+	}
+};
+var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+var isHubPublicHost = (hostname) => {
+	const host = String(hostname || currentHostname()).toLowerCase();
+	return HUB_PUBLIC_HOSTS.includes(host);
+};
+var skuForHubPathSegment = (segment) => {
+	const seg = String(segment || "").trim().toLowerCase();
+	if (!seg) return "";
+	for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
+	return "";
+};
+/** Host + hub/LAN path mount → SKU. `u2re.space/` stays launcher (full chrome). */
+var inferCwspSkuFromLocation = () => {
+	const stamped = readCwspSku();
+	if (stamped) return stamped;
+	const host = currentHostname();
+	for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
+	const fromPath = skuForHubPathSegment(firstPathSegment());
+	if (fromPath) return fromPath;
+	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
+	return "";
+};
+var ensureCwspSkuFromLocation = () => {
+	const sku = inferCwspSkuFromLocation();
+	if (sku) applyCwspSku(sku);
+	return sku;
+};
+var normalizeNavViewId = (view) => {
+	const key = String(view || "").trim().toLowerCase();
+	if (key === "markdown" || key === "document" || key === "md") return "viewer";
+	if (key === "process") return "workcenter";
+	if (key === "files" || key === "fm") return "explorer";
+	if (key === "transfer") return "network";
+	return key;
+};
+/** False on a specialized host/mount for views that belong to another SKU. */
+var isViewLocalToSurface = (view, sku = inferCwspSkuFromLocation()) => {
+	const id = normalizeNavViewId(view);
+	if (!id) return false;
+	if (!sku || sku === "launcher" || sku === "crx") return true;
+	const local = SKU_LOCAL_NAV_VIEWS[sku];
+	if (!local.length) return true;
+	return local.includes(id);
+};
+var isCwspNativeHost = () => {
+	try {
+		const g = globalThis;
+		const platform = g.Capacitor?.getPlatform?.();
+		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
+	} catch {
+		return false;
+	}
+};
+try {
+	ensureCwspSkuFromLocation();
+} catch {}
+var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
 [
 	"cw-shell-base",
 	"cw-shell-window",
@@ -14687,7 +15272,7 @@ async function applyHubSocketFromSettings(settings) {
 	"cw-shell-faint"
 ].join(",");
 //#endregion
-//#region src/frontend/shells/boot/registry.ts
+//#region ../CWSP-document/src/frontend/shells/boot/registry.ts
 var ViewBase = class ViewBase extends UIElement {
 	__options;
 	__initialized = false;
@@ -14909,7 +15494,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([58,1,2,44,45,46,4,43,42,31]), import.meta.url);
+				}, __vite__mapDeps([56,1,2,4,32]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);
@@ -15129,7 +15714,97 @@ var STYLE_CONFIGS = {
 		} catch {}
 	}
 }).getInstance();
-[...ENABLED_VIEW_IDS], pickEnabledView("home", DEFAULT_VIEW_ID);
+var VIEW_FLAGS = {
+	network: "network",
+	settings: "settings",
+	viewer: "viewer",
+	editor: "editor",
+	workcenter: "workcenter",
+	explorer: "explorer",
+	history: "history",
+	home: "home",
+	print: "print"
+};
+/**
+* Optional per-build allowlist: `VITE_ENABLED_VIEWS="network,settings"` restricts
+* which views are enabled (e.g. the Capacitor CWSAndroid shell: Network + Settings
+* only). When unset, all flagged views are enabled. Read from Vite env first,
+* then Node env, guarded for non-bundled (tsx) contexts.
+*/
+var readEnabledViewsAllowlist = () => {
+	let raw = "";
+	try {
+		const search = globalThis?.location?.search;
+		if (search) {
+			const params = new URLSearchParams(search);
+			raw = String(params.get("views") || params.get("enabledViews") || "");
+		}
+	} catch {}
+	if (!raw) try {
+		raw = String(globalThis?.localStorage?.getItem?.("rs-enabled-views") ?? "");
+	} catch {}
+	if (!raw) try {
+		raw = String("minimal,explorer,settings,history");
+	} catch {}
+	if (!raw) try {
+		raw = String({}.VITE_ENABLED_VIEWS ?? "");
+	} catch {}
+	const list = raw.split(/[\s,;]+/).map((entry) => entry.trim().toLowerCase()).filter(Boolean);
+	if (!list.length) return null;
+	list.push("settings");
+	try {
+		const search = globalThis?.location?.search;
+		if (search && new URLSearchParams(search).get("views")) globalThis?.localStorage?.setItem?.("rs-enabled-views", Array.from(new Set(list)).join(","));
+	} catch {}
+	return new Set(list);
+};
+var ENABLED_VIEWS_ALLOWLIST = readEnabledViewsAllowlist();
+/**
+* Build-time gate: the host bundler (CWSP-shell Vite) replaces `__RS_VIEW_<ID>__`
+* with a boolean from `VITE_ENABLED_VIEWS`. `typeof` is safe for undeclared
+* globals (returns "undefined") so non-bundled/tsx contexts fall back to enabled.
+*/
+var BUILD_VIEW_FLAGS = {
+	viewer: false,
+	editor: false,
+	workcenter: false,
+	explorer: true,
+	settings: true,
+	history: true,
+	home: false,
+	print: false,
+	network: false
+};
+var buildAllows = (viewId) => BUILD_VIEW_FLAGS[String(viewId).toLowerCase()] !== false;
+var runtimeAllows = (viewId) => !ENABLED_VIEWS_ALLOWLIST || ENABLED_VIEWS_ALLOWLIST.has(String(viewId).toLowerCase());
+var isViewAllowed = (viewId) => buildAllows(viewId) && runtimeAllows(viewId);
+Object.entries(VIEW_FLAGS).filter(([viewId, enabled]) => Boolean(enabled) && isViewAllowed(viewId) && isViewLocalToSurface(viewId)).map(([viewId]) => viewId);
+//#endregion
+//#region ../../modules/projects/subsystem/src/other/config/settings/settings-shell-profile.ts
+var HUB_SETTINGS_ALIASES = {
+	"": "hub",
+	hub: "hub",
+	shell: "hub",
+	explorer: "explorer",
+	cwsp: "transfer",
+	transfer: "transfer",
+	viewer: "document",
+	markdown: "document",
+	document: "document",
+	md: "document",
+	process: "process",
+	workcenter: "process"
+};
+/** Canonical path segment for a hub settings section (`hub` → no extra segment). */
+var hubSettingsSectionPath = (section) => {
+	if (section === "hub") return "";
+	if (section === "document") return "markdown";
+	return section;
+};
+var canonicalHubSettingsSection = (raw) => {
+	return HUB_SETTINGS_ALIASES[String(raw || "").trim().toLowerCase()] || "hub";
+};
+[...ENABLED_VIEW_IDS$1], pickEnabledView("home", DEFAULT_VIEW_ID);
 /**
 * Build URL from route.
 * WHY: prefer `/${view}?…` so environment/native deep links stay readable
@@ -15138,9 +15813,17 @@ var STYLE_CONFIGS = {
 function buildUrl(route) {
 	ensureHistoryBaseDataset();
 	const view = String(route.view || "").trim().replace(/^\/+/, "").toLowerCase();
-	let url = view && view !== "home" ? withHistoryBase(`/${view}`) : withHistoryBase("/");
-	if (route.params && Object.keys(route.params).length > 0) {
-		const search = new URLSearchParams(route.params).toString();
+	if (shouldHandoffViewToSibling(view)) return publicHrefForView(view) || `/${view}`;
+	const params = { ...route.params || {} };
+	let path;
+	if (view === "settings") {
+		const section = hubSettingsSectionPath(canonicalHubSettingsSection(String(params.section || "").trim()));
+		delete params.section;
+		path = section ? withHistoryBase(`/settings/${section}`) : withHistoryBase("/settings");
+	} else path = view && view !== "home" ? withHistoryBase(pathForSkuHostView(`/${view}`)) : withHistoryBase("/");
+	let url = path;
+	if (Object.keys(params).length > 0) {
+		const search = new URLSearchParams(params).toString();
 		url += (url.includes("?") ? "&" : "?") + search;
 	}
 	return url;
@@ -15150,6 +15833,10 @@ function buildUrl(route) {
 */
 function navigate(route, options = {}) {
 	const url = buildUrl(route);
+	if (shouldHandoffViewToSibling(route.view) || /^https?:\/\//i.test(url)) {
+		globalThis.location.assign(url);
+		return;
+	}
 	if (options.replace) history.replaceState(options.state ?? route, "", url);
 	else history.pushState(options.state ?? route, "", url);
 	globalThis?.dispatchEvent?.(new CustomEvent("route-change", { detail: route }));
@@ -15164,4 +15851,4 @@ function navigateToView(view, params) {
 	});
 }
 //#endregion
-export { getAccessToken as $, CWSP_FLEET_LAN_GATEWAY_HOST as $t, writeClipboardImageToDevice as A, enqueuePendingMessage as An, initCwsNativeBridge$1 as At, canParseURL as B, BROADCAST_CHANNELS$1 as Bn, isGatewayHttpsOrigin as Bt, packetWireDedupeGuard as C, CORE_ENTITY_EXTRACTION_INSTRUCTION as Cn, setAirpadCredentialInvalidator as Ct, clipboard_device_exports as D, settleIngressPaintForMinimalShell as Dn, resolveEcosystemToken as Dt, annotatePacketWireTime64 as E, storeShareTargetPayloadToCache as En, normalizeEcosystemToken as Et, createEmptySpeedDialItem as F, sendMessage as Fn, FLEET_GATEWAY_WIRE_NODE_ID as Ft, loadSettings as G, Capacitor as Gn, normalizeWireNodeIdForWire as Gt, ensureCapacitorCwspSettingsSeeded as H, getBroadcastChannelForDestination as Hn, isHomeFleetLanHost as Ht, ensureSpeedDialMeta as I, sendProtocolMessage as In, airpad_cwsp_client_parity_exports as It, DEFAULT_SETTINGS as J, shouldConnectViaFleetGateway as Jt, noteSettingsControlSync as K, SystemBarType as Kn, sanitizeFleetRouteTarget as Kt, persistSpeedDialItems as L, unifiedMessaging$1 as Ln, isAssociableFleetWireNodeId as Lt, loadStyleSystem as M, initializeComponent$1 as Mn, invokeCwsPlatformIPC$1 as Mt, applyTheme$1 as N, processInitialContent as Nn, isCapacitorCwsNativeShell$1 as Nt, isCapacitorNativeShell as O, UnifiedMessaging_exports as On, CwsBridge$1 as Ot, addSpeedDialItem as P, registerComponent$1 as Pn, DEFAULT_DESK_WIRE_NODE_ID as Pt, applyAirpadRuntimeFromAppSettings as Q, CWSP_DEFAULT_HTTP_PORTS as Qt, persistSpeedDialMeta as R, serviceChannels as Rn, isFleetDeskWireNodeId as Rt, inferWireDedupeCategory as S, templates_exports as Sn, isShellRemoteClipboardBridgeEnabled as St, shouldAnnotateCoordinatorPayload as T, consumeCachedShareTargetPayload as Tn, DEFAULT_SETTINGS$1 as Tt, ensureCrxCwspSettingsSeeded as U, normalizeDestination$1 as Un, isOffHomeFleetNetwork as Ut, Settings_exports as V, ROUTE_HASHES$1 as Vn, isGuestPrivateLanIpv4 as Vt, getLastSettingsSaveReport as W, viewBroadcastChannelName as Wn, isOnHomeFleetLanPageHost as Wt, loadSettings$1 as X, shouldPreferWanGatewayForAirpad as Xt, ensureCapacitorCwspSettingsSeeded$1 as Y, shouldFleetDeskGatewayProbeFallbacks as Yt, shouldDeferCrxHubSocketBootstrap$1 as Z, CWSP_DEFAULT_HTTPS_PORTS as Zt, normalizeHexColor as _, pickEnabledView as _n, isClipboardSenderAllowedForInbound as _t, initWebSocket as a, resolveCwspUrlFields as an, getAirPadPeerInstanceId as at, ensureAppLayers as b, unifiedMessaging as bn, isPreferNativeWebsocketEnabled as bt, websocket_exports as c, splitMultiValueList as cn, getAssociatedClientToken as ct, applyTheme as d, ViewRegistry as dn, getClipboardPushIntervalMs as dt, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as en, getAirPadClientId as et, resyncThemeAfterAdoptedViewSheet as f, darkTheme as fn, getRemoteHost as ft, isAppearanceColorSource as g, isEnabledView as gn, isClipboardHubBootstrapEnabled as gt, defaultColorSource as h, lightTheme as hn, isApplyRemoteClipboardToDeviceEnabled as ht, disconnectWS as i, probeEndpointOriginReport as in, getAirPadHandshakeConnectionType as it, writeClipboardTextToDevice as j, hasPendingMessages as jn, invokeCwsNative as jt, readClipboardTextFromDevice as k, createMessageWithOverrides as kn, cws_bridge_exports as kt, scheduleViewModulePrefetch as l, initializeLayers as ln, getClientAccessToken as lt, FALLBACK_BASE_COLOR as m, initializeRegistries as mn, getRemoteRouteTarget as mt, hub_socket_boot_exports as n, collectEndpointProbeCandidates as nn, getAirPadEndpointUrl as nt, isWSConnected as o, resolveFleetWanGatewayHost as on, getAirPadTransportMode as ot, syncBrowserChromeTheme as p, defaultTheme as pn, getRemoteProtocol as pt, saveSettings as q, SystemBars as qn, sanitizeFleetSelfWireNodeId as qt, connectWS as r, parseConnectHostInput as rn, getAirPadHandshakeArchetype as rt, onWSConnectionChange as s, splitConnectHostList as sn, getAirPadTransportSecret as st, navigateToView as t, buildEndpointOriginCandidates as tn, getAirPadDirectTargetUrl as tt, Theme_exports as u, ShellRegistry as un, getClipboardBroadcastWireTargets as ut, getTransitionDirection as v, startImplicitViewMessagingBridge as vn, isMaintainHubSocketConnectionEnabled as vt, annotateCoordinatorPayload as w, buildShareDataFromCachedPayload as wn, BUILTIN_AI_MODELS as wt, annotatePacketWireHash as x, DEFAULT_INSTRUCTION_TEMPLATES as xn, isPushLocalClipboardToLanEnabled as xt, withViewTransition as y, ingressStampWasSuperseded as yn, isNeutralinoNodeClipboardHubOwned as yt, speedDialItems as z, API_ENDPOINTS as zn, isFleetGatewayWireNodeId as zt };
+export { canParseURL as $, serviceChannels as $n, isGatewayHttpsOrigin as $t, normalizeHexColor as A, lightTheme as An, isClipboardSenderAllowedForInbound as At, clipboard_device_exports as B, consumeCachedShareTargetPayload as Bn, resolveEcosystemToken as Bt, Theme_exports as C, dist_exports as Cn, getClipboardBroadcastWireTargets as Ct, FALLBACK_BASE_COLOR as D, darkTheme as Dn, getRemoteRouteTarget as Dt, syncBrowserChromeTheme as E, ViewRegistry as En, getRemoteProtocol as Et, inferWireDedupeCategory as F, unifiedMessaging as Fn, isShellRemoteClipboardBridgeEnabled as Ft, loadStyleSystem as G, enqueuePendingMessage as Gn, invokeCwsPlatformIPC$1 as Gt, readClipboardTextFromDevice as H, settleIngressPaintForMinimalShell as Hn, cws_bridge_exports as Ht, packetWireDedupeGuard as I, DEFAULT_INSTRUCTION_TEMPLATES as In, setAirpadCredentialInvalidator as It, createEmptySpeedDialItem as J, processInitialContent as Jn, FLEET_GATEWAY_WIRE_NODE_ID as Jt, applyTheme$1 as K, hasPendingMessages as Kn, isCapacitorCwsNativeShell$1 as Kt, annotateCoordinatorPayload as L, templates_exports as Ln, BUILTIN_AI_MODELS as Lt, withViewTransition as M, pickEnabledView as Mn, isNeutralinoNodeClipboardHubOwned as Mt, ensureAppLayers as N, startImplicitViewMessagingBridge as Nn, isPreferNativeWebsocketEnabled as Nt, defaultColorSource as O, defaultTheme as On, isApplyRemoteClipboardToDeviceEnabled as Ot, annotatePacketWireHash as P, ingressStampWasSuperseded as Pn, isPushLocalClipboardToLanEnabled as Pt, speedDialItems as Q, unifiedMessaging$1 as Qn, isFleetGatewayWireNodeId as Qt, shouldAnnotateCoordinatorPayload as R, CORE_ENTITY_EXTRACTION_INSTRUCTION as Rn, DEFAULT_SETTINGS$1 as Rt, scheduleViewModulePrefetch as S, Capacitor as Sn, getClientAccessToken as St, resyncThemeAfterAdoptedViewSheet as T, ShellRegistry as Tn, getRemoteHost as Tt, writeClipboardImageToDevice as U, UnifiedMessaging_exports as Un, initCwsNativeBridge$1 as Ut, isCapacitorNativeShell as V, storeShareTargetPayloadToCache as Vn, CwsBridge$1 as Vt, writeClipboardTextToDevice as W, createMessageWithOverrides as Wn, invokeCwsNative as Wt, persistSpeedDialItems as X, sendMessage as Xn, isAssociableFleetWireNodeId as Xt, ensureSpeedDialMeta as Y, registerComponent$1 as Yn, airpad_cwsp_client_parity_exports as Yt, persistSpeedDialMeta as Z, sendProtocolMessage as Zn, isFleetDeskWireNodeId as Zt, rememberSettingsAreaSection as _, probeEndpointOriginReport as _n, getAirPadHandshakeConnectionType as _t, disconnectWS as a, sanitizeFleetRouteTarget as an, viewBroadcastChannelName as ar, noteSettingsControlSync as at, skuForHubSettingsSection as b, splitConnectHostList as bn, getAirPadTransportSecret as bt, onWSConnectionChange as c, shouldFleetDeskGatewayProbeFallbacks as cn, ensureCapacitorCwspSettingsSeeded$1 as ct, canonicalHubSettingsSection$1 as d, CWSP_DEFAULT_HTTP_PORTS as dn, applyAirpadRuntimeFromAppSettings as dt, isGuestPrivateLanIpv4 as en, API_ENDPOINTS as er, Settings_exports as et, defaultSettingsTabForProfile as f, CWSP_FLEET_LAN_GATEWAY_HOST as fn, getAccessToken as ft, readSettingsAreaSection as g, parseConnectHostInput as gn, getAirPadHandshakeArchetype as gt, pruneBuiltInSettingsTabs as h, collectEndpointProbeCandidates as hn, getAirPadEndpointUrl as ht, connectWS as i, normalizeWireNodeIdForWire as in, normalizeDestination$1 as ir, loadSettings as it, getTransitionDirection as j, isEnabledView as jn, isMaintainHubSocketConnectionEnabled as jt, isAppearanceColorSource as k, initializeRegistries as kn, isClipboardHubBootstrapEnabled as kt, websocket_exports as l, shouldPreferWanGatewayForAirpad as ln, loadSettings$1 as lt, hubSettingsSectionPath$1 as m, buildEndpointOriginCandidates as mn, getAirPadDirectTargetUrl as mt, ecosystem_skus_exports as n, isOffHomeFleetNetwork as nn, ROUTE_HASHES$1 as nr, ensureCrxCwspSettingsSeeded as nt, initWebSocket as o, sanitizeFleetSelfWireNodeId as on, resolveProcessApiUrl$1 as or, saveSettings as ot, hasBuiltInSettingsPanel as p, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as pn, getAirPadClientId as pt, addSpeedDialItem as q, initializeComponent$1 as qn, DEFAULT_DESK_WIRE_NODE_ID as qt, hub_socket_boot_exports as r, isOnHomeFleetLanPageHost as rn, getBroadcastChannelForDestination as rr, getLastSettingsSaveReport as rt, isWSConnected as s, shouldConnectViaFleetGateway as sn, DEFAULT_SETTINGS as st, navigateToView as t, isHomeFleetLanHost as tn, BROADCAST_CHANNELS$1 as tr, ensureCapacitorCwspSettingsSeeded as tt, SIBLING_HUB_SETTINGS_SECTIONS$1 as u, CWSP_DEFAULT_HTTPS_PORTS as un, shouldDeferCrxHubSocketBootstrap$1 as ut, resolveEffectiveHubSettingsSection as v, resolveCwspUrlFields as vn, getAirPadPeerInstanceId as vt, applyTheme as w, initializeLayers as wn, getClipboardPushIntervalMs as wt, visibleHubSettingsSections as x, splitMultiValueList as xn, getAssociatedClientToken as xt, resolveSettingsShellProfile as y, resolveFleetWanGatewayHost as yn, getAirPadTransportMode as yt, annotatePacketWireTime64 as z, buildShareDataFromCachedPayload as zn, normalizeEcosystemToken as zt };

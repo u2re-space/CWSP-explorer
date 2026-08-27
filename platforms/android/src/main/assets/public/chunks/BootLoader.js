@@ -1,11 +1,11 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./frontend-debug-capture.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./sw-handling.js","../assets/index-DrCWYGbn.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./frontend-debug-capture.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./sw-handling.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { $ as getAccessToken, A as writeClipboardImageToDevice, At as initCwsNativeBridge, Bt as isGatewayHttpsOrigin, C as packetWireDedupeGuard, Ct as setAirpadCredentialInvalidator, E as annotatePacketWireTime64, Gt as normalizeWireNodeIdForWire, Ht as isHomeFleetLanHost, J as DEFAULT_SETTINGS, Jt as shouldConnectViaFleetGateway, Kt as sanitizeFleetRouteTarget, Lt as isAssociableFleetWireNodeId, M as loadStyleSystem, N as applyTheme, Nt as isCapacitorCwsNativeShell, O as isCapacitorNativeShell, Pt as DEFAULT_DESK_WIRE_NODE_ID, Q as applyAirpadRuntimeFromAppSettings, Qt as CWSP_DEFAULT_HTTP_PORTS, Rn as serviceChannels, Rt as isFleetDeskWireNodeId, S as inferWireDedupeCategory, St as isShellRemoteClipboardBridgeEnabled, T as shouldAnnotateCoordinatorPayload, Ut as isOffHomeFleetNetwork, Vt as isGuestPrivateLanIpv4, Wt as isOnHomeFleetLanPageHost, X as loadSettings, Xt as shouldPreferWanGatewayForAirpad, Y as ensureCapacitorCwspSettingsSeeded, Yt as shouldFleetDeskGatewayProbeFallbacks, Z as shouldDeferCrxHubSocketBootstrap, Zt as CWSP_DEFAULT_HTTPS_PORTS, _n as pickEnabledView, _t as isClipboardSenderAllowedForInbound, at as getAirPadPeerInstanceId, b as ensureAppLayers, bt as isPreferNativeWebsocketEnabled, ct as getAssociatedClientToken, dt as getClipboardPushIntervalMs, et as getAirPadClientId, fn as darkTheme, ft as getRemoteHost, gn as isEnabledView, gt as isClipboardHubBootstrapEnabled, hn as lightTheme, ht as isApplyRemoteClipboardToDeviceEnabled, it as getAirPadHandshakeConnectionType, j as writeClipboardTextToDevice, jt as invokeCwsNative, k as readClipboardTextFromDevice, ln as initializeLayers, lt as getClientAccessToken, mn as initializeRegistries, mt as getRemoteRouteTarget, nt as getAirPadEndpointUrl, ot as getAirPadTransportMode, pn as defaultTheme, pt as getRemoteProtocol, qt as sanitizeFleetSelfWireNodeId, rt as getAirPadHandshakeArchetype, sn as splitConnectHostList, st as getAirPadTransportSecret, tt as getAirPadDirectTargetUrl, un as ShellRegistry, ut as getClipboardBroadcastWireTargets, vn as startImplicitViewMessagingBridge, vt as isMaintainHubSocketConnectionEnabled, w as annotateCoordinatorPayload, x as annotatePacketWireHash, xt as isPushLocalClipboardToLanEnabled, yt as isNeutralinoNodeClipboardHubOwned, zt as isFleetGatewayWireNodeId } from "../shells/boot-index.js";
-import { bn as loadAsAdopted, vn as __vitePreload } from "../com/app.js";
+import { jn as loadAsAdopted, kn as __vitePreload } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
 import { t as LS_BOOT_SHELL_LAST_ACTIVE } from "../shells/preference.js";
+import { $n as serviceChannels, $t as isGatewayHttpsOrigin, An as lightTheme, At as isClipboardSenderAllowedForInbound, Ct as getClipboardBroadcastWireTargets, Dn as darkTheme, Dt as getRemoteRouteTarget, Et as getRemoteProtocol, F as inferWireDedupeCategory, Ft as isShellRemoteClipboardBridgeEnabled, G as loadStyleSystem, H as readClipboardTextFromDevice, I as packetWireDedupeGuard, It as setAirpadCredentialInvalidator, K as applyTheme, Kt as isCapacitorCwsNativeShell, L as annotateCoordinatorPayload, Mn as pickEnabledView, Mt as isNeutralinoNodeClipboardHubOwned, N as ensureAppLayers, Nn as startImplicitViewMessagingBridge, Nt as isPreferNativeWebsocketEnabled, On as defaultTheme, Ot as isApplyRemoteClipboardToDeviceEnabled, P as annotatePacketWireHash, Pt as isPushLocalClipboardToLanEnabled, Qt as isFleetGatewayWireNodeId, R as shouldAnnotateCoordinatorPayload, St as getClientAccessToken, Tn as ShellRegistry, Tt as getRemoteHost, U as writeClipboardImageToDevice, Ut as initCwsNativeBridge, V as isCapacitorNativeShell, W as writeClipboardTextToDevice, Wt as invokeCwsNative, Xt as isAssociableFleetWireNodeId, Zt as isFleetDeskWireNodeId, _t as getAirPadHandshakeConnectionType, an as sanitizeFleetRouteTarget, bn as splitConnectHostList, bt as getAirPadTransportSecret, cn as shouldFleetDeskGatewayProbeFallbacks, ct as ensureCapacitorCwspSettingsSeeded, dn as CWSP_DEFAULT_HTTP_PORTS, dt as applyAirpadRuntimeFromAppSettings, en as isGuestPrivateLanIpv4, ft as getAccessToken, gt as getAirPadHandshakeArchetype, ht as getAirPadEndpointUrl, in as normalizeWireNodeIdForWire, jn as isEnabledView, jt as isMaintainHubSocketConnectionEnabled, kn as initializeRegistries, kt as isClipboardHubBootstrapEnabled, ln as shouldPreferWanGatewayForAirpad, lt as loadSettings, mt as getAirPadDirectTargetUrl, nn as isOffHomeFleetNetwork, on as sanitizeFleetSelfWireNodeId, pt as getAirPadClientId, qt as DEFAULT_DESK_WIRE_NODE_ID, rn as isOnHomeFleetLanPageHost, sn as shouldConnectViaFleetGateway, st as DEFAULT_SETTINGS, tn as isHomeFleetLanHost, un as CWSP_DEFAULT_HTTPS_PORTS, ut as shouldDeferCrxHubSocketBootstrap, vt as getAirPadPeerInstanceId, wn as initializeLayers, wt as getClipboardPushIntervalMs, xt as getAssociatedClientToken, yt as getAirPadTransportMode, z as annotatePacketWireTime64 } from "../shells/boot-index.js";
 import { t as ensureCapacitorBridgeDaemonStarted } from "./capacitor-settings-permissions.js";
-//#region src/frontend/boot/native-socket.ts
+//#region ../CWSP-document/src/frontend/boot/native-socket.ts
 var appendParams = (target, params) => {
 	if (!params || typeof params !== "object") return;
 	for (const [key, value] of Object.entries(params)) {
@@ -141,7 +141,7 @@ function createWsSocket(url, options) {
 	return new NativeSocket(url, options);
 }
 //#endregion
-//#region src/frontend/boot/native-coordinator-bridge.ts
+//#region ../CWSP-document/src/frontend/boot/native-coordinator-bridge.ts
 /**
 * Capacitor/CWSAndroid: route coordinator acts through Java {@code CwspWsClient} when it owns `/ws`.
 * WHY: WebView hub connect is skipped to avoid duplicate clientId sessions; AirPad must use CwsBridge.
@@ -208,7 +208,7 @@ var sendNativeCoordinatorEnvelope = async (input) => {
 	}
 };
 //#endregion
-//#region src/frontend/boot/websocket.ts
+//#region ../CWSP-document/src/frontend/boot/websocket.ts
 /**
 * AirPad/remote transport hub for the frontend.
 *
@@ -1723,7 +1723,7 @@ function handleWsConnectButtonClick() {
 	else connectWS();
 }
 //#endregion
-//#region src/frontend/boot/hub-socket-boot.ts
+//#region ../CWSP-document/src/frontend/boot/hub-socket-boot.ts
 /**
 * Unified hub transport: WebSocket to cwsp / endpoint (same stack as AirPad), optional background connection.
 * Used from main PWA boot, Settings save, and CRX shells so clipboard coordinator works outside the AirPad view.
@@ -1857,7 +1857,7 @@ async function applyHubSocketFromSettings(settings) {
 	connectWS();
 }
 //#endregion
-//#region src/frontend/boot/BootLoader.ts
+//#region ../CWSP-document/src/frontend/boot/BootLoader.ts
 var BootLoader_exports = /* @__PURE__ */ __exportAll({
 	BootLoader: () => BootLoader,
 	bootLoader: () => bootLoader,
@@ -1963,7 +1963,7 @@ var BootLoader = class BootLoader {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
 					const { initFrontendDebugCapture } = await import("./frontend-debug-capture.js").then((n) => n.t);
 					return { initFrontendDebugCapture };
-				}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+				}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
 				initFrontendDebugCapture();
 			} catch {}
 			const persistedSettings = await loadSettings().catch((error) => {
@@ -1992,7 +1992,7 @@ var BootLoader = class BootLoader {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("./sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([7,2,1,3,4,5,6,8,9]), import.meta.url);
+				}, __vite__mapDeps([8,3,1,5,2,4,6,7,9]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

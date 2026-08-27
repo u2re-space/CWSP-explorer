@@ -1,6 +1,6 @@
 import { speedDialItems } from "core/store/StateStorage";
 import { publicHrefForView, shouldHandoffViewToSibling } from "com/config/ecosystem-skus";
-import { openUnifiedContextMenu, type ContextMenuEntry } from "./web/ts/ContextMenu";
+import { openUnifiedContextMenu, type ContextMenuEntry } from "fl-ui/explorer/ContextMenu";
 
 //
 export type ContextMenuItem = {

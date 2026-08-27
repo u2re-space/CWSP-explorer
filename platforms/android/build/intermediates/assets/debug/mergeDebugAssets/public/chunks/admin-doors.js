@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-//#region src/shared/other/config/admin-doors.ts
+//#region ../CWSP-document/src/shared/other/config/admin-doors.ts
 var admin_doors_exports = /* @__PURE__ */ __exportAll({
 	openAdminDoorFromCore: () => openAdminDoorFromCore,
 	openAdminDoorUrl: () => openAdminDoorUrl,

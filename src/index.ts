@@ -14,7 +14,7 @@
 import type { ViewOptions, ViewLifecycle, BaseViewOptions } from "views/types";
 import { createViewConstructor, ViewBase } from "views/registry";
 import { loadAsAdopted, removeAdopted } from "@fest-lib/dom";
-import type { FileManager } from "./web/ts/FileManager";
+import type { FileManager } from "fl-ui/explorer/FileManager";
 import type { ExplorerInjectApi } from "./inject";
 import type { LocalFileManager } from "./runtime";
 import { wireExplorerSubtree } from "./runtime";
@@ -22,7 +22,7 @@ import { ExplorerChannelAction } from "views/apis/channel-actions";
 import { applyExplorerColorScheme, subscribeExplorerSystemTheme, type ExplorerColorScheme } from "./theme";
 
 /** Re-export + ensure `ui-file-manager` is defined when this module loads. */
-export { FileManager, FileManagerContent } from "./web/ts/FileManager";
+export { FileManager, FileManagerContent } from "fl-ui/explorer/FileManager";
 
 export type { ExplorerInjectApi } from "./inject";
 export { registerExplorerInject, mergeExplorerInject, getRegisteredExplorerInject } from "./inject";

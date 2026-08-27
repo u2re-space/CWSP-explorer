@@ -1,6 +1,6 @@
 import { r as __require$1 } from "./rolldown-runtime.js";
-import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as f } from "../vendor/marked.js";
+import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as src_default } from "../vendor/marked-katex-extension.js";
 //#region ../../node_modules/docx/dist/index.mjs
 var __create = Object.create;
@@ -28068,7 +28068,7 @@ var findPatchKeys = (text) => {
 	return (_text$match = text.match(pattern)) !== null && _text$match !== void 0 ? _text$match : [];
 };
 //#endregion
-//#region src/shared/other/document/docx/constants.ts
+//#region ../CWSP-document/src/shared/other/document/docx/constants.ts
 var ORDERED_LIST_REF = "cw-ordered-list";
 var COLORS = {
 	text: "1A1A1A",
@@ -28109,7 +28109,7 @@ var GOST_LAYOUT = {
 	}
 };
 //#endregion
-//#region src/shared/other/document/docx/download.ts
+//#region ../CWSP-document/src/shared/other/document/docx/download.ts
 function safeFilename(name) {
 	return ((name || "").trim() || "document").replace(/[\\/:*?"<>|\u0000-\u001F]+/g, "-").slice(0, 180);
 }
@@ -28144,7 +28144,7 @@ function downloadBlob(blob, filename) {
 	}
 }
 //#endregion
-//#region src/shared/other/document/docx/image.ts
+//#region ../CWSP-document/src/shared/other/document/docx/image.ts
 function tryDecodeUriComponent(input) {
 	try {
 		return decodeURIComponent(input);
@@ -28371,7 +28371,7 @@ async function imageRunFromSrc(src, alt) {
 	});
 }
 //#endregion
-//#region src/shared/other/document/docx/markdown.ts
+//#region ../CWSP-document/src/shared/other/document/docx/markdown.ts
 var MATH_DELIMITER_PATTERN = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|(?<!\$)\$[^$\n]+\$|\\\([\s\S]*?\\\)/;
 var FENCED_CODE_PATTERN = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g;
 var INLINE_CODE_PATTERN = /`[^`\n]+`/g;
@@ -28483,7 +28483,7 @@ function htmlToBody(html) {
 	return new DOMParser().parseFromString(html ?? "", "text/html").body;
 }
 //#endregion
-//#region src/shared/other/document/docx/rasterize.ts
+//#region ../CWSP-document/src/shared/other/document/docx/rasterize.ts
 var OPERATOR_REMAP$1 = {
 	"−": "-",
 	"–": "-",
@@ -28755,7 +28755,7 @@ function extractMatrixDisplayModel(mathEl) {
 	};
 }
 //#endregion
-//#region src/shared/other/document/docx/math.ts
+//#region ../CWSP-document/src/shared/other/document/docx/math.ts
 function normalizeMathText(s) {
 	return (s ?? "").replace(/\s+/g, " ").trim();
 }
@@ -29101,7 +29101,7 @@ async function convertDisplayMathMatrixParagraph(pEl) {
 	return null;
 }
 //#endregion
-//#region src/shared/other/document/DocxExport.ts
+//#region ../CWSP-document/src/shared/other/document/DocxExport.ts
 function textRun(text, style) {
 	return new TextRun({
 		text,
