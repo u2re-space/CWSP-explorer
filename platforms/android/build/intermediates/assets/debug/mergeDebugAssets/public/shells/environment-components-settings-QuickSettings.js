@@ -1,4 +1,4 @@
-import { Bn as MOCElement, K as getSpeedDialViewOpener, Nn as preloadStyle, Y as __decorate, an as H, in as defineElement, q as UIElement, un as navigate } from "../com/app.js";
+import { In as preloadStyle, J as UIElement, Un as MOCElement, X as __decorate, cn as H, pn as navigate, q as getSpeedDialViewOpener, sn as defineElement } from "../com/app.js";
 import { i as positionFlyout, n as closeChromeFlyout, o as toggleChromeFlyout, r as ensureOverlayRoot } from "./environment-components-calendar-CalendarFlyout.js";
 //#endregion
 //#region ../CWSP-document/src/frontend/shells/environment/components/settings/QuickSettings.ts
@@ -449,12 +449,16 @@ function closeQuickSettingsFlyout() {
 	closeChromeFlyout(FLYOUT_KIND);
 }
 Promise.try(() => {
-	if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => {
-		Promise.try(() => {
-			screen?.orientation?.lock?.("natural");
-		}).catch(console.warn.bind(console));
+	if (typeof requestAnimationFrame !== "function") return;
+	requestAnimationFrame(() => {
+		Promise.try(async () => {
+			const lock = screen?.orientation?.lock;
+			if (typeof lock !== "function") return;
+			const locked = lock.call(screen.orientation, "natural");
+			if (locked && typeof locked.catch === "function") await locked.catch(() => {});
+		}).catch(() => {});
 	});
-}).catch(console.warn.bind(console));
+}).catch(() => {});
 try {
 	installAutoThemeFollow();
 } catch {}

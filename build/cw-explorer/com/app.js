@@ -21818,6 +21818,18 @@ var relPathCandidates = (rel) => {
 	const parts = clean.split(/[\\/]/).filter(Boolean);
 	return parts.map((_, i) => parts.slice(i).join("/"));
 };
+var findFileByBasename = async (dir, basename, depth = 5) => {
+	try {
+		return await (await dir.getFileHandle(basename, { create: false })).getFile();
+	} catch {}
+	if (depth <= 0) return null;
+	for await (const [, handle] of dir.entries()) {
+		if (handle.kind !== "directory") continue;
+		const found = await findFileByBasename(handle, basename, depth - 1);
+		if (found) return found;
+	}
+	return null;
+};
 /** Walk a picked folder so the viewer can resolve `./assets/…` by relative path or basename. */
 var indexDirectoryFiles = async (dir, prefix = "", depth = 8, acc = []) => {
 	if (depth < 0) return acc;
@@ -21832,6 +21844,21 @@ var indexDirectoryFiles = async (dir, prefix = "", depth = 8, acc = []) => {
 		else if (handle.kind === "directory") await indexDirectoryFiles(handle, rel, depth - 1, acc);
 	}
 	return acc;
+};
+/** Read a markdown-relative file from a picked directory (any ancestor of the file). */
+var resolveFileUnderDirectory = async (dir, rel) => {
+	if (!dir) return null;
+	const candidates = relPathCandidates(rel);
+	for (const candidate of candidates) {
+		const handle = await walkExactFile(dir, candidate);
+		if (!handle) continue;
+		try {
+			return await handle.getFile();
+		} catch {}
+	}
+	const base = candidates.at(-1);
+	if (!base || base.includes("/")) return null;
+	return findFileByBasename(dir, base);
 };
 /** Chromium File System Access — pick the folder that holds images / includes. */
 var pickAssetDirectory = async (options = {}) => {
@@ -21855,7 +21882,8 @@ var observeFileSystemHandle = (handle, onRecords) => {
 	if (typeof Ctor !== "function" || !handle) return null;
 	try {
 		const observer = new Ctor((records) => onRecords(records));
-		Promise.resolve(observer.observe(handle)).catch(() => {});
+		const obs = observer;
+		Promise.resolve(obs.observe(handle, { recursive: true })).catch(() => Promise.resolve(obs.observe(handle))).catch(() => {});
 		return { disconnect: () => observer.disconnect?.() };
 	} catch {
 		return null;
@@ -22301,6 +22329,7 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	remove: () => remove,
 	removeFile: () => removeFile,
 	removeFromBank: () => removeFromBank,
+	resolveFileUnderDirectory: () => resolveFileUnderDirectory,
 	resolveOverlayHost: () => resolveOverlayHost,
 	resolvePath: () => resolvePath,
 	resolvePlacement: () => resolvePlacement,
@@ -30757,12 +30786,16 @@ function closeQuickSettingsFlyout() {
 	closeChromeFlyout(FLYOUT_KIND);
 }
 Promise.try(() => {
-	if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => {
-		Promise.try(() => {
-			screen?.orientation?.lock?.("natural");
-		}).catch(console.warn.bind(console));
+	if (typeof requestAnimationFrame !== "function") return;
+	requestAnimationFrame(() => {
+		Promise.try(async () => {
+			const lock = screen?.orientation?.lock;
+			if (typeof lock !== "function") return;
+			const locked = lock.call(screen.orientation, "natural");
+			if (locked && typeof locked.catch === "function") await locked.catch(() => {});
+		}).catch(() => {});
 	});
-}).catch(console.warn.bind(console));
+}).catch(() => {});
 try {
 	installAutoThemeFollow();
 } catch {}
@@ -33081,6 +33114,67 @@ function inferIconDisplay(input) {
 }
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/launcher-state.ts
+var launcher_state_exports = /* @__PURE__ */ __exportAll({
+	ICON_BITMAP_SCALE_OPTIONS: () => ICON_BITMAP_SCALE_OPTIONS,
+	SPEED_DIAL_CLIP_KIND: () => SPEED_DIAL_CLIP_KIND,
+	SPEED_DIAL_MUTATION_EVENT: () => SPEED_DIAL_MUTATION_EVENT,
+	addSpeedDialItem: () => addSpeedDialItem,
+	applyGridSettings: () => applyGridSettings,
+	applyIconBitmapScaleCss: () => applyIconBitmapScaleCss,
+	applyIconScaleToPaintedNodes: () => applyIconScaleToPaintedNodes,
+	applyItemIconScaleToElement: () => applyItemIconScaleToElement,
+	applySpeedDialSnapshot: () => applySpeedDialSnapshot,
+	buildLauncherAppDragEnvelope: () => buildLauncherAppDragEnvelope,
+	captureSpeedDialSnapshot: () => captureSpeedDialSnapshot,
+	defaultOpenLinkTargetForHref: () => defaultOpenLinkTargetForHref,
+	defaultWidgetSpan: () => defaultWidgetSpan,
+	emitSpeedDialMutation: () => emitSpeedDialMutation,
+	ensureSpeedDialMeta: () => ensureSpeedDialMeta,
+	findNextFreeSpeedDialCell: () => findNextFreeSpeedDialCell,
+	findSpeedDialShortcutItem: () => findSpeedDialShortcutItem,
+	forgetSpeedDialIconBlob: () => forgetSpeedDialIconBlob,
+	getDefaultOpenLinkTarget: () => getDefaultOpenLinkTarget,
+	getDefaultSpeedDialAction: () => getDefaultSpeedDialAction,
+	getIconBitmapScale: () => getIconBitmapScale,
+	getItemSpan: () => getItemSpan,
+	getSpeedDialMeta: () => getSpeedDialMeta,
+	getSpeedDialMirrorPath: () => getSpeedDialMirrorPath,
+	gridLayoutState: () => gridLayoutState,
+	iconBitmapScaleCss: () => iconBitmapScaleCss,
+	isClientPointOverSpeedDial: () => isClientPointOverSpeedDial,
+	isCoreRailGridTile: () => isCoreRailGridTile,
+	isExternalWebHref: () => isExternalWebHref,
+	isSpeedDialVirtualPath: () => isSpeedDialVirtualPath,
+	mirrorPathState: () => mirrorPathState,
+	mirrorSpeedDialItems: () => mirrorSpeedDialItems,
+	normalizeIconBitmapScale: () => normalizeIconBitmapScale,
+	normalizeItemIconBitmapScale: () => normalizeItemIconBitmapScale,
+	normalizeOpenLinkTarget: () => normalizeOpenLinkTarget,
+	normalizeTileShape: () => normalizeTileShape,
+	packSpeedDialItem: () => packSpeedDialItem,
+	packSpeedDialMetaPlain: () => packSpeedDialMetaPlain,
+	parseSpeedDialItemFromJSON: () => parseSpeedDialItemFromJSON,
+	parseSpeedDialItemFromSmartText: () => parseSpeedDialItemFromSmartText,
+	parseSpeedDialItemFromURL: () => parseSpeedDialItemFromURL,
+	parseSpeedDialItemFromVirtualPath: () => parseSpeedDialItemFromVirtualPath,
+	persistGridLayout: () => persistGridLayout,
+	persistSpeedDialIconBlob: () => persistSpeedDialIconBlob,
+	persistSpeedDialItems: () => persistSpeedDialItems,
+	persistSpeedDialMeta: () => persistSpeedDialMeta,
+	persistWallpaper: () => persistWallpaper,
+	pinLauncherAppEntry: () => pinLauncherAppEntry,
+	pinSpeedDialLinkFromIntent: () => pinSpeedDialLinkFromIntent,
+	refreshSpeedDialMirror: () => refreshSpeedDialMirror,
+	removeSpeedDialMeta: () => removeSpeedDialMeta,
+	resolveIconScaleFactor: () => resolveIconScaleFactor,
+	resolveSpeedDialCellFromClientPoint: () => resolveSpeedDialCellFromClientPoint,
+	setDefaultOpenLinkTarget: () => setDefaultOpenLinkTarget,
+	speedDialItems: () => speedDialItems,
+	speedDialMeta: () => speedDialMeta,
+	stripCoreRailTilesFromGrid: () => stripCoreRailTilesFromGrid,
+	tileIconFetchSize: () => tileIconFetchSize,
+	wallpaperState: () => wallpaperState
+});
 var viewEnabledCheck = null;
 var isEnabledView = (view) => viewEnabledCheck ? viewEnabledCheck(String(view || "").trim()) : true;
 var OPEN_LINK_TARGET_KEY = "rs-open-link-target";
@@ -33093,6 +33187,15 @@ var normalizeOpenLinkTarget = (raw) => {
 	if (v === "native-window" || v === "native" || v === "window" || v === "app-window") return "native-window";
 	return "inline";
 };
+/** True for http(s), protocol-relative, or bare `www.` hosts (not app view paths). */
+var isExternalWebHref = (raw) => {
+	const s = String(raw || "").trim();
+	if (!s || /^(mailto:|blob:|data:|javascript:)/i.test(s)) return false;
+	if (/^https?:\/\//i.test(s) || /^\/\//.test(s)) return true;
+	if (/^www\./i.test(s)) return true;
+	if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/:?#]|$)/i.test(s) && !s.startsWith("/") && !s.startsWith("#")) return true;
+	return false;
+};
 /** Global default (Settings / localStorage); per-tile meta.openLinkTarget wins. */
 var getDefaultOpenLinkTarget = () => {
 	try {
@@ -33102,6 +33205,12 @@ var getDefaultOpenLinkTarget = () => {
 	} catch {
 		return prefersExternalAppOpenLink() ? "external-app" : "inline";
 	}
+};
+/** http(s) tiles open in a new tab (or Cap chooser). App views stay inline unless set. */
+var defaultOpenLinkTargetForHref = (href) => {
+	if (prefersExternalAppOpenLink()) return "external-app";
+	if (isExternalWebHref(href)) return "new-tab";
+	return getDefaultOpenLinkTarget();
 };
 /** Capacitor / coarse launcher — Open in app (chooser) beats inline iframe. */
 var prefersExternalAppOpenLink = () => {
@@ -33654,11 +33763,24 @@ var hydrateFromOpfs = async (io) => {
 		stripCoreRailTilesFromGrid({ markDirty: true });
 	}
 };
+var skipLinkStoreOpfs = () => {
+	try {
+		if (String(document.documentElement?.dataset?.cwspSku || "").toLowerCase() === "document") return true;
+		const host = String(location.hostname || "").toLowerCase();
+		if (/(^|\.)md\.u2re\.space$/.test(host)) return true;
+	} catch {}
+	return false;
+};
 var initLinkStore = () => {
 	const boot = linkStoreBoot();
 	if (boot.opfsReady) return boot.opfsReady;
 	boot.opfsReady = (async () => {
 		const ls = getLsLike();
+		if (skipLinkStoreOpfs()) {
+			boot.opfsIo = null;
+			boot.opfsHydrated = true;
+			return;
+		}
 		try {
 			boot.opfsIo = await Promise.race([createOpfsLinkStoreIo(), new Promise((_, reject) => {
 				setTimeout(() => reject(/* @__PURE__ */ new Error("[link-store] OPFS getDirectory timeout")), 800);
@@ -33681,6 +33803,17 @@ var initLinkStore = () => {
 		}
 	})();
 	return boot.opfsReady;
+};
+/** Live tile that already represents this Android pinned shortcut. */
+var findSpeedDialShortcutItem = (pkg, shortcutId) => {
+	const packageName = String(pkg || "").trim();
+	const id = String(shortcutId || "").trim();
+	if (!packageName || !id) return null;
+	for (const item of speedDialItems || []) {
+		const meta = getSpeedDialMeta(item.id);
+		if (String(meta?.packageName || "").trim() === packageName && String(meta?.shortcutId || "").trim() === id) return item;
+	}
+	return null;
 };
 if (typeof globalThis !== "undefined") {
 	try {
@@ -34019,7 +34152,7 @@ function pinLauncherAppEntry(app, cell) {
 	addSpeedDialItem(item);
 	return item;
 }
-makeUIState("cw::workspace::wallpaper", () => observe({
+var wallpaperState = makeUIState("cw::workspace::wallpaper", () => observe({
 	src: "/assets/wallpaper.jpg",
 	opacity: 1,
 	blur: 0
@@ -34028,6 +34161,7 @@ makeUIState("cw::workspace::wallpaper", () => observe({
 	opacity: 1,
 	blur: 0
 }), (state) => ({ ...state }));
+var persistWallpaper = () => wallpaperState?.$save?.();
 var ICON_SCALE_VALUES = {
 	compact: "0.78",
 	fit: "1",
@@ -34281,6 +34415,7 @@ var looksLikeJsonObject = (raw) => {
 	const t = String(raw || "").trim();
 	return t.startsWith("{") && t.endsWith("}") || t.startsWith("[") && t.endsWith("]");
 };
+var SPEED_DIAL_CLIP_KIND = "cwsp.speed-dial.shortcut";
 /**
 * Explorer virtual paths (`/bookmarks/…`, `/user/…`, `/assets/…`).
 * WHY: drag from Explorer used to put these in `text/plain`; they are not JSON.
@@ -34352,6 +34487,365 @@ var parseSpeedDialItemFromJSON = (jsonText, suggestedCell) => {
 		console.warn("Failed to parse JSON for speed dial item:", e);
 		return null;
 	}
+};
+/** Digits-only length for phone heuristics (E.164-ish). */
+var PHONE_DIGIT_MIN = 7;
+var PHONE_DIGIT_MAX = 15;
+var digitsOnly = (s) => String(s || "").replace(/\D+/g, "");
+var looksLikePhoneNumber = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t || /\s{3,}/.test(t)) return false;
+	if (/^tel:/i.test(t)) return true;
+	if (/[@/]|https?:/i.test(t) && !/^tel:/i.test(t)) return false;
+	const digits = digitsOnly(t);
+	if (digits.length < PHONE_DIGIT_MIN || digits.length > PHONE_DIGIT_MAX) return false;
+	return /^[+]?[\d\s().-]{7,24}$/.test(t);
+};
+var looksLikeEmail = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return false;
+	if (/^mailto:/i.test(t)) return true;
+	if (/\s/.test(t)) return false;
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(t);
+};
+var looksLikeTelegramHandle = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return false;
+	if (/^(tg:|telegram:)/i.test(t)) return true;
+	if (/^(https?:\/\/)?(t\.me|telegram\.me)\//i.test(t)) return true;
+	return /^@[a-zA-Z][a-zA-Z0-9_]{3,31}$/.test(t);
+};
+/**
+* Parse common calendar-ish fragments → Android calendar time URI when possible.
+* WHY: Cap openUri(ACTION_VIEW) on content://com.android.calendar/time/<ms> opens the day.
+*/
+var parseCalendarHref = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return null;
+	if (/^content:\/\/com\.android\.calendar\//i.test(t)) return {
+		href: t,
+		label: "Calendar"
+	};
+	const iso = t.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s](\d{1,2}:\d{2}(?::\d{2})?))?(?:Z|[+-]\d{2}:?\d{2})?$/);
+	if (iso) {
+		const d = /* @__PURE__ */ new Date(iso[2] ? `${iso[1]}T${iso[2]}` : `${iso[1]}T12:00:00`);
+		if (!Number.isNaN(d.getTime())) return {
+			href: `content://com.android.calendar/time/${d.getTime()}`,
+			label: iso[1]
+		};
+	}
+	const dmy = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
+	if (dmy) {
+		const day = Number(dmy[1]);
+		const month = Number(dmy[2]) - 1;
+		const year = Number(dmy[3]);
+		const hh = dmy[4] != null ? Number(dmy[4]) : 12;
+		const mm = dmy[5] != null ? Number(dmy[5]) : 0;
+		const d = new Date(year, month, day, hh, mm, 0, 0);
+		if (!Number.isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month) return {
+			href: `content://com.android.calendar/time/${d.getTime()}`,
+			label: `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}.${year}`
+		};
+	}
+	return null;
+};
+var normalizeTelegramHref = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return null;
+	if (/^tg:/i.test(t) || /^telegram:/i.test(t)) return {
+		href: t,
+		label: "Telegram"
+	};
+	const at = t.match(/^@([a-zA-Z][a-zA-Z0-9_]{3,31})$/);
+	if (at) return {
+		href: `https://t.me/${at[1]}`,
+		label: `@${at[1]}`
+	};
+	try {
+		const u = new URL(t.startsWith("http") ? t : `https://${t.replace(/^\/+/, "")}`);
+		if (/^(t\.me|telegram\.me)$/i.test(u.hostname.replace(/^www\./, ""))) {
+			const user = u.pathname.replace(/^\/+/, "").split("/")[0] || "Telegram";
+			return {
+				href: u.href,
+				label: user.startsWith("+") ? user : `@${user}`
+			};
+		}
+	} catch {}
+	return null;
+};
+/**
+* Build a Speed Dial open-link tile for tel / mailto / telegram / calendar / smart text.
+* Prefer this before plain http(s) parsing when the clipboard is not a web URL.
+*/
+var parseSpeedDialItemFromSmartText = (rawText, suggestedCell) => {
+	const text = String(rawText || "").trim();
+	if (!text) return null;
+	let candidate = text.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#")) || text;
+	if (candidate.startsWith("<") && candidate.endsWith(">")) candidate = candidate.slice(1, -1).trim();
+	const makeLinkItem = (opts) => {
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: suggestedCell || [0, 0],
+			icon: opts.icon,
+			label: opts.label,
+			action: "open-link"
+		});
+		ensureSpeedDialMeta(item.id, {
+			action: "open-link",
+			href: opts.href,
+			description: opts.description || opts.label,
+			iconDisplay: "glyph",
+			iconScale: "compact",
+			openLinkTarget: defaultOpenLinkTargetForHref(opts.href)
+		});
+		return item;
+	};
+	try {
+		const u = new URL(candidate);
+		const proto = (u.protocol || "").toLowerCase();
+		if (proto === "tel:") {
+			const num = decodeURIComponent(u.pathname || u.href.replace(/^tel:/i, "")).trim() || candidate;
+			return makeLinkItem({
+				href: `tel:${digitsOnly(num) ? num.startsWith("+") ? `+${digitsOnly(num)}` : digitsOnly(num) : num}`,
+				label: num,
+				icon: "phone",
+				description: `Call ${num}`
+			});
+		}
+		if (proto === "mailto:") {
+			const addr = decodeURIComponent(u.pathname || u.username || "").trim() || candidate.replace(/^mailto:/i, "");
+			return makeLinkItem({
+				href: `mailto:${addr}`,
+				label: addr,
+				icon: "at",
+				description: `Email ${addr}`
+			});
+		}
+		if (proto === "tg:" || proto === "telegram:") return makeLinkItem({
+			href: u.href,
+			label: "Telegram",
+			icon: "telegram-logo",
+			description: u.href
+		});
+		if (proto === "content:" && /calendar/i.test(u.href)) return makeLinkItem({
+			href: u.href,
+			label: "Calendar",
+			icon: "calendar",
+			description: u.href
+		});
+	} catch {}
+	if (looksLikePhoneNumber(candidate)) {
+		const digits = digitsOnly(candidate);
+		return makeLinkItem({
+			href: `tel:${candidate.trim().startsWith("+") ? `+${digits}` : digits}`,
+			label: candidate.trim(),
+			icon: "phone",
+			description: `Call ${candidate.trim()}`
+		});
+	}
+	if (looksLikeEmail(candidate)) {
+		const addr = candidate.replace(/^mailto:/i, "").trim();
+		return makeLinkItem({
+			href: `mailto:${addr}`,
+			label: addr,
+			icon: "at",
+			description: `Email ${addr}`
+		});
+	}
+	if (looksLikeTelegramHandle(candidate)) {
+		const tg = normalizeTelegramHref(candidate);
+		if (tg) return makeLinkItem({
+			href: tg.href,
+			label: tg.label,
+			icon: "telegram-logo",
+			description: `Telegram ${tg.label}`
+		});
+	}
+	const cal = parseCalendarHref(candidate);
+	if (cal) return makeLinkItem({
+		href: cal.href,
+		label: cal.label,
+		icon: "calendar",
+		description: `Calendar ${cal.label}`
+	});
+	return null;
+};
+var parseSpeedDialItemFromURL = (urlText, suggestedCell) => {
+	try {
+		const trimmed = urlText.trim();
+		if (!trimmed) return null;
+		const smart = parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+		if (smart) {
+			try {
+				const u = new URL(trimmed);
+				if (/^https?:$/i.test(u.protocol) && !looksLikeTelegramHandle(trimmed)) {} else return smart;
+			} catch {
+				return smart;
+			}
+			if (looksLikeTelegramHandle(trimmed)) return smart;
+		}
+		let url;
+		try {
+			url = new URL(trimmed);
+		} catch {
+			try {
+				url = new URL(trimmed, globalThis?.location?.href);
+			} catch {
+				return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+			}
+		}
+		if (!/^https?:$/i.test(url.protocol)) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+		if (/^(t\.me|telegram\.me)$/i.test(url.hostname.replace(/^www\./, ""))) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+		const hostname = url.hostname || "";
+		const domain = hostname.replace(/^www\./, "");
+		const pathname = url.pathname || "";
+		const label = domain || url.host || "Link";
+		let favicon = "";
+		try {
+			if (hostname) favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=256`;
+		} catch {
+			favicon = "";
+		}
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: suggestedCell || [0, 0],
+			icon: "link",
+			label,
+			action: "open-link"
+		});
+		const meta = {
+			action: "open-link",
+			href: url.href,
+			description: `${label}${pathname ? ` - ${pathname}` : ""}`,
+			iconDisplay: "glyph",
+			iconScale: "compact",
+			openLinkTarget: defaultOpenLinkTargetForHref(url.href),
+			...favicon ? { iconUrl: favicon } : {}
+		};
+		ensureSpeedDialMeta(item.id, meta);
+		return item;
+	} catch (e) {
+		console.warn("Failed to parse URL for speed dial item:", e);
+		return null;
+	}
+};
+/** Pin an http(s) / content / file / app shortcut from Android Share / pin-shortcut. */
+function pinSpeedDialLinkFromIntent(raw, cell) {
+	const targetCell = cell ?? findNextFreeSpeedDialCell();
+	const label = String(raw?.label || "").trim();
+	const pkg = String(raw?.packageName || "").trim();
+	const component = String(raw?.componentName || "").trim();
+	const intentUri = String(raw?.intentUri || "").trim();
+	const href = String(raw?.url || raw?.href || intentUri || "").trim();
+	const actionHint = String(raw?.action || "").trim().toLowerCase();
+	const shortcutId = String(raw?.shortcutId || "").trim();
+	const mimeType = String(raw?.mimeType || "").trim() || guessMimeFromLabelOrHref(label, href);
+	const rawIconUrl = String(raw?.iconUrl || "").trim();
+	const iconUrl = rawIconUrl && !/^(data:|blob:)/i.test(rawIconUrl) ? rawIconUrl : "";
+	const iconDisplay = String(raw?.iconDisplay || "").trim() || (rawIconUrl || iconUrl ? "colored" : "");
+	if (actionHint === "launch-shortcut" || shortcutId && pkg && actionHint !== "launch-app") {
+		if (!pkg || !shortcutId) return null;
+		const existing = findSpeedDialShortcutItem(pkg, shortcutId);
+		if (existing) return existing;
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: targetCell,
+			icon: "folder",
+			label: label || shortcutId,
+			action: "launch-shortcut"
+		});
+		ensureSpeedDialMeta(item.id, {
+			action: "launch-shortcut",
+			packageName: pkg,
+			shortcutId,
+			entityType: "android-shortcut",
+			description: label || shortcutId,
+			iconDisplay: iconDisplay || "colored",
+			...mimeType ? { mimeType } : {},
+			...iconUrl ? { iconUrl } : {}
+		});
+		addSpeedDialItem(item);
+		return item;
+	}
+	if (actionHint === "launch-app" || pkg && !href && !shortcutId) {
+		if (!pkg) return null;
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: targetCell,
+			icon: "device-mobile",
+			label: label || pkg,
+			action: "launch-app"
+		});
+		ensureSpeedDialMeta(item.id, {
+			action: "launch-app",
+			packageName: pkg,
+			componentName: component || void 0,
+			entityType: "android-app",
+			iconCacheKey: pkg,
+			description: label || pkg
+		});
+		addSpeedDialItem(item);
+		return item;
+	}
+	if (!href) return null;
+	if (isSpeedDialVirtualPath(href)) {
+		const item = parseSpeedDialItemFromVirtualPath(href, targetCell, { label: label || void 0 });
+		if (!item) return null;
+		addSpeedDialItem(item);
+		return item;
+	}
+	if (/^https?:\/\//i.test(href) || /^www\./i.test(href)) {
+		const item = parseSpeedDialItemFromURL(href, targetCell);
+		if (!item) return null;
+		if (label) {
+			try {
+				item.label.value = label;
+			} catch {}
+			const meta = ensureSpeedDialMeta(item.id);
+			if (meta) meta.description = label;
+		}
+		addSpeedDialItem(item);
+		return item;
+	}
+	const dataHref = href;
+	const openHref = /^(content:|file:|https?:)/i.test(dataHref) ? dataHref : intentUri || dataHref;
+	const item = createStatefulItem({
+		id: generateItemId(),
+		cell: targetCell,
+		icon: /^content:|^file:/i.test(href) ? "folder" : "link",
+		label: label || href.replace(/^[a-z][a-z0-9+.-]*:/i, "").split("/").filter(Boolean).pop() || "Shortcut",
+		action: "open-link"
+	});
+	ensureSpeedDialMeta(item.id, {
+		action: "open-link",
+		href: openHref,
+		description: label || href,
+		openLinkTarget: "external-app",
+		...intentUri && intentUri !== openHref ? { intentUri } : {},
+		...mimeType ? { mimeType } : {},
+		...shortcutId ? { shortcutId } : {},
+		...pkg ? { publisherPackage: pkg } : {},
+		...iconDisplay ? { iconDisplay } : {},
+		...iconUrl ? { iconUrl } : {}
+	});
+	addSpeedDialItem(item);
+	return item;
+}
+var guessMimeFromLabelOrHref = (label, href) => {
+	const name = `${label} ${href}`.toLowerCase();
+	if (/\.txt(\b|$)/i.test(name) || /\.log(\b|$)/i.test(name) || /\.csv(\b|$)/i.test(name)) return "text/plain";
+	if (/\.md(\b|$)/i.test(name) || /\.markdown(\b|$)/i.test(name)) return "text/markdown";
+	if (/\.pdf(\b|$)/i.test(name)) return "application/pdf";
+	if (/\.png(\b|$)/i.test(name)) return "image/png";
+	if (/\.jpe?g(\b|$)/i.test(name)) return "image/jpeg";
+	if (/\.gif(\b|$)/i.test(name)) return "image/gif";
+	if (/\.webp(\b|$)/i.test(name)) return "image/webp";
+	if (/\.mp4(\b|$)/i.test(name)) return "video/mp4";
+	if (/\.mp3(\b|$)/i.test(name)) return "audio/mpeg";
+	if (/\.html?(\b|$)/i.test(name)) return "text/html";
+	if (/\.json(\b|$)/i.test(name)) return "application/json";
+	if (/\.zip(\b|$)/i.test(name)) return "application/zip";
+	return "";
 };
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/toast.ts
@@ -40022,4 +40516,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 //#region ../../modules/projects/fl.ui/src/styles/ui/home-host-apply.scss?inline
 var home_host_apply_default = ":where(body):has(.speed-dial-root),:where(body):has([data-view=home]),:where(html):has(.speed-dial-root),:where(html[data-cwsp-shell-role=launcher]){block-size:var(--lv-height,100lvb);margin:0;max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);overflow:hidden}:where(main,[role=main]):has(>.view-home.env-home-workspace){background:transparent;border:none;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace,.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace){background:none;background-color:initial;border:0 transparent;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none;outline:0 none transparent}:where(main,[role=main]):has(>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace:not(.wf-mounted-view),.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}.env-home-workspace,.view-home.env-home-workspace{box-sizing:border-box;overflow:visible;pointer-events:none}.view-home.env-home-workspace{align-items:stretch;background:transparent;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:100%;justify-items:stretch;min-block-size:var(--lv-height,100lvb);min-inline-size:0;padding:0;position:relative}.view-home.env-home-workspace>.speed-dial-root{block-size:var(--lv-height,100%);inline-size:var(--lv-width,100%);inset:0 auto auto 0;max-block-size:var(--lv-height,100%);max-inline-size:var(--lv-width,100%);pointer-events:auto;position:absolute}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view{align-self:stretch;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:auto;border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;isolation:isolate;margin:0;margin-inline:0;max-inline-size:none;min-block-size:0;outline:none!important;position:relative;z-index:0}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root{block-size:var(--lv-height,100lvb);border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;inline-size:var(--lv-width,100%);max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);outline:none!important}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view{padding-block-end:env(safe-area-inset-block-end,0);padding-block-start:env(safe-area-inset-block-start,0);padding-inline-end:env(safe-area-inset-inline-end,0);padding-inline-start:env(safe-area-inset-inline-start,0)}.view-home.env-home-workspace:not(.wf-mounted-view){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin-inline:0;max-inline-size:none;min-block-size:var(--lv-height,100lvb);outline:none!important}";
 //#endregion
-export { ensureStyleSheet as $, elementPointerMap as $t, parseSpeedDialItemFromJSON as A, DOMMixin as An, getDir as At, normalizeTileShape$1 as B, MOCElement as Bn, createTemplateManager as Bt, addSpeedDialItem as C, JSOX as Cn, saveMarkdownBlob as Ct, findNextFreeSpeedDialCell as D, isProtocolEnvelope as Dn, isBase64Like as Dt, buildLauncherAppDragEnvelope as E, createProtocolEnvelope as En, decodeBase64ToBytes as Et, TILE_SHAPE_OPTIONS as F, ensureVirtualKeyboardOverlay as Fn, openDirectory as Ft, resolveEntryIcon as G, HistoryManager_exports as Gt, listVirtualRootEntriesFromRouter as H, isInFocus as Hn, getSpeechPrompt as Ht, createTileUiIconElement as I, fixOrientToScreen as In, provide as It, UIElement_default as J, copy as Jt, getSpeedDialViewOpener as K, decodeDesktopState as Kt, defaultIconScaleForDisplay as L, getCorrectOrientation as Ln, registerDirectoryRoot as Lt, resolveSpeedDialCellFromClientPoint as M, loadInlineStyle as Mn, isVirtualFsPath as Mt, tileIconFetchSize as N, preloadStyle$1 as Nn, matchMappedRoot as Nt, isClientPointOverSpeedDial as O, normalizeProtocolEnvelope as On, normalizeDataAsset as Ot, ICON_DISPLAY_OPTIONS as P, removeAdopted as Pn, normalizePath as Pt, testIconRacing as Q, resolveOverlayHost as Qt, inferIconDisplay as R, orientationNumberMap as Rn, dynamicTheme as Rt, ICON_BITMAP_SCALE_OPTIONS as S, safe as Sn, relPathCandidates as St, applyItemIconScaleToElement as T, getUnifiedMessaging as Tn, writeFileSmart as Tt, resolveFsBackend as U, makeUIState as Ut, syncShapelessIconShadow as V, addEvent as Vn, pointerAnchorRef as Vt, subscribeFsBackendRegister as W, saveUIState as Wt, clearIconCaches as X, writeText as Xt, __decorate as Y, initClipboardReceiver as Yt, debugIconSystem as Z, registerTransientOverlay as Zt, getCachedLauncherIconObjectUrl as _, observe as _n, originalRelFromRef as _t, getString as a, H as an, initializeAppCanvasLayer as at, isAndroidIconRef as b, stringRef as bn, pickSidecarDirectoryFiles as bt, WORKSPACE_PAGE_EVENT as c, hasActiveCloseable as cn, applyWallpaperPaperFromLuma as ct, switchWorkspacePage as d, E as dn, getCachedComponent as dt, bindOutsideDismiss as en, reinitializeRegistry as et, attachIconResourcePickButton as f, M$1 as fn, bindDirectoryForLaunchedFiles as ft, getCachedIconResourceObjectUrl as g, numberRef as gn, observeFileSystemHandle as gt, ensureLauncherIconObjectUrl as h, booleanRef as hn, mountPickedDirectory as ht, StorageKeys as i, defineElement as in, getWallpaperStoragePointer as it, pinLauncherAppEntry as j, loadAsAdopted as jn, handleIncomingEntries as jt, normalizeItemIconBitmapScale as k, __vitePreload as kn, parseDataUrl as kt, getActiveWorkspaceId as l, registerModal as ln, restoreWallpaperThemeCache as lt, applyLauncherIconToUiIcon as m, effect as mn, isMarkdownRelativeRef as mt, FileManager as n, getBy as nn, src_exports as nt, setString as o, vector2Ref as on, refreshAppWallpaperPaint as ot, openUnifiedContextMenu as p, affected as pn, findEntryRelPath as pt, UIElement as q, loadDesktopRaw as qt, FileManagerContent_default as r, navigationEnable as rn, WALLPAPER_IDB_MARKER as rt, installLauncherBackStack as s, closeHighestPriority as sn, setAppWallpaperFromBlob as st, home_host_apply_default as t, makeTask as tn, clearAllCache as tt, listWorkspacePages as u, navigate as un, src_exports$1 as ut, resolveIconResourceUrl as v, propRef as vn, pickAssetDirectory as vt, applyIconScaleToPaintedNodes as w, createServiceChannelManager as wn, createFileHandler as wt, showSuccess as x, makeObjectAssignable as xn, provideBoundRelative as xt, tryLaunchSiblingView as y, ref as yn, pickMarkdownFile as yt, normalizeIconDisplay as z, updateVP as zn, placeOverlay as zt };
+export { testIconRacing as $, writeText as $t, normalizeItemIconBitmapScale as A, isProtocolEnvelope as An, isBase64Like as At, normalizeIconDisplay as B, getCorrectOrientation as Bn, registerDirectoryRoot as Bt, addSpeedDialItem as C, stringRef as Cn, provideBoundRelative as Ct, findNextFreeSpeedDialCell as D, createServiceChannelManager as Dn, createFileHandler as Dt, buildLauncherAppDragEnvelope as E, JSOX as En, saveMarkdownBlob as Et, ICON_DISPLAY_OPTIONS as F, loadInlineStyle as Fn, isVirtualFsPath as Ft, subscribeFsBackendRegister as G, isInFocus as Gn, getSpeechPrompt as Gt, syncShapelessIconShadow as H, updateVP as Hn, placeOverlay as Ht, TILE_SHAPE_OPTIONS as I, preloadStyle$1 as In, matchMappedRoot as It, UIElement as J, HistoryManager_exports as Jt, resolveEntryIcon as K, makeUIState as Kt, createTileUiIconElement as L, removeAdopted as Ln, normalizePath as Lt, pinLauncherAppEntry as M, __vitePreload as Mn, parseDataUrl as Mt, resolveSpeedDialCellFromClientPoint as N, DOMMixin as Nn, getDir as Nt, isClientPointOverSpeedDial as O, getUnifiedMessaging as On, writeFileSmart as Ot, tileIconFetchSize as P, loadAsAdopted as Pn, handleIncomingEntries as Pt, debugIconSystem as Q, initClipboardReceiver as Qt, defaultIconScaleForDisplay as R, ensureVirtualKeyboardOverlay as Rn, openDirectory as Rt, ICON_BITMAP_SCALE_OPTIONS as S, ref as Sn, pickSidecarDirectoryFiles as St, applyItemIconScaleToElement as T, safe as Tn, resolveFileUnderDirectory as Tt, listVirtualRootEntriesFromRouter as U, MOCElement as Un, createTemplateManager as Ut, normalizeTileShape$1 as V, orientationNumberMap as Vn, dynamicTheme as Vt, resolveFsBackend as W, addEvent as Wn, pointerAnchorRef as Wt, __decorate as X, loadDesktopRaw as Xt, UIElement_default as Y, decodeDesktopState as Yt, clearIconCaches as Z, copy as Zt, getCachedLauncherIconObjectUrl as _, effect as _n, mountPickedDirectory as _t, getString as a, getBy as an, getWallpaperStoragePointer as at, isAndroidIconRef as b, observe as bn, pickAssetDirectory as bt, WORKSPACE_PAGE_EVENT as c, H as cn, setAppWallpaperFromBlob as ct, switchWorkspacePage as d, hasActiveCloseable as dn, src_exports$1 as dt, registerTransientOverlay as en, ensureStyleSheet as et, attachIconResourcePickButton as f, registerModal as fn, getCachedComponent as ft, getCachedIconResourceObjectUrl as g, affected as gn, isMarkdownRelativeRef as gt, ensureLauncherIconObjectUrl as h, M$1 as hn, indexDirectoryFiles as ht, StorageKeys as i, makeTask as in, WALLPAPER_IDB_MARKER as it, parseSpeedDialItemFromJSON as j, normalizeProtocolEnvelope as jn, normalizeDataAsset as jt, launcher_state_exports as k, createProtocolEnvelope as kn, decodeBase64ToBytes as kt, getActiveWorkspaceId as l, vector2Ref as ln, applyWallpaperPaperFromLuma as lt, applyLauncherIconToUiIcon as m, E as mn, findEntryRelPath as mt, FileManager as n, elementPointerMap as nn, clearAllCache as nt, setString as o, navigationEnable as on, initializeAppCanvasLayer as ot, openUnifiedContextMenu as p, navigate as pn, bindDirectoryForLaunchedFiles as pt, getSpeedDialViewOpener as q, saveUIState as qt, FileManagerContent_default as r, bindOutsideDismiss as rn, src_exports as rt, installLauncherBackStack as s, defineElement as sn, refreshAppWallpaperPaint as st, home_host_apply_default as t, resolveOverlayHost as tn, reinitializeRegistry as tt, listWorkspacePages as u, closeHighestPriority as un, restoreWallpaperThemeCache as ut, resolveIconResourceUrl as v, booleanRef as vn, observeFileSystemHandle as vt, applyIconScaleToPaintedNodes as w, makeObjectAssignable as wn, relPathCandidates as wt, showSuccess as x, propRef as xn, pickMarkdownFile as xt, tryLaunchSiblingView as y, numberRef as yn, originalRelFromRef as yt, inferIconDisplay as z, fixOrientToScreen as zn, provide as zt };

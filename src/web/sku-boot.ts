@@ -66,12 +66,21 @@ export const showExplorerBootFailure = (error: unknown, mount: HTMLElement = doc
     mount.textContent = `[CWSP-explorer] boot failed\n\n${message}`;
 };
 
+/**
+ * WHY: Capacitor `cws:shareIntent` is ingested by `installCapacitorShareIntentBridge`
+ * (open directory, or ask what to do with a file).
+ */
+export const installExplorerShareIngress = (): void => {
+    /* share pipeline lives in capacitor-share-intent + initIngressPWA */
+};
+
 export const bootExplorerSku = async (
     container: HTMLElement,
     kind?: ExplorerHostKind
 ): Promise<void> => {
     const host = detectHostKind(kind);
     stampExplorerSku(host);
+    installExplorerShareIngress();
 
     if (host === "capacitor") {
         try {

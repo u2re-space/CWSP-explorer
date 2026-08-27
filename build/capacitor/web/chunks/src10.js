@@ -1,4 +1,4 @@
-import { Pn as removeAdopted, Y as __decorate, in as defineElement, jn as loadAsAdopted, q as UIElement } from "../com/app.js";
+import { J as UIElement, Ln as removeAdopted, Pn as loadAsAdopted, X as __decorate, sn as defineElement } from "../com/app.js";
 import { _ as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { WorkCenterManager } from "./WorkCenter.js";
 //#region ../../modules/views/workcenter-view/src/scss/_index.scss?inline

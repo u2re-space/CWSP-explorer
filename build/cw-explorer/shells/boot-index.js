@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../vendor/dompurify.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","../chunks/ShareTargetGateway.js","../chunks/LogSanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/storage.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session.js","../chunks/sw-handling.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../vendor/dompurify.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","../chunks/ShareTargetGateway.js","../chunks/LogSanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/storage.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session.js","../chunks/sw-handling.js","../chunks/sku-ingress.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
-import { Cn as JSOX, Dn as isProtocolEnvelope, En as createProtocolEnvelope, In as fixOrientToScreen, On as normalizeProtocolEnvelope, Sn as safe, Tn as getUnifiedMessaging$2, Tt as writeFileSmart, Ut as makeUIState, Wt as saveUIState, Y as __decorate, _n as observe, at as initializeAppCanvasLayer, bn as stringRef, in as defineElement, jn as loadAsAdopted, kn as __vitePreload, q as UIElement, wn as createServiceChannelManager, xn as makeObjectAssignable } from "../com/app.js";
+import { An as isProtocolEnvelope, Cn as stringRef, Dn as createServiceChannelManager, En as JSOX, J as UIElement, Kt as makeUIState, Mn as __vitePreload, On as getUnifiedMessaging$2, Ot as writeFileSmart, Pn as loadAsAdopted, Tn as safe, X as __decorate, bn as observe, jn as normalizeProtocolEnvelope, kn as createProtocolEnvelope, ot as initializeAppCanvasLayer, qt as saveUIState, sn as defineElement, wn as makeObjectAssignable, zn as fixOrientToScreen } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
 import { f as publicHrefForView, l as isViewLocalToSurface$1, m as shouldHandoffViewToSibling, n as SKU_HUB_PATHS$1, p as readCwspSku$1, s as inferCwspSkuFromLocation$1 } from "./boot-history-base.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
@@ -1247,14 +1247,15 @@ var VIEW_MESSAGE_FALLBACKS = {
 		"content-share"
 	],
 	explorer: [
+		"file-ask",
 		"file-save",
 		"navigate-path",
 		"content-explorer"
 	],
+	home: ["home-update", "content-share"],
 	editor: ["content-load", "content-edit"],
 	settings: ["settings-update"],
 	history: ["history-update"],
-	home: ["home-update"],
 	print: ["content-view"]
 };
 var inferViewDestination = (viewId) => {
@@ -8166,7 +8167,7 @@ var isServiceWorkerScope$1 = () => {
 };
 var loadLureFs$1 = () => {
 	if (isServiceWorkerScope$1()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.ut).then((m) => ({
+	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.dt).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([1,2]), import.meta.url);
@@ -9969,7 +9970,7 @@ var isServiceWorkerScope = () => {
 };
 var loadLureFs = () => {
 	if (isServiceWorkerScope()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.ut).then((m) => ({
+	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.dt).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([1,2]), import.meta.url);
@@ -10650,7 +10651,7 @@ var cachedWallpaperPrimary$1 = () => {
 var extractFromImage$1 = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.nt);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.rt);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		return normalizeHexColor$1((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -10675,7 +10676,7 @@ var colorFromAppWallpaper$1 = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.nt);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.rt);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -12213,7 +12214,7 @@ var cachedWallpaperPrimary = () => {
 var extractFromImage = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.nt);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.rt);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		return normalizeHexColor((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -12238,7 +12239,7 @@ var colorFromAppWallpaper = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.nt);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.rt);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -15494,7 +15495,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([56,1,2,4,32]), import.meta.url);
+				}, __vite__mapDeps([56,1,2,4,57,32]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

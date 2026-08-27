@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./WorkCenterDataProcessing.js","../vendor/dompurify.js","../vendor/marked.js","./AIResponseParser.js"])))=>i.map(i=>d[i]);
-import { Dt as isBase64Like, Ot as normalizeDataAsset, an as H, kn as __vitePreload, kt as parseDataUrl } from "../com/app.js";
+import { At as isBase64Like, Mn as __vitePreload, Mt as parseDataUrl, cn as H, jt as normalizeDataAsset } from "../com/app.js";
 import { g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
 import { Xn as sendMessage, Yn as registerComponent, nr as ROUTE_HASHES, qn as initializeComponent } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
