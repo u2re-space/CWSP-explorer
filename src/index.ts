@@ -233,9 +233,11 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
 
         canHandleMessage(messageType: string): boolean {
             return [
+                "file-ask",
                 "file-save",
                 "navigate-path",
                 "content-explorer",
+                ExplorerChannelAction.FileAsk,
                 ExplorerChannelAction.SetColorScheme
             ].includes(messageType);
         }
@@ -243,7 +245,17 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
         async handleMessage(message: unknown): Promise<void> {
             const msg = message as {
                 type?: string;
-                data?: { path?: string; into?: string; file?: File; colorScheme?: unknown; scheme?: unknown; theme?: unknown };
+                data?: {
+                    path?: string;
+                    into?: string;
+                    src?: string;
+                    virtualPath?: string;
+                    file?: File;
+                    files?: File[];
+                    colorScheme?: unknown;
+                    scheme?: unknown;
+                    theme?: unknown;
+                };
             };
             if (msg.type === ExplorerChannelAction.SetColorScheme) {
                 const next =
@@ -252,11 +264,25 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
                 this.setExplorerColorScheme(next);
                 return;
             }
-            if (msg.data?.file instanceof File) {
-                await this.saveIncomingFileToWorkspace(msg.data.file, msg.data.path || msg.data.into);
+            const targetPath = String(
+                msg.data?.path || msg.data?.into || msg.data?.src || msg.data?.virtualPath || ""
+            ).trim();
+            const files = [
+                ...(msg.data?.file instanceof File ? [msg.data.file] : []),
+                ...((Array.isArray(msg.data?.files) ? msg.data!.files! : []).filter((f): f is File => f instanceof File))
+            ];
+            if (msg.type === "file-ask" || msg.type === ExplorerChannelAction.FileAsk) {
+                await this.askWhatToDoWithSharedFiles(files, targetPath);
                 return;
             }
-            const targetPath = msg.data?.path || msg.data?.into;
+            if (msg.type === "navigate-path" || msg.type === "content-explorer") {
+                if (targetPath && this.wiredFileManager) void this.wiredFileManager.navigate(targetPath);
+                return;
+            }
+            if (files[0]) {
+                await this.saveIncomingFileToWorkspace(files[0], targetPath || undefined);
+                return;
+            }
             if (targetPath && this.wiredFileManager) {
                 void this.wiredFileManager.navigate(targetPath);
             }
@@ -268,6 +294,56 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
             if (!op?.ingestFileIntoWorkspace) return false;
             await op.ingestFileIntoWorkspace(file, destPath);
             return true;
+        }
+
+        private parentDirOf(path: string): string {
+            const raw = String(path || "").trim().replace(/\\/g, "/");
+            if (!raw) return "";
+            const trimmed = raw.replace(/\/+$/, "");
+            const cut = trimmed.lastIndexOf("/");
+            if (cut <= 0) return trimmed;
+            if (/\.[a-z0-9]{1,8}$/i.test(trimmed.slice(cut + 1))) return trimmed.slice(0, cut) || "/";
+            return trimmed;
+        }
+
+        private async askWhatToDoWithSharedFiles(files: File[], pathHint: string): Promise<void> {
+            const file = files[0];
+            const folder = this.parentDirOf(pathHint);
+            if (!file && folder) {
+                if (this.wiredFileManager) void this.wiredFileManager.navigate(folder);
+                return;
+            }
+            if (!file) return;
+            const choice = await new Promise<"open" | "save" | "cancel">((resolve) => {
+                const dialog = document.createElement("dialog");
+                dialog.className = "view-explorer__share-ask";
+                const label = file.name || "shared file";
+                dialog.innerHTML = `<form method="dialog">
+                    <p>What should Explorer do with <strong></strong>?</p>
+                    <menu>
+                        <button value="open" type="submit"${folder ? "" : " disabled"}>Open folder</button>
+                        <button value="save" type="submit">Save to workspace</button>
+                        <button value="cancel" type="submit">Cancel</button>
+                    </menu>
+                </form>`;
+                const strong = dialog.querySelector("strong");
+                if (strong) strong.textContent = label;
+                dialog.addEventListener("close", () => {
+                    const v = dialog.returnValue;
+                    dialog.remove();
+                    resolve(v === "open" || v === "save" ? v : "cancel");
+                });
+                (this.explorerRoot || document.body).appendChild(dialog);
+                if (typeof dialog.showModal === "function") dialog.showModal();
+                else dialog.show();
+            });
+            if (choice === "open" && folder && this.wiredFileManager) {
+                void this.wiredFileManager.navigate(folder);
+                return;
+            }
+            if (choice === "save") {
+                await this.saveIncomingFileToWorkspace(file, folder || pathHint || undefined);
+            }
         }
 
         /** Imperative API — channels / tooling (`ui-file-manager` when wired). */
@@ -307,6 +383,17 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
                 }
                 case ExplorerChannelAction.GetPath:
                     return this.wiredFileManager?.path ?? null;
+                case ExplorerChannelAction.FileAsk:
+                case "file-ask": {
+                    const o = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+                    const file = o.file instanceof File ? o.file : null;
+                    const files = [
+                        ...(file ? [file] : []),
+                        ...((Array.isArray(o.files) ? o.files : []).filter((f): f is File => f instanceof File))
+                    ];
+                    const dest = typeof o.path === "string" ? o.path : typeof o.into === "string" ? o.into : "";
+                    return this.askWhatToDoWithSharedFiles(files, dest);
+                }
                 case ExplorerChannelAction.FileSave:
                 case "file-save": {
                     const o = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
