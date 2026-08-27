@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { En as __vitePreload } from "../com/app.js";
+import { kn as __vitePreload } from "../com/app.js";
 import { Rt as DEFAULT_SETTINGS } from "../shells/boot-index.js";
 //#region ../CWSP-document/src/shared/other/config/RuntimeSettings.ts
 var RuntimeSettings_exports = /* @__PURE__ */ __exportAll({ getRuntimeSettings: () => getRuntimeSettings });

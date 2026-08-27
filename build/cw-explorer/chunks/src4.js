@@ -1,4 +1,5 @@
-import { On as loadAsAdopted, gn as ref, jn as removeAdopted, nn as H } from "../com/app.js";
+import { Ct as saveMarkdownBlob, Pn as removeAdopted, an as H, jn as loadAsAdopted, yn as ref, yt as pickMarkdownFile } from "../com/app.js";
+import { _ as takeSkuHandoff, g as stashSkuHandoff } from "../shells/boot-history-base.js";
 import { l as createViewState } from "../views/viewer.js";
 //#region ../../modules/views/editor-view/src/editor.scss?inline
 var editor_default = "@layer view.editor{:is(html,body):has([data-view=editor]){--view-layout:\"flex\";--view-content-max-width:none}.view-editor{background-color:var(--view-bg,var(--color-surface,#ffffff));block-size:100%;color:var(--view-fg,var(--color-on-surface,#1a1a1a));display:flex;flex-direction:column}@supports (color:contrast-color(red)){.view-editor{color:contrast-color(var(--view-bg,var(--color-surface,#ffffff)))}}.view-editor__toolbar{align-items:center;background-color:var(--view-toolbar-bg,rgba(0,0,0,.02));border-block-end:1px solid var(--view-border,rgba(0,0,0,.08));color:contrast-color(var(--view-toolbar-bg,rgba(0,0,0,.02)));display:flex;flex-shrink:0;gap:.5rem;justify-content:space-between;padding:.5rem 1rem}.view-editor__toolbar-left,.view-editor__toolbar-right{align-items:center;display:flex;gap:.25rem}.view-editor__btn{align-items:center;background:transparent;border:none;border-radius:6px;color:var(--view-fg);cursor:pointer;display:flex;font-size:.8125rem;font-weight:500;gap:.5rem;padding:.5rem .75rem;transition:background-color .15s ease}.view-editor__btn ui-icon{font-size:1rem;opacity:.7}@media (max-width:640px){.view-editor__btn span{display:none}}.view-editor__btn:hover{background-color:rgba(0,0,0,.06);color:contrast-color(rgba(0,0,0,.06))}.view-editor__content{display:flex;flex:1;overflow:hidden}.view-editor__textarea{background-color:var(--view-editor-bg,#fafafa);border:none;color:var(--view-fg);flex:1;font-family:SF Mono,Fira Code,JetBrains Mono,Consolas,monospace;font-size:.9375rem;line-height:1.6;padding:1.5rem 2rem;resize:none}@supports (color:contrast-color(red)){.view-editor__textarea{color:contrast-color(var(--view-editor-bg,#fafafa))}}.view-editor__textarea:focus{outline:none}.view-editor__textarea::placeholder{color:var(--view-fg);opacity:.4}@media print{.view-editor__toolbar{display:none}.view-editor__textarea{padding:0}}}";
@@ -41,6 +42,7 @@ var EditorView = class {
 		this.shellContext = options.shellContext;
 		const saved = this.stateManager.load();
 		this.contentRef.value = options.initialContent || saved?.content || DEFAULT_CONTENT;
+		this.applySkuHandoff();
 	}
 	render(options) {
 		if (options) {
@@ -120,73 +122,44 @@ var EditorView = class {
 			}
 		});
 	}
+	applySkuHandoff() {
+		const handed = takeSkuHandoff("editor", "document", "viewer");
+		if (!handed?.content?.trim()) return;
+		this.contentRef.value = handed.content;
+		if (handed.filename) this.options.filename = handed.filename;
+		if (this.textarea) this.textarea.value = handed.content;
+	}
 	handleOpen() {
-		if (typeof showOpenFilePicker !== "undefined") showOpenFilePicker({ types: [{
-			description: "Markdown files",
-			accept: { "text/markdown": [".md", ".markdown"] }
-		}] })?.then?.(async (fileHandle) => {
-			if (fileHandle) {
-				const content = await fileHandle.text();
-				this.setContent(content);
-				this.options.filename = fileHandle.name;
-				this.showMessage(`Opened ${fileHandle.name}`);
+		pickMarkdownFile().then(async (picked) => {
+			if (!picked?.file) return;
+			try {
+				this.setContent(await picked.file.text());
+				this.options.filename = picked.file.name;
+				this.showMessage(`Opened ${picked.file.name}`);
+			} catch {
+				this.showMessage("Failed to open file");
 			}
-			return fileHandle;
-		})?.catch?.(() => {
-			this.showMessage("Failed to open file");
-			return null;
 		});
-		else {
-			const input = document.createElement("input");
-			input.type = "file";
-			input.accept = ".md,.markdown,.txt,text/markdown,text/plain";
-			input.onchange = async () => {
-				const file = input.files?.[0];
-				if (file) try {
-					const content = await file.text();
-					this.setContent(content);
-					this.options.filename = file.name;
-					this.showMessage(`Opened ${file.name}`);
-				} catch {
-					this.showMessage("Failed to open file");
-				}
-			};
-			input.click();
-		}
 	}
 	handleSave() {
 		const content = this.contentRef.value;
 		const filename = this.options.filename || "document.md";
-		const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		if (typeof showSaveFilePicker !== "undefined") showSaveFilePicker({
-			suggestedName: filename,
-			types: [{
-				description: "Markdown files",
-				accept: { "text/markdown": [".md", ".markdown"] }
-			}]
-		})?.then?.(async (fileHandle) => {
-			if (fileHandle) {
-				const writable = await fileHandle.createWritable();
-				await writable.write(content);
-				await writable.close();
-			} else this.showMessage("Failed to save file");
-			return fileHandle;
-		})?.catch?.((error) => {
-			this.showMessage("Failed to save file");
-			return null;
+		saveMarkdownBlob(content, filename).then((result) => {
+			if (result === "cancelled") return;
+			if (result === "failed") {
+				this.showMessage("Failed to save file");
+				return;
+			}
+			this.options.onSave?.(content);
+			this.showMessage(result === "shared" ? `Shared ${filename}` : `Saved ${filename}`);
 		});
-		else {
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = filename;
-			a.click();
-			setTimeout(() => URL.revokeObjectURL(url), 250);
-		}
-		this.options.onSave?.(content);
-		this.showMessage(`Saved ${filename}`);
 	}
 	handlePreview() {
+		stashSkuHandoff({
+			dest: "viewer",
+			content: this.contentRef.value,
+			filename: this.options.filename
+		});
 		this.shellContext?.navigate("viewer");
 	}
 	async handleCopy() {
@@ -206,6 +179,7 @@ var EditorView = class {
 	}
 	onMount() {
 		console.log("[Editor] Mounted");
+		this.applySkuHandoff();
 	}
 	showMessage(message) {
 		this.shellContext?.showMessage(message);

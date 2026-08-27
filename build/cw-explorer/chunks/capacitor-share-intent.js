@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { En as __vitePreload } from "../com/app.js";
+import { kn as __vitePreload } from "../com/app.js";
 import { Kt as isCapacitorCwsNativeShell, xn as splitMultiValueList } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region ../CWSP-document/src/frontend/boot/capacitor-share-intent.ts

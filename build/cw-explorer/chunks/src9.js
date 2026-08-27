@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/marked.js","./rolldown-runtime.js","../vendor/marked-katex-extension.js","../vendor/katex.js","./DocxExport.js","./BootLoader.js","../com/app.js","../fest/core.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
-import { $ as ensureStyleSheet, At as matchMappedRoot, Ct as decodeBase64ToBytes, Dt as getDir, En as __vitePreload, Et as parseDataUrl, Mt as openDirectory, Nt as provide, On as loadAsAdopted, Tt as normalizeDataAsset, _t as originalRelFromRef, bt as relPathCandidates, et as reinitializeRegistry, gn as ref, gt as observeFileSystemHandle, ht as mountPickedDirectory, jn as removeAdopted, jt as normalizePath, kt as isVirtualFsPath, mt as isMarkdownRelativeRef, nn as H, pt as findEntryRelPath, un as affected, vt as pickAssetDirectory, wt as isBase64Like, yt as provideBoundRelative } from "../com/app.js";
-import { g as takeSkuHandoff, h as stashSkuHandoff, p as shouldHandoffViewToSibling, u as publicHrefForSku } from "../shells/boot-history-base.js";
+import { $ as ensureStyleSheet, At as getDir, Ct as saveMarkdownBlob, Dt as isBase64Like, Et as decodeBase64ToBytes, Ft as openDirectory, It as provide, Mt as isVirtualFsPath, Nt as matchMappedRoot, Ot as normalizeDataAsset, Pn as removeAdopted, Pt as normalizePath, St as relPathCandidates, _t as originalRelFromRef, an as H, bt as pickSidecarDirectoryFiles, et as reinitializeRegistry, gt as observeFileSystemHandle, ht as mountPickedDirectory, jn as loadAsAdopted, kn as __vitePreload, kt as parseDataUrl, mt as isMarkdownRelativeRef, pn as affected, pt as findEntryRelPath, vt as pickAssetDirectory, xt as provideBoundRelative, yn as ref, yt as pickMarkdownFile } from "../com/app.js";
+import { _ as takeSkuHandoff, d as publicHrefForSku, g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
 import { Pn as ingressStampWasSuperseded, it as loadSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 import { t as purify } from "../vendor/dompurify.js";
@@ -153,6 +153,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		stateManager = createViewState(STORAGE_KEY);
 		_sheet = null;
 		pasteController = null;
+		documentOpenListener = null;
 		/** Whole-page drag/drop when the viewer is standalone (captures misses on shell padding). */
 		windowDnDController = null;
 		isViewVisible = false;
@@ -1063,15 +1064,15 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			});
 		}
 		handleOpen() {
-			const pickFile = globalThis.showOpenFilePicker;
-			if (typeof globalThis.showDirectoryPicker === "function" && typeof pickFile === "function") {
-				(async () => {
-					try {
-						const dir = await pickAssetDirectory({
-							mode: "read",
-							id: "markdown-assets"
-						});
-						if (!dir) return;
+			(async () => {
+				const canPickDir = typeof globalThis.showDirectoryPicker === "function";
+				const pickFile = globalThis.showOpenFilePicker;
+				if (canPickDir && typeof pickFile === "function") try {
+					const dir = await pickAssetDirectory({
+						mode: "read",
+						id: "markdown-assets"
+					});
+					if (dir) {
 						const root = mountPickedDirectory(dir, "md");
 						this.boundMountRoot = root;
 						this.boundDirectory = dir;
@@ -1095,38 +1096,43 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 						const file = await fileHandle.getFile();
 						this.setContent(await file.text(), file.name, virtual);
 						this.showMessage(`Opened ${file.name}`);
-					} catch (error) {
-						if (error?.name === "AbortError") return;
-						console.warn("[ViewerView] Directory picker open failed, falling back:", error);
-						this.handleOpenInputFallback();
+						return;
 					}
-				})();
-				return;
-			}
-			this.handleOpenInputFallback();
+				} catch (error) {
+					if (error?.name === "AbortError") return;
+					console.warn("[ViewerView] Directory picker open failed, falling back:", error);
+				}
+				const picked = await pickMarkdownFile();
+				if (!picked?.file) return;
+				if (picked.sidecars.length) this.rememberSidecarFiles(picked.sidecars, picked.file);
+				this.setContent(await picked.file.text(), picked.file.name, picked.virtualPath || null);
+				this.showMessage(`Opened ${picked.file.name}`);
+			})();
 		}
 		/** Bind a sibling folder after Launch Queue / Share Target (no parent handle). */
 		async handleBindAssets() {
-			if (typeof globalThis.showDirectoryPicker !== "function") {
-				this.showMessage("Folder picker is not available in this browser");
+			const picked = await pickSidecarDirectoryFiles();
+			if (picked.directory && picked.root) {
+				this.boundMountRoot = picked.root;
+				this.boundDirectory = picked.directory;
+				const name = String(this.options.filename || "document.md").trim() || "document.md";
+				const virtual = `${picked.root}${name}`;
+				this.sourceUrl = this.normalizeSourceUrl(virtual);
+				this.options.source = virtual;
+				this.options.filename = name;
+				this.watchVirtualSource(virtual);
+				if (picked.files.length) this.rememberSidecarFiles(picked.files);
+				const bound = await this.rewireBoundMedia();
+				this.showMessage(bound ? `Bound folder (${bound} refs)` : "Bound asset folder");
 				return;
 			}
-			const dir = await pickAssetDirectory({
-				id: "markdown-assets",
-				mode: "read"
-			});
-			if (!dir) return;
-			const root = mountPickedDirectory(dir, "md");
-			this.boundMountRoot = root;
-			this.boundDirectory = dir;
-			const name = String(this.options.filename || "document.md").trim() || "document.md";
-			const virtual = `${root}${name}`;
-			this.sourceUrl = this.normalizeSourceUrl(virtual);
-			this.options.source = virtual;
-			this.options.filename = name;
-			this.watchVirtualSource(virtual);
+			if (!picked.files.length) {
+				this.showMessage("Folder picker cancelled");
+				return;
+			}
+			this.rememberSidecarFiles(picked.files);
 			const bound = await this.rewireBoundMedia();
-			this.showMessage(bound ? `Bound folder (${bound} refs)` : "Bound asset folder");
+			this.showMessage(bound ? `Bound ${picked.files.length} files (${bound} refs)` : `Bound ${picked.files.length} files`);
 		}
 		viewerMarkdownRoot() {
 			const renderTarget = this.queryViewerSlotted("[data-render-target]");
@@ -1258,36 +1264,15 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		handleDownload() {
 			const content = this.contentRef.value;
 			const filename = this.options.filename || `document-${Date.now()}.md`;
-			const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-			const url = URL.createObjectURL(blob);
-			if (typeof showSaveFilePicker !== "undefined") showSaveFilePicker({
-				suggestedName: filename,
-				types: [{
-					description: "Markdown files",
-					accept: { "text/markdown": [".md", ".markdown"] }
-				}]
-			})?.then?.(async (fileHandle) => {
-				if (fileHandle) {
-					const writable = await fileHandle.createWritable();
-					await writable.write(content);
-					await writable.close();
-					this.showMessage(`Downloaded ${filename}`);
-					this.options.onDownload?.(content, filename);
-				} else this.showMessage("Failed to save file");
-				return fileHandle;
-			})?.catch?.(() => {
-				this.showMessage("Failed to save file");
-				return null;
-			});
-			else {
-				const a = document.createElement("a");
-				a.href = url;
-				a.download = filename;
-				a.click();
-				setTimeout(() => URL.revokeObjectURL(url), 250);
-				this.showMessage(`Downloaded ${filename}`);
+			saveMarkdownBlob(content, filename).then((result) => {
+				if (result === "cancelled") return;
+				if (result === "failed") {
+					this.showMessage("Failed to save file");
+					return;
+				}
+				this.showMessage(result === "shared" ? `Shared ${filename}` : `Saved ${filename}`);
 				this.options.onDownload?.(content, filename);
-			}
+			});
 		}
 		async handleExportDocx() {
 			const content = this.contentRef.value;
@@ -2083,6 +2068,15 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		}
 		onMount() {
 			console.log("[Viewer] Mounted");
+			if (!this.documentOpenListener) {
+				this.documentOpenListener = (ev) => {
+					const detail = ev.detail;
+					const text = String(detail?.content || "");
+					if (!text.trim()) return;
+					this.setContent(text, detail?.filename, detail?.src || null);
+				};
+				window.addEventListener("cwsp:document-open", this.documentOpenListener);
+			}
 			ensureViewerIconRuntime();
 			this._sheet ??= loadAsAdopted(src_default$1);
 			this.applyCustomStyles();
@@ -2099,6 +2093,10 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.isPointerInView = false;
 			this.pasteController?.abort();
 			this.pasteController = null;
+			if (this.documentOpenListener) {
+				window.removeEventListener("cwsp:document-open", this.documentOpenListener);
+				this.documentOpenListener = null;
+			}
 			this.windowDnDController?.abort();
 			this.windowDnDController = null;
 			if (this.customSheet) {

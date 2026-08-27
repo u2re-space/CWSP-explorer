@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { En as __vitePreload } from "../com/app.js";
+import { kn as __vitePreload } from "../com/app.js";
 /**
 * Recent-history window for collapsing identical clipboard bodies that lack a
 * stable contentKey (or had mismatched keys across Cap/Neu emits).

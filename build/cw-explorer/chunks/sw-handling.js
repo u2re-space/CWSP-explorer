@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./BootLoader.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js"])))=>i.map(i=>d[i]);
-import { En as __vitePreload, Et as parseDataUrl, Gt as copy, Kt as initClipboardReceiver, ft as bindDirectoryForLaunchedFiles, wt as isBase64Like } from "../com/app.js";
-import { m as siblingSkuForView, n as SKU_HUB_PATHS, o as ensureCwspSkuFromLocation, p as shouldHandoffViewToSibling, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS, u as publicHrefForSku } from "../shells/boot-history-base.js";
-import { Bn as consumeCachedShareTargetPayload, Fn as unifiedMessaging$1, Gn as enqueuePendingMessage, Qn as unifiedMessaging, Vn as storeShareTargetPayloadToCache, Zn as sendProtocolMessage, ar as viewBroadcastChannelName, ir as normalizeDestination, it as loadSettings, tr as BROADCAST_CHANNELS, zn as buildShareDataFromCachedPayload } from "../shells/boot-index.js";
+import { Dt as isBase64Like, Jt as copy, Yt as initClipboardReceiver, ft as bindDirectoryForLaunchedFiles, kn as __vitePreload, kt as parseDataUrl } from "../com/app.js";
+import { d as publicHrefForSku, h as siblingSkuForView, m as shouldHandoffViewToSibling, n as SKU_HUB_PATHS, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
+import { Bn as consumeCachedShareTargetPayload, Fn as unifiedMessaging$1, Gn as enqueuePendingMessage, Qn as unifiedMessaging, Vn as storeShareTargetPayloadToCache, Zn as sendProtocolMessage, ar as viewBroadcastChannelName, ir as normalizeDestination, it as loadSettings, or as resolveProcessApiUrl, tr as BROADCAST_CHANNELS, zn as buildShareDataFromCachedPayload } from "../shells/boot-index.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 //#region ../CWSP-document/src/shared/boot/toast.ts
 var DEFAULT_CONFIG = {
@@ -1819,7 +1819,7 @@ var processShareTargetData = async (shareData, skipIfEmpty = false) => {
 			console.log("[ShareTarget] Processing text content, length:", content.length);
 		} else throw new Error("No processable content found");
 		console.log("[ShareTarget] Calling unified processing API");
-		const response = await fetch("/api/processing", {
+		const response = await fetch(resolveProcessApiUrl("processing"), {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({

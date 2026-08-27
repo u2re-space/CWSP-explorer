@@ -21818,6 +21818,21 @@ var relPathCandidates = (rel) => {
 	const parts = clean.split(/[\\/]/).filter(Boolean);
 	return parts.map((_, i) => parts.slice(i).join("/"));
 };
+/** Walk a picked folder so the viewer can resolve `./assets/…` by relative path or basename. */
+var indexDirectoryFiles = async (dir, prefix = "", depth = 8, acc = []) => {
+	if (depth < 0) return acc;
+	for await (const [name, handle] of dir.entries()) {
+		const rel = prefix ? `${prefix}/${name}` : name;
+		if (handle.kind === "file") try {
+			acc.push({
+				rel,
+				file: await handle.getFile()
+			});
+		} catch {}
+		else if (handle.kind === "directory") await indexDirectoryFiles(handle, rel, depth - 1, acc);
+	}
+	return acc;
+};
 /** Chromium File System Access — pick the folder that holds images / includes. */
 var pickAssetDirectory = async (options = {}) => {
 	const pick = globalThis.showDirectoryPicker;
@@ -21920,6 +21935,136 @@ var bindDirectoryForLaunchedFiles = async (options) => {
 		root,
 		virtualPath: `${root}${rel}`
 	};
+};
+var MARKDOWN_INPUT_ACCEPT = ".md,.markdown,.mdown,.mkd,.mkdn,.mdtxt,.mdtext,.txt,text/markdown,text/plain";
+var pickFilesViaInput = (options) => new Promise((resolve) => {
+	const input = document.createElement("input");
+	input.type = "file";
+	if (options.accept) input.accept = options.accept;
+	if (options.multiple) input.multiple = true;
+	if (options.directory) {
+		input.setAttribute("webkitdirectory", "");
+		input.setAttribute("directory", "");
+		input.multiple = true;
+	}
+	const finish = (files) => resolve(files);
+	input.addEventListener("change", () => finish(Array.from(input.files || [])), { once: true });
+	input.addEventListener("cancel", () => finish([]), { once: true });
+	input.click();
+});
+/** FSA when present; Capacitor / CRX / Firefox fall back to `<input type=file>`. */
+var pickMarkdownFile = async () => {
+	const pickFile = globalThis.showOpenFilePicker;
+	if (typeof pickFile === "function") try {
+		const [handle] = await pickFile({
+			multiple: false,
+			types: [{
+				description: "Markdown",
+				accept: {
+					"text/markdown": [
+						".md",
+						".markdown",
+						".mdown",
+						".mkd"
+					],
+					"text/plain": [".txt"]
+				}
+			}]
+		});
+		if (!handle) return null;
+		return {
+			file: await handle.getFile(),
+			sidecars: []
+		};
+	} catch (error) {
+		if (error?.name === "AbortError") return null;
+	}
+	const files = await pickFilesViaInput({ accept: MARKDOWN_INPUT_ACCEPT });
+	return files[0] ? {
+		file: files[0],
+		sidecars: []
+	} : null;
+};
+/**
+* Folder of images / includes. Chromium FSA first; otherwise `webkitdirectory`
+* (Capacitor WebView + CRX) so relative `![](./assets/…)` can resolve from sidecars.
+*/
+var pickSidecarDirectoryFiles = async () => {
+	const dir = await pickAssetDirectory({
+		id: "markdown-assets",
+		mode: "read"
+	});
+	if (dir) return {
+		files: (await indexDirectoryFiles(dir)).map((row) => {
+			try {
+				Object.defineProperty(row.file, "webkitRelativePath", { value: row.rel });
+			} catch {}
+			return row.file;
+		}),
+		directory: dir,
+		root: mountPickedDirectory(dir, "md")
+	};
+	return {
+		files: await pickFilesViaInput({ directory: true }),
+		directory: null,
+		root: null
+	};
+};
+/** PWA FSA → CRX `chrome.downloads` → Web Share (Capacitor) → `<a download>`. */
+var saveMarkdownBlob = async (content, filename) => {
+	const name = String(filename || "document.md").trim() || "document.md";
+	const savePicker = globalThis.showSaveFilePicker;
+	if (typeof savePicker === "function") try {
+		const writable = await (await savePicker({
+			suggestedName: name,
+			types: [{
+				description: "Markdown files",
+				accept: { "text/markdown": [".md", ".markdown"] }
+			}]
+		})).createWritable();
+		await writable.write(content);
+		await writable.close();
+		return "saved";
+	} catch (error) {
+		if (error?.name === "AbortError") return "cancelled";
+	}
+	const chromeDl = globalThis.chrome?.downloads?.download;
+	const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+	if (typeof chromeDl === "function") {
+		const url = URL.createObjectURL(blob);
+		try {
+			await chromeDl({
+				url,
+				filename: name,
+				saveAs: true
+			});
+			return "downloaded";
+		} catch {
+			URL.revokeObjectURL(url);
+		}
+	}
+	const file = new File([blob], name, { type: "text/markdown" });
+	const nav = navigator;
+	if (typeof nav.share === "function" && (!nav.canShare || nav.canShare({ files: [file] }))) try {
+		await nav.share({
+			files: [file],
+			title: name
+		});
+		return "shared";
+	} catch (error) {
+		if (error?.name === "AbortError") return "cancelled";
+	}
+	try {
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = name;
+		a.click();
+		setTimeout(() => URL.revokeObjectURL(url), 250);
+		return "downloaded";
+	} catch {
+		return "failed";
+	}
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/LazyLoader.ts
@@ -22081,6 +22226,7 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	html: () => html,
 	htmlBuilder: () => htmlBuilder,
 	ignoreNextPopState: () => ignoreNextPopState,
+	indexDirectoryFiles: () => indexDirectoryFiles,
 	initBackNavigation: () => initBackNavigation,
 	initClipboardReceiver: () => initClipboardReceiver,
 	initGlobalClipboard: () => initGlobalClipboard,
@@ -22133,6 +22279,8 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	pickAssetDirectory: () => pickAssetDirectory,
 	pickBgColor: () => pickBgColor,
 	pickFromCenter: () => pickFromCenter,
+	pickMarkdownFile: () => pickMarkdownFile,
+	pickSidecarDirectoryFiles: () => pickSidecarDirectoryFiles,
 	placeOverlay: () => placeOverlay,
 	pointerAnchorRef: () => pointerAnchorRef,
 	post: () => post,
@@ -22157,6 +22305,7 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	resolvePath: () => resolvePath,
 	resolvePlacement: () => resolvePlacement,
 	resolveRootHandle: () => resolveRootHandle,
+	saveMarkdownBlob: () => saveMarkdownBlob,
 	saveUIState: () => saveUIState,
 	scrollLink: () => scrollLink,
 	scrollRef: () => scrollRef,
@@ -39873,4 +40022,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 //#region ../../modules/projects/fl.ui/src/styles/ui/home-host-apply.scss?inline
 var home_host_apply_default = ":where(body):has(.speed-dial-root),:where(body):has([data-view=home]),:where(html):has(.speed-dial-root),:where(html[data-cwsp-shell-role=launcher]){block-size:var(--lv-height,100lvb);margin:0;max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);overflow:hidden}:where(main,[role=main]):has(>.view-home.env-home-workspace){background:transparent;border:none;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace,.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace){background:none;background-color:initial;border:0 transparent;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none;outline:0 none transparent}:where(main,[role=main]):has(>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace:not(.wf-mounted-view),.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}.env-home-workspace,.view-home.env-home-workspace{box-sizing:border-box;overflow:visible;pointer-events:none}.view-home.env-home-workspace{align-items:stretch;background:transparent;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:100%;justify-items:stretch;min-block-size:var(--lv-height,100lvb);min-inline-size:0;padding:0;position:relative}.view-home.env-home-workspace>.speed-dial-root{block-size:var(--lv-height,100%);inline-size:var(--lv-width,100%);inset:0 auto auto 0;max-block-size:var(--lv-height,100%);max-inline-size:var(--lv-width,100%);pointer-events:auto;position:absolute}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view{align-self:stretch;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:auto;border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;isolation:isolate;margin:0;margin-inline:0;max-inline-size:none;min-block-size:0;outline:none!important;position:relative;z-index:0}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root{block-size:var(--lv-height,100lvb);border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;inline-size:var(--lv-width,100%);max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);outline:none!important}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view{padding-block-end:env(safe-area-inset-block-end,0);padding-block-start:env(safe-area-inset-block-start,0);padding-inline-end:env(safe-area-inset-inline-end,0);padding-inline-start:env(safe-area-inset-inline-start,0)}.view-home.env-home-workspace:not(.wf-mounted-view){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin-inline:0;max-inline-size:none;min-block-size:var(--lv-height,100lvb);outline:none!important}";
 //#endregion
-export { ensureStyleSheet as $, getBy as $t, parseSpeedDialItemFromJSON as A, preloadStyle$1 as An, matchMappedRoot as At, normalizeTileShape$1 as B, makeUIState as Bt, addSpeedDialItem as C, createProtocolEnvelope as Cn, decodeBase64ToBytes as Ct, findNextFreeSpeedDialCell as D, DOMMixin as Dn, getDir as Dt, buildLauncherAppDragEnvelope as E, __vitePreload as En, parseDataUrl as Et, TILE_SHAPE_OPTIONS as F, orientationNumberMap as Fn, dynamicTheme as Ft, resolveEntryIcon as G, copy as Gt, listVirtualRootEntriesFromRouter as H, HistoryManager_exports as Ht, createTileUiIconElement as I, updateVP as In, placeOverlay as It, UIElement_default as J, registerTransientOverlay as Jt, getSpeedDialViewOpener as K, initClipboardReceiver as Kt, defaultIconScaleForDisplay as L, MOCElement as Ln, createTemplateManager as Lt, resolveSpeedDialCellFromClientPoint as M, ensureVirtualKeyboardOverlay as Mn, openDirectory as Mt, tileIconFetchSize as N, fixOrientToScreen as Nn, provide as Nt, isClientPointOverSpeedDial as O, loadAsAdopted as On, handleIncomingEntries as Ot, ICON_DISPLAY_OPTIONS as P, getCorrectOrientation as Pn, registerDirectoryRoot as Pt, testIconRacing as Q, makeTask as Qt, inferIconDisplay as R, addEvent as Rn, pointerAnchorRef as Rt, ICON_BITMAP_SCALE_OPTIONS as S, getUnifiedMessaging as Sn, writeFileSmart as St, applyItemIconScaleToElement as T, normalizeProtocolEnvelope as Tn, normalizeDataAsset as Tt, resolveFsBackend as U, decodeDesktopState as Ut, syncShapelessIconShadow as V, saveUIState as Vt, subscribeFsBackendRegister as W, loadDesktopRaw as Wt, clearIconCaches as X, elementPointerMap as Xt, __decorate as Y, resolveOverlayHost as Yt, debugIconSystem as Z, bindOutsideDismiss as Zt, getCachedLauncherIconObjectUrl as _, stringRef as _n, originalRelFromRef as _t, getString as a, hasActiveCloseable as an, initializeAppCanvasLayer as at, isAndroidIconRef as b, JSOX as bn, relPathCandidates as bt, WORKSPACE_PAGE_EVENT as c, E as cn, applyWallpaperPaperFromLuma as ct, switchWorkspacePage as d, effect as dn, getCachedComponent as dt, navigationEnable as en, reinitializeRegistry as et, attachIconResourcePickButton as f, booleanRef as fn, bindDirectoryForLaunchedFiles as ft, getCachedIconResourceObjectUrl as g, ref as gn, observeFileSystemHandle as gt, ensureLauncherIconObjectUrl as h, propRef as hn, mountPickedDirectory as ht, StorageKeys as i, closeHighestPriority as in, getWallpaperStoragePointer as it, pinLauncherAppEntry as j, removeAdopted as jn, normalizePath as jt, normalizeItemIconBitmapScale as k, loadInlineStyle as kn, isVirtualFsPath as kt, getActiveWorkspaceId as l, M$1 as ln, restoreWallpaperThemeCache as lt, applyLauncherIconToUiIcon as m, observe as mn, isMarkdownRelativeRef as mt, FileManager as n, H as nn, src_exports as nt, setString as o, registerModal as on, refreshAppWallpaperPaint as ot, openUnifiedContextMenu as p, numberRef as pn, findEntryRelPath as pt, UIElement as q, writeText as qt, FileManagerContent_default as r, vector2Ref as rn, WALLPAPER_IDB_MARKER as rt, installLauncherBackStack as s, navigate as sn, setAppWallpaperFromBlob as st, home_host_apply_default as t, defineElement as tn, clearAllCache as tt, listWorkspacePages as u, affected as un, src_exports$1 as ut, resolveIconResourceUrl as v, makeObjectAssignable as vn, pickAssetDirectory as vt, applyIconScaleToPaintedNodes as w, isProtocolEnvelope as wn, isBase64Like as wt, showSuccess as x, createServiceChannelManager as xn, createFileHandler as xt, tryLaunchSiblingView as y, safe as yn, provideBoundRelative as yt, normalizeIconDisplay as z, isInFocus as zn, getSpeechPrompt as zt };
+export { ensureStyleSheet as $, elementPointerMap as $t, parseSpeedDialItemFromJSON as A, DOMMixin as An, getDir as At, normalizeTileShape$1 as B, MOCElement as Bn, createTemplateManager as Bt, addSpeedDialItem as C, JSOX as Cn, saveMarkdownBlob as Ct, findNextFreeSpeedDialCell as D, isProtocolEnvelope as Dn, isBase64Like as Dt, buildLauncherAppDragEnvelope as E, createProtocolEnvelope as En, decodeBase64ToBytes as Et, TILE_SHAPE_OPTIONS as F, ensureVirtualKeyboardOverlay as Fn, openDirectory as Ft, resolveEntryIcon as G, HistoryManager_exports as Gt, listVirtualRootEntriesFromRouter as H, isInFocus as Hn, getSpeechPrompt as Ht, createTileUiIconElement as I, fixOrientToScreen as In, provide as It, UIElement_default as J, copy as Jt, getSpeedDialViewOpener as K, decodeDesktopState as Kt, defaultIconScaleForDisplay as L, getCorrectOrientation as Ln, registerDirectoryRoot as Lt, resolveSpeedDialCellFromClientPoint as M, loadInlineStyle as Mn, isVirtualFsPath as Mt, tileIconFetchSize as N, preloadStyle$1 as Nn, matchMappedRoot as Nt, isClientPointOverSpeedDial as O, normalizeProtocolEnvelope as On, normalizeDataAsset as Ot, ICON_DISPLAY_OPTIONS as P, removeAdopted as Pn, normalizePath as Pt, testIconRacing as Q, resolveOverlayHost as Qt, inferIconDisplay as R, orientationNumberMap as Rn, dynamicTheme as Rt, ICON_BITMAP_SCALE_OPTIONS as S, safe as Sn, relPathCandidates as St, applyItemIconScaleToElement as T, getUnifiedMessaging as Tn, writeFileSmart as Tt, resolveFsBackend as U, makeUIState as Ut, syncShapelessIconShadow as V, addEvent as Vn, pointerAnchorRef as Vt, subscribeFsBackendRegister as W, saveUIState as Wt, clearIconCaches as X, writeText as Xt, __decorate as Y, initClipboardReceiver as Yt, debugIconSystem as Z, registerTransientOverlay as Zt, getCachedLauncherIconObjectUrl as _, observe as _n, originalRelFromRef as _t, getString as a, H as an, initializeAppCanvasLayer as at, isAndroidIconRef as b, stringRef as bn, pickSidecarDirectoryFiles as bt, WORKSPACE_PAGE_EVENT as c, hasActiveCloseable as cn, applyWallpaperPaperFromLuma as ct, switchWorkspacePage as d, E as dn, getCachedComponent as dt, bindOutsideDismiss as en, reinitializeRegistry as et, attachIconResourcePickButton as f, M$1 as fn, bindDirectoryForLaunchedFiles as ft, getCachedIconResourceObjectUrl as g, numberRef as gn, observeFileSystemHandle as gt, ensureLauncherIconObjectUrl as h, booleanRef as hn, mountPickedDirectory as ht, StorageKeys as i, defineElement as in, getWallpaperStoragePointer as it, pinLauncherAppEntry as j, loadAsAdopted as jn, handleIncomingEntries as jt, normalizeItemIconBitmapScale as k, __vitePreload as kn, parseDataUrl as kt, getActiveWorkspaceId as l, registerModal as ln, restoreWallpaperThemeCache as lt, applyLauncherIconToUiIcon as m, effect as mn, isMarkdownRelativeRef as mt, FileManager as n, getBy as nn, src_exports as nt, setString as o, vector2Ref as on, refreshAppWallpaperPaint as ot, openUnifiedContextMenu as p, affected as pn, findEntryRelPath as pt, UIElement as q, loadDesktopRaw as qt, FileManagerContent_default as r, navigationEnable as rn, WALLPAPER_IDB_MARKER as rt, installLauncherBackStack as s, closeHighestPriority as sn, setAppWallpaperFromBlob as st, home_host_apply_default as t, makeTask as tn, clearAllCache as tt, listWorkspacePages as u, navigate as un, src_exports$1 as ut, resolveIconResourceUrl as v, propRef as vn, pickAssetDirectory as vt, applyIconScaleToPaintedNodes as w, createServiceChannelManager as wn, createFileHandler as wt, showSuccess as x, makeObjectAssignable as xn, provideBoundRelative as xt, tryLaunchSiblingView as y, ref as yn, pickMarkdownFile as yt, normalizeIconDisplay as z, updateVP as zn, placeOverlay as zt };

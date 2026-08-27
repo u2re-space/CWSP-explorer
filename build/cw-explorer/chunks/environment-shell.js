@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","../views/viewer.js","../vendor/dompurify.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./storage.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./ShareTargetGateway.js","./LogSanitizer.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
-import { $ as ensureStyleSheet, An as preloadStyle, En as __vitePreload, an as hasActiveCloseable, at as initializeAppCanvasLayer, gn as ref, in as closeHighestPriority, kn as loadInlineStyle, lt as restoreWallpaperThemeCache, ot as refreshAppWallpaperPaint } from "../com/app.js";
+import { $ as ensureStyleSheet, Mn as loadInlineStyle, Nn as preloadStyle, at as initializeAppCanvasLayer, cn as hasActiveCloseable, kn as __vitePreload, lt as restoreWallpaperThemeCache, ot as refreshAppWallpaperPaint, sn as closeHighestPriority, yn as ref } from "../com/app.js";
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
 import { jn as isEnabledView } from "../shells/boot-index.js";
 import { t as ShellBase } from "./shells.js";
@@ -82,7 +82,7 @@ var CWSP_VIEW_LOADERS = {
 	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,1,2,5,3,4,6,7,13,12]), import.meta.url),
 	history: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([20,1,2,12,5,3,4,6,7,13,21]), import.meta.url),
 	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([22,1,2,5,23,3,4,6,7,24,25,26,27,28,16,15,29,30,31,32,33,34,35,13]), import.meta.url),
-	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([36,1,2,12,5,3,4,6,7,13]), import.meta.url),
+	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([36,1,2,5,12,3,4,6,7,13]), import.meta.url),
 	home: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([37,1,2,12,5,3,4,6,7,13,38]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */

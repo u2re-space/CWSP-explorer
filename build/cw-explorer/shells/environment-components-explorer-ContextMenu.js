@@ -1,4 +1,4 @@
-import { It as placeOverlay, Jt as registerTransientOverlay, Pt as registerDirectoryRoot, Yt as resolveOverlayHost } from "../com/app.js";
+import { Lt as registerDirectoryRoot, Qt as resolveOverlayHost, Zt as registerTransientOverlay, zt as placeOverlay } from "../com/app.js";
 //#region ../CWSP-document/src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {
 	let p = String(path || "/").trim() || "/";

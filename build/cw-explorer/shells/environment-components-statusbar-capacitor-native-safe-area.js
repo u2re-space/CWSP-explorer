@@ -1,4 +1,4 @@
-import { An as preloadStyle, J as UIElement_default, Y as __decorate, cn as E, ct as applyWallpaperPaperFromLuma, dn as effect, gn as ref, nn as H, tn as defineElement } from "../com/app.js";
+import { J as UIElement_default, Nn as preloadStyle, Y as __decorate, an as H, ct as applyWallpaperPaperFromLuma, dn as E, in as defineElement, mn as effect, yn as ref } from "../com/app.js";
 import { Vt as CwsBridge } from "./boot-index.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
