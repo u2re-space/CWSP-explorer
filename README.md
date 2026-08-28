@@ -1,23 +1,31 @@
 # CWSP-explorer
 
-Dedicated explorer SKU (not the hub alias). File manager SoT is `modules/projects/fl.ui/src/ui/explorer`.
+Отдельный SKU проводника (не alias хаба). Файловый UI SoT: `modules/projects/fl.ui/src/ui/explorer`. На хосте — `explorer.` / `/explorer`; `u2re.space/explorer` остаётся in-process на хабе.
 
-## Hosts
+## Поверхности
 
-| Surface | Entry | Script |
-|---|---|---|
+| Поверхность | Вход | Скрипт |
+| --- | --- | --- |
 | Web / PWA | `src/web/cw-explorer/` | `npm run build:cw-explorer` |
 | Capacitor | `src/web/capacitor/` | `npm run build:capacitor` |
 | Chrome extension | `src/web/crx/` | `npm run build:crx` |
 | Neutralino | `src/web/neutralino/` | `npm run build:neutralino` |
 
-`u2re.space/explorer` stays in-process on the hub. `explorer.u2re.space` stages from this package.
+```bash
+cd apps/CWSP-explorer
+npm run dev
+npm run dev:8434          # если 443 недоступен
+npm run build:cw-explorer
+npm run build:capacitor
+```
 
-## Backends
+## Бэкенды путей
 
-- `/user/` — OPFS (web, CRX, PWA)
-- `/bookmarks/` — `chrome.bookmarks` (CRX)
-- `/downloads/` — `chrome.downloads` (CRX, read-only)
-- `/sdcard/` `/saf/` — Capacitor native storage
-- `/desktop/` — Neutralino home tree (`filesystem.*` in `neutralino.config.json`)
-- `/mounts/` — File System Access directory picker
+| Префикс | Где |
+| --- | --- |
+| `/user/` | OPFS (web, CRX, PWA) |
+| `/bookmarks/` | `chrome.bookmarks` (CRX) |
+| `/downloads/` | `chrome.downloads` (CRX, только чтение) |
+| `/sdcard/` `/saf/` | Capacitor |
+| `/desktop/` | Neutralino home (`filesystem.*`) |
+| `/mounts/` | File System Access (выбор папки) |
