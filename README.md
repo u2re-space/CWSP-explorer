@@ -1,31 +1,18 @@
-# CWSP-explorer
+# explorer-view
 
-Отдельный SKU проводника (не alias хаба). Файловый UI SoT: `modules/projects/fl.ui/src/ui/explorer`. На хосте — `explorer.` / `/explorer`; `u2re.space/explorer` остаётся in-process на хабе.
+Представление проводника. View id: **`explorer`**. Файловый UI SoT: `fest/fl-ui` `src/ui/explorer`. Здесь — view-адаптер и playground.
 
-## Поверхности
+Продуктовый SKU (PWA / Capacitor / хост `explorer.`) — [`apps/CWSP-explorer`](../../../apps/CWSP-explorer/README.md). Не править копии под `*/views/explorer`.
 
-| Поверхность | Вход | Скрипт |
-| --- | --- | --- |
-| Web / PWA | `src/web/cw-explorer/` | `npm run build:cw-explorer` |
-| Capacitor | `src/web/capacitor/` | `npm run build:capacitor` |
-| Chrome extension | `src/web/crx/` | `npm run build:crx` |
-| Neutralino | `src/web/neutralino/` | `npm run build:neutralino` |
+Префиксы путей (как у SKU): `/user/` OPFS · `/mounts/` FSA · `/bookmarks/` `/downloads/` (CRX) · `/sdcard/` `/saf/` (Cap) · `/desktop/` (Neutralino).
+
+## Запуск
 
 ```bash
-cd apps/CWSP-explorer
+cd modules/views/explorer-view
 npm run dev
-npm run dev:8434          # если 443 недоступен
-npm run build:cw-explorer
-npm run build:capacitor
+npm run dev:8434
+npm run build
 ```
 
-## Бэкенды путей
-
-| Префикс | Где |
-| --- | --- |
-| `/user/` | OPFS (web, CRX, PWA) |
-| `/bookmarks/` | `chrome.bookmarks` (CRX) |
-| `/downloads/` | `chrome.downloads` (CRX, только чтение) |
-| `/sdcard/` `/saf/` | Capacitor |
-| `/desktop/` | Neutralino home (`filesystem.*`) |
-| `/mounts/` | File System Access (выбор папки) |
+На этом пакете также лежат скрипты стейджа (`build:cw-explorer`, `build:capacitor`) — канонический хост для выкладки всё равно `apps/CWSP-explorer`.
