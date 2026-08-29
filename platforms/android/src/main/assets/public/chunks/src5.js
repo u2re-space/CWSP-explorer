@@ -1,4 +1,4 @@
-import { gn as H } from "../com/app.js";
+import { yn as H } from "../com/app.js";
 import { i as HistoryChannelAction } from "../views/viewer.js";
 import { a as transferProgressRatio, dispatchHistoryAction, getTransferHistoryStore, historyImageSrc, i as isMutedHistoryStatus, n as formatTransferBytes, r as formatTransferSpeed, setTransferHistoryUiActive, startCapacitorTransferHistory, startNeutralinoTransferHistory, t as actionsForEntry } from "./transfer-history-runtime.js";
 import { loadAsAdopted, removeAdopted } from "/fest/dom.js";

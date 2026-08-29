@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/marked.js","./rolldown-runtime.js","../vendor/marked-katex-extension.js","../vendor/katex.js","./DocxExport.js","./BootLoader.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
-import { _ as takeSkuHandoff, d as publicHrefForSku, g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Jn as ingressStampWasSuperseded, bt as resolveOpenPolicy, dt as classifyOpenKind, it as loadSettings, mt as looksLikePreviewableBinary, vt as peekOpenPolicy, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/marked.js","./rolldown-runtime.js","../vendor/marked-katex-extension.js","../vendor/katex.js","./DocxExport.js","./BootLoader.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
+import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { Ct as resolveOpenPolicy, mt as looksLikePreviewableBinary, rt as loadSettings, tr as ingressStampWasSuperseded, ut as classifyOpenKind, xt as resolveHostOpenPolicy, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
-import { At as pickSidecarDirectoryFiles, Bt as parseDataUrl, Ct as indexDirectoryFiles, Dt as originalRelFromRef, Et as observeFileSystemHandle, Gt as normalizePath, Kt as openDirectory, Lt as decodeBase64ToBytes, Mt as relPathCandidates, Nt as resolveFileUnderDirectory, Ot as pickAssetDirectory, Pt as saveMarkdownBlob, Rt as isBase64Like, St as findEntryRelPath, Tn as __vitePreload, Tt as mountPickedDirectory, Ut as isVirtualFsPath, Vt as getDir, Wt as matchMappedRoot, gn as H, jt as provideBoundRelative, kt as pickMarkdownFile, qt as provide, wt as isMarkdownRelativeRef, zt as normalizeDataAsset } from "../com/app.js";
+import { At as originalRelFromRef, Bt as decodeBase64ToBytes, Dt as isMarkdownRelativeRef, Et as indexDirectoryFiles, Ft as relPathCandidates, Ht as normalizeDataAsset, It as resolveFileUnderDirectory, Jt as normalizePath, Kt as isVirtualFsPath, Lt as saveMarkdownBlob, Mt as pickMarkdownFile, Nt as pickSidecarDirectoryFiles, On as __vitePreload, Ot as mountPickedDirectory, Pt as provideBoundRelative, Tt as findEntryRelPath, Ut as parseDataUrl, Vt as isBase64Like, Wt as getDir, Xt as provide, Yt as openDirectory, jt as pickAssetDirectory, kt as observeFileSystemHandle, qt as matchMappedRoot, yn as H } from "../com/app.js";
 import { t as purify } from "../vendor/dompurify.js";
 import { c as createViewConstructor, l as createViewState, n as sendViewProtocolMessage, r as ExplorerChannelAction, s as ViewerChannelAction } from "../views/viewer.js";
 import { loadAsAdopted, removeAdopted } from "/fest/dom.js";
@@ -157,6 +157,11 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		_sheet = null;
 		pasteController = null;
 		documentOpenListener = null;
+		shareIntentListener = null;
+		/** Image/PDF opened before the render slot exists — paint after `render()`. */
+		pendingBinaryPreview = null;
+		/** INVARIANT: markdown `contentRef` must not overwrite an in-place image/PDF. */
+		binaryPreviewActive = false;
 		/** Whole-page drag/drop when the viewer is standalone (captures misses on shell padding). */
 		windowDnDController = null;
 		isViewVisible = false;
@@ -242,7 +247,6 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.options = options;
 			this.shellContext = options.shellContext;
 			this.sourceUrl = this.normalizeSourceUrl(options.source);
-			this.applyRouteParams(options.params);
 			this.markdownSettingsPromise = this.loadMarkdownSettings();
 			try {
 				this.outlineVisible = globalThis.sessionStorage?.getItem(VIEWER_OUTLINE_SESSION_KEY) === "1";
@@ -252,6 +256,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.syncViewerColorSchemeFromOptions();
 			const savedState = this.stateManager.load();
 			this.contentRef.value = options.initialContent || savedState?.content || DEFAULT_CONTENT;
+			this.applyRouteParams(options.params);
 			if (!options.initialContent) {
 				const fromParams = (options.params?.content || "").trim();
 				if (fromParams) this.contentRef.value = fromParams;
@@ -276,7 +281,8 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.setupEventHandlers(rawTarget || void 0);
 			this.syncOutlineToolbarState();
 			this.syncToolbarDocumentTitle();
-			if (renderTarget && rawTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+			this.flushPendingBinaryPreview();
+			if (!this.binaryPreviewActive && renderTarget && rawTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
 			this.subscribeContentRefToCurrentTargets(renderTarget, rawTarget);
 			this.refreshDocumentTheme();
 			return this.element;
@@ -334,9 +340,11 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.setupEventHandlers(rawTarget);
 			this.syncOutlineToolbarState();
 			this.syncToolbarDocumentTitle();
-			if (renderTarget && rawTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+			this.flushPendingBinaryPreview();
+			if (!this.binaryPreviewActive && renderTarget && rawTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
 			this.subscribeContentRefToCurrentTargets(renderTarget, rawTarget);
 			this.refreshDocumentTheme();
+			this.pullCapacitorPendingOpen();
 		}
 		getToolbar() {
 			return null;
@@ -362,6 +370,8 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		* Apply markdown read from transports (file/url/message). Blocks obvious binary/mojibake before mutating reactive content (`contentRef`).
 		*/
 		ingestOpenedMarkdownBody(body, filename, source) {
+			this.binaryPreviewActive = false;
+			this.pendingBinaryPreview = null;
 			if (body.length > 0 && textIngressLooksCorrupt(body)) {
 				this.setContent("> This payload does not look like UTF-8 markdown (binary file or unsupported format).\n>\n> Open a `.md` / `.txt` file, paste as plain text, or attach binaries via Work Center.\n\n", filename, source);
 				return;
@@ -577,7 +587,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.syncOutlineToolbarState();
 		}
 		renderMarkdown(content, renderTarget, rawTarget) {
-			if (!renderTarget) return;
+			if (!renderTarget || this.binaryPreviewActive) return;
 			const seq = ++this.renderSeq;
 			const looksLikeHtmlDocument = (text) => {
 				const t = (text || "").trimStart().toLowerCase();
@@ -790,13 +800,19 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			if (filenameParam) this.options.filename = filenameParam;
 			const contentParam = String(params.content || "");
 			if (contentParam.trim()) this.contentRef.value = contentParam;
-			else if (sourceParam && isVirtualFsPath(String(sourceParam))) provide(String(sourceParam)).then(async (file) => {
-				if (!file) return;
-				await this.ingestOpenedFile(file, {
-					virtualPath: String(sourceParam),
-					filename: filenameParam ? String(filenameParam) : file.name
+			else if (sourceParam) {
+				const src = String(sourceParam).trim();
+				if (isVirtualFsPath(src) || /^\/assets(?:\/|$)/i.test(src)) provide(src).then(async (file) => {
+					if (!file) {
+						if (/^\/assets(?:\/|$)/i.test(src)) this.openMarkdownFromUrl(src, filenameParam ? String(filenameParam) : void 0);
+						return;
+					}
+					await this.ingestOpenedFile(file, {
+						virtualPath: src,
+						filename: filenameParam ? String(filenameParam) : file.name
+					});
 				});
-			});
+			}
 			if (this.element) this.syncToolbarDocumentTitle();
 		}
 		/** Toolbar center title span stays empty (no document label in chrome). */
@@ -1758,7 +1774,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			const settings = await loadSettings().catch(() => null);
 			rememberOpenPolicyFromSettings(settings);
 			const kind = classifyOpenKind(file);
-			const sink = resolveOpenPolicy(settings?.openPolicy ?? peekOpenPolicy(), "viewer", kind, opts?.channel || "open");
+			const sink = resolveOpenPolicy(resolveHostOpenPolicy(settings), "viewer", kind, opts?.channel || "open");
 			if (sink === "workcenter") return this.handoffOpenedFile("workcenter", file, opts?.virtualPath);
 			if (sink === "explorer") return this.handoffOpenedFile("explorer", file, opts?.virtualPath);
 			if (sink === "external" || sink === "system") {
@@ -1838,11 +1854,13 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		}
 		/** Image / PDF / downloadable blob — not markdown ingest. */
 		showSharedBinaryPreview(file) {
+			this.binaryPreviewActive = true;
 			const target = this.queryViewerSlotted("[data-render-target]");
 			if (!target) {
-				this.showMessage(file.name || "Opened file");
+				this.pendingBinaryPreview = file;
 				return;
 			}
+			this.pendingBinaryPreview = null;
 			const url = URL.createObjectURL(file);
 			this.assetObjectUrls.push(url);
 			const mime = (file.type || "").toLowerCase();
@@ -1852,6 +1870,10 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			else if (mime === "application/pdf" || /\.pdf$/i.test(name)) target.innerHTML = `<iframe class="view-viewer__share-preview" src="${url}" title="${safeName}" style="width:100%;min-height:70vh;border:0"></iframe>`;
 			else target.innerHTML = `<p>Opened ${safeName} (${file.size} bytes)</p><a href="${url}" download="${safeName}">Download</a>`;
 			this.showMessage(name);
+		}
+		flushPendingBinaryPreview() {
+			const file = this.pendingBinaryPreview;
+			if (file) this.showSharedBinaryPreview(file);
 		}
 		isTextLikeFile(file) {
 			if (this.looksLikeBinaryPreviewFile(file)) return false;
@@ -1918,8 +1940,12 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			});
 		}
 		showMessage(message) {
-			if (this.shellContext) this.shellContext.showMessage(message);
-			else console.log(`[Viewer] ${message}`);
+			const show = this.shellContext?.showMessage || this.options?.shellContext?.showMessage;
+			if (typeof show === "function") {
+				show.call(this.shellContext || this.options?.shellContext, message);
+				return;
+			}
+			console.log(`[Viewer] ${message}`);
 		}
 		normalizeMarkdownExtensionFlags(rawFlags) {
 			return (rawFlags || DEFAULT_MARKDOWN_EXTENSION_FLAGS).split("").filter((flag, index, array) => /[dgimsuvy]/.test(flag) && array.indexOf(flag) === index).join("") || DEFAULT_MARKDOWN_EXTENSION_FLAGS;
@@ -2250,17 +2276,36 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				this.documentOpenListener = (ev) => {
 					const detail = ev.detail;
 					const text = String(detail?.content || "");
-					if (!text.trim()) return;
-					this.setContent(text, detail?.filename, detail?.src || null);
+					if (text.trim()) {
+						this.setContent(text, detail?.filename, detail?.src || null);
+						return;
+					}
+					const src = String(detail?.src || "").trim();
+					if (src) {
+						this.applyRouteParams({
+							src,
+							filename: detail?.filename
+						});
+						return;
+					}
+					this.pullCapacitorPendingOpen();
 				};
 				window.addEventListener("cwsp:document-open", this.documentOpenListener);
+			}
+			if (!this.shareIntentListener) {
+				this.shareIntentListener = () => {
+					this.pullCapacitorPendingOpen();
+				};
+				window.addEventListener("cws:shareIntent", this.shareIntentListener);
 			}
 			ensureViewerIconRuntime();
 			this._sheet ??= loadAsAdopted(src_default$1);
 			this.applyCustomStyles();
 			this.markdownSettingsPromise;
+			this.flushPendingBinaryPreview();
 			this.isViewVisible = true;
 			this.refreshDocumentTheme();
+			this.pullCapacitorPendingOpen();
 		}
 		onUnmount() {
 			console.log("[Viewer] Unmounting");
@@ -2275,6 +2320,10 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				window.removeEventListener("cwsp:document-open", this.documentOpenListener);
 				this.documentOpenListener = null;
 			}
+			if (this.shareIntentListener) {
+				window.removeEventListener("cws:shareIntent", this.shareIntentListener);
+				this.shareIntentListener = null;
+			}
 			this.windowDnDController?.abort();
 			this.windowDnDController = null;
 			if (this.customSheet) {
@@ -2285,12 +2334,64 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.element = null;
 			this.slotProjectingHost = null;
 		}
+		/**
+		* WHY: Capacitor share-intent can fire before the viewer binds. Read the native
+		* pending-share stash here so a second open replaces the painted document.
+		*/
+		async pullCapacitorPendingOpen() {
+			try {
+				const g = globalThis;
+				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
+				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.ln);
+					return { invokeCwsPlatformIPC };
+				}, __vite__mapDeps([8,1,7,9,10,11]), import.meta.url);
+				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
+				if (!peek?.ok) return;
+				const echo = peek.echo || peek;
+				let file = null;
+				if (echo.hasFile) {
+					const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
+					const blob = read.echo || read;
+					if (blob?.data) {
+						const { dataUrlToFile } = await __vitePreload(async () => {
+							const { dataUrlToFile } = await import("./sku-ingress.js");
+							return { dataUrlToFile };
+						}, __vite__mapDeps([14,7,8,1,9,10,11]), import.meta.url);
+						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
+					}
+				}
+				const source = String(echo.url || "").trim() || null;
+				const filename = String(echo.name || echo.title || file?.name || "").trim();
+				const text = String(echo.text || "").trim();
+				let applied = false;
+				if (file && this.looksLikeBinaryPreviewFile(file)) {
+					this.showSharedBinaryPreview(file);
+					if (filename) this.options.filename = filename;
+					applied = true;
+				} else if (file && this.isTextLikeFile(file)) {
+					this.ingestOpenedMarkdownBody(await file.text().catch(() => ""), filename || file.name, source);
+					applied = true;
+				} else if (text) {
+					this.ingestOpenedMarkdownBody(text, filename, source);
+					applied = true;
+				}
+				if (!applied) return;
+				await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
+				if (this.binaryPreviewActive) return;
+				this.saveState();
+				this.repaintMarkdown();
+			} catch {}
+		}
 		onShow() {
 			this._sheet ??= loadAsAdopted(src_default$1);
 			this.applyCustomStyles();
 			this.markdownSettingsPromise = this.loadMarkdownSettings();
 			this.isViewVisible = true;
 			this.refreshDocumentTheme();
+			const handed = takeSkuHandoff("viewer", "document");
+			if (handed?.content?.trim()) this.ingestOpenedMarkdownBody(handed.content, handed.filename, handed.src);
+			this.pullCapacitorPendingOpen();
 			console.log("[Viewer] Shown");
 		}
 		onHide() {

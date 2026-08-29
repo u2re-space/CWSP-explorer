@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { f as publicHrefForView, g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { J as createEmptySpeedDialItem, Q as speedDialItems, X as persistSpeedDialItems, Y as ensureSpeedDialMeta, Z as persistSpeedDialMeta, q as addSpeedDialItem } from "../shells/boot-index.js";
-import { Tn as __vitePreload, a as getString, b as openUnifiedContextMenu, i as StorageKeys, n as FileManager, o as setString, r as FileManagerContent_default } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { At as viewIdForOpenSink, Dt as skuForOpenSink, Et as sinkToOpenLinkTarget, J as ensureSpeedDialMeta, K as addSpeedDialItem, St as resolveOpenPlacement, X as persistSpeedDialMeta, Y as persistSpeedDialItems, Z as speedDialItems, bt as resolveExplorerOpenSink, dt as classifyOpenKindFromName, mt as looksLikePreviewableBinary, q as createEmptySpeedDialItem, rt as loadSettings, ut as classifyOpenKind, vt as peekOpenPolicy, xt as resolveHostOpenPolicy, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
+import { On as __vitePreload, Q as resolveFsBackend, X as ensureDefaultFsBackends, a as getString, b as openUnifiedContextMenu, i as StorageKeys, n as FileManager, o as setString, r as FileManagerContent_default, x as isBookmarksPath } from "../com/app.js";
 import { c as createViewConstructor, n as sendViewProtocolMessage, r as ExplorerChannelAction } from "../views/viewer.js";
 import "./storage.js";
 import { loadAsAdopted, removeAdopted } from "/fest/dom.js";
@@ -107,8 +107,9 @@ var extOf = (filename = "") => {
 };
 var isTextLikeFile = (file) => {
 	if (!file) return false;
+	if (looksLikePreviewableBinary(file)) return false;
 	const type = String(file.type || "").toLowerCase();
-	if (!type || type.startsWith("text/")) return true;
+	if (type.startsWith("text/")) return true;
 	if (type.includes("markdown") || type.includes("json") || type.includes("xml")) return true;
 	return TEXT_FILE_EXTENSIONS.has(extOf(file.name || ""));
 };
@@ -129,63 +130,297 @@ var guessNextShortcutCell = () => {
 };
 //#endregion
 //#region src/runtime.ts
+var openFileWithSystem = async (file, sourcePath, chooser) => {
+	const href = String(sourcePath || "").trim();
+	const mime = String(file.type || "").trim() || guessMimeFromName(file.name || href) || void 0;
+	try {
+		const { launcherOpenUri } = await __vitePreload(async () => {
+			const { launcherOpenUri } = await import("./launcher-bridge.js");
+			return { launcherOpenUri };
+		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+		if (typeof launcherOpenUri === "function") {
+			const uri = /^(file|content|https?):/i.test(href) ? href : "";
+			if (uri && await launcherOpenUri(uri, {
+				chooser,
+				mimeType: mime,
+				title: "Open with"
+			})) return true;
+		}
+	} catch {}
+	if (isCwspNativeHost() && chooser && file.size > 0 && file.size <= 8388608) try {
+		const { launcherOpenFile } = await __vitePreload(async () => {
+			const { launcherOpenFile } = await import("./launcher-bridge.js");
+			return { launcherOpenFile };
+		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+		if (await launcherOpenFile(file, {
+			chooser: true,
+			mimeType: mime,
+			title: "Open with"
+		})) return true;
+	} catch {}
+	if (isCwspNativeHost()) return false;
+	try {
+		const url = URL.createObjectURL(file);
+		globalThis.open?.(url, "_blank", "noopener,noreferrer");
+		return true;
+	} catch {
+		return false;
+	}
+};
+var guessMimeFromName = (name) => {
+	const n = String(name || "").toLowerCase();
+	if (/\.(?:md|markdown|mdown|mkd)(?:$|[?#])/i.test(n)) return "text/markdown";
+	if (/\.(?:txt|log|csv)(?:$|[?#])/i.test(n)) return "text/plain";
+	if (/\.json(?:$|[?#])/i.test(n)) return "application/json";
+	if (/\.pdf(?:$|[?#])/i.test(n)) return "application/pdf";
+	if (/\.png(?:$|[?#])/i.test(n)) return "image/png";
+	if (/\.jpe?g(?:$|[?#])/i.test(n)) return "image/jpeg";
+	if (/\.webp(?:$|[?#])/i.test(n)) return "image/webp";
+	if (/\.gif(?:$|[?#])/i.test(n)) return "image/gif";
+	return "";
+};
+var isNativeStorageVirtualPath = (path) => /^\/(?:sdcard|saf)(?:\/|$)/i.test(String(path || "").trim());
+/** Site / OPFS / mount paths the viewer can fetch without a File blob. */
+var canOpenExplorerSrc = (path) => /^(?:\/(?:assets|user|mounts)\b|https?:)/i.test(String(path || "").trim());
+var openExplorerSrcInTab = (sourcePath) => {
+	const href = String(sourcePath || "").trim();
+	if (!href) return false;
+	try {
+		const url = /^https?:/i.test(href) ? href : new URL(href, globalThis.location?.href || "https://u2re.space/").href;
+		globalThis.open?.(url, "_blank", "noopener,noreferrer");
+		return true;
+	} catch {
+		return false;
+	}
+};
+/** WHY: `/sdcard/` `/saf/` open in one native IPC — no JS read, no WebView hop. */
+var openNativeStorageByPolicy = async (sourcePath, sink, mimeType) => {
+	const { openNativeStorageFile } = await __vitePreload(async () => {
+		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.et);
+		return { openNativeStorageFile };
+	}, __vite__mapDeps([5,2]), import.meta.url);
+	const mime = String(mimeType || "").trim() || guessMimeFromName(sourcePath);
+	if (sink === "system" || sink === "external" || sink === "ask") return openNativeStorageFile(sourcePath, {
+		chooser: true,
+		mimeType: mime,
+		title: "Open with"
+	});
+	if (sink === "document" || sink === "transfer" || sink === "viewer" || sink === "display") {
+		const pkg = androidPackageForSku(sink === "transfer" ? "transfer" : "document");
+		if (pkg && await openNativeStorageFile(sourcePath, {
+			packageName: pkg,
+			chooser: false,
+			mimeType: mime,
+			title: "Open"
+		})) return true;
+		return openNativeStorageFile(sourcePath, {
+			chooser: true,
+			mimeType: mime,
+			title: "Open with"
+		});
+	}
+	return false;
+};
+var nativeViewUri = async (sourcePath) => {
+	const p = String(sourcePath || "").trim();
+	if (/^(content|file|https?):/i.test(p)) return p;
+	try {
+		const { resolveNativeStorageUri } = await __vitePreload(async () => {
+			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.et);
+			return { resolveNativeStorageUri };
+		}, __vite__mapDeps([5,2]), import.meta.url);
+		const uri = await resolveNativeStorageUri(p);
+		if (uri) return uri;
+	} catch {}
+	if (/^\/(?:sdcard|storage)\//i.test(p)) return `file://${p}`;
+	return "";
+};
+var handoffFileToSku = async (sink, item, sourcePath) => {
+	const file = item.file;
+	const sku = skuForOpenSink(sink);
+	const viewId = viewIdForOpenSink(sink);
+	if (!sku || !viewId) return false;
+	if (!file) {
+		if (!isCwspNativeHost() && viewId === "viewer" && canOpenExplorerSrc(sourcePath) && !shouldHandoffViewToSibling("viewer")) {
+			requestOpenView({
+				viewId: "viewer",
+				target: "window",
+				params: {
+					src: sourcePath,
+					filename: String(item.name || "")
+				}
+			});
+			return true;
+		}
+		return false;
+	}
+	try {
+		const content = isTextLikeFile(file) ? await file.text() : "";
+		stashSkuHandoff({
+			dest: viewId,
+			content,
+			filename: file.name || "",
+			src: sourcePath
+		});
+	} catch {
+		stashSkuHandoff({
+			dest: viewId,
+			filename: file.name || "",
+			src: sourcePath
+		});
+	}
+	if (isCwspNativeHost()) {
+		const pkg = androidPackageForSku(sku);
+		const mime = String(file.type || "").trim() || guessMimeFromName(file.name) || void 0;
+		const uri = await nativeViewUri(sourcePath);
+		if (pkg && uri) try {
+			const { launcherOpenUri } = await __vitePreload(async () => {
+				const { launcherOpenUri } = await import("./launcher-bridge.js");
+				return { launcherOpenUri };
+			}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+			if (await launcherOpenUri(uri, {
+				packageName: pkg,
+				chooser: false,
+				mimeType: mime,
+				title: "Open"
+			})) return true;
+		} catch {}
+		if (pkg && file.size > 0 && file.size <= 8388608) try {
+			const { launcherOpenFile } = await __vitePreload(async () => {
+				const { launcherOpenFile } = await import("./launcher-bridge.js");
+				return { launcherOpenFile };
+			}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+			if (await launcherOpenFile(file, {
+				packageName: pkg,
+				chooser: false,
+				mimeType: mime,
+				title: "Open"
+			})) return true;
+		} catch {}
+		return false;
+	}
+	const href = publicHrefForSku(sku);
+	if (href) {
+		try {
+			const next = new URL(href, globalThis.location?.href || href);
+			if (sourcePath) next.searchParams.set("src", sourcePath);
+			if (file.name) next.searchParams.set("filename", file.name);
+			globalThis.location.assign(next.toString());
+		} catch {
+			globalThis.location.assign(href);
+		}
+		return true;
+	}
+	requestOpenView({
+		viewId,
+		target: "window",
+		params: {
+			src: sourcePath,
+			filename: file.name || ""
+		}
+	});
+	return true;
+};
+/** lure uses `view-explorer-path`; runtime storage used `rs-explorer-path`. Read both. */
+var EXPLORER_PATH_KEYS = [
+	StorageKeys.EXPLORER_PATH,
+	"view-explorer-path",
+	"rs-explorer-path"
+];
+var readPersistedExplorerPath = () => {
+	for (const key of EXPLORER_PATH_KEYS) {
+		const value = String(getString(key, "") || "").trim();
+		if (value) return value;
+	}
+	return "";
+};
+var writePersistedExplorerPath = (path) => {
+	const value = path || "/user/";
+	for (const key of EXPLORER_PATH_KEYS) setString(key, value);
+};
 function loadLastPath(explorer, initialPath) {
+	try {
+		ensureDefaultFsBackends();
+	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = initialPath.trim();
 		return;
 	}
-	const persisted = String(getString(StorageKeys.EXPLORER_PATH, "/user/") || "").trim();
+	const handed = takeSkuHandoff("explorer");
+	if (handed?.src) {
+		explorer.path = handed.src;
+		return;
+	}
+	const persisted = readPersistedExplorerPath();
 	explorer.path = !persisted || persisted === "/" ? "/user/" : persisted;
 }
 function setupExplorerEvents(explorer, opts, inject, signal) {
 	const listenerOpts = { signal };
 	const showMessage = (message) => opts.shellContext?.showMessage?.(message);
-	const openFileInViewer = async (item, fullPath, target = "window") => {
+	const openFileInViewer = async (item, fullPath, target = "window", placement = "inline") => {
 		const file = item?.file;
-		if (!file || !isTextLikeFile(file)) return false;
-		const sourcePath = String(fullPath || "");
-		if (shouldHandoffViewToSibling("viewer")) {
-			try {
-				stashSkuHandoff({
-					dest: "viewer",
-					content: await file.text(),
-					filename: file.name || "",
-					src: sourcePath
-				});
-			} catch {
-				stashSkuHandoff({
-					dest: "viewer",
-					filename: file.name || "",
-					src: sourcePath
-				});
-			}
-			const href = publicHrefForView("viewer");
-			if (href) globalThis.location.assign(href);
-			return true;
-		}
+		const sourcePath = String(fullPath || "").trim();
+		const filename = String(file?.name || item?.name || sourcePath.split("/").pop() || "").trim();
+		if (!!!(file && (isTextLikeFile(file) || looksLikePreviewableBinary(file))) && !canOpenExplorerSrc(sourcePath)) return false;
 		if (target === "base" || target === "immersive") {
 			requestOpenView({
 				viewId: "viewer",
 				target: "immersive",
 				params: {
 					src: sourcePath,
-					filename: file.name || "",
+					filename,
 					processId: buildViewerProcessId(sourcePath)
 				}
 			});
 			return true;
 		}
+		if (!isCwspNativeHost() && placement === "new-tab") {
+			if (file) return openFileWithSystem(file, sourcePath, false);
+			return openExplorerSrcInTab(sourcePath);
+		}
+		if (!isCwspNativeHost() && placement === "native-window") {
+			try {
+				const content = file && isTextLikeFile(file) ? await file.text() : "";
+				stashSkuHandoff({
+					dest: "viewer",
+					content,
+					filename,
+					src: sourcePath
+				});
+			} catch {
+				stashSkuHandoff({
+					dest: "viewer",
+					filename,
+					src: sourcePath
+				});
+			}
+			try {
+				const next = new URL(globalThis.location?.href || "https://u2re.space/");
+				next.searchParams.set("shell", "environment");
+				next.searchParams.set("view", "viewer");
+				next.searchParams.set("native", "1");
+				if (sourcePath) next.searchParams.set("src", sourcePath);
+				if (filename) next.searchParams.set("filename", filename);
+				globalThis.open?.(next.href, "cwsp-viewer", "noopener,noreferrer,width=960,height=800");
+				return true;
+			} catch {}
+			if (file) return openFileWithSystem(file, sourcePath, false);
+			return openExplorerSrcInTab(sourcePath);
+		}
 		const processId = buildViewerProcessId(sourcePath);
+		const params = {
+			processId,
+			src: sourcePath,
+			filename
+		};
 		requestOpenView({
 			viewId: "viewer",
 			target: "window",
-			params: {
-				processId,
-				src: sourcePath,
-				filename: file.name || ""
-			}
+			params
 		});
-		try {
+		const openView = opts.shellContext?.openView;
+		if (typeof openView === "function") openView("viewer", { params });
+		if (file) try {
 			if (!await sendViewProtocolMessage({
 				type: "content-view",
 				source: "explorer",
@@ -196,7 +431,7 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 					source: "explorer-viewer-open"
 				}],
 				data: {
-					filename: file.name,
+					filename,
 					path: sourcePath,
 					source: sourcePath
 				},
@@ -208,6 +443,12 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		} catch (error) {
 			console.warn("[Explorer] Failed to send viewer payload:", error);
 		}
+		try {
+			globalThis.dispatchEvent(new CustomEvent("cwsp:document-open", { detail: {
+				src: sourcePath,
+				filename
+			} }));
+		} catch {}
 		return true;
 	};
 	const attachToWorkCenter = async (item, mode) => {
@@ -300,17 +541,55 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		meta.action = "open-link";
 		meta.href = path;
 		meta.description = `Pinned from Explorer: ${path}`;
+		const pinSink = resolveExplorerOpenSink(peekOpenPolicy(), classifyOpenKind(file || { name }), isCwspNativeHost());
+		const pinTarget = sinkToOpenLinkTarget(pinSink);
+		if (pinTarget) meta.openLinkTarget = pinTarget;
 		persistSpeedDialItems();
 		persistSpeedDialMeta();
 		showMessage(`Pinned ${name} to Home`);
 	};
-	const getItemPath = (item) => `${explorer?.path || "/"}${item?.name || ""}`;
+	const getItemPath = (item) => String(item?.path || `${explorer?.path || "/"}${item?.name || ""}`);
 	const mergedHandlers = {
 		view: async (item) => {
-			await openFileInViewer(item, getItemPath(item), "window");
+			const p = getItemPath(item);
+			if (isCwspNativeHost() && isNativeStorageVirtualPath(p)) {
+				if (await openNativeStorageByPolicy(p, "document")) return;
+			}
+			if (isCwspNativeHost()) {
+				await handoffFileToSku("document", item, p);
+				return;
+			}
+			await openFileInViewer(item, p, "window", resolveOpenPlacement(peekOpenPolicy(), "explorer"));
 		},
 		"view-base": async (item) => {
-			await openFileInViewer(item, getItemPath(item), "base");
+			const p = getItemPath(item);
+			if (isCwspNativeHost() && isNativeStorageVirtualPath(p)) {
+				if (await openNativeStorageByPolicy(p, "document")) return;
+			}
+			if (isCwspNativeHost()) {
+				await handoffFileToSku("document", item, p);
+				return;
+			}
+			await openFileInViewer(item, p, "base");
+		},
+		"send-transfer": async (item) => {
+			if (!item) {
+				showMessage("No file selected");
+				return;
+			}
+			if (!item.file && item.kind === "file") {
+				const loadPath = getItemPath(item);
+				try {
+					const backend = resolveFsBackend(loadPath);
+					if (typeof backend?.readFile === "function") item.file = await backend.readFile(loadPath);
+				} catch {}
+			}
+			if (!item.file) {
+				showMessage("Nothing to send");
+				return;
+			}
+			const ok = await handoffFileToSku("transfer", item, getItemPath(item));
+			showMessage(ok ? `Sent ${item.name || item.file.name} to Transfer` : "Transfer is unavailable");
 		},
 		"attach-workcenter": (item) => attachToWorkCenter(item, "active"),
 		"attach-workcenter-queued": (item) => attachToWorkCenter(item, "queued"),
@@ -318,30 +597,107 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		"pin-home": (item) => pinToHome(item),
 		...inject?.contextActionHandlers ?? {}
 	};
-	const onFileOpen = async (e) => {
-		const { item, path } = e.detail || {};
-		if (item?.kind !== "file") return;
-		if (!item.file) {
-			const loadPath = path || `${explorer?.path || "/"}${item.name || ""}`;
-			try {
-				const { provide } = await __vitePreload(async () => {
-					const { provide } = await import("../com/app.js").then((n) => n.yt);
-					return { provide };
-				}, __vite__mapDeps([0,1]), import.meta.url);
-				item.file = await provide(loadPath);
-			} catch {}
+	const ensureItemFile = async (item, sourcePath) => {
+		if (item.file) return;
+		try {
+			const backend = resolveFsBackend(sourcePath);
+			if (typeof backend?.readFile === "function") item.file = await backend.readFile(sourcePath);
+		} catch {}
+		if (!item.file) try {
+			const { provide } = await __vitePreload(async () => {
+				const { provide } = await import("../com/app.js").then((n) => n.St);
+				return { provide };
+			}, __vite__mapDeps([5,2]), import.meta.url);
+			item.file = await provide(sourcePath);
+		} catch {}
+	};
+	const onNativeFileOpen = async (item, sourcePath, sink) => {
+		if (sink === "explorer") {
+			showMessage(item.name || "File");
+			return;
 		}
-		if (!item.file) return;
-		if (!await openFileInViewer(item, path, "window")) requestOpenView({
-			viewId: "workcenter",
-			target: "window"
-		});
+		if (isNativeStorageVirtualPath(sourcePath) && sink !== "workcenter") {
+			try {
+				if (await openNativeStorageByPolicy(sourcePath, sink, guessMimeFromName(item.name || sourcePath))) return;
+			} catch {}
+			showMessage(sink === "document" ? "CWSP-document did not open the file" : sink === "transfer" ? "Transfer is unavailable" : "No app available to open this file");
+			return;
+		}
+		await ensureItemFile(item, sourcePath);
+		if (sink === "system" || sink === "external" || sink === "ask") {
+			if (item.file && await openFileWithSystem(item.file, sourcePath, true)) return;
+			showMessage("No app available to open this file");
+			return;
+		}
+		if (sink === "document" || sink === "transfer") {
+			if (await handoffFileToSku(sink, item, sourcePath)) return;
+			showMessage(sink === "document" ? "CWSP-document did not open the file" : "Transfer is unavailable");
+			return;
+		}
+		if (sink === "workcenter") {
+			if (item.file) await attachToWorkCenter(item, "active");
+			else showMessage("Could not read this file");
+			return;
+		}
+		if (await handoffFileToSku("document", item, sourcePath)) return;
+		showMessage("CWSP-document did not open the file");
+	};
+	const onFileOpen = async (e) => {
+		const detail = e.detail || {};
+		const { item, path } = detail;
+		if (item?.kind !== "file") return;
+		const sourcePath = path || getItemPath(item);
+		const settings = await loadSettings().catch(() => null);
+		rememberOpenPolicyFromSettings(settings);
+		const kind = item.file ? classifyOpenKind(item.file) : classifyOpenKindFromName(item.name || sourcePath, String(item.file?.type || ""));
+		const how = detail.how === "dblclick" ? "dblclick" : "open";
+		const policy = resolveHostOpenPolicy(settings);
+		if (isCwspNativeHost()) {
+			await onNativeFileOpen(item, sourcePath, resolveExplorerOpenSink(policy, kind, true, how));
+			return;
+		}
+		await ensureItemFile(item, sourcePath);
+		const canOpenBySrc = canOpenExplorerSrc(sourcePath);
+		if (!item.file && !canOpenBySrc) {
+			showMessage("Could not read this file");
+			return;
+		}
+		const sink = resolveExplorerOpenSink(policy, kind, false, how);
+		const placement = resolveOpenPlacement(policy, "explorer");
+		if ((sink === "system" || sink === "external") && item.file) {
+			if (await openFileWithSystem(item.file, sourcePath, true)) return;
+		}
+		if (sink === "document" || sink === "transfer") {
+			if (sink === "document" && !shouldHandoffViewToSibling("viewer")) {
+				if (await openFileInViewer(item, sourcePath, "window", placement)) return;
+			}
+			if (await handoffFileToSku(sink, item, sourcePath)) return;
+			showMessage(sink === "document" ? "CWSP-document did not open the file" : "Transfer is unavailable");
+			return;
+		}
+		if (sink === "workcenter") {
+			if (item.file) await attachToWorkCenter(item, "active");
+			else showMessage("Could not read this file");
+			return;
+		}
+		if (sink === "explorer") {
+			showMessage(item.name || "File");
+			return;
+		}
+		if (sink === "viewer" || sink === "display" || sink === "ask" && (item.file && (isTextLikeFile(item.file) || looksLikePreviewableBinary(item.file)) || canOpenBySrc)) {
+			const opened = await openFileInViewer(item, sourcePath, "window", placement);
+			if (!opened && item.file) await attachToWorkCenter(item, "active");
+			else if (!opened) showMessage("Could not open this file");
+			return;
+		}
+		if (item.file) await attachToWorkCenter(item, "active");
+		else showMessage("Could not open this file");
 	};
 	explorer.addEventListener("open-item", onFileOpen, listenerOpts);
 	explorer.addEventListener("open", onFileOpen, listenerOpts);
 	explorer.addEventListener("rs-open", onFileOpen, listenerOpts);
 	const savePath = () => {
-		setString(StorageKeys.EXPLORER_PATH, explorer.path || "/user/");
+		writePersistedExplorerPath(explorer.path || "/user/");
 	};
 	explorer.addEventListener("entries-updated", savePath, listenerOpts);
 	explorer.addEventListener("rs-navigate", savePath, listenerOpts);
@@ -363,7 +719,24 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		event.preventDefault();
 		const path = explorer?.path || "/";
 		const extra = inject?.extraBackgroundMenuItems?.({ path }) ?? [];
+		const runBookmarkMenu = explorer.operative?.runMenuAction;
+		const bookmarkCreateItems = isBookmarksPath(path) && typeof runBookmarkMenu === "function" ? [{
+			id: "new-bookmark",
+			label: "New bookmark…",
+			icon: "bookmark-simple",
+			action: () => {
+				runBookmarkMenu(null, "new-bookmark");
+			}
+		}, {
+			id: "new-folder",
+			label: "New folder…",
+			icon: "folder-plus",
+			action: () => {
+				runBookmarkMenu(null, "new-folder");
+			}
+		}] : [];
 		openExplorerContextMenu(event.clientX, event.clientY, [
+			...bookmarkCreateItems,
 			{
 				id: "refresh",
 				label: "Refresh",
@@ -426,6 +799,14 @@ function setupFallbackExplorerEvents(shellRoot, opts, signal) {
 			filesList.append(li);
 		}
 		const firstTextLike = files.find((file) => isTextLikeFile(file));
+		if (firstTextLike && isCwspNativeHost()) {
+			await handoffFileToSku("document", {
+				kind: "file",
+				name: firstTextLike.name,
+				file: firstTextLike
+			}, firstTextLike.name);
+			return;
+		}
 		if (firstTextLike) {
 			requestOpenView({
 				viewId: "viewer",
@@ -462,7 +843,7 @@ function wireExplorerSubtree(shellRoot, wireOpts) {
 		setupExplorerEvents(fm, wireOpts, injectMerged, signal);
 		return {
 			cleanup: () => {
-				setString(StorageKeys.EXPLORER_PATH, fm.path || "/user/");
+				writePersistedExplorerPath(fm.path || "/user/");
 				ac.abort();
 			},
 			fileManager: fm

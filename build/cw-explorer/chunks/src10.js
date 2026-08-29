@@ -1,5 +1,5 @@
-import { _ as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { ct as UIElement, hn as defineElement, ut as __decorate } from "../com/app.js";
+import { v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { dt as UIElement, pt as __decorate, vn as defineElement } from "../com/app.js";
 import { WorkCenterManager } from "./WorkCenter.js";
 import { loadAsAdopted, removeAdopted } from "/fest/dom.js";
 //#region ../../modules/views/workcenter-view/src/scss/_index.scss?inline

@@ -3,8 +3,8 @@
   Filename: AndroidManifest.xml
   FullPath: apps/CWSP-explorer/platforms/android/AndroidManifest.xml
   FIND:sku
-  Change date and time: 13.52.00_24.08.2026
-  Reason for changes: Package queries so Explorer can ACTION_VIEW into Document / Transfer / Process.
+  Change date and time: 01.20.00_30.08.2026
+  Reason for changes: Package + SEND queries so /sdcard/ Open-with lists Document.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -15,6 +15,10 @@
         <package android:name="space.u2re.cwsp" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
             <data android:mimeType="*/*" />
         </intent>
     </queries>

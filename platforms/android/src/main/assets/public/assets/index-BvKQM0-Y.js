@@ -56,7 +56,7 @@ var bootExplorerSku = async (container, kind) => {
 	} catch {}
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.Ln);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.Wn);
 			return {
 				SystemBarType,
 				SystemBars

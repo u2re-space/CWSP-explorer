@@ -1,7 +1,7 @@
 import { h as shouldHandoffViewToSibling, p as publicHrefForView } from "../shells/boot-history-base.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
-import { Bn as ViewRegistry, E as syncBrowserChromeTheme, Gn as isEnabledView, M as withViewTransition, S as scheduleViewModulePrefetch, T as resyncThemeAfterAdoptedViewSheet, d as canonicalHubSettingsSection, it as loadSettings, j as getTransitionDirection, m as hubSettingsSectionPath, mr as serviceChannels, ot as saveSettings, v as resolveEffectiveHubSettingsSection, w as applyTheme } from "../shells/boot-index.js";
-import { Yt as dynamicTheme } from "../com/app.js";
+import { A as getTransitionDirection, C as applyTheme, Qn as isEnabledView, T as syncBrowserChromeTheme, _ as resolveEffectiveHubSettingsSection, at as saveSettings, j as withViewTransition, p as hubSettingsSectionPath, qn as ViewRegistry, rt as loadSettings, u as canonicalHubSettingsSection, w as resyncThemeAfterAdoptedViewSheet, x as scheduleViewModulePrefetch, xr as serviceChannels } from "../shells/boot-index.js";
+import { Qt as dynamicTheme } from "../com/app.js";
 import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";
 import { loadInlineStyle, preloadStyle } from "/fest/dom.js";
 import { ref } from "/fest/object.js";
@@ -533,12 +533,6 @@ var ShellBase = class {
 				if (href) globalThis.location.assign(href);
 				return;
 			}
-			if (!isEnabledView(vid)) return;
-			if ([
-				"window",
-				"tabbed",
-				"environment"
-			].includes(this.id)) return;
 			let params;
 			if (d.params && typeof d.params === "object" && !Array.isArray(d.params)) {
 				const out = {};
@@ -548,6 +542,15 @@ var ShellBase = class {
 				}
 				if (Object.keys(out).length > 0) params = out;
 			}
+			if ([
+				"window",
+				"tabbed",
+				"environment"
+			].includes(this.id)) {
+				this.navigate(vid, params);
+				return;
+			}
+			if (!isEnabledView(vid)) return;
 			this.navigate(vid, params);
 		};
 		globalThis.addEventListener("cw:view-open-request", onOpen);

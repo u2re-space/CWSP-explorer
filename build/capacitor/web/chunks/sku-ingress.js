@@ -1,9 +1,9 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { St as sinkToDestination, bt as resolveOpenPolicy, ft as classifyOpenKindFromPayload, pt as inferIngressChannels, vt as peekOpenPolicy, wt as surfaceForSku, xt as sinkToAction } from "../shells/boot-index.js";
+import { Ct as resolveOpenPolicy, Tt as sinkToDestination, ft as classifyOpenKindFromPayload, kt as surfaceForSku, pt as inferIngressChannels, vt as peekOpenPolicy, wt as sinkToAction } from "../shells/boot-index.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region ../CWSP-document/src/shared/routing/channel/sku-ingress.ts
-var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.F), __vite__mapDeps([0,1]), import.meta.url);
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.I), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -192,7 +192,7 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.dt);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.mt);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
@@ -272,7 +272,7 @@ var openShellImageInViewer = async (file) => {
 var applyShellWallpaper = async (file) => {
 	if (!await isWallpaperCompatible(file)) return false;
 	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.dt);
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.mt);
 		return {
 			setAppWallpaperFromBlob,
 			getWallpaperStoragePointer,
@@ -299,7 +299,7 @@ var installShellImageOpenListener = () => {
 		(async () => {
 			try {
 				const { loadSettings } = await __vitePreload(async () => {
-					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.et);
+					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.$);
 					return { loadSettings };
 				}, __vite__mapDeps([4,1,3,5,0,6]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {

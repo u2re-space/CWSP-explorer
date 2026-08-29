@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { it as loadSettings, ot as saveSettings } from "../shells/boot-index.js";
+import { at as saveSettings, rt as loadSettings } from "../shells/boot-index.js";
 import { a as generateInstructionId } from "./utils.js";
 //#region ../CWSP-document/src/shared/service/instructions/CustomInstructions.ts
 var CustomInstructions_exports = /* @__PURE__ */ __exportAll({

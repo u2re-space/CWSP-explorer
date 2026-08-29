@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { ct as DEFAULT_SETTINGS } from "../shells/boot-index.js";
+import { st as DEFAULT_SETTINGS } from "../shells/boot-index.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region ../CWSP-document/src/shared/other/config/RuntimeSettings.ts
 var RuntimeSettings_exports = /* @__PURE__ */ __exportAll({ getRuntimeSettings: () => getRuntimeSettings });
@@ -10,7 +10,7 @@ var defaultProvider = null;
 async function getDefaultProvider() {
 	if (defaultProvider) return defaultProvider;
 	const { loadSettings } = await __vitePreload(async () => {
-		const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.et);
+		const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.$);
 		return { loadSettings };
 	}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 	defaultProvider = loadSettings;

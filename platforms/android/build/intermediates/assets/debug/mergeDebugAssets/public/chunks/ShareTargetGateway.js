@@ -1,4 +1,4 @@
-import { hr as API_ENDPOINTS } from "../shells/boot-index.js";
+import { Sr as API_ENDPOINTS } from "../shells/boot-index.js";
 //#region ../../modules/projects/subsystem/src/routing/channel/ShareTargetGateway.ts
 /**
 * Helpers for moving share-target payloads between the service worker, Cache

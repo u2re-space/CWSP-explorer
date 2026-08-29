@@ -1,4 +1,4 @@
-import { wn as JSOX } from "../com/app.js";
+import { Dn as JSOX } from "../com/app.js";
 //#region ../CWSP-document/src/shared/other/document/AIResponseParser.ts
 /**
 * Robust AI Response Parser
