@@ -1,4 +1,7 @@
-import { Bt as registerDirectoryRoot, Ht as placeOverlay, en as registerTransientOverlay, tn as resolveOverlayHost } from "../com/app.js";
+import { Jt as registerDirectoryRoot, Xt as placeOverlay, cn as registerTransientOverlay, ln as resolveOverlayHost } from "../com/app.js";
+import "/fest/dom.js";
+import "/fest/core.js";
+import "/fest/object.js";
 //#region ../CWSP-document/src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {
 	let p = String(path || "/").trim() || "/";
@@ -141,6 +144,15 @@ function createChromeBookmarksBackend(api) {
 		if (!id) return;
 		await bookmarks.update(id, { title: newName });
 	};
+	const update = async (path, patch) => {
+		const id = lastId(path);
+		if (!id) return;
+		const body = {};
+		if (patch.title != null) body.title = String(patch.title || "").trim();
+		if (patch.url != null && !isFolderPath(path)) body.url = String(patch.url || "").trim();
+		if (!Object.keys(body).length) return;
+		await bookmarks.update(id, body);
+	};
 	const move = async (fromPath, toDirPath) => {
 		const id = lastId(fromPath);
 		const parentId = lastId(toDirPath) || "0";
@@ -180,6 +192,7 @@ function createChromeBookmarksBackend(api) {
 		mkdir,
 		createUrl,
 		rename,
+		update,
 		move,
 		remove,
 		writeFile,
@@ -243,6 +256,31 @@ var listNativeStorage = async (root, path = "/") => {
 	const rows = echo.entries || echo.files;
 	return Array.isArray(rows) ? rows : [];
 };
+var dataUrlToFile = async (dataUrl, name, mime) => {
+	const src = String(dataUrl || "").trim();
+	if (!src) return null;
+	try {
+		const blob = await (await fetch(src)).blob();
+		return new File([blob], name || "file", { type: blob.type || mime || "application/octet-stream" });
+	} catch {
+		return null;
+	}
+};
+/** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
+var readNativeStorageFile = async (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (!raw) return null;
+	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
+	if (!root) return null;
+	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	const echo = await capacitorInvoke("storage:read", {
+		root,
+		path: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+	});
+	const data = String(echo.data || echo.dataUrl || "");
+	if (!data) return null;
+	return dataUrlToFile(data, String(echo.name || raw.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+};
 //#endregion
 //#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
 var toEntries = (path, rows) => {
@@ -263,6 +301,9 @@ var createNativeFsBackend = (root) => ({
 	async list(path) {
 		const rel = normalizeVirtualPath(path, true).slice(root.length - 1) || "/";
 		return toEntries(path, await listNativeStorage(root === "/saf/" ? "saf" : "sdcard", rel));
+	},
+	async readFile(path) {
+		return readNativeStorageFile(path);
 	}
 });
 //#endregion
@@ -574,6 +615,26 @@ function ensureDefaultFsBackends() {
 		writable: true,
 		async list(path) {
 			return listOpfsUserDirectory(path);
+		},
+		async readFile(path) {
+			const nav = typeof navigator !== "undefined" ? navigator : null;
+			const getDir = nav?.storage?.getDirectory;
+			if (typeof getDir !== "function") return null;
+			const root = await getDir.call(nav.storage).catch(() => null);
+			if (!root) return null;
+			const segments = stripUserPrefix(path).split("/").filter(Boolean);
+			if (!segments.length) return null;
+			let dir = root;
+			for (const seg of segments.slice(0, -1)) try {
+				dir = await dir.getDirectoryHandle(seg, { create: false });
+			} catch {
+				return null;
+			}
+			try {
+				return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
+			} catch {
+				return null;
+			}
 		}
 	});
 	if (!resolveFsBackend("/assets/")) registerFsBackend({

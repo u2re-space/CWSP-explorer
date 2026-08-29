@@ -7,11 +7,13 @@
  */
 
 import { bootMinimal } from "boot/BootLoader";
-import { applyCwspSku } from "com/config/ecosystem-skus";
+import { applyCwspSku, stashSkuHandoff } from "com/config/ecosystem-skus";
 
 export type ExplorerHostKind = "capacitor" | "web" | "crx" | "neutralino";
 
-const ENABLED_VIEWS = "minimal,explorer,settings,history";
+/** INVARIANT: Capacitor / dedicated explorer never ships markdown viewer — CWSP-document owns open. */
+const ENABLED_VIEWS_EXPLORER = "minimal,explorer,settings,history";
+const ENABLED_VIEWS_CRX = "minimal,explorer,viewer,settings,history";
 
 const detectHostKind = (explicit?: ExplorerHostKind): ExplorerHostKind => {
     if (explicit) return explicit;
@@ -40,7 +42,7 @@ export const stampExplorerSku = (kind: ExplorerHostKind): void => {
             : kind === "neutralino"
                 ? "cw-explorer-neutralino"
                 : "cw-explorer";
-    root.dataset.cwspEnabledViews = ENABLED_VIEWS;
+    root.dataset.cwspEnabledViews = kind === "crx" ? ENABLED_VIEWS_CRX : ENABLED_VIEWS_EXPLORER;
     root.dataset.cwspDefaultView = "explorer";
     if (kind === "capacitor") root.dataset.cwspNativeShell = "capacitor";
     else if (kind === "neutralino") root.dataset.cwspNativeShell = "neutralino";
@@ -80,6 +82,13 @@ export const bootExplorerSku = async (
 ): Promise<void> => {
     const host = detectHostKind(kind);
     stampExplorerSku(host);
+    try {
+        const q = new URLSearchParams(String(globalThis.location?.search || ""));
+        const path = String(q.get("path") || q.get("src") || "").trim();
+        if (path) stashSkuHandoff({ dest: "explorer", src: path });
+    } catch {
+        /* ignore */
+    }
     installExplorerShareIngress();
 
     if (host === "capacitor") {

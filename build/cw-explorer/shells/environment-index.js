@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./environment-window-views-browser-view.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { Mn as __vitePreload, _n as effect, vn as booleanRef, y as tryLaunchSiblingView, yn as numberRef } from "../com/app.js";
+import { E as tryLaunchSiblingView, Tn as __vitePreload } from "../com/app.js";
 import { a as SHELL_SLOT, i as isEnvironmentShellContainerHost, o as resolveOverlayMountPoint, s as resolveShellOverlaysMount, t as getOrCreateEnvironmentOverlayMount } from "./environment-environment-overlay.js";
 import { a as setChromeFlyoutShellHost } from "./environment-components-calendar-CalendarFlyout.js";
 import { t as restoreQuickFilters } from "./environment-components-settings-QuickSettings.js";
@@ -7,6 +7,7 @@ import { c as matchShellDisplayMode, l as mountEnvironmentStatusBar, n as attach
 import { i as setBookmarksMenuApi, r as createChromeBookmarksMenuApi } from "./environment-components-app-menu-AppMenu.js";
 import { t as mountEnvironmentTaskBar } from "./environment-components-taskbar-element-TaskBar.js";
 import "./environment-components-wallpaper.js";
+import { booleanRef, effect, numberRef } from "/fest/object.js";
 Object.freeze({
 	w: 360,
 	h: 240

@@ -284,4 +284,4 @@ try {
 var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
 var apkManifestForSku = (sku) => ECOSYSTEM_SKUS[sku]?.apkManifest || "";
 //#endregion
-export { takeSkuHandoff as _, applyCwspSku as a, isCwspSku as c, publicHrefForSku as d, publicHrefForView as f, stashSkuHandoff as g, siblingSkuForView as h, apkManifestForSku as i, isViewLocalToSurface as l, shouldHandoffViewToSibling as m, SKU_HUB_PATHS as n, ensureCwspSkuFromLocation as o, readCwspSku as p, androidPackageForSku as r, inferCwspSkuFromLocation as s, ECOSYSTEM_SKUS as t, isWebHubSurface as u };
+export { stashSkuHandoff as _, applyCwspSku as a, isCwspNativeHost as c, isWebHubSurface as d, publicHrefForSku as f, siblingSkuForView as g, shouldHandoffViewToSibling as h, apkManifestForSku as i, isCwspSku as l, readCwspSku as m, SKU_HUB_PATHS as n, ensureCwspSkuFromLocation as o, publicHrefForView as p, androidPackageForSku as r, inferCwspSkuFromLocation as s, ECOSYSTEM_SKUS as t, isViewLocalToSurface as u, takeSkuHandoff as v };

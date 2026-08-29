@@ -131,6 +131,7 @@ var SKU_LOCAL_NAV_VIEWS = {
 	],
 	explorer: [
 		"explorer",
+		"viewer",
 		"settings",
 		"history"
 	],

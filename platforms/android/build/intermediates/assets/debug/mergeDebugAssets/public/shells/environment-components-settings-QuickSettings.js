@@ -1,5 +1,7 @@
-import { In as preloadStyle, J as UIElement, Un as MOCElement, X as __decorate, cn as H, pn as navigate, q as getSpeedDialViewOpener, sn as defineElement } from "../com/app.js";
+import { ct as UIElement, gn as H, hn as defineElement, st as getSpeedDialViewOpener, ut as __decorate, xn as navigate } from "../com/app.js";
 import { i as positionFlyout, n as closeChromeFlyout, o as toggleChromeFlyout, r as ensureOverlayRoot } from "./environment-components-calendar-CalendarFlyout.js";
+import { MOCElement, preloadStyle } from "/fest/dom.js";
+import "/fest/icon.js";
 //#endregion
 //#region ../CWSP-document/src/frontend/shells/environment/components/settings/QuickSettings.ts
 /**

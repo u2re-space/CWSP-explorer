@@ -1,6 +1,7 @@
-import { Pn as loadAsAdopted, cn as H } from "../com/app.js";
-import { Bt as resolveEcosystemToken, Gt as invokeCwsPlatformIPC, Kt as isCapacitorCwsNativeShell, Mt as isNeutralinoNodeClipboardHubOwned, Nt as isPreferNativeWebsocketEnabled, Vt as CwsBridge, W as writeClipboardTextToDevice, Wt as invokeCwsNative, _n as probeEndpointOriginReport, a as disconnectWS, bn as splitConnectHostList, c as onWSConnectionChange, gn as parseConnectHostInput, hn as collectEndpointProbeCandidates, i as connectWS, it as loadSettings, jt as isMaintainHubSocketConnectionEnabled, mn as buildEndpointOriginCandidates, o as initWebSocket, s as isWSConnected, yn as resolveFleetWanGatewayHost } from "../shells/boot-index.js";
+import { An as parseConnectHostInput, Jt as isMaintainHubSocketConnectionEnabled, Nn as resolveFleetWanGatewayHost, On as buildEndpointOriginCandidates, Pn as splitConnectHostList, W as writeClipboardTextToDevice, Xt as isPreferNativeWebsocketEnabled, Yt as isNeutralinoNodeClipboardHubOwned, a as disconnectWS, an as invokeCwsPlatformIPC, c as onWSConnectionChange, i as connectWS, in as invokeCwsNative, it as loadSettings, jn as probeEndpointOriginReport, kn as collectEndpointProbeCandidates, o as initWebSocket, on as isCapacitorCwsNativeShell, s as isWSConnected, tn as CwsBridge, ut as resolveEcosystemToken } from "../shells/boot-index.js";
+import { gn as H } from "../com/app.js";
 import { n as getFrontendDebugApi, r as initFrontendDebugCapture } from "./frontend-debug-capture.js";
+import { loadAsAdopted } from "/fest/dom.js";
 //#region ../../modules/views/network-view/src/network-probe-origin.ts
 var trim$1 = (value) => typeof value === "string" ? value.trim() : "";
 /** Strip probe path suffix; canonical CWSP HTTPS origin (`https://host:8434`). */

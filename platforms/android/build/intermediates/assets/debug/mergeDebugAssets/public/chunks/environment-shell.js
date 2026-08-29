@@ -1,11 +1,14 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","../views/viewer.js","../vendor/dompurify.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./storage.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./ShareTargetGateway.js","./LogSanitizer.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
-import { Fn as loadInlineStyle, In as preloadStyle, Mn as __vitePreload, Sn as ref, dn as hasActiveCloseable, et as ensureStyleSheet, ot as initializeAppCanvasLayer, st as refreshAppWallpaperPaint, un as closeHighestPriority, ut as restoreWallpaperThemeCache } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","../views/viewer.js","../vendor/dompurify.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./storage.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
-import { jn as isEnabledView } from "../shells/boot-index.js";
+import { Gn as isEnabledView } from "../shells/boot-index.js";
+import { Tn as __vitePreload, ht as refreshAppWallpaperPaint, mt as initializeAppCanvasLayer, vn as closeHighestPriority, vt as restoreWallpaperThemeCache, yn as hasActiveCloseable } from "../com/app.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT, n as createEnvironmentShellContainer, r as defineEnvironmentShellContainer } from "../shells/environment-environment-overlay.js";
 import { i as mountViewModule, n as seedEnvironmentWallpaperIfUnset, r as createWorkspaceWindowLayer, t as mountEnvironmentChrome } from "../shells/environment-index.js";
 import { t as main_default } from "../shells/environment-scss-main.scss_inline.js";
+import { loadInlineStyle, preloadStyle } from "/fest/dom.js";
+import { ref } from "/fest/object.js";
+import { ensureStyleSheet } from "/fest/icon.js";
 //#region ../CWSP-document/src/shared/routing/native/launcher-home-lifecycle.ts
 var HOOKS_BOOT = "__CWSP_LAUNCHER_HOME_HOOKS_V1__";
 var hookSlot = () => {
@@ -75,15 +78,15 @@ function mergeNativeOpt(viewId, opts) {
 	return base;
 }
 var CWSP_VIEW_LOADERS = {
-	network: () => __vitePreload(() => import("./src7.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url),
-	settings: () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([9,1,2,5,3,4,6,7,10,11,12,13,14,15,16,17]), import.meta.url),
-	explorer: () => __vitePreload(() => import("./src.js"), __vite__mapDeps([18,1,2,5,3,4,6,7,12,13,17]), import.meta.url),
-	viewer: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,1,2,5,3,4,6,7,13,12]), import.meta.url),
-	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,1,2,5,3,4,6,7,13,12]), import.meta.url),
-	history: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([20,1,2,12,5,3,4,6,7,13,21]), import.meta.url),
-	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([22,1,2,5,23,3,4,6,7,24,25,26,27,28,16,15,29,30,31,32,33,34,35,13]), import.meta.url),
-	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([36,1,2,5,12,3,4,6,7,13]), import.meta.url),
-	home: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([37,1,2,12,5,3,4,6,7,13,38]), import.meta.url)
+	network: () => __vitePreload(() => import("./src7.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url),
+	settings: () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([8,3,1,2,4,5,6,9,10,11,12,13,14,15,16]), import.meta.url),
+	explorer: () => __vitePreload(() => import("./src.js"), __vite__mapDeps([17,3,1,2,4,5,6,11,12,16]), import.meta.url),
+	viewer: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([18,3,1,2,4,5,6,12,11]), import.meta.url),
+	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([18,3,1,2,4,5,6,12,11]), import.meta.url),
+	history: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([19,5,2,11,3,1,4,6,12,20]), import.meta.url),
+	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([21,3,5,2,22,1,4,6,23,24,25,26,27,15,14,28,29,30,31,32,33,34,12]), import.meta.url),
+	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([35,3,5,2,11,1,4,6,12]), import.meta.url),
+	home: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([36,5,2,11,3,1,4,6,12,37]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */
 var CWSP_LAUNCHER_VIEWS = [
@@ -98,7 +101,7 @@ var CWSP_LAUNCHER_VIEWS = [
 ];
 async function seedCwspLauncherTiles() {
 	try {
-		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([38,2,1]), import.meta.url);
+		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([37,2,5]), import.meta.url);
 		const items = mod.speedDialItems;
 		if (!items || typeof items.findIndex !== "function") return;
 		let removedAirpad = false;
@@ -362,7 +365,7 @@ var EnvironmentShell = class extends ShellBase {
 		} else this.mountHomeDesktop(homeMount, shellContext);
 	}
 	mountHomeDesktop(homeMount, shellContext) {
-		mountViewModule(() => __vitePreload(() => import("./src6.js"), __vite__mapDeps([37,1,2,12,5,3,4,6,7,13,38]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
+		mountViewModule(() => __vitePreload(() => import("./src6.js"), __vite__mapDeps([36,5,2,11,3,1,4,6,12,37]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
 			this.homeUnmount = unmount;
 		}).catch((err) => {
 			console.warn("[EnvironmentShell] home-view failed", err);

@@ -1,8 +1,11 @@
-import { Fn as loadInlineStyle, In as preloadStyle, Sn as ref, Vt as dynamicTheme, et as ensureStyleSheet } from "../com/app.js";
-import { f as publicHrefForView, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
+import { h as shouldHandoffViewToSibling, p as publicHrefForView } from "../shells/boot-history-base.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
-import { $n as serviceChannels, E as syncBrowserChromeTheme, En as ViewRegistry, M as withViewTransition, S as scheduleViewModulePrefetch, T as resyncThemeAfterAdoptedViewSheet, d as canonicalHubSettingsSection, it as loadSettings, j as getTransitionDirection, jn as isEnabledView, m as hubSettingsSectionPath, ot as saveSettings, v as resolveEffectiveHubSettingsSection, w as applyTheme } from "../shells/boot-index.js";
+import { Bn as ViewRegistry, E as syncBrowserChromeTheme, Gn as isEnabledView, M as withViewTransition, S as scheduleViewModulePrefetch, T as resyncThemeAfterAdoptedViewSheet, d as canonicalHubSettingsSection, it as loadSettings, j as getTransitionDirection, m as hubSettingsSectionPath, mr as serviceChannels, ot as saveSettings, v as resolveEffectiveHubSettingsSection, w as applyTheme } from "../shells/boot-index.js";
+import { Yt as dynamicTheme } from "../com/app.js";
 import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";
+import { loadInlineStyle, preloadStyle } from "/fest/dom.js";
+import { ref } from "/fest/object.js";
+import { ensureStyleSheet } from "/fest/icon.js";
 //#region ../CWSP-document/src/frontend/boot/shell-elements.ts
 var ShellHost = class extends HTMLElement {
 	mountShellLayout(layout) {
@@ -531,13 +534,6 @@ var ShellBase = class {
 				return;
 			}
 			if (!isEnabledView(vid)) return;
-			const target = String(d.target ?? "window").toLowerCase();
-			if ([
-				"window",
-				"tabbed",
-				"environment",
-				"frame"
-			].includes(target)) return;
 			if ([
 				"window",
 				"tabbed",

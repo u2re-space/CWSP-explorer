@@ -1,4 +1,6 @@
-import { In as preloadStyle, J as UIElement, Wn as addEvent, X as __decorate, cn as H, en as registerTransientOverlay, rn as bindOutsideDismiss, sn as defineElement } from "../com/app.js";
+import { cn as registerTransientOverlay, ct as UIElement, dn as bindOutsideDismiss, gn as H, hn as defineElement, ut as __decorate } from "../com/app.js";
+import { addEvent, preloadStyle } from "/fest/dom.js";
+import "/fest/icon.js";
 /** Same as environment-overlay ENV_OVERLAY_Z — above `$z-shell-chrome`. */
 var CHROME_FLYOUT_Z = "2147483600";
 var openControllers = /* @__PURE__ */ new Map();

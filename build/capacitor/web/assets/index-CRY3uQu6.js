@@ -1,10 +1,12 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import "../chunks/vite-preload-BsPm7yBB.js";
+import { _ as stashSkuHandoff, a as applyCwspSku } from "../shells/boot-history-base.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { a as applyCwspSku } from "../shells/boot-history-base.js";
 import { n as bootMinimal } from "../chunks/BootLoader.js";
 //#region src/frontend/web/sku-boot.ts
-var ENABLED_VIEWS = "minimal,explorer,settings,history";
+/** INVARIANT: Capacitor / dedicated explorer never ships markdown viewer — CWSP-document owns open. */
+var ENABLED_VIEWS_EXPLORER = "minimal,explorer,settings,history";
+var ENABLED_VIEWS_CRX = "minimal,explorer,viewer,settings,history";
 var detectHostKind = (explicit) => {
 	if (explicit) return explicit;
 	try {
@@ -22,7 +24,7 @@ var stampExplorerSku = (kind) => {
 	root.dataset.cwspSku = "explorer";
 	root.dataset.cwspApp = "explorer";
 	root.dataset.cwspSurface = kind === "crx" ? "cw-explorer-crx" : kind === "neutralino" ? "cw-explorer-neutralino" : "cw-explorer";
-	root.dataset.cwspEnabledViews = ENABLED_VIEWS;
+	root.dataset.cwspEnabledViews = kind === "crx" ? ENABLED_VIEWS_CRX : ENABLED_VIEWS_EXPLORER;
 	root.dataset.cwspDefaultView = "explorer";
 	if (kind === "capacitor") root.dataset.cwspNativeShell = "capacitor";
 	else if (kind === "neutralino") root.dataset.cwspNativeShell = "neutralino";
@@ -44,14 +46,22 @@ var showExplorerBootFailure = (error, mount = document.body) => {
 var bootExplorerSku = async (container, kind) => {
 	const host = detectHostKind(kind);
 	stampExplorerSku(host);
+	try {
+		const q = new URLSearchParams(String(globalThis.location?.search || ""));
+		const path = String(q.get("path") || q.get("src") || "").trim();
+		if (path) stashSkuHandoff({
+			dest: "explorer",
+			src: path
+		});
+	} catch {}
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.Cn);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.Ln);
 			return {
 				SystemBarType,
 				SystemBars
 			};
-		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		await SystemBars.hide({ bar: SystemBarType.NavigationBar });
 	} catch {}
 	if (host === "neutralino") try {

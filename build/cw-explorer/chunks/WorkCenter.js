@@ -1,13 +1,13 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./WorkCenterDataProcessing.js","../vendor/dompurify.js","../vendor/marked.js","./AIResponseParser.js"])))=>i.map(i=>d[i]);
-import { At as isBase64Like, Mn as __vitePreload, Mt as parseDataUrl, cn as H, jt as normalizeDataAsset } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./WorkCenterDataProcessing.js","../vendor/dompurify.js","../vendor/marked.js","./AIResponseParser.js"])))=>i.map(i=>d[i]);
 import { g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Xn as sendMessage, Yn as registerComponent, nr as ROUTE_HASHES, qn as initializeComponent } from "../shells/boot-index.js";
+import { _r as ROUTE_HASHES, cr as initializeComponent, dr as sendMessage, ur as registerComponent } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
+import { Bt as parseDataUrl, Rt as isBase64Like, Tn as __vitePreload, gn as H, zt as normalizeDataAsset } from "../com/app.js";
 import { t as f } from "../vendor/marked.js";
 import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as src_default } from "../vendor/marked-katex-extension.js";
-import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
+import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
 import { o as toBase64 } from "./entities.js";
@@ -835,9 +835,9 @@ var WorkCenterTemplates = class {
 	/** Get default instruction templates (for seeding). Dynamic import avoids TDZ when workcenter loads before `com/app` finishes. */
 	async getDefaultTemplates() {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
-			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Ln);
+			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Zn);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
-		}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 		return DEFAULT_INSTRUCTION_TEMPLATES;
 	}
 	renderInstructionPanel(state) {
@@ -2190,9 +2190,9 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Un);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.rr);
 				return { unifiedMessaging };
-			}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
 			try {
 				resultContent = JSON.parse(resultContent)?.data || resultContent;
@@ -2251,9 +2251,9 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Un);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.rr);
 				return { unifiedMessaging };
-			}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
 			await unifiedMessaging.sendMessage({
 				id: crypto.randomUUID(),
@@ -2523,7 +2523,7 @@ var WorkCenterEvents = class {
 				const { WorkCenterDataProcessing } = await __vitePreload(async () => {
 					const { WorkCenterDataProcessing } = await import("./WorkCenterDataProcessing.js").then((n) => n.n);
 					return { WorkCenterDataProcessing };
-				}, __vite__mapDeps([8,1,3,2,4,5,6,7,9,10,11]), import.meta.url);
+				}, __vite__mapDeps([7,1,2,3,4,5,6,8,9,10]), import.meta.url);
 				outputContent.innerHTML = `<div class="result-content">${new WorkCenterDataProcessing().formatResult(this.state.lastRawResult, newFormat)}</div>`;
 			}
 		});
@@ -2658,7 +2658,7 @@ var WorkCenterEvents = class {
 					const { WorkCenterDataProcessing } = await __vitePreload(async () => {
 						const { WorkCenterDataProcessing } = await import("./WorkCenterDataProcessing.js").then((n) => n.n);
 						return { WorkCenterDataProcessing };
-					}, __vite__mapDeps([8,1,3,2,4,5,6,7,9,10,11]), import.meta.url);
+					}, __vite__mapDeps([7,1,2,3,4,5,6,8,9,10]), import.meta.url);
 					outputContent.innerHTML = `<div class="result-content">${new WorkCenterDataProcessing().formatResult({ content: step.content }, this.state.outputFormat)}</div>`;
 					this.state.lastRawResult = { data: step.content };
 				}
