@@ -1,5 +1,5 @@
-import { tn as CwsBridge } from "./boot-index.js";
-import { Sn as E, _t as applyWallpaperPaperFromLuma, gn as H, hn as defineElement, lt as UIElement_default, ut as __decorate } from "../com/app.js";
+import { cn as CwsBridge } from "./boot-index.js";
+import { Tn as E, bt as applyWallpaperPaperFromLuma, ft as UIElement_default, pt as __decorate, vn as defineElement, yn as H } from "../com/app.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
 import { preloadStyle } from "/fest/dom.js";

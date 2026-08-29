@@ -1,4 +1,4 @@
-import { an as invokeCwsPlatformIPC } from "../shells/boot-index.js";
+import { fn as invokeCwsPlatformIPC } from "../shells/boot-index.js";
 //#region ../CWSP-document/src/shared/routing/native/launcher-bridge.ts
 async function launcherIsDefault() {
 	return false;
@@ -33,7 +33,7 @@ async function launcherOpenUri(uri, options = {}) {
 	const chooser = options.chooser !== false;
 	const title = String(options.title || "Open with").trim() || "Open with";
 	try {
-		return (await invokeCwsPlatformIPC({
+		return launcherNativeOpened(await invokeCwsPlatformIPC({
 			channel: "launcher:open-uri",
 			payload: {
 				uri: url,
@@ -43,11 +43,17 @@ async function launcherOpenUri(uri, options = {}) {
 				chooser,
 				title
 			}
-		})).ok === true;
+		}));
 	} catch {
 		return false;
 	}
 }
+/** WHY: CwsBridgeWeb echoes `{ ok: true }` for every channel and never opens a file. */
+var launcherNativeOpened = (r) => {
+	if (!r || r.ok !== true) return false;
+	const echo = r.echo || {};
+	return echo.opened === true || echo.sent === true;
+};
 var fileToDataUrl = (file) => new Promise((resolve, reject) => {
 	const reader = new FileReader();
 	reader.onload = () => resolve(String(reader.result || ""));
@@ -64,7 +70,7 @@ async function launcherOpenFile(file, options = {}) {
 	const title = String(options.title || "Open").trim() || "Open";
 	try {
 		const data = await fileToDataUrl(file);
-		return (await invokeCwsPlatformIPC({
+		return launcherNativeOpened(await invokeCwsPlatformIPC({
 			channel: "launcher:open-bytes",
 			payload: {
 				name: file.name || "shared.bin",
@@ -74,7 +80,7 @@ async function launcherOpenFile(file, options = {}) {
 				chooser,
 				title
 			}
-		})).ok === true;
+		}));
 	} catch {
 		return false;
 	}

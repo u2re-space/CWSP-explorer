@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","./launcher-bridge.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { c as isCwspSku, i as apkManifestForSku, p as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation, u as isWebHubSurface } from "../shells/boot-history-base.js";
-import { A as normalizeHexColor, D as FALLBACK_BASE_COLOR, Gn as isEnabledView, Mn as resolveCwspUrlFields, O as defaultColorSource, Ot as applyAirpadRuntimeFromAppSettings, Xn as DEFAULT_INSTRUCTION_TEMPLATES, _ as rememberSettingsAreaSection, at as noteSettingsControlSync, b as skuForHubSettingsSection, d as canonicalHubSettingsSection, dr as sendMessage, f as defaultSettingsTabForProfile, g as readSettingsAreaSection, h as pruneBuiltInSettingsTabs, ht as mergeOpenPolicy, it as loadSettings, k as isAppearanceColorSource, lt as normalizeEcosystemToken, m as hubSettingsSectionPath, nt as ensureCrxCwspSettingsSeeded, ot as saveSettings, p as hasBuiltInSettingsPanel, rt as getLastSettingsSaveReport, st as BUILTIN_AI_MODELS, t as navigateToView, tt as ensureCapacitorCwspSettingsSeeded, u as SIBLING_HUB_SETTINGS_SECTIONS, ut as resolveEcosystemToken, v as resolveEffectiveHubSettingsSection, w as applyTheme, x as visibleHubSettingsSections, y as resolveSettingsShellProfile } from "../shells/boot-index.js";
-import { Tn as __vitePreload, gn as H, i as StorageKeys, o as setString } from "../com/app.js";
+import { c as isCwspNativeHost, d as isWebHubSurface, i as apkManifestForSku, l as isCwspSku, m as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { C as applyTheme, D as defaultColorSource, E as FALLBACK_BASE_COLOR, O as isAppearanceColorSource, Ot as stampHostOpenPolicy, Pt as applyAirpadRuntimeFromAppSettings, Qn as isEnabledView, _ as resolveEffectiveHubSettingsSection, at as saveSettings, b as visibleHubSettingsSections, ct as normalizeEcosystemToken, d as defaultSettingsTabForProfile, et as ensureCapacitorCwspSettingsSeeded, f as hasBuiltInSettingsPanel, g as rememberSettingsAreaSection, h as readSettingsAreaSection, ht as mergeOpenPolicy, it as noteSettingsControlSync, k as normalizeHexColor, l as SIBLING_HUB_SETTINGS_SECTIONS, lt as resolveEcosystemToken, m as pruneBuiltInSettingsTabs, nt as getLastSettingsSaveReport, ot as BUILTIN_AI_MODELS, p as hubSettingsSectionPath, rr as DEFAULT_INSTRUCTION_TEMPLATES, rt as loadSettings, t as navigateToView, tt as ensureCrxCwspSettingsSeeded, u as canonicalHubSettingsSection, v as resolveSettingsShellProfile, vr as sendMessage, xt as resolveHostOpenPolicy, y as skuForHubSettingsSection, zn as resolveCwspUrlFields } from "../shells/boot-index.js";
+import { On as __vitePreload, i as StorageKeys, o as setString, yn as H } from "../com/app.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 import { n as requestCapacitorSettingsPermissionsAfterSave } from "./capacitor-settings-permissions.js";
 import { o as SettingsChannelAction } from "../views/viewer.js";
@@ -1520,6 +1520,18 @@ var SINK_OPTIONS = [
 	["external", "New tab / browser"],
 	["system", "Android / system chooser"]
 ];
+var PLACEMENT_OPTIONS = [
+	["inline", "Inline window (same tab)"],
+	["native-window", "Separate window"],
+	["new-tab", "New tab (file as-is)"]
+];
+var ANDROID_EXPLORER_OPEN_OPTIONS = [
+	["document", "CWSP-document"],
+	["system", "Ask Android (Open with…)"],
+	["transfer", "CWSP-transfer"],
+	["workcenter", "CWSP-process"]
+];
+var ANDROID_EXPLORER_KIND_OPTIONS = [["ask", "Follow Open / click"], ...ANDROID_EXPLORER_OPEN_OPTIONS];
 var SHELL_IMAGE_OPTIONS = [
 	["wallpaper", "Wallpaper if it fits, otherwise viewer"],
 	["viewer", "Markdown (in this app)"],
@@ -1544,8 +1556,8 @@ var showSurface = (ctx, surface) => {
 	if (sku === "explorer") return surface === "explorer";
 	if (sku === "process") return surface === "process";
 	if (sku === "transfer") return surface === "transfer";
-	if (sku === "launcher" || host === "environment") return surface === "shell";
-	if (sku === "crx" || host === "crx") return surface === "crx";
+	if (sku === "launcher" || host === "environment") return surface === "shell" || surface === "explorer";
+	if (sku === "crx" || host === "crx") return surface === "crx" || surface === "explorer";
 	return true;
 };
 var section = (title, hint, fields) => [
@@ -1569,18 +1581,26 @@ var registerOpenFilesSettingsContribution = () => registerSettingsContribution({
 			settingsSelectField("Images", "openPolicy.viewer.kinds.image", SINK_OPTIONS),
 			settingsSelectField("Other files", "openPolicy.viewer.kinds.other", SINK_OPTIONS)
 		]));
-		if (showSurface(ctx, "explorer")) blocks.push(...section("Explorer", "CWSP-explorer: markdown in this app, CWSP-document / process / transfer, or Android chooser.", [
-			settingsSelectField("Open / click", "openPolicy.explorer.channels.open", SINK_OPTIONS),
-			settingsSelectField("Double-click", "openPolicy.explorer.channels.dblclick", SINK_OPTIONS),
-			settingsSelectField("Share target", "openPolicy.explorer.channels.share-target", SINK_OPTIONS),
-			settingsSelectField("Launch queue", "openPolicy.explorer.channels.launch-queue", SINK_OPTIONS),
-			settingsSelectField("Capacitor open-with", "openPolicy.explorer.channels.capacitor", SINK_OPTIONS),
-			settingsSelectField("Markdown", "openPolicy.explorer.kinds.markdown", SINK_OPTIONS),
-			settingsSelectField("Text", "openPolicy.explorer.kinds.text", SINK_OPTIONS),
-			settingsSelectField("Documents", "openPolicy.explorer.kinds.document", SINK_OPTIONS),
-			settingsSelectField("Images", "openPolicy.explorer.kinds.image", SINK_OPTIONS),
-			settingsSelectField("Other files", "openPolicy.explorer.kinds.other", SINK_OPTIONS)
-		]));
+		if (showSurface(ctx, "explorer")) {
+			const android = ctx.surface === "capacitor" || ctx.surface === "native" || isCwspNativeHost();
+			blocks.push(...section("Explorer", android ? "These rows are Android-only. They do not change the site / PWA / CRX. Open / click is CWSP-document or Ask Android; a file-type row overrides it only when it is not “Follow Open / click”." : "These rows are site / PWA / CRX only. They do not change the Android Explorer APK. Markdown and images open in an inline window unless you pick a separate window or a new tab.", android ? [
+				settingsSelectField("Open / click", "openPolicy.explorer.nativeOpen", ANDROID_EXPLORER_OPEN_OPTIONS),
+				settingsSelectField("Markdown", "openPolicy.explorer.nativeKinds.markdown", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Text", "openPolicy.explorer.nativeKinds.text", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Documents", "openPolicy.explorer.nativeKinds.document", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Images", "openPolicy.explorer.nativeKinds.image", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Other files", "openPolicy.explorer.nativeKinds.other", ANDROID_EXPLORER_KIND_OPTIONS)
+			] : [
+				settingsSelectField("Open markdown / images in", "openPolicy.explorer.placement", PLACEMENT_OPTIONS),
+				settingsSelectField("Open / click", "openPolicy.explorer.channels.open", SINK_OPTIONS),
+				settingsSelectField("Double-click", "openPolicy.explorer.channels.dblclick", SINK_OPTIONS),
+				settingsSelectField("Markdown", "openPolicy.explorer.kinds.markdown", SINK_OPTIONS),
+				settingsSelectField("Text", "openPolicy.explorer.kinds.text", SINK_OPTIONS),
+				settingsSelectField("Documents", "openPolicy.explorer.kinds.document", SINK_OPTIONS),
+				settingsSelectField("Images", "openPolicy.explorer.kinds.image", SINK_OPTIONS),
+				settingsSelectField("Other files", "openPolicy.explorer.kinds.other", SINK_OPTIONS)
+			]));
+		}
 		if (showSurface(ctx, "shell")) blocks.push(...section("Environment / shell", "Launch queue, Capacitor open-with, share, and drop/paste on the home grid. Per-tile “Open link in” still wins.", [
 			settingsSelectField("Share target", "openPolicy.shell.channels.share-target", SINK_OPTIONS),
 			settingsSelectField("Launch queue", "openPolicy.shell.channels.launch-queue", SINK_OPTIONS),
@@ -1617,13 +1637,12 @@ var registerOpenFilesSettingsContribution = () => registerSettingsContribution({
 		return settingsPanel("open-files", "Open & share", blocks);
 	},
 	load: (settings, panel) => {
-		settings.openPolicy = {
-			...settings,
-			openPolicy: mergeOpenPolicy(settings.openPolicy)
-		}.openPolicy;
+		settings.openPolicy = resolveHostOpenPolicy(settings);
+		bindContributionFields(panel, settings);
 	},
 	save: (settings) => {
 		settings.openPolicy = mergeOpenPolicy(settings.openPolicy);
+		stampHostOpenPolicy(settings);
 	}
 });
 //#endregion
@@ -2279,7 +2298,7 @@ var resolveSettingsContributionContext = (isExtension, hubSectionOverride) => {
 	if (hubSection === "document") surface = isNativeApkHost() ? "capacitor" : "markdown";
 	else if (hubSection === "transfer") surface = isNativeApkHost() ? "capacitor" : "web";
 	else if (hubSection === "process" || hubSection === "explorer") surface = isNativeApkHost() ? "capacitor" : "web";
-	else if (hubSection === "hub") surface = "environment";
+	else if (hubSection === "hub") surface = isNativeApkHost() ? "capacitor" : "environment";
 	return {
 		isExtension: Boolean(isExtension),
 		surface,
@@ -2530,7 +2549,7 @@ var resolveCwspSettingsBeforeSave = async (settings) => {
 	const core = settings.core;
 	if (!core || typeof core !== "object") return;
 	const { sanitizeFleetSelfWireNodeId } = await __vitePreload(async () => {
-		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.ln);
+		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.gn);
 		return { sanitizeFleetSelfWireNodeId };
 	}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
 	const canonicalUserId = sanitizeFleetSelfWireNodeId(core.userId);
@@ -3134,7 +3153,7 @@ var createSettingsView = (opts) => {
 		applyTheme(s);
 		applyContributions(root, s, contributionCtx);
 		opts.onTheme?.(s?.appearance?.theme || "auto");
-		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.nn).then(async (m) => {
+		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.ln).then(async (m) => {
 			const hints = [...root.querySelectorAll("[data-apk-local-version]")];
 			if (!hints.length) return;
 			const { srcEl, endpointEl, tokenEl, insecureEl } = apkBridgeFields();
@@ -3297,11 +3316,11 @@ var createSettingsView = (opts) => {
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-app-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.B).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.z).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-notification-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.B).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.z).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		const crxPairBtn = t?.closest?.("button[data-action=\"crx-control-pair\"]");
@@ -3378,7 +3397,7 @@ var createSettingsView = (opts) => {
 					if (userClicked) setNote(pairRegenBtn ? "Regenerating public token…" : "Refreshing pairing code…", { tone: "warn" });
 					try {
 						const { invokeCwsNative } = await __vitePreload(async () => {
-							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.nn);
+							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.ln);
 							return { invokeCwsNative };
 						}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
 						const result = await invokeCwsNative(pairRegenBtn ? "control:public-token:regenerate" : "control:pairing:status", {});
@@ -3422,7 +3441,7 @@ var createSettingsView = (opts) => {
 			(async () => {
 				try {
 					const { invokeCwsNative } = await __vitePreload(async () => {
-						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.nn);
+						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.ln);
 						return { invokeCwsNative };
 					}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
 					const s = await loadSettings();
@@ -3500,7 +3519,7 @@ var createSettingsView = (opts) => {
 					const token = (tokenEl?.value || "").trim() || resolveEcosystemToken(s);
 					const allowInsecureTls = insecureEl?.checked ?? Boolean(s.core?.allowInsecureTls);
 					const { invokeCwsNative } = await __vitePreload(async () => {
-						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.nn);
+						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.ln);
 						return { invokeCwsNative };
 					}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
 					const clicked = apkInstallBtn || apkCheckBtn;
@@ -3754,7 +3773,7 @@ var createSettingsView = (opts) => {
 			const permReport = await permPromise;
 			const permLines = permReport.lines;
 			const permDenied = permReport.results.some((r) => r.granted === false);
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.r).then(async (m) => {
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.n).then(async (m) => {
 				if (publicControlSpa) {
 					try {
 						if (!Boolean(globalThis.__CWSP_CONTROL_BRIDGE_LIVE__)) console.warn("[Settings] Control not paired — settings saved locally only; pair to push to device");
@@ -3798,7 +3817,7 @@ var createSettingsView = (opts) => {
 				if (typeof m.nativeShellOwnsExclusiveHubWebsocket === "function" && m.nativeShellOwnsExclusiveHubWebsocket()) {
 					try {
 						const { invokeCwsNative } = await __vitePreload(async () => {
-							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.nn);
+							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.ln);
 							return { invokeCwsNative };
 						}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
 						await invokeCwsNative("runtime:reload-settings", {});
@@ -3808,7 +3827,7 @@ var createSettingsView = (opts) => {
 					return;
 				}
 				await m.applyHubSocketFromSettings(saved);
-				__vitePreload(() => import("../shells/boot-index.js").then((n) => n.l).then((ws) => {
+				__vitePreload(() => import("../shells/boot-index.js").then((n) => n.c).then((ws) => {
 					if (typeof ws.reconnectTransportAfterLifecycleResume === "function") ws.reconnectTransportAfterLifecycleResume("settings-save");
 				}), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).catch(() => void 0);
 			}), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
@@ -4050,7 +4069,7 @@ var SettingsView = class {
 			this.handleMessage({ data: payload });
 			(async () => {
 				try {
-					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.et), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.C), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url)]);
+					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.$), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.S), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url)]);
 					const cur = await loadSettings();
 					const patch = payload;
 					applyTheme({

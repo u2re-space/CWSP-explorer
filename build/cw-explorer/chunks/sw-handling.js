@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
-import { n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { $n as buildShareDataFromCachedPayload, Yn as unifiedMessaging$1, er as consumeCachedShareTargetPayload, gr as BROADCAST_CHANNELS, it as loadSettings, pr as unifiedMessaging, tr as storeShareTargetPayloadToCache, xr as resolveProcessApiUrl } from "../shells/boot-index.js";
-import { Bt as parseDataUrl, Rt as isBase64Like, Tn as __vitePreload, an as copy, on as initClipboardReceiver, xt as bindDirectoryForLaunchedFiles } from "../com/app.js";
+import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { Cr as BROADCAST_CHANNELS, Or as resolveProcessApiUrl, br as unifiedMessaging, cr as storeShareTargetPayloadToCache, nr as unifiedMessaging$1, or as buildShareDataFromCachedPayload, rt as loadSettings, sr as consumeCachedShareTargetPayload } from "../shells/boot-index.js";
+import { On as __vitePreload, Ut as parseDataUrl, Vt as isBase64Like, cn as copy, ln as initClipboardReceiver, wt as bindDirectoryForLaunchedFiles } from "../com/app.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 import { applyLauncherIngress, installShellImageOpenListener, refineLauncherImageIngress, skuIngressHint } from "./sku-ingress.js";
 import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "./ViewTransferRouting.js";
@@ -707,10 +707,11 @@ function isKnownPathMountSegment(segment) {
 function pathForSkuHostView(viewPath) {
 	let path = String(viewPath || "/").trim() || "/";
 	if (!path.startsWith("/")) path = `/${path}`;
-	if (!isDedicatedSkuHost()) return path;
+	const sku = inferCwspSkuFromLocation();
+	const nativeSku = isCwspNativeHost() && !!sku && sku !== "launcher" && sku !== "crx";
+	if (!isDedicatedSkuHost() && !nativeSku) return path;
 	const seg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
 	if (!seg || !isKnownPathMountSegment(seg)) return path;
-	const sku = inferCwspSkuFromLocation();
 	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS[sku]?.includes(seg) ? "/" : path;
 	return "/";
 }
@@ -892,7 +893,7 @@ var getServiceWorkerCandidates = () => {
 		"MODE": "cw-explorer",
 		"PROD": true,
 		"SSR": false,
-		"VITE_ENABLED_VIEWS": "minimal,explorer,viewer,settings,history"
+		"VITE_ENABLED_VIEWS": "minimal,explorer,settings,history"
 	}.DEV);
 	const bases = serviceWorkerPathBases();
 	const perBaseDev = [];
@@ -1198,7 +1199,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 				"MODE": "cw-explorer",
 				"PROD": true,
 				"SSR": false,
-				"VITE_ENABLED_VIEWS": "minimal,explorer,viewer,settings,history"
+				"VITE_ENABLED_VIEWS": "minimal,explorer,settings,history"
 			};
 			if (!registration) {
 				if (viteEnv?.DEV) console.warn("[PWA] Service worker not registered (dev): probe failed for dev-sw/sw.js — check Vite BASE_URL matches vite-plugin-pwa dev worker path.");
@@ -1584,6 +1585,17 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 	}
 	if (currentPath !== destNorm) {
 		if (!await tryNavigateLiveShell()) {
+			if ((() => {
+				try {
+					const c = globalThis.Capacitor;
+					return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+				} catch {
+					return false;
+				}
+			})()) {
+				console.warn("[ViewTransfer] Skipping hard navigation on Capacitor:", destNorm);
+				return delivered;
+			}
 			const nextUrl = new URL(globalThis?.location?.href);
 			nextUrl.pathname = destPath;
 			nextUrl.search = "";
@@ -1617,7 +1629,25 @@ var ingestSharePayload = async (shareData, source = "share-target") => {
 			}
 		});
 	} catch {}
-	return routeToTransferView(shareData, source, extractTransferHint(shareData), false);
+	const file = files[0];
+	try {
+		const content = !!file && (/^text\/|json|markdown|xml|javascript|typescript/i.test(String(file.type || "")) || /\.(?:md|markdown|txt|json|html?|css|js|ts|tsx|yml|yaml|csv|log|xml)$/i.test(file.name)) && file ? await file.text() : String(shareData.text || "");
+		if (content.trim() || file?.name) stashSkuHandoff({
+			dest: "viewer",
+			content,
+			filename: String(file?.name || shareData.title || ""),
+			src: String(shareData.url || shareData.sharedUrl || "")
+		});
+	} catch {}
+	const native = (() => {
+		try {
+			const c = globalThis.Capacitor;
+			return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+		} catch {
+			return false;
+		}
+	})();
+	return routeToTransferView(shareData, source, extractTransferHint(shareData), native);
 };
 /**
 * Extract processable content from share data

@@ -1,8 +1,8 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/marked.js","./rolldown-runtime.js","../vendor/marked-katex-extension.js","../vendor/katex.js","./DocxExport.js","./BootLoader.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { Jn as ingressStampWasSuperseded, bt as resolveOpenPolicy, dt as classifyOpenKind, it as loadSettings, mt as looksLikePreviewableBinary, vt as peekOpenPolicy, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
+import { Ct as resolveOpenPolicy, mt as looksLikePreviewableBinary, rt as loadSettings, tr as ingressStampWasSuperseded, ut as classifyOpenKind, vt as peekOpenPolicy, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
-import { At as pickSidecarDirectoryFiles, Bt as parseDataUrl, Ct as indexDirectoryFiles, Dt as originalRelFromRef, Et as observeFileSystemHandle, Gt as normalizePath, Kt as openDirectory, Lt as decodeBase64ToBytes, Mt as relPathCandidates, Nt as resolveFileUnderDirectory, Ot as pickAssetDirectory, Pt as saveMarkdownBlob, Rt as isBase64Like, St as findEntryRelPath, Tn as __vitePreload, Tt as mountPickedDirectory, Ut as isVirtualFsPath, Vt as getDir, Wt as matchMappedRoot, gn as H, jt as provideBoundRelative, kt as pickMarkdownFile, qt as provide, wt as isMarkdownRelativeRef, zt as normalizeDataAsset } from "../com/app.js";
+import { At as originalRelFromRef, Bt as decodeBase64ToBytes, Dt as isMarkdownRelativeRef, Et as indexDirectoryFiles, Ft as relPathCandidates, Ht as normalizeDataAsset, It as resolveFileUnderDirectory, Jt as normalizePath, Kt as isVirtualFsPath, Lt as saveMarkdownBlob, Mt as pickMarkdownFile, Nt as pickSidecarDirectoryFiles, On as __vitePreload, Ot as mountPickedDirectory, Pt as provideBoundRelative, Tt as findEntryRelPath, Ut as parseDataUrl, Vt as isBase64Like, Wt as getDir, Xt as provide, Yt as openDirectory, jt as pickAssetDirectory, kt as observeFileSystemHandle, qt as matchMappedRoot, yn as H } from "../com/app.js";
 import { t as purify } from "../vendor/dompurify.js";
 import { c as createViewConstructor, l as createViewState, n as sendViewProtocolMessage, r as ExplorerChannelAction, s as ViewerChannelAction } from "../views/viewer.js";
 import { loadAsAdopted, removeAdopted } from "/fest/dom.js";
@@ -152,6 +152,7 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 		_sheet = null;
 		pasteController = null;
 		documentOpenListener = null;
+		shareIntentListener = null;
 		/** Whole-page drag/drop when the viewer is standalone (captures misses on shell padding). */
 		windowDnDController = null;
 		isViewVisible = false;
@@ -786,13 +787,19 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 			if (filenameParam) this.options.filename = filenameParam;
 			const contentParam = String(params.content || "");
 			if (contentParam.trim()) this.contentRef.value = contentParam;
-			else if (sourceParam && isVirtualFsPath(String(sourceParam))) provide(String(sourceParam)).then(async (file) => {
-				if (!file) return;
-				await this.ingestOpenedFile(file, {
-					virtualPath: String(sourceParam),
-					filename: filenameParam ? String(filenameParam) : file.name
+			else if (sourceParam) {
+				const src = String(sourceParam).trim();
+				if (isVirtualFsPath(src) || /^\/assets(?:\/|$)/i.test(src)) provide(src).then(async (file) => {
+					if (!file) {
+						if (/^\/assets(?:\/|$)/i.test(src)) this.openMarkdownFromUrl(src, filenameParam ? String(filenameParam) : void 0);
+						return;
+					}
+					await this.ingestOpenedFile(file, {
+						virtualPath: src,
+						filename: filenameParam ? String(filenameParam) : file.name
+					});
 				});
-			});
+			}
 			if (this.element) this.syncToolbarDocumentTitle();
 		}
 		/** Toolbar center title span stays empty (no document label in chrome). */
@@ -2250,9 +2257,23 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 						this.setContent(text, detail?.filename, detail?.src || null);
 						return;
 					}
+					const src = String(detail?.src || "").trim();
+					if (src) {
+						this.applyRouteParams({
+							src,
+							filename: detail?.filename
+						});
+						return;
+					}
 					this.pullCapacitorPendingOpen();
 				};
 				window.addEventListener("cwsp:document-open", this.documentOpenListener);
+			}
+			if (!this.shareIntentListener) {
+				this.shareIntentListener = () => {
+					this.pullCapacitorPendingOpen();
+				};
+				window.addEventListener("cws:shareIntent", this.shareIntentListener);
 			}
 			ensureViewerIconRuntime();
 			this._sheet ??= loadAsAdopted(src_default);
@@ -2275,6 +2296,10 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 				window.removeEventListener("cwsp:document-open", this.documentOpenListener);
 				this.documentOpenListener = null;
 			}
+			if (this.shareIntentListener) {
+				window.removeEventListener("cws:shareIntent", this.shareIntentListener);
+				this.shareIntentListener = null;
+			}
 			this.windowDnDController?.abort();
 			this.windowDnDController = null;
 			if (this.customSheet) {
@@ -2294,7 +2319,7 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 				const g = globalThis;
 				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.nn);
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.ln);
 					return { invokeCwsPlatformIPC };
 				}, __vite__mapDeps([8,1,7,9,10,11]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
@@ -2312,21 +2337,25 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
 					}
 				}
-				await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
 				const source = String(echo.url || "").trim() || null;
 				const filename = String(echo.name || echo.title || file?.name || "").trim();
+				const text = String(echo.text || "").trim();
+				let applied = false;
 				if (file && this.looksLikeBinaryPreviewFile(file)) {
 					this.showSharedBinaryPreview(file);
 					if (filename) this.options.filename = filename;
-					return;
+					applied = true;
+				} else if (file && this.isTextLikeFile(file)) {
+					this.ingestOpenedMarkdownBody(await file.text().catch(() => ""), filename || file.name, source);
+					applied = true;
+				} else if (text) {
+					this.ingestOpenedMarkdownBody(text, filename, source);
+					applied = true;
 				}
-				if (file && this.isTextLikeFile(file)) {
-					const text = await file.text().catch(() => "");
-					this.ingestOpenedMarkdownBody(text, filename || file.name, source);
-					return;
-				}
-				const text = String(echo.text || "").trim();
-				if (text) this.ingestOpenedMarkdownBody(text, filename, source);
+				if (!applied) return;
+				await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
+				this.saveState();
+				this.repaintMarkdown();
 			} catch {}
 		}
 		onShow() {

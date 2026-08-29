@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { it as loadSettings } from "../shells/boot-index.js";
+import { rt as loadSettings } from "../shells/boot-index.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 import { n as getRuntimeSettings } from "./RuntimeSettings.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";

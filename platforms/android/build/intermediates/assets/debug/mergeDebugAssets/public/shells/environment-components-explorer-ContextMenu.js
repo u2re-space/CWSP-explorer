@@ -1,4 +1,4 @@
-import { Jt as registerDirectoryRoot, Xt as placeOverlay, cn as registerTransientOverlay, ln as resolveOverlayHost } from "../com/app.js";
+import { $t as placeOverlay, Zt as registerDirectoryRoot, dn as registerTransientOverlay, fn as resolveOverlayHost } from "../com/app.js";
 import "/fest/dom.js";
 import "/fest/core.js";
 import "/fest/object.js";
@@ -238,6 +238,21 @@ var capacitorInvoke = async (channel, payload = {}) => {
 	});
 	return r?.echo || r || {};
 };
+var parseNativeStoragePath = (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (!raw) return null;
+	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
+	if (!root) return null;
+	if (raw === `/${root}`) return {
+		root,
+		rel: "/"
+	};
+	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	return {
+		root,
+		rel: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+	};
+};
 var isNativeStorageAvailable = () => {
 	if (api?.list) return true;
 	try {
@@ -268,18 +283,15 @@ var dataUrlToFile = async (dataUrl, name, mime) => {
 };
 /** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
 var readNativeStorageFile = async (virtualPath) => {
-	const raw = String(virtualPath || "").trim();
-	if (!raw) return null;
-	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
-	if (!root) return null;
-	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) return null;
 	const echo = await capacitorInvoke("storage:read", {
-		root,
-		path: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+		root: parsed.root,
+		path: parsed.rel
 	});
 	const data = String(echo.data || echo.dataUrl || "");
 	if (!data) return null;
-	return dataUrlToFile(data, String(echo.name || raw.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+	return dataUrlToFile(data, String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
 };
 //#endregion
 //#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
@@ -642,6 +654,19 @@ function ensureDefaultFsBackends() {
 		writable: false,
 		async list() {
 			return [];
+		},
+		async readFile(path) {
+			const p = String(path || "").trim();
+			if (!p || p.endsWith("/")) return null;
+			try {
+				const r = await fetch(p);
+				if (!r?.ok) return null;
+				const blob = await r.blob();
+				const name = p.slice(p.lastIndexOf("/") + 1) || "asset";
+				return new File([blob], name, { type: blob.type || "" });
+			} catch {
+				return null;
+			}
 		}
 	});
 	if (!resolveFsBackend("/bookmarks/")) {
