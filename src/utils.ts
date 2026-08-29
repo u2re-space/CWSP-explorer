@@ -1,6 +1,7 @@
 import { speedDialItems } from "core/store/StateStorage";
 import { publicHrefForView, shouldHandoffViewToSibling } from "com/config/ecosystem-skus";
 import { openUnifiedContextMenu, type ContextMenuEntry } from "fl-ui/explorer/ContextMenu";
+import { looksLikePreviewableBinary } from "com/config/open-policy";
 
 //
 export type ContextMenuItem = {
@@ -87,8 +88,9 @@ export const extOf = (filename = ""): string => {
 
 export const isTextLikeFile = (file?: File | null): boolean => {
     if (!file) return false;
+    if (looksLikePreviewableBinary(file)) return false;
     const type = String(file.type || "").toLowerCase();
-    if (!type || type.startsWith("text/")) return true;
+    if (type.startsWith("text/")) return true;
     if (type.includes("markdown") || type.includes("json") || type.includes("xml")) return true;
     return TEXT_FILE_EXTENSIONS.has(extOf(file.name || ""));
 };
