@@ -27,12 +27,14 @@ export function resolveExplorerColorSchemePreference(mode: ExplorerColorScheme |
     return "dark";
 }
 
-/** Push resolved scheme onto the explorer shell for CSS tokens under `[data-explorer-color-scheme]`. */
+/** Push resolved scheme onto the explorer shell. Do not rewrite `--color-*` (veela + `light-dark()`). */
 export function applyExplorerColorScheme(shellRoot: HTMLElement | null | undefined, mode?: ExplorerColorScheme | null): void {
     if (!shellRoot) return;
     const resolved = resolveExplorerColorSchemePreference(mode ?? undefined);
     shellRoot.dataset.explorerColorScheme = resolved;
-    shellRoot.style.setProperty("color-scheme", resolved);
+    shellRoot.setAttribute("data-theme", resolved);
+    // WHY: `only` stops OS `prefers-color-scheme` from flipping used `light-dark()` under the shell.
+    shellRoot.style.setProperty("color-scheme", `${resolved} only`);
 }
 
 export type ExplorerThemeSync = {

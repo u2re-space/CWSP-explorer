@@ -6,10 +6,10 @@
  */
 /* FL-UI file-manager chrome, scoped to the standalone explorer view.
  *
- * NOTE: The `[data-explorer-color-scheme]` `--color-*` remap below is an INTENTIONAL scoped
- * scheme override for the explorer's independent color-scheme toggle (remaps surface indices,
- * never `--color-primary`). Canonical color-token source of truth is veela
- * `core/misc/_tokens.scss`; `--view-*` / `--explorer-*` here are derived from canonical `--color-*`.
+ * NOTE: Scheme toggle only sets `color-scheme` / `data-explorer-color-scheme`.
+ * Do not re-emit `--color-*` here — `--u2-color-mod` + `color-mix(..., gray)`
+ * washed the file manager and dropped ink when the function was out of scope.
+ * SoT: veela `core/misc/_tokens.scss`.
  */
 @use "./web/scss/explorer" as *;
 @use "./web/scss/explorer-content" as *;
@@ -93,40 +93,13 @@ ui-window.explorer-native-window[native-mode] {
                 ui-monospace, "Cascadia Code", "Cascadia Mono", "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
         }
 
-        /*
-         * Scheme only remaps surface indices — do NOT override --color-primary.
-         * WHY: WallpaperTheme writes seeds on :root / ui-window; hardcoding #1362c3/#6eb4ff
-         * washed out nebula teal chrome inside the file manager.
-         * `applyExplorerColorScheme()` sets `data-explorer-color-scheme` on `.view-explorer`.
-         */
+        /* WHY: no `--color-*` remap — inherit veela; `color-scheme` flips `light-dark()`. */
         .view-explorer[data-explorer-color-scheme="light"] {
-            --base-color: var(--color-primary, #2e3a64);
-            --base-color-neutralized: color-mix(in oklab, var(--base-color) 60%, gray);
-            --color-surface: --u2-color-mod(var(--base-color-neutralized), 10);
-            --color-on-surface: --u2-color-mod(var(--base-color-neutralized), 980);
-            --color-on-surface-variant: --u2-color-mod(var(--base-color-neutralized), 800);
-            --color-on-primary: --u2-color-mod(var(--base-color-neutralized), 20);
-            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 100);
-            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 5);
-            --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 10);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 20);
-            --color-error: #ba1a1a;
-            --error-color: --u2-color-mod(color-mix(in oklab, var(--color-error) 60%, gray), 550);
+            color-scheme: light only;
         }
 
         .view-explorer[data-explorer-color-scheme="dark"] {
-            --base-color: var(--color-primary, #2e3a64);
-            --base-color-neutralized: color-mix(in oklab, var(--base-color) 60%, gray);
-            --color-surface: --u2-color-mod(var(--base-color-neutralized), 960);
-            --color-on-surface: --u2-color-mod(var(--base-color-neutralized), 10);
-            --color-on-surface-variant: --u2-color-mod(var(--base-color-neutralized), 20);
-            --color-on-primary: --u2-color-mod(var(--base-color-neutralized), 80);
-            --color-outline-variant: --u2-color-mod(var(--base-color-neutralized), 900);
-            --color-surface-container: --u2-color-mod(var(--base-color-neutralized), 960);
-            --color-surface-container-high: --u2-color-mod(var(--base-color-neutralized), 980);
-            --color-surface-container-highest: --u2-color-mod(var(--base-color-neutralized), 1000);
-            --color-error: #ffb4ab;
-            --error-color: --u2-color-mod(var(--color-error), 480);
+            color-scheme: dark only;
         }
     }
 
@@ -147,7 +120,6 @@ ui-window.explorer-native-window[native-mode] {
             line-height: 1.5;
             color: var(--color-on-surface, var(--view-fg, light-dark(#1a1c1f, #e8eaed)));
             background: var(--color-surface, var(--view-bg, light-dark(#f7f8fc, #1a1d24)));
-            color: contrast-color(var(--color-surface, var(--view-bg, light-dark(#f7f8fc, #1a1d24))));
         }
 
         cw-view-explorer {
@@ -170,12 +142,11 @@ ui-window.explorer-native-window[native-mode] {
             min-block-size: 0;
             min-inline-size: 0;
             font-family: var(--font-family, var(--explorer-font-sans, system-ui, sans-serif));
-            background: var(--color-surface, var(--view-bg));
-            color: var(--color-on-surface, var(--view-fg));
+            background: var(--color-surface, var(--view-bg, light-dark(#f7f8fc, #1a1d24)));
+            color: var(--color-on-surface, var(--view-fg, light-dark(#1a1c1f, #e8eaed)));
             border: none;
             border-radius: 0;
             overflow: hidden;
-            color: contrast-color(var(--color-surface, var(--view-bg, light-dark(#f7f8fc, #1a1d24))));
         }
 
         .view-explorer__content {

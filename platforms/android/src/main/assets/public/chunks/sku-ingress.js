@@ -1,7 +1,8 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { Ct as resolveOpenPolicy, Tt as sinkToDestination, ft as classifyOpenKindFromPayload, kt as surfaceForSku, pt as inferIngressChannels, vt as peekOpenPolicy, wt as sinkToAction } from "../shells/boot-index.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+
 //#region ../CWSP-document/src/shared/routing/channel/sku-ingress.ts
 var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.L), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([

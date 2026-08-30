@@ -1,7 +1,8 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import "../chunks/vite-preload-BsPm7yBB.js";
 import { _ as stashSkuHandoff, a as applyCwspSku } from "../shells/boot-history-base.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+
 import { n as bootMinimal } from "../chunks/BootLoader.js";
 //#region src/frontend/web/sku-boot.ts
 /** INVARIANT: Capacitor / dedicated explorer never ships markdown viewer — CWSP-document owns open. */

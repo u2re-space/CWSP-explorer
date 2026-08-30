@@ -739,10 +739,15 @@ function setupExplorerEvents(
     explorer.addEventListener(
         "context-action",
         async (event: Event) => {
-            const detail = (event as CustomEvent<{ action?: string; item?: ExplorerFileItem }>).detail || {};
+            const detail = (event as CustomEvent<{ action?: string; item?: ExplorerFileItem; handled?: boolean; message?: string }>).detail || {};
             const action = String(detail.action || "");
             const item = detail.item;
             if (!action) return;
+            if ((detail as { handled?: boolean }).handled) {
+                const msg = String((detail as { message?: string }).message || "").trim();
+                if (msg) showMessage(msg);
+                return;
+            }
             const handler = mergedHandlers[action];
             if (!handler) return;
             await handler(item);

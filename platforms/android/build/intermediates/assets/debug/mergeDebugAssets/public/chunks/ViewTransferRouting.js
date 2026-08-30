@@ -1,7 +1,8 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
 import { Ct as resolveOpenPolicy, Dr as viewBroadcastChannelName, Dt as skuForOpenSink, Er as normalizeDestination, Tt as sinkToDestination, ft as classifyOpenKindFromPayload, gt as normalizeOpenSink, kt as surfaceForSku, pr as enqueuePendingMessage, pt as inferIngressChannels, vt as peekOpenPolicy, yr as sendProtocolMessage } from "../shells/boot-index.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+
 import { t as summarizeForLog } from "./LogSanitizer.js";
 import { skuIngressHint } from "./sku-ingress.js";
 //#region ../CWSP-document/src/shared/routing/channel/ViewTransferRouting.ts

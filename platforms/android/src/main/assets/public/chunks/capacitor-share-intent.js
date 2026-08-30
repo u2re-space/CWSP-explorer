@@ -1,6 +1,7 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { Hn as splitMultiValueList } from "../shells/boot-index.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region ../CWSP-document/src/frontend/boot/capacitor-share-intent.ts
 /**

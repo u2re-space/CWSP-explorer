@@ -8408,7 +8408,7 @@ var raceClipboardWrite = (write, ms) => Promise.race([write.then(() => "ok").cat
 /**
 * Write text to clipboard using modern API
 */
-var writeText = async (text) => {
+var writeText$1 = async (text) => {
 	const raw = toText(text);
 	if (!raw.trim()) return {
 		ok: false,
@@ -8501,7 +8501,7 @@ var writeHTML = async (html, plainText) => {
 				} catch (err) {
 					console.warn("[Clipboard] HTML write failed:", err);
 				}
-				resolve(await writeText(textContent));
+				resolve(await writeText$1(textContent));
 			};
 			tryHTMLClipboard();
 		});
@@ -8510,7 +8510,7 @@ var writeHTML = async (html, plainText) => {
 /**
 * Write image to clipboard
 */
-var writeImage = async (blob) => {
+var writeImage$1 = async (blob) => {
 	return new Promise((resolve) => {
 		scheduleClipboardFrame(async () => {
 			if (typeof document !== "undefined" && document.hasFocus && !document.hasFocus()) globalThis?.focus?.();
@@ -8583,11 +8583,11 @@ var copy = async (data, options = {}) => {
 		scheduleClipboardFrame(async () => {
 			let result;
 			if (data instanceof Blob) {
-				if (data.type.startsWith("image/")) result = await writeImage(data);
-				else result = await writeText(await data.text());
+				if (data.type.startsWith("image/")) result = await writeImage$1(data);
+				else result = await writeText$1(await data.text());
 			} else if (type === "html" || typeof data === "string" && data.trim().startsWith("<")) result = await writeHTML(String(data));
-			else if (type === "image") result = await writeImage(data);
-			else result = await writeText(toText(data));
+			else if (type === "image") result = await writeImage$1(data);
+			else result = await writeText$1(toText(data));
 			if (showFeedback && (result.ok || !silentOnError)) broadcastClipboardFeedback(result);
 			resolve(result);
 		});
@@ -12552,8 +12552,8 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	writeFile: () => writeFile,
 	writeFileSmart: () => writeFileSmart,
 	writeHTML: () => writeHTML,
-	writeImage: () => writeImage,
-	writeText: () => writeText
+	writeImage: () => writeImage$1,
+	writeText: () => writeText$1
 });
 //#endregion
 //#region ../../node_modules/culori/src/rgb/parseNumber.js
@@ -17088,7 +17088,7 @@ CalendarFlyout = __decorate([defineElement("ui-calendar-flyout")], CalendarFlyou
 * this component stays usable standalone inside `fl.ui`. Apps that ship a real Theme
 * subsystem can still react via the `u2-theme-change` event this module dispatches.
 */
-var styled$8 = preloadStyle(":host{box-sizing:border-box;color-scheme:inherit;contain:layout style;display:block;pointer-events:auto}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([open]){animation:c .14s cubic-bezier(.22,.8,.3,1)}:host([hidden]){display:none!important}@keyframes c{0%{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}@layer ui-quick-settings{.qs-panel{--qs-primary:var(--color-primary);--qs-surface:var(--color-surface);--qs-on-surface:var(--color-on-surface);--qs-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);background:var(--qs-surface);border:1px solid var(--qs-outline);border-radius:14px;box-shadow:0 20px 48px -20px rgba(0,0,0,.4),0 2px 8px -2px rgba(0,0,0,.25);box-sizing:border-box;color:var(--qs-on-surface);display:grid;font:500 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;gap:.85rem;inline-size:min(360px,100vw - 1.5rem);max-inline-size:360px;min-inline-size:320px;padding:.9rem;pointer-events:auto}@supports (color:contrast-color(red)){.qs-panel{color:contrast-color(var(--qs-surface))}}.qs-tiles{display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}.qs-tile-icon{--icon-size:1.5rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile-icon{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)))}}.qs-tile{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:10px;color:inherit;cursor:pointer;display:flex;gap:.6rem;min-inline-size:0;padding:.55rem .65rem;text-align:start;transition:background-color .14s ease,color .14s ease}.qs-tile,.qs-tile:hover{color:contrast-color(inherit(background-color))}.qs-tile:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-tile:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);color:contrast-color(inherit(background-color))}.qs-tile:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-tile[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,var(--qs-primary)) 26%,transparent);color:var(--color-primary,var(--qs-primary))}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true]{color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:var(--color-primary,var(--qs-primary));--icon-color:currentColor}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile-text{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)));display:flex;flex-direction:column;gap:.05rem;min-inline-size:0;overflow:hidden}.qs-tile-label{font-size:.78rem;font-weight:600}.qs-tile-label,.qs-tile-sub{color:contrast-color(var(--qs-surface));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qs-tile-sub{font-size:.68rem;font-weight:500;opacity:.7}.qs-sliders{border-block-start:1px solid var(--qs-outline);color:contrast-color(var(--qs-surface));display:grid;gap:.6rem;padding-block-start:.7rem}.qs-slider-row{align-items:center;cursor:default;display:flex;gap:.65rem}.qs-slider-icon{--icon-size:1.35rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-slider-col{display:flex;flex:1 1 auto;flex-direction:column;gap:.25rem;min-inline-size:0}.qs-slider-label{font-size:.68rem;font-weight:500;opacity:.75}.qs-slider{appearance:none;-webkit-appearance:none;background:transparent;block-size:1.1rem;color:contrast-color(inherit(background-color));cursor:pointer;inline-size:100%;margin:0}.qs-slider::-webkit-slider-runnable-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-moz-range-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem;margin-block-start:-6px}.qs-slider::-moz-range-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem}.qs-slider:focus-visible::-webkit-slider-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer{align-items:center;border-block-start:1px solid var(--qs-outline);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.4rem;justify-content:flex-end;padding-block-start:.65rem}.qs-footer-btn{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:8px;color:contrast-color(var(--qs-surface));cursor:pointer;display:inline-flex;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;gap:.35rem;min-inline-size:0;padding:.28rem .55rem;transition:background-color .14s ease}.qs-footer-btn:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-footer-btn:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-footer-btn:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}}");
+var styled$8 = preloadStyle(":host{box-sizing:border-box;color-scheme:inherit;contain:layout style;display:block;pointer-events:auto}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([open]){animation:a .14s cubic-bezier(.22,.8,.3,1)}:host([hidden]){display:none!important}@keyframes a{0%{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}@layer ui-quick-settings{.qs-panel{--qs-primary:var(--color-primary);--qs-surface:var(--color-surface);--qs-on-surface:var(--color-on-surface);--qs-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);background:var(--qs-surface);border:1px solid var(--qs-outline);border-radius:14px;box-shadow:0 20px 48px -20px rgba(0,0,0,.4),0 2px 8px -2px rgba(0,0,0,.25);box-sizing:border-box;color:var(--qs-on-surface);display:grid;font:500 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;gap:.85rem;inline-size:min(360px,100vw - 1.5rem);max-inline-size:360px;min-inline-size:320px;padding:.9rem;pointer-events:auto}@supports (color:contrast-color(red)){.qs-panel{color:contrast-color(var(--qs-surface))}}.qs-tiles{display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}.qs-tile-icon{--icon-size:1.5rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile-icon{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)))}}.qs-tile{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:10px;color:inherit;cursor:pointer;display:flex;gap:.6rem;min-inline-size:0;padding:.55rem .65rem;text-align:start;transition:background-color .14s ease,color .14s ease}.qs-tile,.qs-tile:hover{color:contrast-color(inherit(background-color))}.qs-tile:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-tile:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);color:contrast-color(inherit(background-color))}.qs-tile:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-tile[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,var(--qs-primary)) 26%,transparent);color:var(--color-primary,var(--qs-primary))}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true]{color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:var(--color-primary,var(--qs-primary));--icon-color:currentColor}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile-text{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)));display:flex;flex-direction:column;gap:.05rem;min-inline-size:0;overflow:hidden}.qs-tile-label{font-size:.78rem;font-weight:600}.qs-tile-label,.qs-tile-sub{color:contrast-color(var(--qs-surface));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qs-tile-sub{font-size:.68rem;font-weight:500;opacity:.7}.qs-sliders{border-block-start:1px solid var(--qs-outline);color:contrast-color(var(--qs-surface));display:grid;gap:.6rem;padding-block-start:.7rem}.qs-slider-row{align-items:center;cursor:default;display:flex;gap:.65rem}.qs-slider-icon{--icon-size:1.35rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-slider-col{display:flex;flex:1 1 auto;flex-direction:column;gap:.25rem;min-inline-size:0}.qs-slider-label{font-size:.68rem;font-weight:500;opacity:.75}.qs-slider{appearance:none;-webkit-appearance:none;background:transparent;block-size:1.1rem;color:contrast-color(inherit(background-color));cursor:pointer;inline-size:100%;margin:0}.qs-slider::-webkit-slider-runnable-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-moz-range-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem;margin-block-start:-6px}.qs-slider::-moz-range-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem}.qs-slider:focus-visible::-webkit-slider-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer{align-items:center;border-block-start:1px solid var(--qs-outline);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.4rem;justify-content:flex-end;padding-block-start:.65rem}.qs-footer-btn{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:8px;color:contrast-color(var(--qs-surface));cursor:pointer;display:inline-flex;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;gap:.35rem;min-inline-size:0;padding:.28rem .55rem;transition:background-color .14s ease}.qs-footer-btn:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-footer-btn:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-footer-btn:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}}");
 /** Shared exclusivity/positioning kind — see `ChromeFlyout.ts`. Mirrors `CalendarFlyout.ts`. */
 var FLYOUT_KIND = "quick-settings";
 var THEME_ATTR = "data-theme";
@@ -19352,7 +19352,9 @@ var storage_bridge_exports = /* @__PURE__ */ __exportAll({
 	pickSafTree: () => pickSafTree,
 	readNativeStorageFile: () => readNativeStorageFile,
 	requestAllFilesAccess: () => requestAllFilesAccess,
-	resolveNativeStorageUri: () => resolveNativeStorageUri
+	resolveNativeStorageRealPath: () => resolveNativeStorageRealPath,
+	resolveNativeStorageUri: () => resolveNativeStorageUri,
+	shareNativeStorageFile: () => shareNativeStorageFile
 });
 var api = null;
 var capacitorInvoke = async (channel, payload = {}) => {
@@ -19428,6 +19430,30 @@ var resolveNativeStorageUri = async (virtualPath) => {
 		path: parsed.rel
 	});
 	return String(echo.uri || echo.url || "").trim();
+};
+/** ACTION_SEND chooser — Android share sheet, no JS byte hop. */
+var shareNativeStorageFile = async (virtualPath, opts = {}) => {
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) return false;
+	const mimeType = String(opts.mimeType || "").trim();
+	const title = String(opts.title || "Share").trim();
+	const echo = await capacitorInvoke("storage:share", {
+		root: parsed.root,
+		path: parsed.rel,
+		...mimeType ? { mimeType } : {},
+		...title ? { title } : {}
+	});
+	return echo.opened === true || echo.sent === true || echo.ok === true;
+};
+/** Absolute `/storage/emulated/0/…` or SAF `content://` URI. */
+var resolveNativeStorageRealPath = async (virtualPath) => {
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) return "";
+	const echo = await capacitorInvoke("storage:realpath", {
+		root: parsed.root,
+		path: parsed.rel
+	});
+	return String(echo.path || echo.uri || echo.url || "").trim();
 };
 /**
 * WHY: Capacitor Explorer must open `/sdcard/` / `/saf/` in one native hop
@@ -23138,6 +23164,402 @@ function applyLauncherIconToUiIcon(host, objectUrl, mode = "colored") {
 	});
 }
 //#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/share-copy.ts
+var TEXT_EXT = /* @__PURE__ */ new Set([
+	"txt",
+	"md",
+	"markdown",
+	"csv",
+	"tsv",
+	"json",
+	"xml",
+	"html",
+	"htm",
+	"css",
+	"scss",
+	"js",
+	"mjs",
+	"cjs",
+	"ts",
+	"tsx",
+	"jsx",
+	"svg",
+	"yml",
+	"yaml",
+	"ini",
+	"log",
+	"sh",
+	"bat",
+	"ps1",
+	"py",
+	"rb",
+	"go",
+	"rs",
+	"java",
+	"kt",
+	"c",
+	"h",
+	"cpp",
+	"hpp",
+	"toml"
+]);
+var IMAGE_EXT = /* @__PURE__ */ new Set([
+	"png",
+	"jpg",
+	"jpeg",
+	"gif",
+	"webp",
+	"bmp",
+	"avif",
+	"svg",
+	"ico",
+	"tif",
+	"tiff"
+]);
+var blobUrlKeep = [];
+var extOf$1 = (name) => {
+	const base = String(name || "").split(/[\\/]/).pop() || "";
+	const i = base.lastIndexOf(".");
+	return i >= 0 ? base.slice(i + 1).toLowerCase() : "";
+};
+var isTextLikeEntry = (item, path = "") => {
+	const mime = String(item?.type || item?.file?.type || "").toLowerCase();
+	if (mime.startsWith("text/") || mime === "application/json" || mime === "application/xml" || mime === "image/svg+xml") return true;
+	return TEXT_EXT.has(extOf$1(item?.name || path));
+};
+var isImageLikeEntry = (item, path = "") => {
+	if (String(item?.type || item?.file?.type || "").toLowerCase().startsWith("image/")) return true;
+	return IMAGE_EXT.has(extOf$1(item?.name || path));
+};
+var explorerItemPath = (item, currentPath = "/") => {
+	const own = String(item?.path || "").trim();
+	if (own) return own;
+	const name = String(item?.name || "").trim();
+	if (!name) return String(currentPath || "/");
+	const base = String(currentPath || "/");
+	return base.endsWith("/") ? `${base}${name}` : `${base}/${name}`;
+};
+var isNativeVirtual = (path) => /^\/(?:sdcard|saf)(?:\/|$)/i.test(String(path || "").trim());
+var mapSdcardRealPath = (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (raw === "/sdcard" || raw === "/sdcard/") return "/storage/emulated/0";
+	if (raw.startsWith("/sdcard/")) return `/storage/emulated/0/${raw.slice(8)}`;
+	return "";
+};
+var waitClipboard = () => new Promise((resolve) => {
+	if (typeof requestAnimationFrame === "function") {
+		requestAnimationFrame(() => resolve());
+		return;
+	}
+	setTimeout(resolve, 0);
+});
+var writeText = async (text) => {
+	const value = String(text || "");
+	if (!value) return false;
+	await waitClipboard();
+	try {
+		await navigator.clipboard?.writeText?.(value);
+		return true;
+	} catch {
+		return false;
+	}
+};
+var writeImage = async (file) => {
+	await waitClipboard();
+	const mime = file.type || "image/png";
+	try {
+		if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+			const blob = mime === "image/svg+xml" ? file : file;
+			await navigator.clipboard.write([new ClipboardItem({ [blob.type || mime]: blob })]);
+			return true;
+		}
+	} catch {}
+	try {
+		return writeText(await fileToBase64Url(file));
+	} catch {
+		return false;
+	}
+};
+var loadExplorerFile = async (item, path) => {
+	if (item?.file instanceof File) return item.file;
+	const href = String(item?.href || "").trim();
+	if (href && /^https?:\/\//i.test(href) && !item?.file) return null;
+	if (isNativeVirtual(path) && isNativeStorageAvailable()) {
+		const native = await readNativeStorageFile(path).catch(() => null);
+		if (native) {
+			if (item) item.file = native;
+			return native;
+		}
+	}
+	try {
+		const backend = resolveFsBackend(path);
+		if (typeof backend?.readFile === "function") {
+			const file = await backend.readFile(path);
+			if (file) {
+				if (item) item.file = file;
+				return file;
+			}
+		}
+	} catch {}
+	const provided = await provide(path).catch(() => null);
+	if (provided instanceof File) {
+		if (item) item.file = provided;
+		return provided;
+	}
+	return null;
+};
+var fileToBase64Url = async (file) => {
+	const mime = file.type || getMimeTypeByFilename(file.name) || "application/octet-stream";
+	const buf = await file.arrayBuffer();
+	const bytes = new Uint8Array(buf);
+	const chunk = 32768;
+	let bin = "";
+	for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+	return `data:${mime};base64,${btoa(bin)}`;
+};
+var webShare = async (data) => {
+	const nav = navigator;
+	if (typeof nav.share !== "function") return false;
+	try {
+		if (typeof nav.canShare === "function" && !nav.canShare(data)) return false;
+		await nav.share(data);
+		return true;
+	} catch (err) {
+		if ((err instanceof DOMException ? err.name : "") === "AbortError") return true;
+		return false;
+	}
+};
+var capacitorShare = async (opts) => {
+	try {
+		const Share = globalThis.Capacitor?.Plugins?.Share;
+		if (typeof Share?.share !== "function") return false;
+		await Share.share({
+			title: opts.title,
+			text: opts.text,
+			url: opts.url,
+			dialogTitle: "Share"
+		});
+		return true;
+	} catch {
+		return false;
+	}
+};
+var shareExplorerItem = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	const name = String(item?.name || path.split("/").filter(Boolean).pop() || "file");
+	const href = String(item?.href || "").trim();
+	if (isNativeVirtual(path) && isNativeStorageAvailable() && item?.kind !== "directory") {
+		if (await shareNativeStorageFile(path, {
+			mimeType: item?.type || getMimeTypeByFilename(name),
+			title: name
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+	}
+	if (href && /^https?:\/\//i.test(href)) {
+		if (await webShare({
+			title: name,
+			text: name,
+			url: href
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await capacitorShare({
+			title: name,
+			text: name,
+			url: href
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await writeText(href)) return {
+			ok: true,
+			message: "Copied link (share unavailable)"
+		};
+		return {
+			ok: false,
+			message: "Share is unavailable"
+		};
+	}
+	if (item?.kind === "directory") {
+		const text = await resolveExplorerRealPath(item, currentPath) || path;
+		if (await webShare({
+			title: name,
+			text
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await capacitorShare({
+			title: name,
+			text
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await writeText(text)) return {
+			ok: true,
+			message: "Copied path (share unavailable)"
+		};
+		return {
+			ok: false,
+			message: "Share is unavailable"
+		};
+	}
+	const file = await loadExplorerFile(item, path);
+	if (file) {
+		if (await webShare({
+			title: name,
+			text: name,
+			files: [file]
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		const uri = isNativeVirtual(path) ? await resolveNativeStorageUri(path).catch(() => "") : "";
+		if (uri && await capacitorShare({
+			title: name,
+			url: uri
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await webShare({
+			title: name,
+			text: name
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await capacitorShare({
+			title: name,
+			text: name
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		return {
+			ok: false,
+			message: "Share is unavailable for this file"
+		};
+	}
+	if (await webShare({
+		title: name,
+		text: path
+	})) return {
+		ok: true,
+		message: `Shared ${name}`
+	};
+	if (await capacitorShare({
+		title: name,
+		text: path
+	})) return {
+		ok: true,
+		message: `Shared ${name}`
+	};
+	return {
+		ok: false,
+		message: "Nothing to share"
+	};
+};
+var resolveExplorerRealPath = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	const href = String(item?.href || "").trim();
+	if (href && /^(https?|file|content):/i.test(href)) return href;
+	if (isNativeVirtual(path) && isNativeStorageAvailable()) {
+		const native = await resolveNativeStorageRealPath(path).catch(() => "");
+		if (native) return native;
+		const uri = await resolveNativeStorageUri(path).catch(() => "");
+		if (uri) return uri;
+	}
+	return mapSdcardRealPath(path);
+};
+var copyExplorerBase64Url = async (item, currentPath = "/") => {
+	const file = await loadExplorerFile(item, explorerItemPath(item, currentPath));
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	try {
+		const ok = await writeText(await fileToBase64Url(file));
+		return {
+			ok,
+			message: ok ? "Copied Base64 URL" : "Clipboard write failed"
+		};
+	} catch {
+		return {
+			ok: false,
+			message: "File is too large for Base64"
+		};
+	}
+};
+var copyExplorerInlineText = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	if (!isTextLikeEntry(item, path)) return {
+		ok: false,
+		message: "Not a text file"
+	};
+	const file = await loadExplorerFile(item, path);
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	const ok = await writeText(await file.text());
+	return {
+		ok,
+		message: ok ? "Copied text" : "Clipboard write failed"
+	};
+};
+var copyExplorerImage = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	if (!isImageLikeEntry(item, path)) return {
+		ok: false,
+		message: "Not an image"
+	};
+	const file = await loadExplorerFile(item, path);
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	const ok = await writeImage(file);
+	return {
+		ok,
+		message: ok ? "Copied image" : "Clipboard write failed"
+	};
+};
+var copyExplorerRealPath = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	const real = await resolveExplorerRealPath(item, currentPath);
+	if (real) {
+		const ok = await writeText(real);
+		return {
+			ok,
+			message: ok ? "Copied real path" : "Clipboard write failed"
+		};
+	}
+	const ok = await writeText(path);
+	return {
+		ok,
+		message: ok ? "Copied Explorer path (no OS path)" : "Clipboard write failed"
+	};
+};
+var copyExplorerBlobUrl = async (item, currentPath = "/") => {
+	const file = await loadExplorerFile(item, explorerItemPath(item, currentPath));
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	const url = URL.createObjectURL(file);
+	blobUrlKeep.push(url);
+	const ok = await writeText(url);
+	return {
+		ok,
+		message: ok ? "Copied Blob URL (this session)" : "Clipboard write failed"
+	};
+};
+//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/Operative.ts
 var handleCache = /* @__PURE__ */ new WeakMap();
 var waitForClipboardFrame = () => new Promise((resolve) => {
@@ -24030,6 +24452,22 @@ var FileOperative = class {
 						item
 					} }));
 					break;
+				case "share":
+				case "copy-base64":
+				case "copy-text":
+				case "copy-image":
+				case "copy-real-path":
+				case "copy-blob-url": {
+					const current = this.path || "/";
+					const result = actionId === "share" ? await shareExplorerItem(item, current) : actionId === "copy-base64" ? await copyExplorerBase64Url(item, current) : actionId === "copy-text" ? await copyExplorerInlineText(item, current) : actionId === "copy-image" ? await copyExplorerImage(item, current) : actionId === "copy-real-path" ? await copyExplorerRealPath(item, current) : await copyExplorerBlobUrl(item, current);
+					this.dispatchEvent(new CustomEvent("context-action", { detail: {
+						action: actionId,
+						item,
+						handled: true,
+						message: result.message
+					} }));
+					break;
+				}
 				case "attach-workcenter":
 					this.dispatchEvent(new CustomEvent("context-action", { detail: {
 						action: "attach-workcenter",
@@ -24958,6 +25396,11 @@ var makeFileActionOps = () => {
 			icon: "arrow-square-out"
 		}] : [],
 		{
+			id: "share",
+			label: "Share…",
+			icon: "share-network"
+		},
+		{
 			id: "send-transfer",
 			label: "Send to Transfer",
 			icon: "paper-plane-tilt"
@@ -25002,6 +25445,31 @@ var makeFileSystemOps = () => {
 			icon: "pencil"
 		},
 		{
+			id: "copy-base64",
+			label: "Copy as Base64 URL",
+			icon: "code"
+		},
+		{
+			id: "copy-text",
+			label: "Copy as text",
+			icon: "text-t"
+		},
+		{
+			id: "copy-image",
+			label: "Copy as image",
+			icon: "image"
+		},
+		{
+			id: "copy-real-path",
+			label: "Copy real path",
+			icon: "map-pin"
+		},
+		{
+			id: "copy-blob-url",
+			label: "Copy as Blob URL",
+			icon: "link"
+		},
+		{
 			id: "copyPath",
 			label: "Copy Path",
 			icon: "copy"
@@ -25020,7 +25488,9 @@ var makeDirectoryOps = () => {
 		"delete",
 		"rename",
 		"copyPath",
-		"movePath"
+		"movePath",
+		"share",
+		"copy-real-path"
 	]);
 	return [...makeFileActionOps(), ...makeFileSystemOps()].filter((item) => allowed.has(item.id));
 };
@@ -25031,6 +25501,11 @@ var makeBookmarkFileOps = () => [
 		icon: "arrow-square-out"
 	},
 	{
+		id: "share",
+		label: "Share…",
+		icon: "share-network"
+	},
+	{
 		id: "edit-bookmark",
 		label: "Edit bookmark…",
 		icon: "pencil"
@@ -25039,6 +25514,11 @@ var makeBookmarkFileOps = () => [
 		id: "delete",
 		label: "Delete",
 		icon: "trash"
+	},
+	{
+		id: "copy-real-path",
+		label: "Copy real path",
+		icon: "map-pin"
 	},
 	{
 		id: "copyPath",
@@ -25118,7 +25598,11 @@ var createItemCtxMenu = (fileManager, onMenuAction, entries) => {
 		if (baseItems.length === 0) return;
 		ev.preventDefault();
 		ev.stopPropagation();
-		const menuItems = baseItems.map((menuItem) => ({
+		const menuItems = baseItems.filter((menuItem) => {
+			if (menuItem.id === "copy-text") return isTextLikeEntry(item, item?.path || currentPath);
+			if (menuItem.id === "copy-image") return isImageLikeEntry(item, item?.path || currentPath);
+			return true;
+		}).map((menuItem) => ({
 			...menuItem,
 			danger: menuItem.id === "delete",
 			action: () => onMenuAction?.(item, menuItem.id, ev)
@@ -26228,7 +26712,7 @@ var sortLauncherApps = (apps, prefs) => {
 		return n * dir;
 	});
 };
-preloadStyle("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;pointer-events:auto}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:auto;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:d .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.35rem .55rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-nav{align-items:center;display:flex;flex:1 1 auto;flex-wrap:wrap;gap:.2rem;min-inline-size:0}.env-shell-app-menu__crumb-actions{align-items:center;display:flex;flex-wrap:wrap;gap:.3rem;margin-inline-start:auto}.env-shell-app-menu__crumb-actions[hidden]{display:none!important}.env-shell-app-menu__crumb-action{appearance:none;background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:8px;color:inherit;cursor:pointer;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.28rem .5rem}.env-shell-app-menu__crumb-action:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__tools{grid-template-columns:1fr 1fr}.env-shell-app-menu__search{grid-column:1/-1}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:none}.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__tools{align-items:stretch;display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr) auto auto;inset-block-start:0;position:sticky;z-index:3}.env-shell-app-menu__tools[hidden]{display:none!important}.env-shell-app-menu__search,.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.55rem .65rem}.env-shell-app-menu__search{inline-size:100%;min-inline-size:0}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:11rem}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible;pointer-events:auto}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes d{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
+preloadStyle("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;pointer-events:auto}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:auto;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.35rem .55rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-nav{align-items:center;display:flex;flex:1 1 auto;flex-wrap:wrap;gap:.2rem;min-inline-size:0}.env-shell-app-menu__crumb-actions{align-items:center;display:flex;flex-wrap:wrap;gap:.3rem;margin-inline-start:auto}.env-shell-app-menu__crumb-actions[hidden]{display:none!important}.env-shell-app-menu__crumb-action{appearance:none;background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:8px;color:inherit;cursor:pointer;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.28rem .5rem}.env-shell-app-menu__crumb-action:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__tools{grid-template-columns:1fr 1fr}.env-shell-app-menu__search{grid-column:1/-1}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:none}.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__tools{align-items:stretch;display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr) auto auto;inset-block-start:0;position:sticky;z-index:3}.env-shell-app-menu__tools[hidden]{display:none!important}.env-shell-app-menu__search,.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.55rem .65rem}.env-shell-app-menu__search{inline-size:100%;min-inline-size:0}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:11rem}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible;pointer-events:auto}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/widgets.ts
 var androidBridge = null;
@@ -29010,4 +29494,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 //#region ../../modules/projects/fl.ui/src/styles/ui/home-host-apply.scss?inline
 var home_host_apply_default = ":where(body):has(.speed-dial-root),:where(body):has([data-view=home]),:where(html):has(.speed-dial-root),:where(html[data-cwsp-shell-role=launcher]){block-size:var(--lv-height,100lvb);margin:0;max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);overflow:hidden}:where(main,[role=main]):has(>.view-home.env-home-workspace){background:transparent;border:none;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace,.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace){background:none;background-color:initial;border:0 transparent;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none;outline:0 none transparent}:where(main,[role=main]):has(>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace:not(.wf-mounted-view),.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}.env-home-workspace,.view-home.env-home-workspace{box-sizing:border-box;overflow:visible;pointer-events:none}.view-home.env-home-workspace{align-items:stretch;background:transparent;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:100%;justify-items:stretch;min-block-size:var(--lv-height,100lvb);min-inline-size:0;padding:0;position:relative}.view-home.env-home-workspace>.speed-dial-root{block-size:var(--lv-height,100%);inline-size:var(--lv-width,100%);inset:0 auto auto 0;max-block-size:var(--lv-height,100%);max-inline-size:var(--lv-width,100%);pointer-events:auto;position:absolute}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view{align-self:stretch;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:auto;border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;isolation:isolate;margin:0;margin-inline:0;max-inline-size:none;min-block-size:0;outline:none!important;position:relative;z-index:0}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root{block-size:var(--lv-height,100lvb);border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;inline-size:var(--lv-width,100%);max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);outline:none!important}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view{padding-block-end:env(safe-area-inset-block-end,0);padding-block-start:env(safe-area-inset-block-start,0);padding-inline-end:env(safe-area-inset-inline-end,0);padding-inline-start:env(safe-area-inset-inline-start,0)}.view-home.env-home-workspace:not(.wf-mounted-view){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin-inline:0;max-inline-size:none;min-block-size:var(--lv-height,100lvb);outline:none!important}";
 //#endregion
-export { resolveFsBackend as $, registerDirectoryRoot as $t, ICON_BITMAP_SCALE_OPTIONS as A, __vitePreload as An, mountPickedDirectory as At, pinLauncherAppEntry as B, createFileHandler as Bt, applyLauncherIconToUiIcon as C, closeHighestPriority as Cn, restoreWallpaperThemeCache as Ct, resolveIconResourceUrl as D, E as Dn, findEntryRelPath as Dt, getCachedLauncherIconObjectUrl as E, navigate as En, bindDirectoryForLaunchedFiles as Et, findNextFreeSpeedDialCell as F, pickSidecarDirectoryFiles as Ft, createTileUiIconElement as G, parseDataUrl as Gt, tileIconFetchSize as H, decodeBase64ToBytes as Ht, isClientPointOverSpeedDial as I, provideBoundRelative as It, normalizeIconDisplay as J, isVirtualFsPath as Jt, defaultIconScaleForDisplay as K, getDir as Kt, launcher_state_exports as L, relPathCandidates as Lt, applyIconScaleToPaintedNodes as M, originalRelFromRef as Mt, applyItemIconScaleToElement as N, pickAssetDirectory as Nt, tryLaunchSiblingView as O, M$1 as On, indexDirectoryFiles as Ot, buildLauncherAppDragEnvelope as P, pickMarkdownFile as Pt, listVirtualRootEntriesFromRouter as Q, provide as Qt, normalizeItemIconBitmapScale as R, resolveFileUnderDirectory as Rt, isBookmarksPath as S, vector2Ref as Sn, applyWallpaperPaperFromLuma as St, getCachedIconResourceObjectUrl as T, registerModal as Tn, getCachedComponent as Tt, ICON_DISPLAY_OPTIONS as U, isBase64Like as Ut, resolveSpeedDialCellFromClientPoint as V, writeFileSmart as Vt, TILE_SHAPE_OPTIONS as W, normalizeDataAsset as Wt, syncShapelessIconShadow as X, normalizePath as Xt, normalizeTileShape$1 as Y, matchMappedRoot as Yt, ensureDefaultFsBackends as Z, openDirectory as Zt, peekAppMenuSort as _, makeTask as _n, WALLPAPER_IDB_MARKER as _t, getString as a, makeUIState as an, getAppLaunchSpec as at, attachIconResourcePickButton as b, defineElement as bn, refreshAppWallpaperPaint as bt, overlay_back_exports as c, decodeDesktopState as cn, resolveAppLaunchSpec as ct, listWorkspacePages as d, initClipboardReceiver as dn, showSuccess as dt, dynamicTheme as en, subscribeFsBackendRegister as et, switchWorkspacePage as f, writeText as fn, getSpeedDialViewOpener as ft, hydrateAppColorKeys as g, bindOutsideDismiss as gn, src_exports as gt, defaultDirForAppSort as h, elementPointerMap as hn, __decorate as ht, StorageKeys as i, getSpeechPrompt as in, clearAppLaunchSpec as it, addSpeedDialItem as j, observeFileSystemHandle as jt, isAndroidIconRef as k, JSOX as kn, isMarkdownRelativeRef as kt, WORKSPACE_PAGE_EVENT as l, loadDesktopRaw as ln, setAppLaunchSpec as lt, APP_MENU_SORT_OPTIONS as m, resolveOverlayHost as mn, UIElement_default as mt, FileManager as n, createTemplateManager as nn, resolveEntryIcon as nt, setString as o, saveUIState as on, isLauncherLaunchSpecEmpty as ot, APP_MENU_SORT_EVENT as p, registerTransientOverlay as pn, UIElement as pt, inferIconDisplay as q, handleIncomingEntries as qt, FileManagerContent_default as r, pointerAnchorRef as rn, toExplorerStoragePath as rt, installLauncherBackStack as s, HistoryManager_exports as sn, normalizeLauncherLaunchSpec as st, home_host_apply_default as t, placeOverlay as tn, storage_bridge_exports as tt, getActiveWorkspaceId as u, copy as un, showError as ut, sortLauncherApps as v, getBy as vn, getWallpaperStoragePointer as vt, ensureLauncherIconObjectUrl as w, hasActiveCloseable as wn, src_exports$1 as wt, openUnifiedContextMenu as x, H as xn, setAppWallpaperFromBlob as xt, writeAppMenuSort as y, navigationEnable as yn, initializeAppCanvasLayer as yt, parseSpeedDialItemFromJSON as z, saveMarkdownBlob as zt };
+export { resolveFsBackend as $, registerDirectoryRoot as $t, ICON_BITMAP_SCALE_OPTIONS as A, __vitePreload as An, mountPickedDirectory as At, pinLauncherAppEntry as B, createFileHandler as Bt, applyLauncherIconToUiIcon as C, closeHighestPriority as Cn, restoreWallpaperThemeCache as Ct, resolveIconResourceUrl as D, E as Dn, findEntryRelPath as Dt, getCachedLauncherIconObjectUrl as E, navigate as En, bindDirectoryForLaunchedFiles as Et, findNextFreeSpeedDialCell as F, pickSidecarDirectoryFiles as Ft, createTileUiIconElement as G, parseDataUrl as Gt, tileIconFetchSize as H, decodeBase64ToBytes as Ht, isClientPointOverSpeedDial as I, provideBoundRelative as It, normalizeIconDisplay as J, isVirtualFsPath as Jt, defaultIconScaleForDisplay as K, getDir as Kt, launcher_state_exports as L, relPathCandidates as Lt, applyIconScaleToPaintedNodes as M, originalRelFromRef as Mt, applyItemIconScaleToElement as N, pickAssetDirectory as Nt, tryLaunchSiblingView as O, M$1 as On, indexDirectoryFiles as Ot, buildLauncherAppDragEnvelope as P, pickMarkdownFile as Pt, listVirtualRootEntriesFromRouter as Q, provide as Qt, normalizeItemIconBitmapScale as R, resolveFileUnderDirectory as Rt, isBookmarksPath as S, vector2Ref as Sn, applyWallpaperPaperFromLuma as St, getCachedIconResourceObjectUrl as T, registerModal as Tn, getCachedComponent as Tt, ICON_DISPLAY_OPTIONS as U, isBase64Like as Ut, resolveSpeedDialCellFromClientPoint as V, writeFileSmart as Vt, TILE_SHAPE_OPTIONS as W, normalizeDataAsset as Wt, syncShapelessIconShadow as X, normalizePath as Xt, normalizeTileShape$1 as Y, matchMappedRoot as Yt, ensureDefaultFsBackends as Z, openDirectory as Zt, peekAppMenuSort as _, makeTask as _n, WALLPAPER_IDB_MARKER as _t, getString as a, makeUIState as an, getAppLaunchSpec as at, attachIconResourcePickButton as b, defineElement as bn, refreshAppWallpaperPaint as bt, overlay_back_exports as c, decodeDesktopState as cn, resolveAppLaunchSpec as ct, listWorkspacePages as d, initClipboardReceiver as dn, showSuccess as dt, dynamicTheme as en, subscribeFsBackendRegister as et, switchWorkspacePage as f, writeText$1 as fn, getSpeedDialViewOpener as ft, hydrateAppColorKeys as g, bindOutsideDismiss as gn, src_exports as gt, defaultDirForAppSort as h, elementPointerMap as hn, __decorate as ht, StorageKeys as i, getSpeechPrompt as in, clearAppLaunchSpec as it, addSpeedDialItem as j, observeFileSystemHandle as jt, isAndroidIconRef as k, JSOX as kn, isMarkdownRelativeRef as kt, WORKSPACE_PAGE_EVENT as l, loadDesktopRaw as ln, setAppLaunchSpec as lt, APP_MENU_SORT_OPTIONS as m, resolveOverlayHost as mn, UIElement_default as mt, FileManager as n, createTemplateManager as nn, resolveEntryIcon as nt, setString as o, saveUIState as on, isLauncherLaunchSpecEmpty as ot, APP_MENU_SORT_EVENT as p, registerTransientOverlay as pn, UIElement as pt, inferIconDisplay as q, handleIncomingEntries as qt, FileManagerContent_default as r, pointerAnchorRef as rn, toExplorerStoragePath as rt, installLauncherBackStack as s, HistoryManager_exports as sn, normalizeLauncherLaunchSpec as st, home_host_apply_default as t, placeOverlay as tn, storage_bridge_exports as tt, getActiveWorkspaceId as u, copy as un, showError as ut, sortLauncherApps as v, getBy as vn, getWallpaperStoragePointer as vt, ensureLauncherIconObjectUrl as w, hasActiveCloseable as wn, src_exports$1 as wt, openUnifiedContextMenu as x, H as xn, setAppWallpaperFromBlob as xt, writeAppMenuSort as y, navigationEnable as yn, initializeAppCanvasLayer as yt, parseSpeedDialItemFromJSON as z, saveMarkdownBlob as zt };
