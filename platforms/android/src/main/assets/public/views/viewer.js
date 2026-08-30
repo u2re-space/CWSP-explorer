@@ -4,9 +4,9 @@ import { n as __exportAll } from "../chunks/rolldown-runtime.js";
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { Ct as resolveOpenPolicy, fr as createProtocolEnvelope, mt as looksLikePreviewableBinary, rt as loadSettings, tr as ingressStampWasSuperseded, ut as classifyOpenKind, xt as resolveHostOpenPolicy, yr as sendProtocolMessage, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
-import { At as mountPickedDirectory, Dt as findEntryRelPath, Ft as pickSidecarDirectoryFiles, Gt as parseDataUrl, Ht as decodeBase64ToBytes, It as provideBoundRelative, Jt as isVirtualFsPath, Kt as getDir, Lt as relPathCandidates, Mt as originalRelFromRef, Nt as pickAssetDirectory, Ot as indexDirectoryFiles, Pt as pickMarkdownFile, Qt as provide, Rt as resolveFileUnderDirectory, Ut as isBase64Like, Wt as normalizeDataAsset, Xt as normalizePath, Yt as matchMappedRoot, Zt as openDirectory, jt as observeFileSystemHandle, kt as isMarkdownRelativeRef, xn as H, zt as saveMarkdownBlob } from "../com/app.js";
+import { At as pickSidecarDirectoryFiles, Bt as parseDataUrl, Ct as indexDirectoryFiles, Dt as originalRelFromRef, Et as observeFileSystemHandle, Gt as isVirtualFsPath, Jt as openDirectory, Kt as matchMappedRoot, Lt as decodeBase64ToBytes, Mt as relPathCandidates, Nt as resolveFileUnderDirectory, Ot as pickAssetDirectory, Pt as saveMarkdownBlob, Rt as isBase64Like, St as findEntryRelPath, Tt as mountPickedDirectory, Ut as getDir, Yt as provide, _n as H, jt as provideBoundRelative, kt as pickMarkdownFile, qt as normalizePath, wt as isMarkdownRelativeRef, zt as normalizeDataAsset } from "../com/app.js";
 import { t as purify } from "../vendor/dompurify.js";
-import { loadAsAdopted, removeAdopted } from "/fest/dom.js";
+import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";
 import { affected, ref } from "/fest/object.js";
 import { ensureStyleSheet, reinitializeRegistry } from "/fest/icon.js";
 //#region ../../modules/projects/subsystem/types.ts

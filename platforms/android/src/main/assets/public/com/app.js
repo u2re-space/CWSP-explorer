@@ -1,9 +1,10 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","./service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
-import { DOMMixin, MOCElement, addEvent, addRoot, containsOrSelf, createElementVanilla, fixedClientZoom, getAdoptedStyleRule, getCorrectOrientation, getPadding, handleAttribute, handleDataset, handleHidden, handleProperty, handleStyleChange, indexOf, isElement, isValidParent, loadAsAdopted, loadInlineStyle, makeRAFCycle, observeAttribute, observeAttributeBySelector, observeBySelector, orientationNumberMap, preloadStyle, readFixedOverlayViewport, reflectBehaviors, reflectMixins, reflectStores, setAttributesIfNull, setChecked, setIdleInterval, setStyleProperty, whenAnyScreenChanges } from "/fest/dom.js";
+import { S, addAdoptedSheetToElement, adoptedStyleSheetsCache, applyNormalizedInlineStyle, bindStyle, compileInlineStyleAttribute, getAdoptedStyleRule, getPadding, isStyleBinding, loadAsAdopted, loadCachedStyles, loadInlineStyle, preloadStyle, pruneEmptyStyleAttribute, scheduleEnsureHostStyles, setProperty, setStyleProperty } from "/fest/style-lib.js";
 import { QueuedWorkerChannel, createWorkerChannel } from "/fest/uniform.js";
-import { $avoidTrigger, $getValue, $set, UUIDv4, WRef, bindEvent, camelToKebab, canBeInteger, contextify, deref, getValue, handleListeners, hasValue, inProxy, isNotEqual, isObject, isObservable, isPrimitive, isUserScopePath, isValueRef, normalizePrimitive, stripUserScopePrefix, toRef as toRef$1, userPathCandidates } from "/fest/core.js";
-import { $affected, $trigger, $triggerControl, $triggerLess, DoubleWeakMap, addToCallChain, affected, booleanRef, iterated, makeObjectAssignable, numberRef, numberRef as numberRef$1, observe, propRef, ref, safe, stringRef, unwrap } from "/fest/object.js";
+import { $avoidTrigger, $getValue, $set, UUIDv4, WRef, bindEvent, camelToKebab, canBeInteger, clamp, contextify, cvt_cs_to_os, deref, getValue, handleListeners, hasValue, inProxy, isNotEqual, isObject, isObservable, isPrimitive, isUserScopePath, isValidObj, isValueRef, normalizePrimitive, stripUserScopePrefix, toRef as toRef$1, unref, userPathCandidates, withCtx } from "/fest/core.js";
+import { DOMMixin, MOCElement, RAFBehavior, ROOT, addEvent, addEvents, addRoot, bbh, bbw, cbh, cbw, containsOrSelf, createElementVanilla, doBorderObserve, doContentObserve, fixedClientZoom, getBoundingOrientRect, getCorrectOrientation, getEventTarget, handleAttribute, handleDataset, handleHidden, handleProperty, handleStyleChange, includeSelf, indexOf, isElement, isInFocus, isValidParent, makeRAFCycle, namedStoreMaps, observeAttribute, observeAttributeBySelector, observeBySelector, observeContentBox, orientOf, orientationNumberMap, readFixedOverlayViewport, reflectBehaviors, reflectMixins, reflectStores, removeEvent, removeEvents, setAttributesIfNull, setChecked, setIdleInterval, updateAllMixins, whenAnyScreenChanges } from "/fest/dom.js";
+import { $affected, $trigger, $triggerControl, $triggerLess, DoubleWeakMap, addToCallChain, affected, booleanRef, booleanRef as booleanRef$1, computed, conditional, deref as deref$1, iterated, makeObjectAssignable, numberRef, numberRef as numberRef$1, observe, propRef, ref, safe, stringRef, unaffected, unwrap } from "/fest/object.js";
 import { ensureStyleSheet } from "/fest/icon.js";
 //#region \0vite/preload-helper.js
 var scriptRel = "modulepreload";
@@ -2583,9 +2584,300 @@ JSOX.stringify = function(object, replacer, space) {
 	};
 });
 //#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/CSSAnimated.ts
+/**
+* Animation binding state for tracking active animations
+*/
+var AnimationState = class {
+	animations = /* @__PURE__ */ new Map();
+	transitions = /* @__PURE__ */ new Map();
+	setAnimation(property, animation) {
+		this.animations.set(property, animation);
+	}
+	getAnimation(property) {
+		return this.animations.get(property);
+	}
+	cancelAnimation(property) {
+		const animation = this.animations.get(property);
+		if (animation) {
+			animation.cancel();
+			this.animations.delete(property);
+		}
+	}
+	setTransition(element, property, options) {
+		const transitionValue = `${property} ${options.duration || 200}ms ${options.easing || "ease"} ${options.delay || 0}ms`;
+		if (this.transitions.get(property) !== transitionValue) {
+			this.transitions.set(property, transitionValue);
+			this.updateElementTransitions(element);
+		}
+	}
+	updateElementTransitions(element) {
+		const transitions = Array.from(this.transitions.values()).join(", ");
+		element.style.transition = transitions;
+	}
+	clearTransitions(element) {
+		this.transitions.clear();
+		element.style.transition = "";
+	}
+	cancelAll(element) {
+		const animationValues = Array.from(this.animations.values());
+		for (const animation of animationValues) animation.cancel();
+		this.animations.clear();
+		this.clearTransitions(element);
+	}
+	getAnimations() {
+		return this.animations;
+	}
+};
+var animationStates = /* @__PURE__ */ new WeakMap();
+/**
+* Get or create animation state for an element
+*/
+function getAnimationState(element) {
+	let state = animationStates.get(element);
+	if (!state) {
+		state = new AnimationState();
+		animationStates.set(element, state);
+	}
+	return state;
+}
+/**
+* Animated style change handler using Web Animations API
+* Creates smooth transitions between values
+*/
+function handleAnimatedStyleChange(element, property, value, options = {}) {
+	if (!element || !property) return;
+	const state = getAnimationState(element);
+	const currentValue = element.style.getPropertyValue(property) || getComputedStyle(element)[property];
+	const targetValue = $getValue(value);
+	if (currentValue === targetValue) return;
+	state.cancelAnimation(property);
+	const keyframes = [{ [property]: currentValue }, { [property]: targetValue }];
+	const animationOptions = {
+		duration: options.duration || 200,
+		easing: options.easing || "ease",
+		delay: options.delay || 0,
+		direction: options.direction || "normal",
+		iterations: options.iterations || 1,
+		fill: options.fill || "forwards"
+	};
+	const animation = element.animate(keyframes, animationOptions);
+	state.setAnimation(property, animation);
+	animation.addEventListener("finish", () => {
+		state.cancelAnimation(property);
+		element.style.setProperty(property, targetValue);
+	});
+}
+/**
+* Transition-based style change handler using CSS transitions
+* More efficient for simple transitions, uses browser's native transition system
+*/
+function handleTransitionStyleChange(element, property, value, options = {}) {
+	if (!element || !property) return;
+	const state = getAnimationState(element);
+	const targetValue = $getValue(value);
+	state.setTransition(element, property, options);
+	element.style.setProperty(property, targetValue);
+}
+/**
+* Spring-based animation handler for natural-feeling animations
+* Uses spring physics for more organic motion
+*/
+function handleSpringStyleChange(element, property, value, options = {}) {
+	if (!element || !property) return;
+	const state = getAnimationState(element);
+	const targetValue = $getValue(value);
+	const currentValue = parseFloat(element.style.getPropertyValue(property)) || parseFloat(getComputedStyle(element)[property]) || 0;
+	if (Math.abs(currentValue - targetValue) < .01) return;
+	state.cancelAnimation(property);
+	const stiffness = options.stiffness || 100;
+	const damping = options.damping || 10;
+	const mass = options.mass || 1;
+	const initialVelocity = options.velocity || 0;
+	let currentPosition = currentValue;
+	let currentVelocity = initialVelocity;
+	let animationId;
+	const animate = () => {
+		const acceleration = (-stiffness * (currentPosition - targetValue) + -damping * currentVelocity) / mass;
+		currentVelocity += acceleration * .016;
+		currentPosition += currentVelocity * .016;
+		const cssValue = property.includes("scale") || property.includes("opacity") ? currentPosition.toString() : `${currentPosition}px`;
+		element.style.setProperty(property, cssValue);
+		if (Math.abs(currentPosition - targetValue) > .01 || Math.abs(currentVelocity) > .01) animationId = requestAnimationFrame(animate);
+		else {
+			element.style.setProperty(property, property.includes("scale") || property.includes("opacity") ? targetValue.toString() : `${targetValue}px`);
+			state.cancelAnimation(property);
+		}
+	};
+	state.setAnimation(property, { cancel: () => cancelAnimationFrame(animationId) });
+	animationId = requestAnimationFrame(animate);
+}
+/**
+* Morphing animation handler for complex style changes
+* Can animate multiple properties simultaneously with coordinated timing
+*/
+function handleMorphStyleChange(element, properties, options = {}) {
+	if (!element || !properties) return;
+	const state = getAnimationState(element);
+	const keyframes = [{}, {}];
+	for (const [property, value] of Object.entries(properties)) {
+		const currentValue = element.style.getPropertyValue(property) || getComputedStyle(element)[property];
+		const targetValue = $getValue(value);
+		keyframes[0][property] = currentValue;
+		keyframes[1][property] = targetValue;
+	}
+	for (const property of Object.keys(properties)) state.cancelAnimation(property);
+	const animationOptions = {
+		duration: options.duration || 300,
+		easing: options.easing || "ease-out",
+		delay: options.delay || 0,
+		direction: options.direction || "normal",
+		iterations: options.iterations || 1,
+		fill: options.fill || "forwards"
+	};
+	const animation = element.animate(keyframes, animationOptions);
+	for (const property of Object.keys(properties)) state.setAnimation(property, animation);
+	animation.addEventListener("finish", () => {
+		for (const property of Object.keys(properties)) {
+			state.cancelAnimation(property);
+			const targetValue = $getValue(properties[property]);
+			element.style.setProperty(property, targetValue);
+		}
+	});
+}
+/**
+* Reactive animation binding that automatically animates when values change
+*/
+function bindAnimatedStyle(element, propertyOrProperties, reactiveValue, animationType = "animate", options = {}) {
+	const wel = toRef$1(element);
+	const wv = toRef$1(reactiveValue);
+	if (animationType === "morph") {
+		const properties = propertyOrProperties;
+		handleMorphStyleChange(deref(wel), properties, options);
+		return affected(reactiveValue, (newValue) => {
+			handleMorphStyleChange(deref(wel), properties, options);
+		});
+	} else {
+		const property = propertyOrProperties;
+		const handler = animationType === "animate" ? handleAnimatedStyleChange : animationType === "transition" ? handleTransitionStyleChange : handleSpringStyleChange;
+		handler(deref(wel), property, $getValue(deref(wv)), options);
+		return affected(reactiveValue, (newValue) => {
+			handler(deref(wel), property, newValue, options);
+		});
+	}
+}
+/**
+* Animation sequence builder for complex multi-stage animations
+*/
+var AnimationSequence = class AnimationSequence {
+	steps = [];
+	addStep(properties, options = {}, delay = 0) {
+		this.steps.push({
+			properties,
+			options,
+			delay
+		});
+		return this;
+	}
+	async play(element) {
+		for (const step of this.steps) {
+			if (step.delay) await new Promise((resolve) => setTimeout(resolve, step.delay));
+			await new Promise((resolve) => {
+				handleMorphStyleChange(element, step.properties, {
+					...step.options,
+					fill: "forwards"
+				});
+				setTimeout(resolve, step.options.duration || 200);
+			});
+		}
+	}
+	static create() {
+		return new AnimationSequence();
+	}
+};
+/**
+* Animation presets for common use cases
+*/
+var AnimationPresets = {
+	fade: {
+		duration: 200,
+		easing: "ease-in-out"
+	},
+	bounce: {
+		duration: 400,
+		easing: "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+	},
+	elastic: {
+		duration: 600,
+		easing: "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+	},
+	slideIn: (direction) => ({
+		duration: 300,
+		easing: "ease-out",
+		transform: `translate${direction === "left" || direction === "right" ? "X" : "Y"}(${direction === "left" || direction === "up" ? "-" : ""}100%)`
+	}),
+	scale: {
+		duration: 200,
+		easing: "ease-in-out"
+	}
+};
+/**
+* Cleanup function to cancel all animations for an element
+*/
+function cancelElementAnimations(element) {
+	const state = animationStates.get(element);
+	if (state) {
+		state.cancelAll(element);
+		animationStates.delete(element);
+	}
+}
+/**
+* Utility to create animated reactive references
+*/
+function animatedRef(initialValue, animationType = "animate", options = {}) {
+	const ref = typeof initialValue === "number" ? numberRef(initialValue) : stringRef(initialValue);
+	ref.$animationType = animationType;
+	ref.$animationOptions = options;
+	return ref;
+}
+var effectProperty$1 = {
+	fill: "both",
+	delay: 0,
+	easing: "linear",
+	rangeStart: "cover 0%",
+	rangeEnd: "cover 100%",
+	duration: 1
+};
+var animateByTimeline = async (source, properties = {}, timeline) => {
+	if (!source || !timeline) return;
+	const nativeTimeline = timeline instanceof ScrollTimeline || timeline instanceof ViewTimeline ? timeline : timeline?.timeline;
+	if (nativeTimeline instanceof ScrollTimeline || nativeTimeline instanceof ViewTimeline) return source?.animate?.(properties, {
+		...effectProperty$1,
+		timeline: nativeTimeline
+	});
+	const target = toRef$1(source), wk = toRef$1(timeline);
+	const renderCb = ([name, $v]) => {
+		const tg = deref(target);
+		if (tg) {
+			const val = deref(wk)?.value || 0, values = $v;
+			setProperty(tg, name, values[0] * (1 - val) + values[1] * val);
+		}
+	};
+	const scheduler = makeRAFCycle();
+	const everyCb = () => Object.entries(properties)?.forEach?.(renderCb);
+	return affected(timeline, (val) => scheduler?.schedule?.(everyCb));
+};
+//#endregion
 //#region ../../modules/projects/lur.e/src/lure/core/Binding.ts
+var runWhenIdle$1 = (cb, timeout = 100) => {
+	if (typeof globalThis.requestIdleCallback === "function") return globalThis.requestIdleCallback(cb, { timeout });
+	return setTimeout(() => cb({
+		didTimeout: false,
+		timeRemaining: () => 0
+	}), 0);
+};
 var bankSymbol = Symbol.for("lur.e@bank");
-globalThis[bankSymbol] ??= new DoubleWeakMap();
+var bank = globalThis[bankSymbol] ??= new DoubleWeakMap();
 var elMapSymbol = Symbol.for("lur.e@elMap");
 var elMap$1 = globalThis[elMapSymbol] ??= new DoubleWeakMap();
 var alivesSymbol = Symbol.for("lur.e@alives");
@@ -2595,6 +2887,27 @@ var $virtual = Symbol.for("@virtual");
 var $behavior = Symbol.for("@behavior");
 var isLinkerLike = (value) => {
 	return !!value && typeof value == "object" && "ref" in value && typeof value?.unbind == "function";
+};
+var bindBeh = (element, store, behavior) => {
+	const weak = toRef$1(element);
+	const name = store?.[0] ?? store?.name;
+	store?.[1] ?? store?.value;
+	if (behavior) {
+		const usub = affected?.(store, (value, prop, old) => {
+			const valMap = namedStoreMaps?.get?.(name);
+			behavior?.([
+				value,
+				prop,
+				old
+			], [
+				weak,
+				store,
+				valMap?.get(deref(weak))
+			]);
+		});
+		addToCallChain(store, Symbol.dispose, usub);
+	}
+	return element;
 };
 var bindCtrl = (element, ctrlCb) => {
 	if (isLinkerLike(ctrlCb)) {
@@ -2662,6 +2975,9 @@ var addToBank = (el, handler, prop, forLink) => {
 	bank[prop] = forLink;
 	return true;
 };
+var hasInBank = (el, handler) => {
+	return elMap$1.has([el, handler]);
+};
 var bindHandler = (element, value, prop, handler, set, withObserver) => {
 	const linker = isLinkerLike(value) ? value : null;
 	if (linker) {
@@ -2712,975 +3028,220 @@ var bindHandler = (element, value, prop, handler, set, withObserver) => {
 	alives.register(element, unsub);
 	if (!addToBank(element, handler, prop, [value, unsub])) return unsub;
 };
+var updateInput = (target, state) => {
+	const selector = "input:where([type=\"text\"], [type=\"number\"], [type=\"range\"])";
+	const input = includeSelf(target, "input");
+	const name = input?.name || target?.dataset?.name || "";
+	if (state?.[name] != null || name in state) {
+		if (state && input?.matches?.(selector)) {
+			if (input.value != state[name]) $avoidTrigger(state, () => {
+				input.value = state[name];
+				input.dispatchEvent(new Event("change", {
+					bubbles: true,
+					cancelable: true
+				}));
+			}, name);
+		}
+		if (state) {
+			const radio = includeSelf(target, `input:where([type="radio"][name="${name}"][value="${state?.[name]}"])`);
+			if (state && radio && state[name] == radio.value && !radio.checked) $avoidTrigger(state, () => {
+				setChecked(radio, state[name]);
+			}, name);
+		}
+		const checkbox = includeSelf(target, "input:where([type=\"checkbox\"])");
+		if (state && checkbox) {
+			if (state[name] != checkbox.checked) $avoidTrigger(state, () => {
+				setChecked(checkbox, state[name]);
+			}, name);
+		}
+	}
+};
 var bindWith = (el, prop, value, handler, set, withObserver) => {
 	handler(el, prop, isLinkerLike(value) ? value.ref : value);
 	return bindHandler(el, value, prop, handler, set, withObserver);
 };
-//#endregion
-//#region ../../modules/projects/lur.e/src/lure/misc/Animatable.ts
-var ANIMATABLE_BRAND = Symbol.for("fest.animatable");
-var isAnimatableValue = (value) => value != null && typeof value === "object" && value[ANIMATABLE_BRAND] === true;
-//#endregion
-//#region ../../modules/projects/lur.e/src/lure/misc/Styles.ts
-/**
-* Detect S`...` / css`...` StyleBinding tuple.
-* WHY: arrays must not be treated as `{ 0, 1, 2 }` style objects in reflectStyles /
-* reflectAttributes — that was breaking `style=${S\`...\`}`.
-*/
-var isStyleBinding = (styles) => {
-	return Array.isArray(styles) && typeof styles[0] === "function";
-};
-var styleTemplateId = 0;
-var CSS_DIMENSION_UNITS = /* @__PURE__ */ new Set([
-	"%",
-	"px",
-	"cm",
-	"mm",
-	"q",
-	"in",
-	"pc",
-	"pt",
-	"em",
-	"ex",
-	"ch",
-	"cap",
-	"ic",
-	"lh",
-	"rem",
-	"rex",
-	"rch",
-	"rcap",
-	"ric",
-	"rlh",
-	"vw",
-	"vh",
-	"vi",
-	"vb",
-	"vmin",
-	"vmax",
-	"svw",
-	"svh",
-	"svi",
-	"svb",
-	"svmin",
-	"svmax",
-	"lvw",
-	"lvh",
-	"lvi",
-	"lvb",
-	"lvmin",
-	"lvmax",
-	"dvw",
-	"dvh",
-	"dvi",
-	"dvb",
-	"dvmin",
-	"dvmax",
-	"cqw",
-	"cqh",
-	"cqi",
-	"cqb",
-	"cqmin",
-	"cqmax",
-	"deg",
-	"grad",
-	"rad",
-	"turn",
-	"s",
-	"ms",
-	"hz",
-	"khz",
-	"dpi",
-	"dpcm",
-	"dppx",
-	"x",
-	"fr"
-]);
-/**
-* True when there is no declaration with a non-empty value.
-*/
-var isEffectivelyEmptyStyleText = (cssText) => {
-	const source = typeof cssText === "string" ? cssText.trim() : "";
-	if (!source) return true;
-	for (const chunk of source.split(";")) {
-		const declaration = chunk.trim();
-		if (!declaration) continue;
-		const colonIndex = declaration.indexOf(":");
-		if (colonIndex < 0) return false;
-		if (declaration.slice(colonIndex + 1).trim().length > 0) return false;
-	}
-	return true;
-};
-/**
-* Removes a useless style attribute left by empty interpolation.
-*/
-var pruneEmptyStyleAttribute = (element) => {
-	if (element == null) return;
-	const raw = element.getAttribute("style");
-	if (raw == null) return;
-	if (isEffectivelyEmptyStyleText(raw)) {
-		element.style.cssText = "";
-		element.removeAttribute("style");
-	}
-};
-/**
-* Sets inline CSS or removes the style attribute when it is empty.
-*/
-var applyNormalizedInlineStyle = (element, cssText) => {
-	if (isEffectivelyEmptyStyleText(cssText)) {
-		element.style.cssText = "";
-		element.removeAttribute("style");
-		return;
-	}
-	element.style.cssText = cssText;
-};
-/**
-* Detects CSSUnitValue, CSSMathValue and other CSSStyleValue
-* descendants, including values created in another Window.
-*/
-var isNativeCSSStyleValue = (value) => {
-	if (value == null || typeof value !== "object") return false;
-	try {
-		const CSSStyleValueCtor = globalThis.CSSStyleValue;
-		if (typeof CSSStyleValueCtor === "function" && value instanceof CSSStyleValueCtor) return true;
-		for (let prototype = value; prototype; prototype = Object.getPrototypeOf(prototype)) if (prototype?.constructor?.name === "CSSStyleValue") return true;
-	} catch {}
-	return false;
-};
-/**
-* Detects the existing reactive `{ value: ... }` contract.
-*
-* Native CSSStyleValue must be checked first because CSSUnitValue
-* also contains a `value` property.
-*/
-var isReactiveStyleValue = (value) => {
-	if (value == null || typeof value !== "object" || isNativeCSSStyleValue(value)) return false;
-	try {
-		return "value" in value;
-	} catch {
-		return false;
-	}
-};
-var isStaticStyleInterpolation = (value) => {
-	return value == null || typeof value !== "object" && typeof value !== "function";
-};
-var escapeRegExp = (value) => {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-};
-var containsMarker = (cssValue, marker) => {
-	return new RegExp(`var\\(\\s*${escapeRegExp(marker)}\\s*\\)`).test(cssValue);
-};
-var readAttachedCSSUnit = (text) => {
-	const match = /^(%|[a-zA-Z]+)/.exec(text);
-	if (!match) return null;
-	const authored = match[0];
-	const normalized = authored.toLowerCase();
-	if (!CSS_DIMENSION_UNITS.has(normalized)) return null;
-	return {
-		authored,
-		normalized,
-		length: authored.length
-	};
-};
-var getCSSUnitFactoryName = (unit) => {
-	switch (unit.toLowerCase()) {
-		case "%": return "percent";
-		case "q": return "Q";
-		case "hz": return "Hz";
-		case "khz": return "kHz";
-		case "fr": return "flex";
-		default: return unit.toLowerCase();
-	}
-};
-var getCSSUnitConstructorName = (unit) => {
-	switch (unit.toLowerCase()) {
-		case "%": return "percent";
-		default: return unit.toLowerCase();
-	}
-};
-var getWindowConstructor = (win, name) => {
-	return win?.[name] ?? globalThis?.[name];
-};
-/**
-* Creates CSS.px(value), CSS.deg(value), CSS.number(value), etc.
-*/
-var createTypedUnitValue = (win, unit, value) => {
-	const CSSNamespace = win?.CSS;
-	const factoryName = getCSSUnitFactoryName(unit);
-	const factory = CSSNamespace?.[factoryName];
-	if (typeof factory === "function") return factory.call(CSSNamespace, value);
-	const CSSUnitValueCtor = getWindowConstructor(win, "CSSUnitValue");
-	if (typeof CSSUnitValueCtor !== "function") throw new TypeError(`Typed OM does not support CSS unit "${unit}"`);
-	return new CSSUnitValueCtor(value, getCSSUnitConstructorName(unit));
-};
-var readReactiveNumber = (slot) => {
-	const current = slot.value?.value;
-	const number = typeof current === "number" ? current : Number(current);
-	if (!Number.isFinite(number)) throw new TypeError(`Reactive CSS value "${String(current)}" is not finite`);
-	return number;
-};
-var getReactiveInitialNumber = (value) => {
-	const number = Number(value?.value);
-	return Number.isFinite(number) ? number : 0;
-};
-var replaceTypedMarkers = (cssValue, slots) => {
-	let result = cssValue;
-	for (const slot of slots) result = result.replace(new RegExp(`var\\(\\s*${escapeRegExp(slot.marker)}\\s*\\)`, "g"), String(slot.value));
-	return result;
-};
-var isDirectSlotValue = (cssValue, marker) => {
-	const escapedMarker = escapeRegExp(marker);
-	return new RegExp(`^var\\(\\s*${escapedMarker}\\s*\\)$`).test(cssValue.trim());
-};
-/**
-* Serialize animatable's first/current step for base inline style.
-* WHY: triggers like click/hover/manual do not start WAAPI yet; without a
-* base value, `opacity:${anim}` stays empty after we drop the var() probe.
-*/
-var serializeAnimatableCssValue = (raw, unit) => {
-	let value = raw;
-	if (value != null && typeof value === "object" && "value" in value && !(value instanceof Element)) value = value.value;
-	if (value == null || value === "") return unit ? `0${unit}` : "0";
-	if (unit != null && typeof value === "number") return `${value}${unit}`;
-	return String(value);
-};
-var isDirectSlotUnitProduct = (cssValue, marker, unit) => {
-	if (!unit) return false;
-	const escapedMarker = escapeRegExp(marker);
-	const escapedUnit = escapeRegExp(unit);
-	return new RegExp(`^calc\\(\\s*var\\(\\s*${escapedMarker}\\s*\\)\\s*\\*\\s*1${escapedUnit}\\s*\\)$`, "i").test(cssValue.trim());
-};
-var setParsedTypedValue = (styleMap, CSSStyleValueCtor, property, cssValue) => {
-	if (typeof CSSStyleValueCtor?.parseAll === "function") {
-		const values = CSSStyleValueCtor.parseAll(property, cssValue);
-		styleMap.set(property, ...values);
-		return;
-	}
-	if (typeof CSSStyleValueCtor?.parse === "function") {
-		styleMap.set(property, CSSStyleValueCtor.parse(property, cssValue));
-		return;
-	}
-	styleMap.set(property, cssValue);
-};
-var tokenizeNumericCSS = (source) => {
-	const tokens = [];
-	let cursor = 0;
-	while (cursor < source.length) {
-		const rest = source.slice(cursor);
-		const whitespace = /^\s+/.exec(rest);
-		if (whitespace) {
-			cursor += whitespace[0].length;
-			continue;
-		}
-		const variable = /^var\(\s*(--[a-zA-Z0-9_-]+)\s*\)/.exec(rest);
-		if (variable) {
-			tokens.push({
-				kind: "variable",
-				marker: variable[1]
-			});
-			cursor += variable[0].length;
-			continue;
-		}
-		const number = /^(?:\d*\.\d+|\d+\.?\d*)(?:[eE][+-]?\d+)?/.exec(rest);
-		if (number) {
-			cursor += number[0].length;
-			const unitMatch = /^(%|[a-zA-Z]+)/.exec(source.slice(cursor));
-			const unit = unitMatch?.[0] ?? null;
-			if (unitMatch) cursor += unitMatch[0].length;
-			tokens.push({
-				kind: "number",
-				value: Number(number[0]),
-				unit: unit == null ? null : unit.toLowerCase()
-			});
-			continue;
-		}
-		const identifier = /^[a-zA-Z_][a-zA-Z0-9_-]*/.exec(rest);
-		if (identifier) {
-			tokens.push({
-				kind: "identifier",
-				value: identifier[0].toLowerCase()
-			});
-			cursor += identifier[0].length;
-			continue;
-		}
-		const symbol = rest[0];
-		if (symbol === "+" || symbol === "-" || symbol === "*" || symbol === "/" || symbol === "(" || symbol === ")" || symbol === ",") {
-			tokens.push({
-				kind: "symbol",
-				value: symbol
-			});
-			cursor++;
-			continue;
-		}
-		throw new SyntaxError(`Unsupported Typed OM numeric token near "${rest}"`);
-	}
-	return tokens;
-};
-var NumericTypedOMParser = class {
-	tokens;
-	win;
-	reactiveByMarker;
-	typedByMarker;
-	index = 0;
-	leaves = [];
-	constructor(tokens, win, reactiveByMarker, typedByMarker) {
-		this.tokens = tokens;
-		this.win = win;
-		this.reactiveByMarker = reactiveByMarker;
-		this.typedByMarker = typedByMarker;
-	}
-	parse() {
-		const root = this.parseSum();
-		if (this.index !== this.tokens.length) throw new SyntaxError("Unexpected trailing Typed OM expression");
-		return {
-			root,
-			leaves: this.leaves
-		};
-	}
-	current() {
-		return this.tokens[this.index];
-	}
-	consume() {
-		const token = this.tokens[this.index];
-		if (!token) throw new SyntaxError("Unexpected end of Typed OM expression");
-		this.index++;
-		return token;
-	}
-	consumeSymbol(symbol) {
-		const token = this.consume();
-		if (token.kind !== "symbol" || token.value !== symbol) throw new SyntaxError(`Expected "${symbol}"`);
-	}
-	matchesSymbol(symbol) {
-		const token = this.current();
-		return token?.kind === "symbol" && token.value === symbol;
-	}
-	createMath(name, ...values) {
-		const Constructor = getWindowConstructor(this.win, name);
-		if (typeof Constructor !== "function") throw new TypeError(`${name} is not supported`);
-		return new Constructor(...values);
-	}
-	parseSum() {
-		let value = this.parseProduct();
-		while (this.matchesSymbol("+") || this.matchesSymbol("-")) {
-			const operator = this.consume();
-			const right = this.parseProduct();
-			if (operator.kind !== "symbol") throw new SyntaxError("Expected a sum operator");
-			if (operator.value === "+") value = this.createMath("CSSMathSum", value, right);
-			else value = this.createMath("CSSMathSum", value, this.createMath("CSSMathNegate", right));
-		}
-		return value;
-	}
-	parseProduct() {
-		let value = this.parseUnary();
-		while (this.matchesSymbol("*") || this.matchesSymbol("/")) {
-			const operator = this.consume();
-			const right = this.parseUnary();
-			if (operator.kind !== "symbol") throw new SyntaxError("Expected a product operator");
-			if (operator.value === "*") value = this.createMath("CSSMathProduct", value, right);
-			else value = this.createMath("CSSMathProduct", value, this.createMath("CSSMathInvert", right));
-		}
-		return value;
-	}
-	parseUnary() {
-		if (this.matchesSymbol("+")) {
-			this.consume();
-			return this.parseUnary();
-		}
-		if (this.matchesSymbol("-")) {
-			this.consume();
-			return this.createMath("CSSMathNegate", this.parseUnary());
-		}
-		return this.parsePrimary();
-	}
-	parsePrimary() {
-		const token = this.consume();
-		if (token.kind === "number") return createTypedUnitValue(this.win, token.unit ?? "number", token.value);
-		if (token.kind === "variable") {
-			const reactive = this.reactiveByMarker.get(token.marker);
-			if (reactive) {
-				if (this.matchesSymbol("*")) {
-					const checkpoint = this.index;
-					this.consume();
-					const rhs = this.current();
-					if (rhs?.kind === "number" && rhs.value === 1 && typeof rhs.unit === "string" && (!reactive.multipliedByUnit || reactive.multipliedByUnit === rhs.unit.toLowerCase())) {
-						this.consume();
-						const leaf = createTypedUnitValue(this.win, rhs.unit.toLowerCase(), readReactiveNumber(reactive));
-						this.leaves.push({
-							slot: reactive,
-							value: leaf
-						});
-						return leaf;
-					}
-					this.index = checkpoint;
-				}
-				const leaf = createTypedUnitValue(this.win, "number", readReactiveNumber(reactive));
-				this.leaves.push({
-					slot: reactive,
-					value: leaf
-				});
-				return leaf;
+var bindForms = (fields = document.documentElement, wrapper = ".u2-input", state = {}) => {
+	state ??= observe({});
+	const wst = new WeakRef(state);
+	const onChange = (ev) => {
+		const state = deref(wst);
+		if (!state) return;
+		const eventTarget = getEventTarget(ev) ?? ev?.target;
+		const input = eventTarget?.matches?.("input") ? eventTarget : eventTarget?.querySelector?.("input");
+		const target = (eventTarget?.matches?.(wrapper) ? eventTarget : input?.closest?.(wrapper)) ?? input;
+		const name = input?.name || target?.name || target?.dataset?.name;
+		if (state?.[name] != null || name in state) {
+			if (input?.matches?.("input:where([type=\"text\"], [type=\"number\"], [type=\"range\"])")) {
+				const value = input.valueAsNumber != null && !isNaN(input.valueAsNumber) ? input.valueAsNumber : input.value;
+				if (state[name] != value) state[name] = value;
 			}
-			const typed = this.typedByMarker.get(token.marker);
-			if (typed) return typed.value;
-			throw new SyntaxError(`Unknown style slot "${token.marker}"`);
-		}
-		if (token.kind === "symbol" && token.value === "(") {
-			const value = this.parseSum();
-			this.consumeSymbol(")");
-			return value;
-		}
-		if (token.kind === "identifier") return this.parseFunction(token.value);
-		throw new SyntaxError("Expected a Typed OM numeric value");
-	}
-	parseFunction(name) {
-		this.consumeSymbol("(");
-		if (name === "calc") {
-			const value = this.parseSum();
-			this.consumeSymbol(")");
-			return value;
-		}
-		const values = [];
-		if (!this.matchesSymbol(")")) {
-			values.push(this.parseSum());
-			while (this.matchesSymbol(",")) {
-				this.consume();
-				values.push(this.parseSum());
-			}
-		}
-		this.consumeSymbol(")");
-		if (name === "min") {
-			if (values.length === 0) throw new SyntaxError("min() requires a value");
-			return this.createMath("CSSMathMin", ...values);
-		}
-		if (name === "max") {
-			if (values.length === 0) throw new SyntaxError("max() requires a value");
-			return this.createMath("CSSMathMax", ...values);
-		}
-		if (name === "clamp") {
-			if (values.length !== 3) throw new SyntaxError("clamp() requires three values");
-			return this.createMath("CSSMathClamp", values[0], values[1], values[2]);
-		}
-		throw new SyntaxError(`Unsupported Typed OM function "${name}"`);
-	}
-};
-var buildNumericTypedOMTree = (cssValue, win, reactiveSlots, typedSlots) => {
-	const reactiveByMarker = /* @__PURE__ */ new Map();
-	const typedByMarker = /* @__PURE__ */ new Map();
-	for (const slot of reactiveSlots) reactiveByMarker.set(slot.marker, slot);
-	for (const slot of typedSlots) typedByMarker.set(slot.marker, slot);
-	return new NumericTypedOMParser(tokenizeNumericCSS(cssValue), win, reactiveByMarker, typedByMarker).parse();
-};
-var isTransformStyleProperty = (property) => {
-	return property.trim().toLowerCase() === "transform";
-};
-/**
-* Builds CSSTransformValue from a transform list such as
-* `translate(calc(var(--fest-ref-0) * 1px), calc(var(--fest-ref-1) * 1px))`.
-*
-* INVARIANT: reactive `${ref}px` args become mutable CSS.px leaves (via the
-* numeric parser collapse), not leftover --fest-ref custom properties.
-*/
-var buildTransformTypedOMTree = (cssValue, win, reactiveSlots, typedSlots) => {
-	const tokens = tokenizeNumericCSS(cssValue);
-	const leaves = [];
-	const components = [];
-	const reactiveByMarker = /* @__PURE__ */ new Map();
-	const typedByMarker = /* @__PURE__ */ new Map();
-	for (const slot of reactiveSlots) reactiveByMarker.set(slot.marker, slot);
-	for (const slot of typedSlots) typedByMarker.set(slot.marker, slot);
-	const zeroPx = () => createTypedUnitValue(win, "px", 0);
-	const oneNumber = () => createTypedUnitValue(win, "number", 1);
-	let index = 0;
-	const current = () => tokens[index];
-	const consume = () => {
-		const token = tokens[index];
-		if (!token) throw new SyntaxError("Unexpected end of transform expression");
-		index++;
-		return token;
-	};
-	const consumeSymbol = (symbol) => {
-		const token = consume();
-		if (token.kind !== "symbol" || token.value !== symbol) throw new SyntaxError(`Expected "${symbol}"`);
-	};
-	const parseArgument = () => {
-		const start = index;
-		let depth = 0;
-		while (index < tokens.length) {
-			const token = tokens[index];
-			if (token.kind === "symbol" && token.value === "(") {
-				depth++;
-				index++;
-				continue;
-			}
-			if (token.kind === "symbol" && token.value === ")") {
-				if (depth === 0) break;
-				depth--;
-				index++;
-				continue;
-			}
-			if (token.kind === "symbol" && token.value === "," && depth === 0) break;
-			index++;
-		}
-		const slice = tokens.slice(start, index);
-		if (slice.length === 0) throw new SyntaxError("Empty transform function argument");
-		const tree = new NumericTypedOMParser(slice, win, reactiveByMarker, typedByMarker).parse();
-		leaves.push(...tree.leaves);
-		return tree.root;
-	};
-	const parseArgumentList = () => {
-		const args = [];
-		consumeSymbol("(");
-		if (!(current()?.kind === "symbol" && current()?.value === ")")) {
-			args.push(parseArgument());
-			while (current()?.kind === "symbol" && current()?.value === ",") {
-				consume();
-				args.push(parseArgument());
-			}
-		}
-		consumeSymbol(")");
-		return args;
-	};
-	const createComponent = (name, args) => {
-		const ctor = (className) => {
-			const Ctor = getWindowConstructor(win, className);
-			if (typeof Ctor !== "function") throw new TypeError(`${className} is not supported`);
-			return Ctor;
-		};
-		switch (name) {
-			case "translate": {
-				const Translate = ctor("CSSTranslate");
-				if (args.length === 1) return new Translate(args[0], zeroPx());
-				if (args.length === 2) return new Translate(args[0], args[1]);
-				if (args.length === 3) return new Translate(args[0], args[1], args[2]);
-				throw new SyntaxError("translate() expects 1..3 args");
-			}
-			case "translatex": return new (ctor("CSSTranslate"))(args[0], zeroPx());
-			case "translatey": return new (ctor("CSSTranslate"))(zeroPx(), args[0]);
-			case "translatez": return new (ctor("CSSTranslate"))(zeroPx(), zeroPx(), args[0]);
-			case "translate3d":
-				if (args.length !== 3) throw new SyntaxError("translate3d() expects 3 args");
-				return new (ctor("CSSTranslate"))(args[0], args[1], args[2]);
-			case "scale": {
-				const Scale = ctor("CSSScale");
-				if (args.length === 1) return new Scale(args[0], args[0]);
-				if (args.length === 2) return new Scale(args[0], args[1]);
-				if (args.length === 3) return new Scale(args[0], args[1], args[2]);
-				throw new SyntaxError("scale() expects 1..3 args");
-			}
-			case "scalex": return new (ctor("CSSScale"))(args[0], oneNumber());
-			case "scaley": return new (ctor("CSSScale"))(oneNumber(), args[0]);
-			case "scalez": return new (ctor("CSSScale"))(oneNumber(), oneNumber(), args[0]);
-			case "scale3d":
-				if (args.length !== 3) throw new SyntaxError("scale3d() expects 3 args");
-				return new (ctor("CSSScale"))(args[0], args[1], args[2]);
-			case "rotate": {
-				const Rotate = ctor("CSSRotate");
-				if (args.length === 1) return new Rotate(args[0]);
-				if (args.length === 4) return new Rotate(args[0], args[1], args[2], args[3]);
-				throw new SyntaxError("rotate() expects 1 or 4 args");
-			}
-			case "rotatex": return new (ctor("CSSRotate"))(oneNumber(), createTypedUnitValue(win, "number", 0), createTypedUnitValue(win, "number", 0), args[0]);
-			case "rotatey": return new (ctor("CSSRotate"))(createTypedUnitValue(win, "number", 0), oneNumber(), createTypedUnitValue(win, "number", 0), args[0]);
-			case "rotatez": return new (ctor("CSSRotate"))(createTypedUnitValue(win, "number", 0), createTypedUnitValue(win, "number", 0), oneNumber(), args[0]);
-			case "rotate3d":
-				if (args.length !== 4) throw new SyntaxError("rotate3d() expects 4 args");
-				return new (ctor("CSSRotate"))(args[0], args[1], args[2], args[3]);
-			case "skew": {
-				const Skew = ctor("CSSSkew");
-				if (args.length === 1) return new Skew(args[0], createTypedUnitValue(win, "deg", 0));
-				if (args.length === 2) return new Skew(args[0], args[1]);
-				throw new SyntaxError("skew() expects 1..2 args");
-			}
-			case "skewx": return new (ctor("CSSSkewX"))(args[0]);
-			case "skewy": return new (ctor("CSSSkewY"))(args[0]);
-			case "perspective": return new (ctor("CSSPerspective"))(args[0]);
-			default: throw new SyntaxError(`Unsupported transform function "${name}"`);
+			if (input?.matches?.("input[type=\"radio\"]") && state[name] != input?.value && input?.checked) state[name] = input.value;
+			if (input?.matches?.("input[type=\"checkbox\"]") && state[name] != input?.checked) state[name] = input.checked;
 		}
 	};
-	while (index < tokens.length) {
-		const token = consume();
-		if (token.kind !== "identifier") throw new SyntaxError("Expected a transform function name");
-		const args = parseArgumentList();
-		components.push(createComponent(token.value, args));
-	}
-	if (components.length === 0) throw new SyntaxError("Empty transform list");
-	const CSSTransformValueCtor = getWindowConstructor(win, "CSSTransformValue");
-	if (typeof CSSTransformValueCtor !== "function") throw new TypeError("CSSTransformValue is not supported");
-	return {
-		root: new CSSTransformValueCtor(components),
-		leaves
-	};
-};
-var buildTypedOMStyleValue = (property, cssValue, win, reactiveSlots, typedSlots) => {
-	if (isTransformStyleProperty(property)) return buildTransformTypedOMTree(cssValue, win, reactiveSlots, typedSlots);
-	return buildNumericTypedOMTree(cssValue, win, reactiveSlots, typedSlots);
-};
-var addMutableLeaves = (target, leaves) => {
-	for (const leaf of leaves) {
-		const current = target.get(leaf.slot.marker);
-		if (current) current.push(leaf);
-		else target.set(leaf.slot.marker, [leaf]);
-	}
-};
-/**
-* Attach declaration identity onto parser leaves so reactive updates can
-* re-set attributeStyleMap after mutating CSSUnitValue.value.
-*
-* WHY: Chromium keeps the live CSSUnitValue identity, but does not refresh
-* the style map / serialization until styleMap.set() is called again.
-*/
-var attachLeafTargets = (leaves, property, root) => {
-	return leaves.map((leaf) => ({
-		slot: leaf.slot,
-		value: leaf.value,
-		property,
-		root
-	}));
-};
-/**
-* Applies a parsed S-template.
-*
-* Typed OM objects and their mathematical trees are created once.
-* Reactive updates mutate existing CSSUnitValue leaves only.
-*/
-var applyStyleTemplate = (element, cssText, typedSlots, reactiveSlots, variables, animatableSlots) => {
-	const probe = element.ownerDocument.createElement("span");
-	probe.style.cssText = cssText;
-	applyNormalizedInlineStyle(element, "");
-	const target = element;
-	const styleMap = target.attributeStyleMap ?? target.styleMap;
-	const win = element.ownerDocument.defaultView ?? globalThis;
-	const CSSStyleValueCtor = win?.CSSStyleValue ?? globalThis.CSSStyleValue;
-	const mutableLeaves = /* @__PURE__ */ new Map();
-	const requiredCSSVariables = /* @__PURE__ */ new Set();
-	const subscriptions = [];
-	/**
-	* Привязка animatable-слотов.
-	*
-	* Выбор режима:
-	* - слот занимает всю декларацию целиком (`opacity:${anim}`) ->
-	*   mode:"property" — браузер анимирует само свойство. Дешевле,
-	*   и работает даже без CSS.registerProperty.
-	* - слот внутри выражения (`translateX(${anim}px)`, calc, clamp) ->
-	*   mode:"custom-property" — анимируем зарегистрированное число,
-	*   а декларация "подтягивает" его через var()/calc().
-	*/
-	const propertyModeOwned = /* @__PURE__ */ new Set();
-	for (const slot of animatableSlots) {
-		let plan = null;
-		for (let i = 0; i < probe.style.length; i++) {
-			const property = probe.style.item(i);
-			const parsedValue = probe.style.getPropertyValue(property);
-			if (isDirectSlotValue(parsedValue, slot.marker)) {
-				plan = {
-					mode: "property",
-					target: property
-				};
-				element.style.setProperty(property, serializeAnimatableCssValue(slot.value.value));
-				propertyModeOwned.add(property);
-				break;
-			}
-			if (isDirectSlotUnitProduct(parsedValue, slot.marker, slot.multipliedByUnit)) {
-				plan = {
-					mode: "property",
-					target: property,
-					unit: slot.multipliedByUnit
-				};
-				element.style.setProperty(property, serializeAnimatableCssValue(slot.value.value, slot.multipliedByUnit));
-				propertyModeOwned.add(property);
-				break;
-			}
-		}
-		if (!plan) {
-			const initialNumber = Number(slot.value.value) || 0;
-			ensureRegisteredNumberProperty(win, slot.marker, initialNumber);
-			element.style.setProperty(slot.marker, String(initialNumber));
-			plan = {
-				mode: "custom-property",
-				target: slot.marker
-			};
-		}
-		subscriptions.push(slot.value.attach(element, plan));
-	}
-	for (let index = 0; index < probe.style.length; index++) {
-		const property = probe.style.item(index);
-		if (propertyModeOwned.has(property)) continue;
-		const parsedValue = probe.style.getPropertyValue(property);
-		const priority = probe.style.getPropertyPriority(property);
-		const usedTypedSlots = typedSlots.filter((slot) => containsMarker(parsedValue, slot.marker));
-		const usedReactiveSlots = reactiveSlots.filter((slot) => containsMarker(parsedValue, slot.marker));
-		if (usedTypedSlots.length === 0 && usedReactiveSlots.length === 0) {
-			element.style.setProperty(property, parsedValue, priority);
-			continue;
-		}
-		const canUseTypedOM = styleMap?.set && !priority && !property.startsWith("--");
-		let appliedThroughTypedOM = false;
-		if (canUseTypedOM && usedReactiveSlots.length > 0) try {
-			const directSlot = usedReactiveSlots.length === 1 && usedTypedSlots.length === 0 ? usedReactiveSlots[0] : null;
-			if (directSlot && isDirectSlotUnitProduct(parsedValue, directSlot.marker, directSlot.multipliedByUnit)) {
-				const linkedValue = createTypedUnitValue(win, directSlot.multipliedByUnit, readReactiveNumber(directSlot));
-				styleMap.set(property, linkedValue);
-				addMutableLeaves(mutableLeaves, attachLeafTargets([{
-					slot: directSlot,
-					value: linkedValue
-				}], property, linkedValue));
-				appliedThroughTypedOM = true;
-			} else if (directSlot && isDirectSlotValue(parsedValue, directSlot.marker)) {
-				const linkedValue = createTypedUnitValue(win, "number", readReactiveNumber(directSlot));
-				styleMap.set(property, linkedValue);
-				addMutableLeaves(mutableLeaves, attachLeafTargets([{
-					slot: directSlot,
-					value: linkedValue
-				}], property, linkedValue));
-				appliedThroughTypedOM = true;
-			} else {
-				const tree = buildTypedOMStyleValue(property, parsedValue, win, usedReactiveSlots, usedTypedSlots);
-				styleMap.set(property, tree.root);
-				addMutableLeaves(mutableLeaves, attachLeafTargets(tree.leaves, property, tree.root));
-				appliedThroughTypedOM = true;
-			}
-		} catch {}
-		if (appliedThroughTypedOM) continue;
-		if (canUseTypedOM && usedReactiveSlots.length === 0 && usedTypedSlots.length > 0) try {
-			const directSlot = usedTypedSlots.length === 1 ? usedTypedSlots[0] : null;
-			if (directSlot && isDirectSlotValue(parsedValue, directSlot.marker)) {
-				styleMap.set(property, directSlot.value);
-				appliedThroughTypedOM = true;
-			} else if (directSlot && isDirectSlotUnitProduct(parsedValue, directSlot.marker, directSlot.multipliedByUnit)) {
-				const CSSMathProductCtor = getWindowConstructor(win, "CSSMathProduct");
-				if (typeof CSSMathProductCtor !== "function") throw new TypeError("CSSMathProduct is not supported");
-				const product = new CSSMathProductCtor(directSlot.value, createTypedUnitValue(win, directSlot.multipliedByUnit, 1));
-				styleMap.set(property, product);
-				appliedThroughTypedOM = true;
-			} else {
-				try {
-					const tree = buildTypedOMStyleValue(property, parsedValue, win, [], usedTypedSlots);
-					styleMap.set(property, tree.root);
-				} catch {
-					setParsedTypedValue(styleMap, CSSStyleValueCtor, property, replaceTypedMarkers(parsedValue, usedTypedSlots));
-				}
-				appliedThroughTypedOM = true;
-			}
-		} catch {}
-		if (appliedThroughTypedOM) continue;
-		const reconstructed = replaceTypedMarkers(parsedValue, usedTypedSlots);
-		element.style.setProperty(property, reconstructed, priority);
-		for (const slot of usedReactiveSlots) requiredCSSVariables.add(slot.marker);
-	}
-	for (const slot of reactiveSlots) {
-		const leaves = mutableLeaves.get(slot.marker) ?? [];
-		const needsCSSVariable = requiredCSSVariables.has(slot.marker);
-		if (leaves.length === 0 && !needsCSSVariable) continue;
-		const subscription = bindWith(element, slot.marker, slot.value, function(...args) {
-			if (leaves.length > 0) try {
-				const nextValue = readReactiveNumber(slot);
-				const dirtyRoots = /* @__PURE__ */ new Map();
-				for (const leaf of leaves) {
-					leaf.value.value = nextValue;
-					dirtyRoots.set(leaf.property, leaf.root);
-				}
-				if (styleMap?.set) for (const [propertyName, root] of dirtyRoots) styleMap.set(propertyName, root);
-			} catch {}
-			if (needsCSSVariable) handleStyleChange.apply(this, args);
-		});
-		subscriptions.push(subscription);
-	}
-	for (const name of requiredCSSVariables) {
-		if (reactiveSlots.some((slot) => slot.marker === name)) continue;
-		const value = variables.get(name);
-		if (value == null) continue;
-		subscriptions.push(bindWith(element, name, value, handleStyleChange));
-	}
-	pruneEmptyStyleAttribute(element);
-	return () => {
-		for (const subscription of subscriptions) subscription?.();
-	};
-};
-/**
-* Compiles the static CSS text from the StyleBinding.
-* @param forReturn - The StyleBinding to compile.
-* @returns The static CSS text.
-*/
-var complileStaticCSSText = (forReturn) => {
-	const [apply, properties, variables] = forReturn;
-	const element = document.createElement("div");
-	apply(element);
-	return element.style.cssText;
-};
-var S = (strings, ...values) => {
-	const templateId = styleTemplateId++;
-	const properties = [];
-	const variables = /* @__PURE__ */ new Map();
-	const typedSlots = [];
-	const reactiveSlots = [];
-	const parts = [];
-	const animatableSlots = [];
-	const consumed = new Array(strings.length).fill(0);
-	for (let index = 0; index < strings.length; index++) {
-		parts.push(strings[index].slice(consumed[index]));
-		if (index >= values.length) continue;
-		const value = values[index];
-		const attachedUnit = readAttachedCSSUnit(strings[index + 1] ?? "");
-		if (isNativeCSSStyleValue(value)) {
-			const marker = `--fest-typed-${templateId}-${typedSlots.length}`;
-			typedSlots.push({
-				marker,
-				value,
-				multipliedByUnit: attachedUnit?.normalized
-			});
-			if (attachedUnit) {
-				parts.push(`calc(var(${marker}) * 1${attachedUnit.authored})`);
-				consumed[index + 1] += attachedUnit.length;
-			} else parts.push(`var(${marker})`);
-			continue;
-		}
-		if (isAnimatableValue(value)) {
-			const marker = `--fest-anim-${templateId}-${animatableSlots.length}`;
-			if (attachedUnit) {
-				parts.push(`calc(var(${marker}) * 1${attachedUnit.authored})`);
-				consumed[index + 1] += attachedUnit.length;
-			} else parts.push(`var(${marker})`);
-			properties.push(`@property ${marker} { syntax: "<number>"; initial-value: ${Number(value.value) || 0}; inherits: false; };`);
-			animatableSlots.push({
-				marker,
-				value,
-				multipliedByUnit: attachedUnit?.normalized
-			});
-			continue;
-		}
-		if (isReactiveStyleValue(value)) {
-			const marker = `--fest-ref-${templateId}-${reactiveSlots.length}`;
-			reactiveSlots.push({
-				marker,
-				value,
-				multipliedByUnit: attachedUnit?.normalized
-			});
-			if (attachedUnit) {
-				parts.push(`calc(var(${marker}) * 1${attachedUnit.authored})`);
-				consumed[index + 1] += attachedUnit.length;
-			} else parts.push(`var(${marker})`);
-			const initialValue = getReactiveInitialNumber(value);
-			properties.push(`@property ${marker} { syntax: "<number>"; initial-value: ${initialValue}; inherits: true; };`);
-			variables.set(marker, value);
-			continue;
-		}
-		if (typeof value !== "object" && typeof value !== "function" && value != null && String(value).trim() !== "") parts.push(String(value));
-	}
-	const forReturn = [
-		(element) => {
-			return applyStyleTemplate(element, parts.join(""), typedSlots, reactiveSlots, variables, animatableSlots);
-		},
-		properties,
-		variables
-	];
-	forReturn[Symbol.toStringTag] = () => complileStaticCSSText(forReturn);
-	forReturn[Symbol.toPrimitive] = (type) => {
-		if (type === "string") return complileStaticCSSText(forReturn);
-		return forReturn[0];
-	};
-	forReturn.toString = () => complileStaticCSSText(forReturn);
-	forReturn.valueOf = () => complileStaticCSSText(forReturn);
-	Object.defineProperty(forReturn, "cssText", {
-		get: () => complileStaticCSSText(forReturn),
-		set: (value) => {
-			console.log("set cssText", value);
-			const [apply, properties, variables] = forReturn;
-			const element = document.createElement("div");
-			apply(element);
-			element.style.cssText = value;
-		},
-		configurable: true,
-		enumerable: true
+	const appearHandler = () => runWhenIdle$1(() => fields.querySelectorAll(wrapper).forEach((target) => updateInput(target, state)), 100);
+	const observer = observeBySelector(fields, wrapper, (mutations) => mutations.addedNodes.forEach((target) => runWhenIdle$1(() => updateInput(state, target), 100)));
+	const unsubscribe = affected?.(state, (_value, _property) => fields.querySelectorAll(wrapper).forEach((target) => updateInput(target, state)));
+	runWhenIdle$1(() => fields.querySelectorAll(wrapper).forEach((target) => updateInput(target, state)), 100);
+	fields.addEventListener("input", onChange);
+	fields.addEventListener("change", onChange);
+	fields.addEventListener("u2-appear", appearHandler);
+	const wf = new WeakRef(fields);
+	addToCallChain(state, Symbol.dispose, () => {
+		const fields = deref(wf);
+		fields?.removeEventListener?.("input", onChange);
+		fields?.removeEventListener?.("change", onChange);
+		fields?.removeEventListener?.("u2-appear", appearHandler);
+		observer?.disconnect?.();
+		unsubscribe?.();
+		unaffected(state);
 	});
-	return forReturn;
+	return state;
 };
-var splitInlineStylePlaceholders = (source, attributes) => {
-	const strings = [];
-	const values = [];
-	const pattern = /#\{(\d+)\}/g;
-	let cursor = 0;
-	let match;
-	while ((match = pattern.exec(source)) != null) {
-		const attributeIndex = Number.parseInt(match[1], 10);
-		if (!Number.isSafeInteger(attributeIndex) || attributeIndex < 0) continue;
-		strings.push(source.slice(cursor, match.index));
-		values.push(attributes[attributeIndex]);
-		cursor = match.index + match[0].length;
-	}
-	if (values.length === 0) return null;
-	strings.push(source.slice(cursor));
-	return {
-		strings,
-		values
-	};
+var bindAnimated = (element, property, value, options = {}) => {
+	return bindAnimatedStyle(element, property, value, "animate", options);
 };
-var joinStaticInlineStyle = (strings, values) => {
-	let result = strings[0] ?? "";
-	for (let index = 0; index < values.length; index++) {
-		const value = values[index];
-		if (value != null) result += String(value);
-		result += strings[index + 1] ?? "";
-	}
-	return result;
+var bindTransition = (element, property, value, options = {}) => {
+	return bindAnimatedStyle(element, property, value, "transition", options);
 };
-/**
-* Converts an H style attribute containing internal #{n}
-* placeholders into static CSS, a direct legacy binding, or S.
-*/
-var compileInlineStyleAttribute = (source, attributes) => {
-	const parsed = splitInlineStylePlaceholders(source, attributes);
-	if (!parsed) return null;
-	const { strings, values } = parsed;
-	if (values.length === 1 && (strings[0] ?? "").trim() === "" && (strings[1] ?? "").trim() === "" && !isStaticStyleInterpolation(values[0]) && !isNativeCSSStyleValue(values[0])) {
-		if (isStyleBinding(values[0])) return {
-			kind: "template",
-			binding: values[0]
+var bindSpring = (element, property, value, options = {}) => {
+	return bindAnimatedStyle(element, property, value, "spring", options);
+};
+var bindMorph = (element, properties, options = {}) => {
+	return bindAnimatedStyle(element, "", properties, "morph", options);
+};
+var createAnimatedRef = animatedRef;
+var createAnimationSequence = () => AnimationSequence.create();
+var cancelAnimations = cancelElementAnimations;
+var bindWithAnimation = (el, prop, value, animationType = "instant", animationOptions = {}) => {
+	if (animationType === "instant") return bindWith(el, prop, value, handleStyleChange);
+	return (animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring)(el, prop, value, animationOptions);
+};
+var bindAnimatedBatch = (element, bindings) => {
+	const unbinders = [];
+	bindings.forEach((binding, index) => {
+		const delay = binding.delay || index * 50;
+		const options = {
+			...binding.options,
+			delay: (binding.options?.delay || 0) + delay
 		};
-		return {
-			kind: "direct",
-			value: values[0]
-		};
-	}
-	if (values.some((value) => isReactiveStyleValue(value) || isNativeCSSStyleValue(value))) return {
-		kind: "template",
-		binding: S(strings, ...values)
-	};
-	if (values.every(isStaticStyleInterpolation)) return {
-		kind: "static",
-		cssText: joinStaticInlineStyle(strings, values)
-	};
-	return {
-		kind: "template",
-		binding: S(strings, ...values)
-	};
+		const unbinder = bindAnimatedStyle(element, binding.property, binding.value, binding.animationType || "animate", options);
+		unbinders.push(unbinder);
+	});
+	return () => unbinders.forEach((unbind) => unbind?.());
 };
-/**
-* Applies an S tuple or a standalone S applicator.
-*/
-var bindStyle = (element, styled) => {
-	const apply = Array.isArray(styled) ? styled[0] : styled;
-	if (typeof apply !== "function") return () => {};
-	const result = apply(element);
+var bindPreset = {
+	fade: (element, value, duration = 200) => bindAnimated(element, "opacity", value, {
+		duration,
+		easing: "ease-in-out"
+	}),
+	slideX: (element, value, duration = 300) => bindAnimated(element, "transform", value, {
+		duration,
+		easing: "ease-out"
+	}),
+	slideY: (element, value, duration = 300) => bindAnimated(element, "transform", value, {
+		duration,
+		easing: "ease-out"
+	}),
+	scale: (element, value, duration = 200) => bindAnimated(element, "transform", value, {
+		duration,
+		easing: "ease-in-out"
+	}),
+	color: (element, value, duration = 300) => bindTransition(element, "color", value, {
+		duration,
+		easing: "ease-in-out"
+	}),
+	backgroundColor: (element, value, duration = 300) => bindTransition(element, "background-color", value, {
+		duration,
+		easing: "ease-in-out"
+	}),
+	bounce: (element, property, value) => bindSpring(element, property, value, {
+		stiffness: 200,
+		damping: 15
+	}),
+	elastic: (element, property, value) => bindAnimated(element, property, value, AnimationPresets.elastic)
+};
+var bindConditionalAnimation = (element, condition, animations) => {
+	const wel = toRef$1(element);
+	const wcond = toRef$1(condition);
+	let currentUnbinders = [];
+	const applyAnimations = (isTrue) => {
+		currentUnbinders.forEach((un) => un?.());
+		currentUnbinders = [];
+		const animationSet = isTrue ? animations.true : animations.false;
+		if (animationSet) animationSet.forEach((anim) => {
+			const unbinder = bindAnimated(deref(wel), anim.property, anim.value, anim.options);
+			currentUnbinders.push(unbinder);
+		});
+	};
+	applyAnimations($getValue(deref(wcond)));
+	const unSub = affected(condition, (newValue) => {
+		applyAnimations(!!newValue);
+	});
 	return () => {
-		if (typeof result === "function") {
-			result();
+		currentUnbinders.forEach((un) => un?.());
+		unSub?.();
+	};
+};
+/** WHY: DOM stores `--client-*` via stringification; bare numbers become `"450"` (invalid `<length>`), so `.ux-anchor` inset resolves to (0,0). */
+var asPointerInsetLength = (v) => {
+	if (typeof v === "number" && Number.isFinite(v)) return `${v}px`;
+	return v;
+};
+var withInsetWithPointer = (exists, pRef) => {
+	if (!exists) return () => {};
+	const ubs = [bindWith(exists, "--client-x", asPointerInsetLength(pRef?.[0]), handleStyleChange), bindWith(exists, "--client-y", asPointerInsetLength(pRef?.[1]), handleStyleChange)];
+	if (pRef?.[2] != null) ubs.push(bindWith(exists, "--anchor-width", asPointerInsetLength(pRef?.[2]), handleStyleChange));
+	if (pRef?.[3] != null) ubs.push(bindWith(exists, "--anchor-height", asPointerInsetLength(pRef?.[3]), handleStyleChange));
+	return () => ubs?.forEach?.((ub) => ub?.());
+};
+var bindWhileConnected = (element, bind) => {
+	if (!element) return () => {};
+	let cleanup = null;
+	let disposed = false;
+	const ensureBound = () => {
+		if (disposed) return;
+		if (!element.isConnected) {
+			if (cleanup) {
+				cleanup();
+				cleanup = null;
+			}
 			return;
 		}
-		result?.unbind?.();
+		if (!cleanup) {
+			const c = bind();
+			cleanup = typeof c === "function" ? c : null;
+		}
 	};
-};
-var registeredProperties = /* @__PURE__ */ new Set();
-var ensureRegisteredNumberProperty = (win, name, initialValue) => {
-	if (registeredProperties.has(name)) return;
-	registeredProperties.add(name);
-	try {
-		(win?.CSS ?? CSS)?.registerProperty?.({
-			name,
-			syntax: "<number>",
-			initialValue: String(initialValue),
-			inherits: false
-		});
-	} catch {}
+	const root = typeof document !== "undefined" ? document.documentElement : null;
+	const elAny = element?.element ?? element;
+	const el = elAny instanceof Node ? elAny : null;
+	if (!el) return () => {};
+	const mo = typeof MutationObserver !== "undefined" && root ? new MutationObserver((records) => {
+		for (const r of records) {
+			const target = r.target;
+			if (target === el || target instanceof Node && target.contains(el)) {
+				ensureBound();
+				return;
+			}
+			const nodes = [...Array.from(r?.addedNodes || []), ...Array.from(r?.removedNodes || [])];
+			for (const n of nodes) if (n === el || n instanceof Node && n.contains(el)) {
+				ensureBound();
+				return;
+			}
+		}
+	}) : null;
+	if (mo && root) mo.observe(root, {
+		childList: true,
+		subtree: true
+	});
+	queueMicrotask(() => ensureBound());
+	return () => {
+		disposed = true;
+		mo?.disconnect?.();
+		cleanup?.();
+		cleanup = null;
+	};
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/context/ReflectChildren.ts
@@ -4797,6 +4358,9 @@ var Q = (selector, host = document.documentElement, index = 0, direction = "chil
 		return new Proxy(host, new UniversalElementHandler(selector, index, direction));
 	});
 };
+var extendQueryPrototype = (extended = {}) => {
+	return Object.assign(queryExtensions, extended);
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/context/Reflect.ts
 var makeDisposable = (anchors, usub) => {
@@ -5224,6 +4788,11 @@ var M$1 = (observable, mapCb, boundParent = null) => {
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/core/TriggerCore.ts
+/**
+* Composable modifier and reactive-source adapters for LinkTrigger.
+* DOM listener mechanics remain in fest/dom; object.ts remains the owner of
+* reactive subscription semantics.
+*/
 var disposeOf = (cleanup) => {
 	if (typeof cleanup === "function") return cleanup;
 	if (typeof cleanup?.disconnect === "function") return () => cleanup.disconnect?.();
@@ -5279,6 +4848,23 @@ var withTriggerModifiers = (trigger, modifiers = {}) => (ctx) => {
 	}));
 	return dispose;
 };
+/**
+* Adapt an object.ts observable ref/property into the LinkTrigger lifecycle.
+* Reactive filtering remains delegated to object.ts `affected()`.
+*/
+var refTrigger = (target, prop = "value", { affectTypes = ["setter", "manual"], triggerImmediately = false } = {}) => ({ commit }) => affected([target, prop], (value, key, oldValue, trigger) => {
+	commit({
+		type: "ref",
+		target,
+		prop: key ?? prop,
+		value,
+		oldValue,
+		trigger
+	}, prop);
+}, {
+	affectTypes,
+	triggerImmediately
+});
 /**
 * Bind `E({ on })` style handlers with the same modifier semantics as Linker.
 * Existing bare handlers remain valid; modifier tuples are additive.
@@ -5545,6 +5131,10 @@ var createElement = (type, props = {}, children, ...others) => {
 	})?.catch?.(console.warn.bind(console));
 	return element;
 };
+/** Automatic runtime entry used by TS `jsxImportSource` + Vite plugin-react. */
+var jsx = (type, props, _key) => createElement(type, props ?? {});
+var jsxs = jsx;
+var jsxDEV = (type, props, _key, _isStatic, _source, _self) => createElement(type, props ?? {});
 globalThis["createElement"] = createElement;
 globalThis["Fragment"] = Fragment;
 globalThis["render"] = createElement;
@@ -5602,7 +5192,7 @@ var originalPush = typeof history != "undefined" ? history.pushState.bind(histor
 var originalReplace = typeof history != "undefined" ? history.replaceState.bind(history) : void 0;
 var originalGo = typeof history != "undefined" ? history.go.bind(history) : void 0;
 var originalForward = typeof history != "undefined" ? history.forward.bind(history) : void 0;
-typeof history != "undefined" && history.back.bind(history);
+var originalBack = typeof history != "undefined" ? history.back.bind(history) : void 0;
 var initHistory = (initialView = "") => {
 	if (initialized$1) return;
 	initialized$1 = true;
@@ -5748,6 +5338,33 @@ var navigate = (view, replace = false) => {
 		if (historyState?.entries?.[historyState.index]?.view !== hash || historyState?.entries?.[historyState.index]?.view) history?.replaceState?.(null, "", hash);
 	} else history?.pushState?.(null, "", hash);
 };
+var historyViewRef = (initialValue = `#${location.hash?.replace?.(/^#/, "") || "home"}`, options = {}) => {
+	const internal = observe({ value: initialValue });
+	let isUpdatingFromHistory = false;
+	let isUpdatingFromInternal = false;
+	affected([historyState, "view"], (view) => {
+		if (isUpdatingFromInternal) return;
+		if (options.ignoreBack && historyState.action === "BACK") return;
+		let nextValue = view;
+		if (options.withoutHashPrefix) nextValue = view.replace(/^#/, "");
+		if (internal.value !== nextValue) {
+			isUpdatingFromHistory = true;
+			internal.value = nextValue;
+			isUpdatingFromHistory = false;
+		}
+	});
+	affected([internal, "value"], (val) => {
+		if (isUpdatingFromHistory) return;
+		let viewToNavigate = val;
+		if (options.withoutHashPrefix && !val.startsWith("#")) viewToNavigate = `#${val}`;
+		if (historyState.view !== viewToNavigate) {
+			isUpdatingFromInternal = true;
+			navigate(viewToNavigate);
+			isUpdatingFromInternal = false;
+		}
+	});
+	return internal;
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/tasking/BackNavigation.ts
 /**
@@ -5839,6 +5456,17 @@ var closeHighestPriority = (view) => {
 	return entry?.close?.(view) != false ? entry : null;
 };
 /**
+* Close all active closeables in a specific group
+*/
+var closeByGroup = (group) => {
+	let closedCount = 0;
+	for (const entry of registry$2.values()) if (entry.group === group && entry.isActive()) {
+		registry$2?.delete?.(entry.id);
+		if (entry.close() !== false) closedCount++;
+	}
+	return closedCount;
+};
+/**
 * Check if any closeable is currently active
 */
 var hasActiveCloseable = (view) => {
@@ -5917,6 +5545,23 @@ var initBackNavigation = (opts = {}) => {
 	};
 };
 /**
+* Register a context menu as closeable
+*/
+var registerContextMenu = (element, visibleRef, onClose) => {
+	return registerCloseable({
+		id: `ctx-menu-${element.id || generateId()}`,
+		priority: 100,
+		element: new WeakRef(element),
+		group: "context-menu",
+		isActive: () => visibleRef.value === true,
+		close: () => {
+			visibleRef.value = false;
+			onClose?.();
+			return true;
+		}
+	});
+};
+/**
 * Register a modal dialog as closeable
 */
 var registerModal = (element, isActiveCheck, onClose) => {
@@ -5938,6 +5583,69 @@ var registerModal = (element, isActiveCheck, onClose) => {
 			return true;
 		}
 	});
+};
+/**
+* Register a sidebar as closeable
+*/
+var registerSidebar = (element, openedRef, onClose) => {
+	return registerCloseable({
+		id: `sidebar-${element.id || generateId()}`,
+		priority: 60,
+		element: new WeakRef(element),
+		group: "sidebar",
+		isActive: () => {
+			const val = openedRef.value;
+			return !!val && String(val) !== "false";
+		},
+		close: () => {
+			openedRef.value = false;
+			onClose?.();
+			return false;
+		}
+	});
+};
+/**
+* Register an overlay/panel as closeable
+*/
+var registerOverlay = (element, isActiveCheck, onClose, priority = 50) => {
+	return registerCloseable({
+		id: `overlay-${element.id || generateId()}`,
+		priority,
+		element: new WeakRef(element),
+		group: "overlay",
+		isActive: isActiveCheck,
+		close: () => {
+			onClose();
+			return false;
+		}
+	});
+};
+/**
+* Create a modal backdrop with back navigation support
+* Wraps an existing modal creation pattern
+*/
+var createBackNavigableModal = (content, options = {}) => {
+	const { backdropClass = "rs-modal-backdrop", closeOnBackdropClick = true, closeOnEscape = true, onClose } = options;
+	const backdrop = document.createElement("div");
+	backdrop.className = backdropClass;
+	backdrop.appendChild(content);
+	const close = () => {
+		onClose?.();
+		backdrop.remove();
+		document.removeEventListener("keydown", escHandler);
+	};
+	const escHandler = (ev) => {
+		if (ev.key === "Escape" && closeOnEscape) close();
+	};
+	if (closeOnEscape) document.addEventListener("keydown", escHandler);
+	if (closeOnBackdropClick) backdrop.addEventListener("click", (ev) => {
+		if (ev.target === backdrop) close();
+	});
+	return {
+		element: backdrop,
+		close,
+		unregister: registerModal(backdrop, void 0, close)
+	};
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/core/Links.ts
@@ -5968,6 +5676,23 @@ var selectSourceInput = (source, event, selector = "input") => {
 	if (target?.matches?.(selector)) return target;
 	return target?.querySelector?.(selector) ?? source;
 };
+var radioScopeOf = (source) => {
+	return source?.matches?.("input[type=\"radio\"]") ? source?.form ?? source?.parentNode ?? source : source;
+};
+var radioNameOf = (source, name) => {
+	if (name) return name;
+	if (source?.type == "radio" && source?.name) return source.name;
+	return source?.querySelector?.("input[type=\"radio\"]:checked")?.name ?? source?.querySelector?.("input[type=\"radio\"]")?.name ?? "";
+};
+var radioSelectorOf = (name) => `input[type="radio"]${name ? `[name="${globalThis.CSS?.escape?.(name) ?? name}"]` : ""}`;
+var radioCheckedIn = (source, name) => {
+	const scope = radioScopeOf(source);
+	if (source?.type == "radio" && (!name || source.name == name) && source.checked) return source;
+	return scope?.querySelector?.(`${radioSelectorOf(name)}:checked`) ?? null;
+};
+var radioByValueIn = (source, value, name) => {
+	return [...radioScopeOf(source)?.querySelectorAll?.(radioSelectorOf(name)) ?? (source?.type == "radio" ? [source] : [])].find((radio) => radio?.value == value) ?? null;
+};
 var eventTrigger = (events, options = {}) => {
 	const eventList = Array.isArray(events) ? events : [events];
 	const listenerOptions = listenerOptionsFor(options);
@@ -5991,6 +5716,15 @@ var mutationTrigger = (attribute) => {
 			attributes: true,
 			attributeFilter: attribute ? [attribute] : void 0
 		});
+		return () => observer.disconnect();
+	};
+};
+var resizeTrigger = (box) => {
+	return ({ source, commit }) => {
+		const target = source?.element ?? source?.self ?? source;
+		if (!target || typeof ResizeObserver == "undefined") return;
+		const observer = new ResizeObserver((entries) => commit(entries));
+		observer.observe(target, { box });
 		return () => observer.disconnect();
 	};
 };
@@ -6098,6 +5832,54 @@ var localStorageLink = (existsStorage, exists, key, initial) => {
 		}, ref];
 	});
 };
+var normalizeHash = (hash, withHashCharacter = true) => {
+	if (hash == null) return withHashCharacter ? "#" : "";
+	if (!withHashCharacter && hash?.startsWith?.("#")) return hash?.replace?.("#", "") || "";
+	if (withHashCharacter && !hash?.startsWith?.("#")) return `#${hash || ""}`;
+	return (withHashCharacter ? hash?.startsWith?.("#") ? hash : `#${hash || ""}` : hash?.replace?.("#", "")) || "";
+};
+var hashTargetLink = (_, exists, initial, withHashCharacter = false) => {
+	const locationHash = normalizeHash(normalizeHash(location?.hash || "", false) || normalizeHash(initial || "", false) || "", withHashCharacter) || "";
+	const ref = isValueRef(exists) ? exists : stringRef(locationHash);
+	if (isObject(ref)) ref.value ||= locationHash;
+	let processingStateChange = false;
+	let nanoThrottle = 0;
+	const evf = (ev) => {
+		if (getIgnoreNextPopState()) return;
+		if (nanoThrottle <= 0) {
+			nanoThrottle = 1;
+			setTimeout(() => {
+				const newValue = normalizeHash(normalizeHash(location?.hash, false) || normalizeHash(ref.value || "", false), withHashCharacter) || "";
+				if (normalizeHash(ref.value, false) !== normalizeHash(newValue, false)) {
+					if (!processingStateChange) {
+						processingStateChange = true;
+						ref.value = newValue;
+						setTimeout(() => processingStateChange = false, 0);
+					}
+				}
+				nanoThrottle = 0;
+			}, 0);
+		}
+	};
+	const $val = new WeakRef(ref);
+	const usb = affected([ref, "value"], (val) => {
+		const newHash = normalizeHash(normalizeHash($getValue($val?.deref?.()) || val, false) || normalizeHash(location?.hash, false), true);
+		if (newHash != location.hash) $avoidTrigger($val?.deref?.(), () => {
+			if (!processingStateChange) {
+				setIgnoreNextPopState(true);
+				history.pushState("", "", newHash || location.hash);
+				setTimeout(() => setIgnoreNextPopState(false), 0);
+			}
+		});
+	});
+	addEventListener("popstate", evf);
+	addEventListener("hashchange", evf);
+	return () => {
+		usb?.();
+		removeEventListener("popstate", evf);
+		removeEventListener("hashchange", evf);
+	};
+};
 var matchMediaLink = (existsMedia, exists, condition) => {
 	if (condition == null) return;
 	const med = existsMedia ?? matchMedia(condition), def = med?.matches || false;
@@ -6108,6 +5890,18 @@ var matchMediaLink = (existsMedia, exists, condition) => {
 	return () => {
 		med?.removeEventListener?.("change", evf);
 	};
+};
+var visibleLink = (element, exists, initial) => {
+	if (element == null) return;
+	const def = initial?.value ?? (typeof initial != "object" ? initial : null) ?? element?.getAttribute?.("data-hidden") == null;
+	const linker = makeLinker({
+		source: element,
+		ref: isValueRef(exists) ? exists : booleanRef(!!def),
+		getter: ({ event }) => event?.type == "u2-hidden" ? false : true,
+		setter: (value, { source }) => handleHidden(source, "data-hidden", value),
+		trigger: eventTrigger(["u2-hidden", "u2-appear"], { passive: true })
+	}).bind();
+	return () => linker.unbind();
 };
 var attrLink = (element, exists, attribute, initial) => {
 	const def = element?.getAttribute?.(attribute) ?? (typeof initial == "boolean" ? initial ? "" : null : getValue(initial));
@@ -6123,6 +5917,48 @@ var attrLink = (element, exists, attribute, initial) => {
 	}).bind();
 	return () => linker.unbind();
 };
+var datasetKeyOf = (key = "") => key.replace(/^data-/, "").replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+var datasetAttributeOf = (key) => `data-${datasetKeyOf(key).replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}`;
+/**
+* Bidirectionally link a reactive ref to one `data-*` entry.
+* Dataset writes flow through `handleDataset`; external attribute mutations
+* commit back through the normal Linker lifecycle.
+*/
+var datasetLink = (element, exists, key = "", initial) => {
+	if (!element || !key) return;
+	const datasetKey = datasetKeyOf(key);
+	const attribute = datasetAttributeOf(datasetKey);
+	const def = element?.dataset?.[datasetKey] ?? getValue(initial) ?? "";
+	const val = isValueRef(exists) ? exists : stringRef(def);
+	if (isObject(val) && val.value == null) val.value = def;
+	const linker = makeLinker({
+		source: element,
+		ref: val,
+		getter: ({ source }) => source?.dataset?.[datasetKey] ?? "",
+		setter: (value, { source }) => handleDataset(source, datasetKey, normalizePrimitive(value)),
+		trigger: mutationTrigger(attribute)
+	}).bind();
+	return () => linker.unbind();
+};
+/**
+* One-way explicit binding for an inline CSS property or custom property.
+* Reverse style-attribute observation is intentionally deferred: style is a
+* shared write surface where one mutation can contain unrelated properties.
+*/
+var stylePropLink = (element, exists, property = "", initial) => {
+	if (!element || !property) return;
+	const def = element?.style?.getPropertyValue?.(property) ?? getValue(initial) ?? "";
+	const val = isValueRef(exists) ? exists : stringRef(def);
+	if (isObject(val) && val.value == null) val.value = def;
+	const linker = makeLinker({
+		source: element,
+		ref: val,
+		setter: (value, { source }) => handleStyleChange(source, property, value)
+	}).bind();
+	return () => linker.unbind();
+};
+/** Alias for `stylePropLink` that documents a `--custom-property` binding. */
+var cssVarLink = stylePropLink;
 var sizeLink = (element, exists, axis, box) => {
 	const def = box == "border-box" ? element?.[axis == "inline" ? "offsetWidth" : "offsetHeight"] : element?.[axis == "inline" ? "clientWidth" : "clientHeight"] - getPadding(element, axis);
 	const val = isValueRef(exists) ? exists : numberRef(def);
@@ -6175,6 +6011,37 @@ var checkedLink = (element, exists) => {
 	}).bind();
 	return () => linker.unbind();
 };
+var radioValueLink = (element, exists, name, initial) => {
+	if (isPrimitive(element)) return;
+	if (!element || !(element instanceof Node || element?.element instanceof Node)) return;
+	const radioName = radioNameOf(element, name);
+	const def = radioCheckedIn(element, radioName)?.value ?? getValue(initial) ?? "";
+	const val = isValueRef(exists) ? exists : stringRef(def);
+	if (isObject(val) && !normalizePrimitive(val.value)) val.value = normalizePrimitive(def) ?? val.value ?? "";
+	if (isObject(val) && isNotEqual(val.value, def)) val.value = def;
+	const linker = makeLinker({
+		source: element,
+		ref: val,
+		getter: ({ source, event }) => {
+			const target = event?.target;
+			if (target?.matches?.(radioSelectorOf(radioName)) && target?.checked) return target.value;
+			return radioCheckedIn(source, radioName)?.value ?? val?.value ?? "";
+		},
+		setter: (value, { source }) => {
+			const radio = radioByValueIn(source, $getValue(value), radioName);
+			if (radio && !radio.checked) {
+				setChecked(radio, true);
+				radio.dispatchEvent?.(new Event("change", { bubbles: true }));
+			}
+		},
+		trigger: eventTrigger([
+			"click",
+			"input",
+			"change"
+		])
+	}).bind();
+	return () => linker.unbind();
+};
 var valueLink = (element, exists) => {
 	if (isPrimitive(element)) return;
 	if (!element || !(element instanceof Node || element?.element instanceof Node)) return;
@@ -6200,6 +6067,41 @@ var valueLink = (element, exists) => {
 	}).bind();
 	return () => linker.unbind();
 };
+/**
+* Two-way value binding specialized for `<select>` controls.
+* Unlike `valueLink`, source updates are driven only by `change`.
+*/
+var selectLink = (element, exists, initial) => {
+	if (isPrimitive(element)) return;
+	if (!element || !(element instanceof Node || element?.element instanceof Node)) return;
+	const def = element?.value ?? getValue(initial) ?? "";
+	const val = isValueRef(exists) ? exists : stringRef(def);
+	if (isObject(val) && val.value == null) val.value = def;
+	const linker = makeLinker({
+		source: element,
+		ref: val,
+		getter: ({ source }) => source?.value ?? "",
+		setter: (value, { source }) => {
+			const next = $getValue(value) ?? "";
+			if (source && isNotEqual(source.value, next)) source.value = next;
+		},
+		trigger: eventTrigger("change")
+	}).bind();
+	return () => linker.unbind();
+};
+/**
+* Select a canonical Linker preset for common form control families.
+* This is additive: the existing specialized links remain public APIs.
+*/
+var formLink = (element, exists, kind = "text", options = {}) => {
+	switch (kind) {
+		case "number": return valueAsNumberLink(element, exists);
+		case "checked": return checkedLink(element, exists);
+		case "radio": return radioValueLink(element, exists, options.name, options.initial);
+		case "select": return selectLink(element, exists, options.initial);
+		default: return valueLink(element, exists);
+	}
+};
 var valueAsNumberLink = (element, exists) => {
 	if (isPrimitive(element)) return;
 	if (!element || !(element instanceof Node || element?.element instanceof Node)) return;
@@ -6223,6 +6125,99 @@ var valueAsNumberLink = (element, exists) => {
 		])
 	}).bind();
 	return () => linker.unbind();
+};
+var observeSizeLink = (element, exists, box, styles) => {
+	if (isPrimitive(element)) return;
+	if (!element || !(element instanceof Node || element?.element instanceof Node)) return;
+	if (!styles) styles = isValueRef(exists) ? exists : observe({});
+	let obs = null;
+	(obs = new ResizeObserver((mut) => {
+		if (box == "border-box") {
+			styles.inlineSize = `${mut[0].borderBoxSize[0].inlineSize}px`;
+			styles.blockSize = `${mut[0].borderBoxSize[0].blockSize}px`;
+		}
+		if (box == "content-box") {
+			styles.inlineSize = `${mut[0].contentBoxSize[0].inlineSize}px`;
+			styles.blockSize = `${mut[0].contentBoxSize[0].blockSize}px`;
+		}
+		if (box == "device-pixel-content-box") {
+			styles.inlineSize = `${mut[0].devicePixelContentBoxSize[0].inlineSize}px`;
+			styles.blockSize = `${mut[0].devicePixelContentBoxSize[0].blockSize}px`;
+		}
+	})).observe(element?.element ?? element?.self ?? element, { box });
+	return () => {
+		obs?.disconnect?.();
+	};
+};
+var refCtl = (value) => {
+	if (isPrimitive(value)) return value;
+	return ref(value);
+};
+var orientLink = (host, exists) => {
+	const orient = orientationNumberMap?.[getCorrectOrientation()] || 0;
+	const def = Number(orient) || 0;
+	const val = isValueRef(exists) ? exists : numberRef(def);
+	if (hasValue(val)) val.value = def;
+	return whenAnyScreenChanges(() => {
+		val.value = orientationNumberMap?.[getCorrectOrientation()] || 0;
+	});
+};
+var pointerEventLink = (element, event = "click", pointerId = 0, coordType = "client", exists) => {
+	if (isPrimitive(element)) return;
+	if (!element || !(element instanceof Node || element?.element instanceof Node)) return;
+	const x = numberRef(0);
+	const y = numberRef(0);
+	const p = numberRef(pointerId || 0);
+	if (exists) {
+		Object.defineProperty(exists, "x", {
+			get: () => x.value,
+			set: (value) => x.value = value,
+			enumerable: true
+		});
+		Object.defineProperty(exists, "y", {
+			get: () => y.value,
+			set: (value) => y.value = value,
+			enumerable: true
+		});
+		Object.defineProperty(exists, "pointerId", {
+			get: () => p.value,
+			set: (value) => p.value = value,
+			enumerable: true
+		});
+	} else exists ??= observe({
+		get x() {
+			return x.value;
+		},
+		get y() {
+			return y.value;
+		},
+		set x(value) {
+			x.value = value;
+		},
+		set y(value) {
+			y.value = value;
+		},
+		set pointerId(value) {
+			p.value = value;
+		},
+		get pointerId() {
+			return p.value;
+		}
+	});
+	const unb = addEvent(element, event || "click", (ev) => {
+		if (ev?.pointerId == (pointerId || 0)) {
+			x.value = ev[(coordType || "client") + "X"];
+			y.value = ev[(coordType || "client") + "Y"];
+			p.value = ev.pointerId;
+		}
+		return true;
+	});
+	return () => {
+		unb?.();
+		x?.();
+		y?.();
+		p?.();
+	};
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/math/Point2D.ts
@@ -6366,8 +6361,905 @@ var Vector2D = class Vector2D {
 var vector2Ref = (x = 0, y = 0) => {
 	return new Vector2D(x, y);
 };
+var Matrix2D = class Matrix2D {
+	_elements;
+	constructor(a = 1, b = 0, c = 0, d = 1) {
+		this._elements = [
+			typeof a === "number" ? numberRef(a) : a,
+			typeof b === "number" ? numberRef(b) : b,
+			typeof c === "number" ? numberRef(c) : c,
+			typeof d === "number" ? numberRef(d) : d
+		];
+	}
+	get elements() {
+		return this._elements;
+	}
+	get m00() {
+		return this._elements[0];
+	}
+	get m01() {
+		return this._elements[1];
+	}
+	get m10() {
+		return this._elements[2];
+	}
+	get m11() {
+		return this._elements[3];
+	}
+	set m00(value) {
+		if (typeof value === "number") this._elements[0].value = value;
+		else this._elements[0] = value;
+	}
+	set m01(value) {
+		if (typeof value === "number") this._elements[1].value = value;
+		else this._elements[1] = value;
+	}
+	set m10(value) {
+		if (typeof value === "number") this._elements[2].value = value;
+		else this._elements[2] = value;
+	}
+	set m11(value) {
+		if (typeof value === "number") this._elements[3].value = value;
+		else this._elements[3] = value;
+	}
+	get 0() {
+		return this._elements[0];
+	}
+	get 1() {
+		return this._elements[1];
+	}
+	get 2() {
+		return this._elements[2];
+	}
+	get 3() {
+		return this._elements[3];
+	}
+	toArray() {
+		return [...this._elements];
+	}
+	clone() {
+		return new Matrix2D(this._elements[0].value, this._elements[1].value, this._elements[2].value, this._elements[3].value);
+	}
+	set(a, b, c, d) {
+		this._elements[0].value = a;
+		this._elements[1].value = b;
+		this._elements[2].value = c;
+		this._elements[3].value = d;
+		return this;
+	}
+	identity() {
+		return this.set(1, 0, 0, 1);
+	}
+	copy(m) {
+		this._elements[0].value = m.elements[0].value;
+		this._elements[1].value = m.elements[1].value;
+		this._elements[2].value = m.elements[2].value;
+		this._elements[3].value = m.elements[3].value;
+		return this;
+	}
+	multiply(m) {
+		const a = this._elements[0].value, b = this._elements[1].value;
+		const c = this._elements[2].value, d = this._elements[3].value;
+		const e = m.elements[0].value, f = m.elements[1].value;
+		const g = m.elements[2].value, h = m.elements[3].value;
+		return new Matrix2D(a * e + b * g, a * f + b * h, c * e + d * g, c * f + d * h);
+	}
+	multiplyScalar(s) {
+		return new Matrix2D(this._elements[0].value * s, this._elements[1].value * s, this._elements[2].value * s, this._elements[3].value * s);
+	}
+	transformVector(v) {
+		return new Vector2D(this._elements[0].value * v.x.value + this._elements[1].value * v.y.value, this._elements[2].value * v.x.value + this._elements[3].value * v.y.value);
+	}
+	determinant() {
+		return this._elements[0].value * this._elements[3].value - this._elements[1].value * this._elements[2].value;
+	}
+	inverse() {
+		const det = this.determinant();
+		if (det === 0) return null;
+		const invDet = 1 / det;
+		return new Matrix2D(this._elements[3].value * invDet, -this._elements[1].value * invDet, -this._elements[2].value * invDet, this._elements[0].value * invDet);
+	}
+	transpose() {
+		return new Matrix2D(this._elements[0].value, this._elements[2].value, this._elements[1].value, this._elements[3].value);
+	}
+	equals(m, tolerance = 1e-6) {
+		for (let i = 0; i < 4; i++) if (Math.abs(this._elements[i].value - m.elements[i].value) > tolerance) return false;
+		return true;
+	}
+	static rotation(angle) {
+		const cos = Math.cos(angle);
+		const sin = Math.sin(angle);
+		return new Matrix2D(cos, -sin, sin, cos);
+	}
+	static scale(sx, sy = sx) {
+		return new Matrix2D(sx, 0, 0, sy);
+	}
+	static shear(sx, sy) {
+		return new Matrix2D(1, sx, sy, 1);
+	}
+};
+var matrix2x2Ref = (a = 1, b = 0, c = 0, d = 1) => {
+	return new Matrix2D(a, b, c, d);
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/math/Point3D.ts
+var Vector3D = class Vector3D {
+	_x;
+	_y;
+	_z;
+	constructor(x = 0, y = 0, z = 0) {
+		this._x = typeof x === "number" ? numberRef(x) : x;
+		this._y = typeof y === "number" ? numberRef(y) : y;
+		this._z = typeof z === "number" ? numberRef(z) : z;
+	}
+	get x() {
+		return this._x;
+	}
+	set x(value) {
+		if (typeof value === "number") this._x.value = value;
+		else this._x = value;
+	}
+	get y() {
+		return this._y;
+	}
+	set y(value) {
+		if (typeof value === "number") this._y.value = value;
+		else this._y = value;
+	}
+	get z() {
+		return this._z;
+	}
+	set z(value) {
+		if (typeof value === "number") this._z.value = value;
+		else this._z = value;
+	}
+	get 0() {
+		return this._x;
+	}
+	get 1() {
+		return this._y;
+	}
+	get 2() {
+		return this._z;
+	}
+	toArray() {
+		return [
+			this._x,
+			this._y,
+			this._z
+		];
+	}
+	clone() {
+		return new Vector3D(this._x.value, this._y.value, this._z.value);
+	}
+	set(x, y, z) {
+		this._x.value = x;
+		this._y.value = y;
+		this._z.value = z;
+		return this;
+	}
+	copy(v) {
+		this._x.value = v.x.value;
+		this._y.value = v.y.value;
+		this._z.value = v.z.value;
+		return this;
+	}
+};
+var vector3Ref = (x = 0, y = 0, z = 0) => {
+	return new Vector3D(x, y, z);
+};
+var Matrix3D = class Matrix3D {
+	_elements;
+	constructor(a = 1, b = 0, c = 0, d = 0, e = 1, f = 0, g = 0, h = 0, i = 1) {
+		this._elements = [
+			typeof a === "number" ? numberRef(a) : a,
+			typeof b === "number" ? numberRef(b) : b,
+			typeof c === "number" ? numberRef(c) : c,
+			typeof d === "number" ? numberRef(d) : d,
+			typeof e === "number" ? numberRef(e) : e,
+			typeof f === "number" ? numberRef(f) : f,
+			typeof g === "number" ? numberRef(g) : g,
+			typeof h === "number" ? numberRef(h) : h,
+			typeof i === "number" ? numberRef(i) : i
+		];
+	}
+	get elements() {
+		return this._elements;
+	}
+	get m00() {
+		return this._elements[0];
+	}
+	get m01() {
+		return this._elements[1];
+	}
+	get m02() {
+		return this._elements[2];
+	}
+	get m10() {
+		return this._elements[3];
+	}
+	get m11() {
+		return this._elements[4];
+	}
+	get m12() {
+		return this._elements[5];
+	}
+	get m20() {
+		return this._elements[6];
+	}
+	get m21() {
+		return this._elements[7];
+	}
+	get m22() {
+		return this._elements[8];
+	}
+	set m00(value) {
+		if (typeof value === "number") this._elements[0].value = value;
+		else this._elements[0] = value;
+	}
+	set m01(value) {
+		if (typeof value === "number") this._elements[1].value = value;
+		else this._elements[1] = value;
+	}
+	set m02(value) {
+		if (typeof value === "number") this._elements[2].value = value;
+		else this._elements[2] = value;
+	}
+	set m10(value) {
+		if (typeof value === "number") this._elements[3].value = value;
+		else this._elements[3] = value;
+	}
+	set m11(value) {
+		if (typeof value === "number") this._elements[4].value = value;
+		else this._elements[4] = value;
+	}
+	set m12(value) {
+		if (typeof value === "number") this._elements[5].value = value;
+		else this._elements[5] = value;
+	}
+	set m20(value) {
+		if (typeof value === "number") this._elements[6].value = value;
+		else this._elements[6] = value;
+	}
+	set m21(value) {
+		if (typeof value === "number") this._elements[7].value = value;
+		else this._elements[7] = value;
+	}
+	set m22(value) {
+		if (typeof value === "number") this._elements[8].value = value;
+		else this._elements[8] = value;
+	}
+	get 0() {
+		return this._elements[0];
+	}
+	get 1() {
+		return this._elements[1];
+	}
+	get 2() {
+		return this._elements[2];
+	}
+	get 3() {
+		return this._elements[3];
+	}
+	get 4() {
+		return this._elements[4];
+	}
+	get 5() {
+		return this._elements[5];
+	}
+	get 6() {
+		return this._elements[6];
+	}
+	get 7() {
+		return this._elements[7];
+	}
+	get 8() {
+		return this._elements[8];
+	}
+	toArray() {
+		return [...this._elements];
+	}
+	clone() {
+		return new Matrix3D(this._elements[0].value, this._elements[1].value, this._elements[2].value, this._elements[3].value, this._elements[4].value, this._elements[5].value, this._elements[6].value, this._elements[7].value, this._elements[8].value);
+	}
+	set(a, b, c, d, e, f, g, h, i) {
+		this._elements[0].value = a;
+		this._elements[1].value = b;
+		this._elements[2].value = c;
+		this._elements[3].value = d;
+		this._elements[4].value = e;
+		this._elements[5].value = f;
+		this._elements[6].value = g;
+		this._elements[7].value = h;
+		this._elements[8].value = i;
+		return this;
+	}
+	identity() {
+		return this.set(1, 0, 0, 0, 1, 0, 0, 0, 1);
+	}
+	copy(m) {
+		for (let i = 0; i < 9; i++) this._elements[i].value = m.elements[i].value;
+		return this;
+	}
+};
+var matrix3x3Ref = (a = 1, b = 0, c = 0, d = 0, e = 1, f = 0, g = 0, h = 0, i = 1) => {
+	return new Matrix3D(a, b, c, d, e, f, g, h, i);
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/math/Point4D.ts
+var Vector4D = class Vector4D {
+	_x;
+	_y;
+	_z;
+	_w;
+	constructor(x = 0, y = 0, z = 0, w = 1) {
+		this._x = typeof x === "number" ? numberRef(x) : x;
+		this._y = typeof y === "number" ? numberRef(y) : y;
+		this._z = typeof z === "number" ? numberRef(z) : z;
+		this._w = typeof w === "number" ? numberRef(w) : w;
+	}
+	get x() {
+		return this._x;
+	}
+	set x(value) {
+		if (typeof value === "number") this._x.value = value;
+		else this._x = value;
+	}
+	get y() {
+		return this._y;
+	}
+	set y(value) {
+		if (typeof value === "number") this._y.value = value;
+		else this._y = value;
+	}
+	get z() {
+		return this._z;
+	}
+	set z(value) {
+		if (typeof value === "number") this._z.value = value;
+		else this._z = value;
+	}
+	get w() {
+		return this._w;
+	}
+	set w(value) {
+		if (typeof value === "number") this._w.value = value;
+		else this._w = value;
+	}
+	get 0() {
+		return this._x;
+	}
+	get 1() {
+		return this._y;
+	}
+	get 2() {
+		return this._z;
+	}
+	get 3() {
+		return this._w;
+	}
+	toArray() {
+		return [
+			this._x,
+			this._y,
+			this._z,
+			this._w
+		];
+	}
+	clone() {
+		return new Vector4D(this._x.value, this._y.value, this._z.value, this._w.value);
+	}
+	set(x, y, z, w = 1) {
+		this._x.value = x;
+		this._y.value = y;
+		this._z.value = z;
+		this._w.value = w;
+		return this;
+	}
+	copy(v) {
+		this._x.value = v.x.value;
+		this._y.value = v.y.value;
+		this._z.value = v.z.value;
+		this._w.value = v.w.value;
+		return this;
+	}
+};
+var vector4Ref = (x = 0, y = 0, z = 0, w = 1) => {
+	return new Vector4D(x, y, z, w);
+};
+var Matrix4D = class Matrix4D {
+	_elements;
+	constructor(a = 1, b = 0, c = 0, d = 0, e = 0, f = 1, g = 0, h = 0, i = 0, j = 0, k = 1, l = 0, m = 0, n = 0, o = 0, p = 1) {
+		this._elements = [
+			typeof a === "number" ? numberRef(a) : a,
+			typeof b === "number" ? numberRef(b) : b,
+			typeof c === "number" ? numberRef(c) : c,
+			typeof d === "number" ? numberRef(d) : d,
+			typeof e === "number" ? numberRef(e) : e,
+			typeof f === "number" ? numberRef(f) : f,
+			typeof g === "number" ? numberRef(g) : g,
+			typeof h === "number" ? numberRef(h) : h,
+			typeof i === "number" ? numberRef(i) : i,
+			typeof j === "number" ? numberRef(j) : j,
+			typeof k === "number" ? numberRef(k) : k,
+			typeof l === "number" ? numberRef(l) : l,
+			typeof m === "number" ? numberRef(m) : m,
+			typeof n === "number" ? numberRef(n) : n,
+			typeof o === "number" ? numberRef(o) : o,
+			typeof p === "number" ? numberRef(p) : p
+		];
+	}
+	get elements() {
+		return this._elements;
+	}
+	get m00() {
+		return this._elements[0];
+	}
+	get m01() {
+		return this._elements[1];
+	}
+	get m02() {
+		return this._elements[2];
+	}
+	get m03() {
+		return this._elements[3];
+	}
+	get m10() {
+		return this._elements[4];
+	}
+	get m11() {
+		return this._elements[5];
+	}
+	get m12() {
+		return this._elements[6];
+	}
+	get m13() {
+		return this._elements[7];
+	}
+	get m20() {
+		return this._elements[8];
+	}
+	get m21() {
+		return this._elements[9];
+	}
+	get m22() {
+		return this._elements[10];
+	}
+	get m23() {
+		return this._elements[11];
+	}
+	get m30() {
+		return this._elements[12];
+	}
+	get m31() {
+		return this._elements[13];
+	}
+	get m32() {
+		return this._elements[14];
+	}
+	get m33() {
+		return this._elements[15];
+	}
+	set m00(value) {
+		if (typeof value === "number") this._elements[0].value = value;
+		else this._elements[0] = value;
+	}
+	set m01(value) {
+		if (typeof value === "number") this._elements[1].value = value;
+		else this._elements[1] = value;
+	}
+	set m02(value) {
+		if (typeof value === "number") this._elements[2].value = value;
+		else this._elements[2] = value;
+	}
+	set m03(value) {
+		if (typeof value === "number") this._elements[3].value = value;
+		else this._elements[3] = value;
+	}
+	set m10(value) {
+		if (typeof value === "number") this._elements[4].value = value;
+		else this._elements[4] = value;
+	}
+	set m11(value) {
+		if (typeof value === "number") this._elements[5].value = value;
+		else this._elements[5] = value;
+	}
+	set m12(value) {
+		if (typeof value === "number") this._elements[6].value = value;
+		else this._elements[6] = value;
+	}
+	set m13(value) {
+		if (typeof value === "number") this._elements[7].value = value;
+		else this._elements[7] = value;
+	}
+	set m20(value) {
+		if (typeof value === "number") this._elements[8].value = value;
+		else this._elements[8] = value;
+	}
+	set m21(value) {
+		if (typeof value === "number") this._elements[9].value = value;
+		else this._elements[9] = value;
+	}
+	set m22(value) {
+		if (typeof value === "number") this._elements[10].value = value;
+		else this._elements[10] = value;
+	}
+	set m23(value) {
+		if (typeof value === "number") this._elements[11].value = value;
+		else this._elements[11] = value;
+	}
+	set m30(value) {
+		if (typeof value === "number") this._elements[12].value = value;
+		else this._elements[12] = value;
+	}
+	set m31(value) {
+		if (typeof value === "number") this._elements[13].value = value;
+		else this._elements[13] = value;
+	}
+	set m32(value) {
+		if (typeof value === "number") this._elements[14].value = value;
+		else this._elements[14] = value;
+	}
+	set m33(value) {
+		if (typeof value === "number") this._elements[15].value = value;
+		else this._elements[15] = value;
+	}
+	get 0() {
+		return this._elements[0];
+	}
+	get 1() {
+		return this._elements[1];
+	}
+	get 2() {
+		return this._elements[2];
+	}
+	get 3() {
+		return this._elements[3];
+	}
+	get 4() {
+		return this._elements[4];
+	}
+	get 5() {
+		return this._elements[5];
+	}
+	get 6() {
+		return this._elements[6];
+	}
+	get 7() {
+		return this._elements[7];
+	}
+	get 8() {
+		return this._elements[8];
+	}
+	get 9() {
+		return this._elements[9];
+	}
+	get 10() {
+		return this._elements[10];
+	}
+	get 11() {
+		return this._elements[11];
+	}
+	get 12() {
+		return this._elements[12];
+	}
+	get 13() {
+		return this._elements[13];
+	}
+	get 14() {
+		return this._elements[14];
+	}
+	get 15() {
+		return this._elements[15];
+	}
+	toArray() {
+		return [...this._elements];
+	}
+	clone() {
+		return new Matrix4D(this._elements[0].value, this._elements[1].value, this._elements[2].value, this._elements[3].value, this._elements[4].value, this._elements[5].value, this._elements[6].value, this._elements[7].value, this._elements[8].value, this._elements[9].value, this._elements[10].value, this._elements[11].value, this._elements[12].value, this._elements[13].value, this._elements[14].value, this._elements[15].value);
+	}
+	set(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) {
+		this._elements[0].value = a;
+		this._elements[1].value = b;
+		this._elements[2].value = c;
+		this._elements[3].value = d;
+		this._elements[4].value = e;
+		this._elements[5].value = f;
+		this._elements[6].value = g;
+		this._elements[7].value = h;
+		this._elements[8].value = i;
+		this._elements[9].value = j;
+		this._elements[10].value = k;
+		this._elements[11].value = l;
+		this._elements[12].value = m;
+		this._elements[13].value = n;
+		this._elements[14].value = o;
+		this._elements[15].value = p;
+		return this;
+	}
+	identity() {
+		return this.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	}
+	copy(m) {
+		for (let i = 0; i < 16; i++) this._elements[i].value = m.elements[i].value;
+		return this;
+	}
+};
+var matrix4x4Ref = (a = 1, b = 0, c = 0, d = 0, e = 0, f = 1, g = 0, h = 0, i = 0, j = 0, k = 1, l = 0, m = 0, n = 0, o = 0, p = 1) => {
+	return new Matrix4D(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/math/Operations.ts
+var vectorFromArray = (arr) => {
+	switch (arr.length) {
+		case 2: return new Vector2D(arr[0], arr[1]);
+		case 3: return new Vector3D(arr[0], arr[1], arr[2]);
+		case 4: return new Vector4D(arr[0], arr[1], arr[2], arr[3]);
+		default: throw new Error(`Unsupported vector dimension: ${arr.length}`);
+	}
+};
+var vectorToArray = (vec) => {
+	if (vec instanceof Vector2D) return [vec.x, vec.y];
+	if (vec instanceof Vector3D) return [
+		vec.x,
+		vec.y,
+		vec.z
+	];
+	if (vec instanceof Vector4D) return [
+		vec.x,
+		vec.y,
+		vec.z,
+		vec.w
+	];
+	throw new Error("Unsupported vector type");
+};
+var translate2D = (vec, tx, ty) => {
+	return addVector2D(vec, new Vector2D(tx, ty));
+};
+var scale2D = (vec, sx, sy = sx) => {
+	return new Vector2D(operated([vec.x, sx], () => vec.x.value * sx.value), operated([vec.y, sy], () => vec.y.value * sy.value));
+};
+var rotate2D = (vec, angle) => {
+	const cos = operated([angle], () => Math.cos(angle.value));
+	const sin = operated([angle], () => Math.sin(angle.value));
+	return new Vector2D(operated([
+		vec.x,
+		vec.y,
+		cos,
+		sin
+	], () => vec.x.value * cos.value - vec.y.value * sin.value), operated([
+		vec.x,
+		vec.y,
+		cos,
+		sin
+	], () => vec.x.value * sin.value + vec.y.value * cos.value));
+};
+var createRect2D = (x = 0, y = 0, width = 0, height = 0) => ({
+	position: vector2Ref(x, y),
+	size: vector2Ref(width, height)
+});
+var rectCenter = (rect) => {
+	return addVector2D(rect.position, multiplyVector2D(rect.size, numberRef(.5)));
+};
+var rectContainsPoint = (rect, point) => {
+	return operated([
+		rect.position.x,
+		rect.position.y,
+		rect.size.x,
+		rect.size.y,
+		point.x,
+		point.y
+	], () => {
+		const inX = point.x.value >= rect.position.x.value && point.x.value <= rect.position.x.value + rect.size.x.value;
+		const inY = point.y.value >= rect.position.y.value && point.y.value <= rect.position.y.value + rect.size.y.value;
+		return inX && inY;
+	});
+};
+var rectIntersects = (rectA, rectB) => {
+	return operated([
+		rectA.position.x,
+		rectA.position.y,
+		rectA.size.x,
+		rectA.size.y,
+		rectB.position.x,
+		rectB.position.y,
+		rectB.size.x,
+		rectB.size.y
+	], () => {
+		const aRight = rectA.position.x.value + rectA.size.x.value;
+		const aBottom = rectA.position.y.value + rectA.size.y.value;
+		const bRight = rectB.position.x.value + rectB.size.x.value;
+		const bBottom = rectB.position.y.value + rectB.size.y.value;
+		return !(rectA.position.x.value > bRight || aRight < rectB.position.x.value || rectA.position.y.value > bBottom || aBottom < rectB.position.y.value);
+	});
+};
+var rectUnion = (rectA, rectB) => {
+	const minX = operated([rectA.position.x, rectB.position.x], () => Math.min(rectA.position.x.value, rectB.position.x.value));
+	const minY = operated([rectA.position.y, rectB.position.y], () => Math.min(rectA.position.y.value, rectB.position.y.value));
+	const maxX = operated([
+		rectA.position.x,
+		rectA.size.x,
+		rectB.position.x,
+		rectB.size.x
+	], () => Math.max(rectA.position.x.value + rectA.size.x.value, rectB.position.x.value + rectB.size.x.value));
+	const maxY = operated([
+		rectA.position.y,
+		rectA.size.y,
+		rectB.position.y,
+		rectB.size.y
+	], () => Math.max(rectA.position.y.value + rectA.size.y.value, rectB.position.y.value + rectB.size.y.value));
+	return {
+		position: new Vector2D(minX, minY),
+		size: new Vector2D(operated([maxX, minX], () => maxX.value - minX.value), operated([maxY, minY], () => maxY.value - minY.value))
+	};
+};
+var clampPointToRect = (point, rect) => {
+	return new Vector2D(operated([
+		point.x,
+		rect.position.x,
+		rect.size.x
+	], () => Math.max(rect.position.x.value, Math.min(point.x.value, rect.position.x.value + rect.size.x.value))), operated([
+		point.y,
+		rect.position.y,
+		rect.size.y
+	], () => Math.max(rect.position.y.value, Math.min(point.y.value, rect.position.y.value + rect.size.y.value))));
+};
+var pointToRectDistance = (point, rect) => {
+	return magnitude2D(subtractVector2D(point, clampPointToRect(point, rect)));
+};
+var rectArea = (rect) => {
+	return operated([rect.size.x, rect.size.y], () => rect.size.x.value * rect.size.y.value);
+};
+var scaleRectAroundCenter = (rect, scale) => {
+	const center = rectCenter(rect);
+	const newSize = multiplyVector2D(rect.size, scale);
+	return {
+		position: subtractVector2D(center, multiplyVector2D(newSize, numberRef(.5))),
+		size: newSize
+	};
+};
+var transformRect2D = (rect, transform) => {
+	const transformedCorners = [
+		rect.position,
+		addVector2D(rect.position, new Vector2D(rect.size.x, numberRef(0))),
+		addVector2D(rect.position, rect.size),
+		addVector2D(rect.position, new Vector2D(numberRef(0), rect.size.y))
+	].map(transform);
+	return rectUnion({
+		position: transformedCorners[0],
+		size: vector2Ref(0, 0)
+	}, {
+		position: transformedCorners[1],
+		size: vector2Ref(0, 0)
+	});
+};
+var relativePosition = (child, parent) => {
+	return new Vector2D(operated([child.x, parent.position.x], () => child.x.value - parent.position.x.value), operated([child.y, parent.position.y], () => child.y.value - parent.position.y.value));
+};
+var absolutePosition = (relative, parent) => {
+	return addVector2D(relative, parent.position);
+};
+var constrainRectAspectRatio = (rect, aspectRatio, mode = "fit") => {
+	return operated([
+		rect.size.x,
+		rect.size.y,
+		aspectRatio
+	], () => {
+		const currentRatio = rect.size.x.value / rect.size.y.value;
+		const targetRatio = aspectRatio.value;
+		let newWidth = rect.size.x.value;
+		let newHeight = rect.size.y.value;
+		if (mode === "fit") {
+			if (currentRatio > targetRatio) newHeight = newWidth / targetRatio;
+			else newWidth = newHeight * targetRatio;
+		} else if (currentRatio > targetRatio) newWidth = newHeight * targetRatio;
+		else newHeight = newWidth / targetRatio;
+		return {
+			position: rect.position,
+			size: vector2Ref(newWidth, newHeight)
+		};
+	});
+};
+var smoothValueTransition = (current, target, smoothing = numberRef(.1)) => {
+	return operated([
+		current,
+		target,
+		smoothing
+	], () => {
+		const diff = target.value - current.value;
+		return current.value + diff * smoothing.value;
+	});
+};
+var sliderThumbPosition = (value, min, max, trackSize) => {
+	return operated([
+		value,
+		min,
+		max,
+		trackSize
+	], () => {
+		return (value.value - min.value) / (max.value - min.value) * trackSize.value;
+	});
+};
+var scrollbarMetrics = (contentSize, containerSize, scrollPosition) => {
+	const thumbSize = operated([contentSize, containerSize], () => {
+		const ratio = containerSize.value / contentSize.value;
+		return Math.max(20, ratio * containerSize.value);
+	});
+	return {
+		thumbSize,
+		thumbPosition: operated([
+			scrollPosition,
+			contentSize,
+			containerSize,
+			thumbSize
+		], () => {
+			const maxScroll = contentSize.value - containerSize.value;
+			return (maxScroll > 0 ? scrollPosition.value / maxScroll : 0) * (containerSize.value - thumbSize.value);
+		})
+	};
+};
+var screenToControlValue = (screenPos, controlRect, axis = "x") => {
+	const controlStart = axis === "x" ? controlRect.position.x : controlRect.position.y;
+	const controlSize = axis === "x" ? controlRect.size.x : controlRect.size.y;
+	return operated([
+		screenPos,
+		controlStart,
+		controlSize
+	], () => {
+		const relativePos = screenPos.value - controlStart.value;
+		return Math.max(0, Math.min(1, relativePos / controlSize.value));
+	});
+};
+var easeInOutCubic = (t) => {
+	return operated([t], () => {
+		const x = t.value;
+		return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+	});
+};
+var easeOutBounce = (t) => {
+	return operated([t], () => {
+		let x = t.value;
+		const n1 = 7.5625;
+		const d1 = 2.75;
+		if (x < 1 / d1) return n1 * x * x;
+		else if (x < 2 / d1) {
+			x -= 1.5 / d1;
+			return n1 * x * x + .75;
+		} else if (x < 2.5 / d1) {
+			x -= 2.25 / d1;
+			return n1 * x * x + .9375;
+		} else {
+			x -= 2.625 / d1;
+			return n1 * x * x + .984375;
+		}
+	});
+};
+var momentumScroll = (velocity, deceleration = numberRef(.95), minVelocity = numberRef(.01)) => {
+	return operated([
+		velocity,
+		deceleration,
+		minVelocity
+	], () => {
+		const newVelocity = velocity.value * deceleration.value;
+		return Math.abs(newVelocity) < minVelocity.value ? 0 : newVelocity;
+	});
+};
+var scrollBoundsWithBounce = (scrollPosition, contentSize, containerSize, bounceDistance = numberRef(50)) => {
+	return operated([
+		scrollPosition,
+		contentSize,
+		containerSize,
+		bounceDistance
+	], () => {
+		const maxScroll = contentSize.value - containerSize.value;
+		if (scrollPosition.value < 0) return -Math.min(bounceDistance.value, Math.abs(scrollPosition.value)) * .3;
+		else if (scrollPosition.value > maxScroll) {
+			const overScroll = scrollPosition.value - maxScroll;
+			return maxScroll + Math.min(bounceDistance.value, overScroll) * .3;
+		}
+		return scrollPosition.value;
+	});
+};
 var flattenRefs = (input) => {
 	const refs = [];
 	const traverse = (item) => {
@@ -6399,6 +7291,181 @@ var operated = (args, fn) => {
 	flattenRefs(args).forEach((ref) => affected(ref, updateResult));
 	return currentResult;
 };
+var addRef = (a, b) => {
+	return operated([a, b], () => a.value + b.value);
+};
+var subtractRef = (a, b) => {
+	return operated([a, b], () => a.value - b.value);
+};
+var multiplyRef = (a, b) => {
+	return operated([a, b], () => a.value * b.value);
+};
+var divideRef = (a, b) => {
+	return operated([a, b], () => a.value / b.value);
+};
+var modulusRef = (a, b) => {
+	return operated([a, b], () => a.value % b.value);
+};
+var powerRef = (a, b) => {
+	return operated([a, b], () => Math.pow(a.value, b.value));
+};
+var sinRef = (a) => {
+	return operated(a, () => Math.sin(a.value));
+};
+var cosRef = (a) => {
+	return operated(a, () => Math.cos(a.value));
+};
+var tanRef = (a) => {
+	return operated(a, () => Math.tan(a.value));
+};
+var asinRef = (a) => {
+	return operated(a, () => Math.asin(a.value));
+};
+var acosRef = (a) => {
+	return operated(a, () => Math.acos(a.value));
+};
+var atanRef = (a) => {
+	return operated(a, () => Math.atan(a.value));
+};
+var atan2Ref = (a, b) => {
+	return operated([a, b], () => Math.atan2(a.value, b.value));
+};
+var hypotRef = (a, b) => {
+	return operated([a, b], () => Math.hypot(a.value, b.value));
+};
+var squareRootRef = (a) => {
+	return operated(a, () => Math.sqrt(a.value));
+};
+var cubeRootRef = (a) => {
+	return operated(a, () => Math.cbrt(a.value));
+};
+var absoluteRef = (a) => {
+	return operated(a, () => Math.abs(a.value));
+};
+var signRef = (a) => {
+	return operated(a, () => Math.sign(a.value));
+};
+var clampRef = (a, min, max) => {
+	return operated([
+		a,
+		min,
+		max
+	], () => Math.min(Math.max(a.value, min.value), max.value));
+};
+var addVector2D = (a, b) => {
+	return new Vector2D(operated([a.x, b.x], () => a.x.value + b.x.value), operated([a.y, b.y], () => a.y.value + b.y.value));
+};
+var subtractVector2D = (a, b) => {
+	return new Vector2D(operated([a.x, b.x], () => a.x.value - b.x.value), operated([a.y, b.y], () => a.y.value - b.y.value));
+};
+var multiplyVector2D = (a, scalar) => {
+	return new Vector2D(operated([a.x, scalar], () => a.x.value * scalar.value), operated([a.y, scalar], () => a.y.value * scalar.value));
+};
+var divideVector2D = (a, scalar) => {
+	return new Vector2D(operated([a.x, scalar], () => a.x.value / scalar.value), operated([a.y, scalar], () => a.y.value / scalar.value));
+};
+var dotProduct2D = (a, b) => {
+	return operated([
+		a.x,
+		a.y,
+		b.x,
+		b.y
+	], () => a.x.value * b.x.value + a.y.value * b.y.value);
+};
+var magnitude2D = (a) => {
+	return operated([a.x, a.y], () => Math.sqrt(a.x.value * a.x.value + a.y.value * a.y.value));
+};
+var normalize2D = (a) => {
+	const mag = magnitude2D(a);
+	return new Vector2D(operated([a.x, mag], () => a.x.value / mag.value), operated([a.y, mag], () => a.y.value / mag.value));
+};
+var addVector3D = (a, b) => {
+	return new Vector3D(operated([a.x, b.x], () => a.x.value + b.x.value), operated([a.y, b.y], () => a.y.value + b.y.value), operated([a.z, b.z], () => a.z.value + b.z.value));
+};
+var subtractVector3D = (a, b) => {
+	return new Vector3D(operated([a.x, b.x], () => a.x.value - b.x.value), operated([a.y, b.y], () => a.y.value - b.y.value), operated([a.z, b.z], () => a.z.value - b.z.value));
+};
+var multiplyVector3D = (a, scalar) => {
+	return new Vector3D(operated([a.x, scalar], () => a.x.value * scalar.value), operated([a.y, scalar], () => a.y.value * scalar.value), operated([a.z, scalar], () => a.z.value * scalar.value));
+};
+var divideVector3D = (a, scalar) => {
+	return new Vector3D(operated([a.x, scalar], () => a.x.value / scalar.value), operated([a.y, scalar], () => a.y.value / scalar.value), operated([a.z, scalar], () => a.z.value / scalar.value));
+};
+var dotProduct3D = (a, b) => {
+	return operated([
+		a.x,
+		a.y,
+		a.z,
+		b.x,
+		b.y,
+		b.z
+	], () => a.x.value * b.x.value + a.y.value * b.y.value + a.z.value * b.z.value);
+};
+var crossProduct3D = (a, b) => {
+	return new Vector3D(operated([
+		a.y,
+		a.z,
+		b.y,
+		b.z
+	], () => a.y.value * b.z.value - a.z.value * b.y.value), operated([
+		a.z,
+		a.x,
+		b.z,
+		b.x
+	], () => a.z.value * b.x.value - a.x.value * b.z.value), operated([
+		a.x,
+		a.y,
+		b.x,
+		b.y
+	], () => a.x.value * b.y.value - a.y.value * b.x.value));
+};
+var magnitude3D = (a) => {
+	return operated([
+		a.x,
+		a.y,
+		a.z
+	], () => Math.sqrt(a.x.value * a.x.value + a.y.value * a.y.value + a.z.value * a.z.value));
+};
+var normalize3D = (a) => {
+	const mag = magnitude3D(a);
+	return new Vector3D(operated([a.x, mag], () => a.x.value / mag.value), operated([a.y, mag], () => a.y.value / mag.value), operated([a.z, mag], () => a.z.value / mag.value));
+};
+var addVector4D = (a, b) => {
+	return new Vector4D(operated([a.x, b.x], () => a.x.value + b.x.value), operated([a.y, b.y], () => a.y.value + b.y.value), operated([a.z, b.z], () => a.z.value + b.z.value), operated([a.w, b.w], () => a.w.value + b.w.value));
+};
+var subtractVector4D = (a, b) => {
+	return new Vector4D(operated([a.x, b.x], () => a.x.value - b.x.value), operated([a.y, b.y], () => a.y.value - b.y.value), operated([a.z, b.z], () => a.z.value - b.z.value), operated([a.w, b.w], () => a.w.value - b.w.value));
+};
+var multiplyVector4D = (a, scalar) => {
+	return new Vector4D(operated([a.x, scalar], () => a.x.value * scalar.value), operated([a.y, scalar], () => a.y.value * scalar.value), operated([a.z, scalar], () => a.z.value * scalar.value), operated([a.w, scalar], () => a.w.value * scalar.value));
+};
+var divideVector4D = (a, scalar) => {
+	return new Vector4D(operated([a.x, scalar], () => a.x.value / scalar.value), operated([a.y, scalar], () => a.y.value / scalar.value), operated([a.z, scalar], () => a.z.value / scalar.value), operated([a.w, scalar], () => a.w.value / scalar.value));
+};
+var dotProduct4D = (a, b) => {
+	return operated([
+		a.x,
+		a.y,
+		a.z,
+		a.w,
+		b.x,
+		b.y,
+		b.z,
+		b.w
+	], () => a.x.value * b.x.value + a.y.value * b.y.value + a.z.value * b.z.value + a.w.value * b.w.value);
+};
+var magnitude4D = (a) => {
+	return operated([
+		a.x,
+		a.y,
+		a.z,
+		a.w
+	], () => Math.sqrt(a.x.value * a.x.value + a.y.value * a.y.value + a.z.value * a.z.value + a.w.value * a.w.value));
+};
+var normalize4D = (a) => {
+	const mag = magnitude4D(a);
+	return new Vector4D(operated([a.x, mag], () => a.x.value / mag.value), operated([a.y, mag], () => a.y.value / mag.value), operated([a.z, mag], () => a.z.value / mag.value), operated([a.w, mag], () => a.w.value / mag.value));
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/core/Refs.ts
 var makeRef = (host, type, link, ...args) => {
@@ -6413,8 +7480,13 @@ var makeRef = (host, type, link, ...args) => {
 	if (usub && targetRef) addToCallChain(targetRef, Symbol.dispose, usub);
 	return targetRef;
 };
+var orientRef = (host, ...args) => makeRef(host, numberRef, orientLink, ...args);
 var attrRef = (host, ...args) => makeRef(host, stringRef, attrLink, ...args);
+var datasetRef = (host, ...args) => makeRef(host, stringRef, datasetLink, ...args);
+var stylePropRef = (host, ...args) => makeRef(host, stringRef, stylePropLink, ...args);
+var cssVarRef = (host, ...args) => makeRef(host, stringRef, cssVarLink, ...args);
 var valueRef = (host, ...args) => makeRef(host, stringRef, valueLink, ...args);
+var radioValueRef = (host, ...args) => makeRef(host, stringRef, radioValueLink, ...args);
 var valueAsNumberRef = (host, ...args) => makeRef(host, numberRef, valueAsNumberLink, ...args);
 var localStorageRef = (...args) => {
 	if (localStorageLinkMap.has(args[0])) return localStorageLinkMap.get(args[0])?.[1];
@@ -6427,7 +7499,72 @@ var localStorageRef = (...args) => {
 var sizeRef = (host, ...args) => makeRef(host, numberRef, sizeLink, ...args);
 var checkedRef = (host, ...args) => makeRef(host, booleanRef, checkedLink, ...args);
 var scrollRef = (host, ...args) => makeRef(host, numberRef, scrollLink, ...args);
+var visibleRef = (host, ...args) => makeRef(host, booleanRef, visibleLink, ...args);
 var matchMediaRef = (...args) => makeRef(null, booleanRef, matchMediaLink, ...args);
+var hashTargetRef = (...args) => makeRef(null, stringRef, hashTargetLink, ...args);
+var makeWeakRef = (initial, behavior) => {
+	const obj = deref$1(initial);
+	return isValidObj(obj) ? observe(WRef(obj)) : ref(obj, behavior);
+};
+var scrollSize = (source, axis = 0, inputChange) => {
+	const target = toRef(source);
+	const compute = (vl) => deref$1(target)?.[["scrollWidth", "scrollHeight"][axis] || "scrollWidth"] - 1 || 1;
+	const scroll = scrollRef(source, ["inline", "block"][axis]);
+	const conRef = sizeRef(source, ["inline", "block"][axis], "content-box");
+	const percent = computed(scroll, compute);
+	const recompute = () => {
+		scroll?.[$trigger]?.();
+		percent?.[$trigger]?.();
+	};
+	affected(conRef, (vl) => {
+		recompute?.();
+	});
+	addEvent(inputChange || source, "input", () => {
+		recompute?.();
+	});
+	addEvent(inputChange || source, "change", () => {
+		recompute?.();
+	});
+	queueMicrotask(() => {
+		recompute?.();
+	});
+	return percent;
+};
+var reactiveScrollbarSize = (source, axis, contentSize) => {
+	const containerSize = axis === 0 ? operated([], () => source.clientWidth) : operated([], () => source.clientHeight);
+	return operated([containerSize, contentSize], () => {
+		const ratio = containerSize.value / contentSize.value;
+		return Math.max(20, ratio * containerSize.value);
+	});
+};
+var paddingBoxSize = (source, axis, inputChange) => {
+	asWeak(source);
+	const scroll = scrollRef(source, ["inline", "block"][axis]);
+	const conRef = sizeRef(source, ["inline", "block"][axis], "content-box");
+	const content = computed(conRef, (v) => v + (getPadding(source, ["inline", "block"][axis]) || 0));
+	const recompute = () => {
+		conRef?.[$trigger]?.();
+		content?.[$trigger]?.();
+	};
+	affected(scroll, (vl) => {
+		recompute?.();
+	});
+	addEvent(inputChange || source, "input", () => {
+		recompute?.();
+	});
+	addEvent(inputChange || source, "change", () => {
+		recompute?.();
+	});
+	queueMicrotask(() => {
+		recompute?.();
+	});
+	return content;
+};
+var pointerEventRef = (host, ...args) => makeRef(host, observe({
+	x: 0,
+	y: 0,
+	pointerId: 0
+}), pointerEventLink, ...args);
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/misc/Normalizer.ts
 function getIndentColumns(line, tabWidth = 4) {
@@ -6993,12 +8130,6 @@ var H = (str, ...values) => {
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/misc/Glit.ts
-var styleCacheSymbol = Symbol.for("lur.e@styleCache");
-globalThis[styleCacheSymbol] ??= /* @__PURE__ */ new Map();
-var styleCache = globalThis[styleCacheSymbol];
-var styleElementCacheSymbol = Symbol.for("lur.e@styleElementCache");
-globalThis[styleElementCacheSymbol] ??= /* @__PURE__ */ new WeakMap();
-var styleElementCache = globalThis[styleElementCacheSymbol];
 var propStoreSymbol = Symbol.for("lur.e@propStore");
 globalThis[propStoreSymbol] ??= /* @__PURE__ */ new WeakMap();
 var propStore = globalThis[propStoreSymbol];
@@ -7021,6 +8152,7 @@ var whenAxisValid = (name) => {
 	if (cb?.startsWith?.("block")) return "block";
 	return null;
 };
+var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 var inRenderKey = Symbol.for("@render@");
 var defKeys = Symbol.for("@defKeys@");
 var defaultStyle = typeof document != "undefined" ? document?.createElement?.("style") : null;
@@ -7089,6 +8221,12 @@ function withProperties(ctr) {
 	};
 	return ctr;
 }
+function generateName(length = 8) {
+	let r = "";
+	const l = 52;
+	for (let i = 0; i < length; i++) r += characters.charAt(Math.floor(Math.random() * l));
+	return r;
+}
 function defineElement(name, options) {
 	return function(target, _key) {
 		const registry = globalThis?.customElements;
@@ -7154,184 +8292,10 @@ function property(options = {}) {
 		};
 	};
 }
-var adoptedStyleSheetsCache = /* @__PURE__ */ new WeakMap();
-var HOST_CSS_FALLBACK = "data-glit-host-css";
-/** COMPAT: stale `/fest/dom.js` has no cssTextForAdoptedSheet / ensureAdoptedSheetContent. */
-var ensureAdoptedSheetContent = (sheet) => {
-	if (!sheet) return false;
-	try {
-		return sheet.cssRules.length > 0;
-	} catch {
-		return false;
-	}
-};
-var cssTextForAdoptedSheet = (_sheet) => null;
-var syncAdoptedSheetsToShadow = (bTo) => {
-	const root = bTo?.shadowRoot;
-	if (!root) return;
-	const adoptedSheets = adoptedStyleSheetsCache.get(bTo) || [];
-	for (const sheet of adoptedSheets) ensureAdoptedSheetContent(sheet);
-	try {
-		const live = root.adoptedStyleSheets || [];
-		root.adoptedStyleSheets = [...adoptedSheets.filter((s) => !live.includes(s)), .../* @__PURE__ */ new Set([...live])];
-	} catch {}
-};
-var addAdoptedSheetToElement = (bTo, sheet) => {
-	let adoptedSheets = adoptedStyleSheetsCache.get(bTo);
-	if (!adoptedSheets) adoptedStyleSheetsCache.set(bTo, adoptedSheets = []);
-	if (sheet && adoptedSheets.indexOf(sheet) < 0) adoptedSheets.push(sheet);
-	ensureAdoptedSheetContent(sheet);
-	syncAdoptedSheetsToShadow(bTo);
-};
-var ensureShadowCssFallback = (bTo, cssText) => {
-	const root = bTo?.shadowRoot;
-	if (!root || !cssText) return null;
-	let style = root.querySelector?.(`style[${HOST_CSS_FALLBACK}]`);
-	if (!style) {
-		style = loadInlineStyle(cssText, root, "");
-		if (style) style.setAttribute(HOST_CSS_FALLBACK, "");
-	} else if (style.textContent !== cssText) style.textContent = cssText;
-	return style;
-};
-/** WHY: Capacitor WebView drops `shadowRoot.adoptedStyleSheets` or empties cssRules; cache + source text restore them. */
-var rehydrateAdoptedStyleSheets = (root = typeof document !== "undefined" ? document : null) => {
-	if (!root) return;
-	const restore = (host) => {
-		if (!host?.shadowRoot) return;
-		ensureShadowCssFallback(host, hostCssText(host));
-		syncAdoptedSheetsToShadow(host);
-	};
-	if (root.nodeType === 1) restore(root);
-	const visit = (node) => {
-		let children = [];
-		try {
-			children = node.querySelectorAll("*");
-		} catch {
-			return;
-		}
-		for (let i = 0; i < children.length; i++) {
-			const host = children[i];
-			if (host.shadowRoot) {
-				restore(host);
-				visit(host.shadowRoot);
-			}
-		}
-	};
-	visit(root);
-};
-var hostCssText = (bTo) => {
-	const src = bTo?.styles;
-	if (typeof src === "string") return src;
-	if (typeof src === "function") try {
-		const out = src.call(bTo);
-		if (typeof out === "string") return out;
-		return cssTextForAdoptedSheet(out);
-	} catch {
-		return null;
-	}
-	return cssTextForAdoptedSheet(src);
-};
-var ensureHostStyles = (bTo) => {
-	if (!bTo) return;
-	if (bTo.styles != null) loadCachedStyles(bTo, bTo.styles);
-	syncAdoptedSheetsToShadow(bTo);
-	ensureShadowCssFallback(bTo, hostCssText(bTo));
-};
-var styleFlushPending = /* @__PURE__ */ new WeakSet();
-var styleFlushBatch = [];
-var styleFlushScheduled = false;
-/** WHY: connect / childList / theme attrs often land in the same turn — one apply before paint. */
-var scheduleEnsureHostStyles = (bTo) => {
-	if (!bTo || !(bTo instanceof Element) || styleFlushPending.has(bTo)) return;
-	styleFlushPending.add(bTo);
-	styleFlushBatch.push(bTo);
-	if (styleFlushScheduled) return;
-	styleFlushScheduled = true;
-	queueMicrotask(() => {
-		styleFlushScheduled = false;
-		const batch = styleFlushBatch;
-		styleFlushBatch = [];
-		for (const host of batch) {
-			styleFlushPending.delete(host);
-			if (host.isConnected) ensureHostStyles(host);
-		}
-	});
-};
-__vitePreload(() => import("/fest/dom.js").then((dom) => {
-	dom.registerStyleTreeHook?.((el) => scheduleEnsureHostStyles(el));
-}), [], import.meta.url).catch(() => {});
-var loadCachedStyles = (bTo, src) => {
-	if (!src) return null;
-	let resolvedSrc = src;
-	if (typeof src == "function") try {
-		const weak = new WeakRef(bTo);
-		resolvedSrc = src.call(bTo, weak);
-	} catch (e) {
-		console.warn("Error calling styles function:", e);
-		return null;
-	}
-	if (resolvedSrc && typeof CSSStyleSheet != "undefined" && resolvedSrc instanceof CSSStyleSheet) {
-		addAdoptedSheetToElement(bTo, resolvedSrc);
-		return ensureShadowCssFallback(bTo, cssTextForAdoptedSheet(resolvedSrc));
-	}
-	if (resolvedSrc instanceof Promise) {
-		resolvedSrc.then((result) => {
-			if (result instanceof CSSStyleSheet) addAdoptedSheetToElement(bTo, result);
-			else if (result != null) loadCachedStyles(bTo, result);
-		}).catch((e) => {
-			console.warn("Error loading adopted stylesheet:", e);
-		});
-		return null;
-	}
-	if (typeof resolvedSrc == "string" || resolvedSrc instanceof Blob || resolvedSrc instanceof File) {
-		const adopted = loadAsAdopted(resolvedSrc, "");
-		if (adopted) {
-			const addAdoptedSheet = (sheet) => {
-				addAdoptedSheetToElement(bTo, sheet);
-			};
-			if (adopted instanceof Promise) {
-				adopted.then((sheet) => {
-					addAdoptedSheet(sheet);
-					ensureShadowCssFallback(bTo, typeof resolvedSrc == "string" ? resolvedSrc : cssTextForAdoptedSheet(sheet));
-				}).catch((e) => {
-					console.warn("Error loading adopted stylesheet:", e);
-				});
-				return null;
-			} else {
-				addAdoptedSheet(adopted);
-				return ensureShadowCssFallback(bTo, typeof resolvedSrc == "string" ? resolvedSrc : cssTextForAdoptedSheet(adopted));
-			}
-		}
-	}
-	const source = typeof src == "function" || typeof src == "object" ? styleElementCache : styleCache;
-	const cached = source.get(src);
-	let styleElement = cached?.styleElement;
-	let vars = cached?.vars;
-	if (!cached) {
-		let styles = ``;
-		let props = [];
-		if (typeof resolvedSrc == "string") styles = resolvedSrc || "";
-		else if (typeof resolvedSrc == "object" && resolvedSrc != null) {
-			if (resolvedSrc instanceof HTMLStyleElement) styleElement = resolvedSrc;
-			else {
-				styles = typeof resolvedSrc.css == "string" ? resolvedSrc.css : typeof resolvedSrc == "string" ? resolvedSrc : String(resolvedSrc);
-				props = resolvedSrc?.props ?? props;
-				vars = resolvedSrc?.vars ?? vars;
-			}
-		}
-		if (!styleElement && styles) styleElement = loadInlineStyle(styles, bTo, "ux-layer");
-		source.set(src, {
-			css: styles,
-			props,
-			vars,
-			styleElement
-		});
-	}
-	return styleElement;
-};
 var isNotExtended = (el) => {
 	return !(el instanceof HTMLDivElement || el instanceof HTMLImageElement || el instanceof HTMLVideoElement || el instanceof HTMLCanvasElement) && !(el?.hasAttribute?.("is") || el?.getAttribute?.("is") != null);
 };
+var customElement = defineElement;
 /**
 * GLitElement: Создаёт базовый класс для кастомных элементов с расширенными возможностями.
 * Поддерживает все lifecycle callbacks Web Components.
@@ -7512,7 +8476,6 @@ function GLitElement(derivate) {
 	}
 	const result = withProperties(GLitElementImpl);
 	CSM.set(Base, result);
-	console.log("result", result);
 	return result;
 }
 //#endregion
@@ -7528,6 +8491,16 @@ var taskHashUrl$1 = (taskIdOrHash) => {
 	} catch {
 		return hash || "#";
 	}
+};
+var historyBack = (tasks = []) => {
+	setIgnoreNextPopState(true);
+	history?.back?.();
+	const lastFocus = getFocused(tasks, false)?.taskId || "";
+	if (location?.hash?.trim?.()?.replace?.(/^#/, "")?.trim?.() != lastFocus?.trim?.()?.replace?.(/^#/, "")?.trim?.()) {
+		setIgnoreNextPopState(true);
+		history?.replaceState?.("", "", taskHashUrl$1(lastFocus));
+	}
+	return tasks;
 };
 var getFocused = (tasks = [], includeHash = true) => {
 	return tasks.findLast((t) => t.active) ?? (includeHash ? tasks?.find?.((t) => t.taskId?.replace?.(/^#/, "") == location.hash?.replace?.(/^#/, "")) : null);
@@ -7731,6 +8704,11 @@ var makeTask = (taskId, list, state = null, payload = {}, action) => {
 	const task = new Task(taskId, list, state, payload, action);
 	return observe(task);
 };
+var makeTasks = (createCb) => {
+	const tasks = observe([]);
+	createCb(tasks);
+	return tasks;
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/controllers/LazyEvents.ts
 var hubsByTarget = /* @__PURE__ */ new WeakMap();
@@ -7901,7 +8879,73 @@ var addProxiedEvent = (root, type, options = {
 		};
 	};
 };
-typeof document != "undefined" && document?.documentElement;
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/Trigger.ts
+var ROOT$1 = typeof document != "undefined" ? document?.documentElement : null;
+var $set$1 = (rv, key, val) => {
+	if (rv?.deref?.() != null) return rv.deref()[key] = val;
+};
+function makeInterruptTrigger(except = null, ref = booleanRef(false), closeEvents = [
+	"pointerdown",
+	"click",
+	"contextmenu",
+	"scroll"
+], element = document?.documentElement) {
+	if (!element) return () => {};
+	const wr = new WeakRef(ref);
+	const close = typeof ref === "function" ? ref : (ev) => {
+		(!(except?.contains?.(ev?.target) || ev?.target == (except?.element ?? except)) || !except) && $set$1(wr, "value", false);
+	};
+	const listening = closeEvents.map((event) => lazyAddEventListener(element, event, close, {
+		capture: false,
+		passive: false
+	}));
+	const dispose = () => listening.forEach((ub) => ub?.());
+	addToCallChain(ref, Symbol.dispose, dispose);
+	return dispose;
+}
+var doObserve = (holder, parent) => {
+	if (!holder) throw Error("Element is null...");
+	if (parent) doContentObserve(parent);
+	doBorderObserve(holder);
+};
+var makeShiftTrigger = (callable, newItem) => ((evc) => {
+	const ev = evc;
+	newItem ??= ev?.target ?? newItem;
+	if (!newItem.dataset.dragging) {
+		const n_coord = [ev.clientX, ev.clientY];
+		if (ev?.pointerId >= 0) newItem?.setPointerCapture?.(ev?.pointerId);
+		const shifting = ((evc_l) => {
+			const ev_l = evc_l;
+			ev_l?.preventDefault?.();
+			if (ev_l?.pointerId == ev?.pointerId) {
+				const coord = [evc_l.clientX, evc_l.clientY];
+				const shift = [coord[0] - n_coord[0], coord[1] - n_coord[1]];
+				if (Math.hypot(...shift) > 2) {
+					newItem?.style?.setProperty?.("will-change", "inset, transform, translate, z-index");
+					unbind?.(ev_l);
+					callable?.(ev);
+				}
+			}
+		});
+		const releasePointer = ((evc_l) => {
+			const ev_l = evc_l;
+			if (ev_l?.pointerId == ev?.pointerId) {
+				newItem?.releasePointerCapture?.(ev?.pointerId);
+				unbind?.(ev_l);
+			}
+		});
+		const handler = {
+			"pointermove": shifting,
+			"pointercancel": releasePointer,
+			"pointerup": releasePointer
+		};
+		const unbind = ((evc_l) => {
+			if (evc_l?.pointerId == ev?.pointerId) bindings?.forEach((binding) => binding?.());
+		});
+		const bindings = addEvents(ROOT$1, handler);
+	}
+});
 function deepContains(container, target) {
 	let node = target;
 	while (node) {
@@ -7963,12 +9007,1045 @@ var bindOutsideDismiss = ({ root = typeof document !== "undefined" ? document.do
 		unbinders.forEach((unbind) => unbind());
 	};
 };
+function makeClickOutsideTrigger(ref, except = null, element, options = {}) {
+	const { root = typeof document != "undefined" ? document?.documentElement : null, closeEvents = [
+		"scroll",
+		"click",
+		"pointerdown"
+	], mouseLeaveDelay = 100 } = options;
+	const wr = new WeakRef(ref);
+	function onDisposeEvent(ev) {
+		if (!isInside(ev, element?.element ?? element) && !isInside(ev, except?.element ?? except)) $set$1(wr, "value", false);
+	}
+	function onPointerDown(ev) {
+		const t = ev;
+		if (!isInside(t, element?.element ?? element) && !isInside(t, except?.element ?? except)) $set$1(wr, "value", false);
+	}
+	const listening = [...addEvents(root, Object.fromEntries(closeEvents.map((event) => [event, onDisposeEvent]))), addEvent(root, "pointerdown", onPointerDown)];
+	if (element) {}
+	function destroy() {
+		listening.forEach((ub) => ub?.());
+	}
+	addToCallChain(ref, Symbol.dispose, destroy);
+	return ref;
+}
+var OOBTrigger = (element, ref, selector, root = typeof document != "undefined" ? document?.documentElement : null) => {
+	ref = toRef$1(ref);
+	const checker = (ev) => {
+		let $ref = unref(ref);
+		const target = selector ? ev?.target?.matches?.(selector) ? ev?.target : (ev?.target ?? root)?.querySelector?.(selector) : ev?.target;
+		if (!target || element != target) $ref.value = false;
+	};
+	const cancel = () => {
+		root?.removeEventListener?.("click", checker);
+	};
+	if (root) root.addEventListener?.("click", checker);
+	return cancel;
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/controllers/PointerAPI.ts
+/**
+* Pointer helpers for orient-aware UIs. For launcher / speed-dial grids (cell hit-test, placement),
+* use `fest/dom` `resolveGridCellFromClientPoint` + Veela `compute_grid_item_cell` / `.ui-launcher-grid`.
+*/
+var DecorWith = class {
+	#addition;
+	constructor(addition) {
+		this.#addition = addition;
+	}
+	get(target, name) {
+		return withCtx(this.#addition, this.#addition?.[name]) ?? withCtx(target, target?.[name]);
+	}
+	set(target, name, val) {
+		if (!Reflect.set(target, name, val)) this.#addition[name] = val;
+		return true;
+	}
+	ownKeys(target) {
+		return [...Reflect.ownKeys(target) ?? [], ...Reflect.ownKeys(this.#addition) ?? []];
+	}
+	getOwnPropertyDescriptor(target, name) {
+		return Reflect.getOwnPropertyDescriptor(target, name) ?? Reflect.getOwnPropertyDescriptor(this.#addition, name);
+	}
+	getPrototypeOf(target) {
+		return Reflect.getPrototypeOf(target) ?? Reflect.getPrototypeOf(this.#addition);
+	}
+	setPrototypeOf(target, proto) {
+		return Reflect.setPrototypeOf(target, proto) ?? Reflect.setPrototypeOf(this.#addition, proto);
+	}
+	isExtensible(target) {
+		return Reflect.isExtensible(target) ?? Reflect.isExtensible(this.#addition);
+	}
+	preventExtensions(target) {
+		return Reflect.preventExtensions(target) ?? Reflect.preventExtensions(this.#addition);
+	}
+	defineProperty(target, name, desc) {
+		return Reflect.defineProperty(this.#addition, name, desc) ?? Reflect.defineProperty(target, name, desc);
+	}
+	deleteProperty(target, name) {
+		return Reflect.deleteProperty(this.#addition, name) ?? Reflect.deleteProperty(target, name);
+	}
+};
 var elementPointerMap = /* @__PURE__ */ new WeakMap();
-if (typeof PointerEvent != "undefined");
+var agWrapEvent = (cb) => {
+	const wpb = (ev) => {
+		const el = (ev?.target?.matches?.(".ui-orientbox") ? ev?.target : null) || ev?.target?.closest?.(".ui-orientbox");
+		if (!el) return cb(ev);
+		let { pointerCache, pointerMap } = elementPointerMap?.getOrInsert?.(el, {
+			pointerCache: /* @__PURE__ */ new Map(),
+			pointerMap: /* @__PURE__ */ new Map()
+		});
+		const coord = [ev?.clientX || 0, ev?.clientY || 0];
+		const cache = pointerCache?.getOrInsert?.(ev?.pointerId || 0, {
+			client: coord,
+			orient: null,
+			boundingBox: null,
+			movement: vector2Ref(0, 0)
+		});
+		cache.delta = [coord[0] - cache.client[0], coord[1] - cache.client[1]];
+		cache.movement.x.value = cache.delta[0];
+		cache.movement.y.value = cache.delta[1];
+		cache.orient = null, cache.client = coord;
+		const pointer = pointerMap?.getOrInsert?.(ev?.pointerId || 0, {
+			type: ev?.type || "pointer",
+			event: ev,
+			target: ev?.target || el,
+			cs_box: [el?.offsetWidth || 1, el?.offsetHeight || 1],
+			cap_element: null,
+			get client() {
+				return cache.client;
+			},
+			get orient() {
+				return cache.orient ??= cvt_cs_to_os([...pointer.client || cache.client], [el?.offsetWidth || 1, el?.offsetHeight || 1], orientOf(ev.target || el) || 0);
+			},
+			get movement() {
+				return [cache.movement.x.value, cache.movement.y.value];
+			},
+			get boundingBox() {
+				return cache.boundingBox ??= getBoundingOrientRect(ev?.target || el, orientOf(ev.target || el) || 0);
+			},
+			capture(element = ev?.target || el) {
+				return pointer.cap_element = element?.setPointerCapture?.(ev?.pointerId || 0);
+			},
+			release(element = null) {
+				(element || pointer.cap_element || ev?.target || el)?.releasePointerCapture?.(ev?.pointerId || 0);
+				pointer.cap_element = null;
+			}
+		});
+		Object.assign(pointer, {
+			type: ev?.type || "pointer",
+			event: ev,
+			target: ev?.target || el,
+			cs_box: [el?.offsetWidth || 1, el?.offsetHeight || 1],
+			pointerId: ev?.pointerId || 0
+		});
+		if (ev?.type == "contextmenu" || ev?.type == "click" || ev?.type == "pointerup" || ev?.type == "pointercancel") {
+			pointerMap?.delete?.(ev?.pointerId || 0);
+			pointerCache?.delete?.(ev?.pointerId || 0);
+			if (ev?.type == "pointercancel") pointer?.release?.();
+		}
+		if (pointer && ev) return cb(new Proxy(ev, new DecorWith(pointer)));
+	};
+	return wpb;
+};
+var preventedPointers = /* @__PURE__ */ new Map();
+var clickPrevention = (element, pointerId = 0) => {
+	if (preventedPointers.has(pointerId)) return;
+	const rmev = () => {
+		preventedPointers.delete(pointerId);
+		dce?.forEach?.((unbind) => unbind?.());
+		ece?.forEach?.((unbind) => unbind?.());
+	};
+	const preventClick = (e) => {
+		if (e?.pointerId == pointerId || e?.pointerId == null || pointerId == null || pointerId < 0) {
+			e.preventDefault();
+			preventedPointers.set(pointerId, true);
+			rmev();
+		} else preventedPointers.delete(pointerId);
+	};
+	const emt = [preventClick, { once: true }];
+	const doc = [preventClick, {
+		once: true,
+		capture: true
+	}];
+	const dce = addEvents(document.documentElement, {
+		"click": doc,
+		"pointerdown": doc,
+		"contextmenu": doc
+	});
+	const ece = addEvents(element, {
+		"click": emt,
+		"pointerdown": emt,
+		"contextmenu": emt
+	});
+	setTimeout(rmev, 10);
+};
+var PointerEventDrag = null;
+if (typeof PointerEvent != "undefined") PointerEventDrag = class PointerEventDrag extends PointerEvent {
+	#holding;
+	constructor(type, eventInitDict) {
+		super(type, eventInitDict);
+		this.#holding = eventInitDict?.holding;
+	}
+	get holding() {
+		return this.#holding;
+	}
+	get event() {
+		return this.#holding?.event;
+	}
+	get result() {
+		return this.#holding?.result;
+	}
+	get shifting() {
+		return this.#holding?.shifting;
+	}
+	get modified() {
+		return this.#holding?.modified;
+	}
+	get canceled() {
+		return this.#holding?.canceled;
+	}
+	get duration() {
+		return this.#holding?.duration;
+	}
+	get element() {
+		return this.#holding?.element?.deref?.() ?? null;
+	}
+	get propertyName() {
+		return this.#holding?.propertyName ?? "drag";
+	}
+};
+else PointerEventDrag = class PointerEventDrag {
+	#holding;
+	constructor(type, eventInitDict) {
+		this.#holding = eventInitDict?.holding;
+	}
+	get holding() {
+		return this.#holding;
+	}
+};
+var draggingPointerMap = /* @__PURE__ */ new WeakMap();
+var grabForDrag = (em, ex = {
+	pointerId: 0,
+	pointerType: "mouse"
+}, { shifting = [0, 0], result = [{ value: 0 }, { value: 0 }] } = {}) => {
+	let frameTime = .01, lastLoop = performance.now(), thisLoop;
+	const filterStrength = 100;
+	const computeDuration = () => {
+		var thisFrameTime = (thisLoop = performance.now()) - lastLoop;
+		frameTime += (thisFrameTime - frameTime) / filterStrength;
+		lastLoop = thisLoop;
+		return frameTime;
+	};
+	const hm = {
+		result,
+		movement: [...ex?.movement || [0, 0]],
+		shifting: [...shifting],
+		modified: [...shifting],
+		canceled: false,
+		duration: frameTime,
+		element: new WeakRef(em),
+		client: null
+	};
+	const moveEvent = [((evc) => {
+		if (ex?.pointerId == evc?.pointerId) {
+			evc?.preventDefault?.();
+			const client = [...evc?.client || [evc?.clientX || 0, evc?.clientY || 0]];
+			hm.duration = computeDuration();
+			hm.movement = [...hm.client ? [client?.[0] - (hm.client?.[0] || 0), client?.[1] - (hm.client?.[1] || 0)] : [0, 0]];
+			hm.client = client;
+			hm.shifting[0] += hm.movement[0] || 0, hm.shifting[1] += hm.movement[1] || 0;
+			hm.modified[0] = (hm.shifting[0] ?? hm.modified[0]) || 0, hm.modified[1] = (hm.shifting[1] ?? hm.modified[1]) || 0;
+			em?.dispatchEvent?.(new PointerEventDrag("m-dragging", {
+				...evc,
+				bubbles: true,
+				holding: hm,
+				event: evc
+			}));
+			if (hm?.result?.[0] != null) hm.result[0].value = hm.modified[0] || 0;
+			if (hm?.result?.[1] != null) hm.result[1].value = hm.modified[1] || 0;
+			if (hm?.result?.[2] != null) hm.result[2].value = 0;
+		}
+	}), { capture: true }];
+	const promised = Promise.withResolvers();
+	const releaseEvent = [((evc) => {
+		if (ex?.pointerId == evc?.pointerId) {
+			const elm = em?.element || em;
+			if (evc?.type == "pointerup") clickPrevention(elm, evc?.pointerId);
+			queueMicrotask(() => promised?.resolve?.(result));
+			bindings?.forEach?.((binding) => binding?.());
+			try {
+				elm?.releasePointerCapture?.(evc?.pointerId);
+			} catch {}
+			try {
+				elm?.releaseCapturePointer?.(evc?.pointerId);
+			} catch {}
+			hm.canceled = evc?.type == "pointercancel";
+			elm?.dispatchEvent?.(new PointerEventDrag("m-dragend", {
+				...evc,
+				bubbles: true,
+				holding: hm,
+				event: evc
+			}));
+			try {
+				ex.pointerId = -1;
+			} catch (_) {}
+		}
+	}), { capture: true }];
+	let bindings = null;
+	clickPrevention(em, ex?.pointerId);
+	queueMicrotask(() => {
+		if (em?.dispatchEvent?.(new PointerEventDrag("m-dragstart", {
+			...ex,
+			bubbles: true,
+			holding: hm,
+			event: ex
+		}))) {
+			em?.setPointerCapture?.(ex?.pointerId);
+			bindings = addEvents(em, {
+				"pointermove": moveEvent,
+				"pointercancel": releaseEvent,
+				"pointerup": releaseEvent
+			});
+			bindings?.push?.(...addEvents(document.documentElement, {
+				"pointercancel": releaseEvent,
+				"pointerup": releaseEvent
+			}));
+		} else hm.canceled = true;
+	});
+	return promised?.promise ?? result;
+};
+var bindDraggable = (elementOrEventListener, onEnd = () => {}, draggable = [{ value: 0 }, { value: 0 }], shifting = [0, 0]) => {
+	if (!draggable) return;
+	const process = (ev, el) => grabForDrag(el ?? elementOrEventListener, ev, {
+		result: draggable,
+		shifting: typeof shifting == "function" ? shifting?.(draggable) : shifting
+	})?.then?.(onEnd);
+	if (typeof elementOrEventListener?.addEventListener == "function") addEvent(elementOrEventListener, "pointerdown", process);
+	else if (typeof elementOrEventListener == "function") elementOrEventListener(process);
+	else throw new Error("bindDraggable: elementOrEventListener is not a function or an object with addEventListener");
+	const dispose = () => {
+		if (typeof elementOrEventListener?.removeEventListener == "function") removeEvent(elementOrEventListener, "pointerdown", process);
+	};
+	return {
+		draggable,
+		dispose,
+		process
+	};
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/math/GridMath.ts
+/**
+* Grid coordinate utilities
+*/
+var GridCoordUtils = class GridCoordUtils {
+	static create(row = 0, col = 0) {
+		return {
+			row: numberRef(row),
+			col: numberRef(col)
+		};
+	}
+	static toPixel(coord, config) {
+		return operated([
+			coord.row,
+			coord.col,
+			config.cellWidth,
+			config.cellHeight,
+			config.gap,
+			config.padding.x,
+			config.padding.y
+		], () => {
+			return vector2Ref(config.padding.x.value + coord.col.value * (config.cellWidth.value + config.gap.value), config.padding.y.value + coord.row.value * (config.cellHeight.value + config.gap.value));
+		});
+	}
+	static fromPixel(pixel, config) {
+		const coord = operated([
+			pixel.x,
+			pixel.y,
+			config.cellWidth,
+			config.cellHeight,
+			config.gap,
+			config.padding.x,
+			config.padding.y
+		], () => {
+			const col = Math.floor((pixel.x.value - config.padding.x.value) / (config.cellWidth.value + config.gap.value));
+			const row = Math.floor((pixel.y.value - config.padding.y.value) / (config.cellHeight.value + config.gap.value));
+			return GridCoordUtils.create(row, col);
+		});
+		return {
+			row: operated([coord], () => coord.value.row.value),
+			col: operated([coord], () => coord.value.col.value)
+		};
+	}
+	static snapToGrid(pixel, config) {
+		const gridCoord = this.fromPixel(pixel, config);
+		return this.toPixel(gridCoord, config);
+	}
+	static snapToCellCenter(pixel, config) {
+		const gridCoord = this.fromPixel(pixel, config);
+		const cellTopLeft = this.toPixel(gridCoord, config);
+		return operated([
+			cellTopLeft.x,
+			cellTopLeft.y,
+			config.cellWidth,
+			config.cellHeight
+		], () => {
+			return vector2Ref(cellTopLeft.x.value + config.cellWidth.value / 2, cellTopLeft.y.value + config.cellHeight.value / 2);
+		});
+	}
+	static adjacent(coord, direction) {
+		const delta = {
+			up: {
+				row: -1,
+				col: 0
+			},
+			down: {
+				row: 1,
+				col: 0
+			},
+			left: {
+				row: 0,
+				col: -1
+			},
+			right: {
+				row: 0,
+				col: 1
+			}
+		}[direction];
+		return {
+			row: operated([coord.row], () => coord.row.value + delta.row),
+			col: operated([coord.col], () => coord.col.value + delta.col)
+		};
+	}
+	static isValid(coord, config) {
+		return operated([
+			coord.row,
+			coord.col,
+			config.rows,
+			config.cols
+		], () => coord.row.value >= 0 && coord.row.value < config.rows.value && coord.col.value >= 0 && coord.col.value < config.cols.value);
+	}
+	static manhattanDistance(a, b) {
+		return operated([
+			a.row,
+			a.col,
+			b.row,
+			b.col
+		], () => Math.abs(a.row.value - b.row.value) + Math.abs(a.col.value - b.col.value));
+	}
+	static euclideanDistance(a, b) {
+		return operated([
+			a.row,
+			a.col,
+			b.row,
+			b.col
+		], () => Math.sqrt(Math.pow(a.row.value - b.row.value, 2) + Math.pow(a.col.value - b.col.value, 2)));
+	}
+};
+/**
+* Grid cell utilities with span support
+*/
+var GridCellUtils = class {
+	static create(row = 0, col = 0, rowSpan = 1, colSpan = 1) {
+		return {
+			row: numberRef(row),
+			col: numberRef(col),
+			rowSpan: numberRef(rowSpan),
+			colSpan: numberRef(colSpan)
+		};
+	}
+	static toRect(cell, config) {
+		const topLeft = GridCoordUtils.toPixel(cell, config);
+		const width = operated([
+			cell.colSpan,
+			config.cellWidth,
+			config.gap
+		], () => cell.colSpan.value * config.cellWidth.value + (cell.colSpan.value - 1) * config.gap.value);
+		const height = operated([
+			cell.rowSpan,
+			config.cellHeight,
+			config.gap
+		], () => cell.rowSpan.value * config.cellHeight.value + (cell.rowSpan.value - 1) * config.gap.value);
+		return createRect2D(topLeft.x, topLeft.y, width, height);
+	}
+	static getCenter(cell, config) {
+		const rect = this.toRect(cell, config);
+		return operated([
+			rect.position.x,
+			rect.position.y,
+			rect.size.x,
+			rect.size.y
+		], () => vector2Ref(rect.position.x.value + rect.size.x.value / 2, rect.position.y.value + rect.size.y.value / 2));
+	}
+	static overlaps(a, b) {
+		return operated([
+			a.row,
+			a.col,
+			a.rowSpan,
+			a.colSpan,
+			b.row,
+			b.col,
+			b.rowSpan,
+			b.colSpan
+		], () => {
+			const aRight = a.col.value + a.colSpan.value;
+			const aBottom = a.row.value + a.rowSpan.value;
+			const bRight = b.col.value + b.colSpan.value;
+			const bBottom = b.row.value + b.rowSpan.value;
+			return !(a.col.value >= bRight || aRight <= b.col.value || a.row.value >= bBottom || aBottom <= b.row.value);
+		});
+	}
+	static getOccupiedCells(cell) {
+		const cells = [];
+		for (let r = 0; r < cell.rowSpan.value; r++) for (let c = 0; c < cell.colSpan.value; c++) cells.push(GridCoordUtils.create(cell.row.value + r, cell.col.value + c));
+		return cells;
+	}
+};
+/**
+* Grid layout algorithms
+*/
+var GridLayoutUtils = class {
+	static fitCells(cells, config) {
+		const placed = [];
+		const occupied = /* @__PURE__ */ new Set();
+		cells.forEach((cell) => {
+			let placedCell = { ...cell };
+			for (let row = 0; row < config.rows.value; row++) for (let col = 0; col < config.cols.value; col++) {
+				placedCell.row = numberRef(row);
+				placedCell.col = numberRef(col);
+				if (this.canPlaceCell(placedCell, occupied, config)) {
+					this.markOccupied(placedCell, occupied);
+					placed.push(placedCell);
+					return;
+				}
+			}
+			placed.push(placedCell);
+		});
+		return placed;
+	}
+	static canPlaceCell(cell, occupied, config) {
+		if (!GridCoordUtils.isValid(cell, config).value) return false;
+		return !GridCellUtils.getOccupiedCells(cell).some((coord) => occupied.has(`${coord.row.value},${coord.col.value}`));
+	}
+	static markOccupied(cell, occupied) {
+		GridCellUtils.getOccupiedCells(cell).forEach((coord) => {
+			occupied.add(`${coord.row.value},${coord.col.value}`);
+		});
+	}
+	static calculateOptimalSize(cells) {
+		let maxRow = 0, maxCol = 0;
+		cells.forEach((cell) => {
+			maxRow = Math.max(maxRow, cell.row.value + cell.rowSpan.value);
+			maxCol = Math.max(maxCol, cell.col.value + cell.colSpan.value);
+		});
+		return {
+			rows: maxRow,
+			cols: maxCol
+		};
+	}
+	static redistributeCells(cells, config, algorithm = "row-major") {
+		const redistributed = [];
+		let currentRow = 0, currentCol = 0;
+		cells.forEach((cell, index) => {
+			switch (algorithm) {
+				case "row-major":
+					if (currentCol + cell.colSpan.value > config.cols.value) {
+						currentRow++;
+						currentCol = 0;
+					}
+					cell.row = numberRef(currentRow);
+					cell.col = numberRef(currentCol);
+					currentCol += cell.colSpan.value;
+					break;
+				case "column-major":
+					if (currentRow + cell.rowSpan.value > config.rows.value) {
+						currentCol++;
+						currentRow = 0;
+					}
+					cell.row = numberRef(currentRow);
+					cell.col = numberRef(currentCol);
+					currentRow += cell.rowSpan.value;
+					break;
+				case "diagonal":
+					const diagonal = Math.floor(index / Math.sqrt(cells.length));
+					cell.row = numberRef(diagonal);
+					cell.col = numberRef(index % Math.ceil(Math.sqrt(cells.length)));
+			}
+			redistributed.push(cell);
+		});
+		return redistributed;
+	}
+};
+/**
+* Grid animation and transition utilities
+*/
+var GridAnimationUtils = class GridAnimationUtils {
+	static animateCellMovement(cell, targetCoord, config, duration = 300) {
+		return new Promise((resolve) => {
+			const startRow = cell.row.value;
+			const startCol = cell.col.value;
+			const endRow = targetCoord.row.value;
+			const endCol = targetCoord.col.value;
+			const startTime = performance.now();
+			const animate = (currentTime) => {
+				const elapsed = currentTime - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				const eased = 1 - Math.pow(1 - progress, 3);
+				cell.row.value = startRow + (endRow - startRow) * eased;
+				cell.col.value = startCol + (endCol - startCol) * eased;
+				if (progress < 1) requestAnimationFrame(animate);
+				else resolve();
+			};
+			requestAnimationFrame(animate);
+		});
+	}
+	static animateCellResize(cell, targetRowSpan, targetColSpan, duration = 300) {
+		return new Promise((resolve) => {
+			const startRowSpan = cell.rowSpan.value;
+			const startColSpan = cell.colSpan.value;
+			const startTime = performance.now();
+			const animate = (currentTime) => {
+				const elapsed = currentTime - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				const eased = 1 - Math.pow(1 - progress, 3);
+				cell.rowSpan.value = startRowSpan + (targetRowSpan - startRowSpan) * eased;
+				cell.colSpan.value = startColSpan + (targetColSpan - startColSpan) * eased;
+				if (progress < 1) requestAnimationFrame(animate);
+				else resolve();
+			};
+			requestAnimationFrame(animate);
+		});
+	}
+	static createAnimationChain(cell, config) {
+		return {
+			moveTo: (targetCoord, duration) => GridAnimationUtils.animateCellMovement(cell, targetCoord, config, duration),
+			resizeTo: (rowSpan, colSpan, duration) => GridAnimationUtils.animateCellResize(cell, rowSpan, colSpan, duration),
+			then: function(callback) {
+				return this;
+			}
+		};
+	}
+};
+/**
+* Grid collision and interaction utilities
+*/
+var GridInteractionUtils = class {
+	static getCellAtPixel(pixel, config) {
+		return GridCoordUtils.fromPixel(pixel, config);
+	}
+	static getCellsInRect(rect, config) {
+		const cells = [];
+		const topLeft = GridCoordUtils.fromPixel(rect.position, config);
+		const bottomRight = GridCoordUtils.fromPixel(addVector2D(rect.position, rect.size), config);
+		for (let row = topLeft.row.value; row <= bottomRight.row.value; row++) for (let col = topLeft.col.value; col <= bottomRight.col.value; col++) if (row >= 0 && row < config.rows.value && col >= 0 && col < config.cols.value) cells.push(GridCoordUtils.create(row, col));
+		return cells;
+	}
+	static wouldOverlap(cell, newCoord, existingCells) {
+		const testCell = GridCellUtils.create(newCoord.row.value, newCoord.col.value, cell.rowSpan.value, cell.colSpan.value);
+		return existingCells.some((otherCell) => otherCell !== cell && GridCellUtils.overlaps(testCell, otherCell).value);
+	}
+	static findValidPositions(cell, config, existingCells) {
+		const validPositions = [];
+		for (let row = 0; row < config.rows.value - cell.rowSpan.value + 1; row++) for (let col = 0; col < config.cols.value - cell.colSpan.value + 1; col++) {
+			const testCoord = GridCoordUtils.create(row, col);
+			if (!this.wouldOverlap(cell, testCoord, existingCells)) validPositions.push(testCoord);
+		}
+		return validPositions;
+	}
+	static calculateDragPreview(cell, dragPosition, config, existingCells) {
+		const snappedCoord = GridCoordUtils.fromPixel(dragPosition, config);
+		const clampedRow = Math.max(0, Math.min(snappedCoord.row.value, config.rows.value - cell.rowSpan.value));
+		const clampedCol = Math.max(0, Math.min(snappedCoord.col.value, config.cols.value - cell.colSpan.value));
+		const clampedCoord = GridCoordUtils.create(clampedRow, clampedCol);
+		if (this.wouldOverlap(cell, clampedCoord, existingCells)) {
+			const validPositions = this.findValidPositions(cell, config, existingCells);
+			if (validPositions.length > 0) {
+				let closest = validPositions[0];
+				let minDistance = GridCoordUtils.euclideanDistance(clampedCoord, closest).value;
+				validPositions.forEach((pos) => {
+					const distance = GridCoordUtils.euclideanDistance(clampedCoord, pos).value;
+					if (distance < minDistance) {
+						minDistance = distance;
+						closest = pos;
+					}
+				});
+				return closest;
+			}
+		}
+		return clampedCoord;
+	}
+};
+var clampCell = (cellPos, layout) => {
+	let x, y;
+	if (cellPos instanceof Vector2D) {
+		x = cellPos.x?.value ?? 0;
+		y = cellPos.y?.value ?? 0;
+	} else if (Array.isArray(cellPos) && cellPos.length >= 2) {
+		x = cellPos[0] ?? 0;
+		y = cellPos[1] ?? 0;
+	} else return vector2Ref(0, 0);
+	if (!isFinite(x) || !isFinite(y)) return vector2Ref(0, 0);
+	const cols = Math.max(1, layout[0] || 1);
+	const rows = Math.max(1, layout[1] || 1);
+	return vector2Ref(Math.max(0, Math.min(Math.floor(x), cols - 1)), Math.max(0, Math.min(Math.floor(y), rows - 1)));
+};
+var floorCell = (cellPos, N = 1) => {
+	const x = cellPos instanceof Vector2D ? cellPos.x.value : cellPos[0];
+	const y = cellPos instanceof Vector2D ? cellPos.y.value : cellPos[1];
+	return vector2Ref(Math.floor(x / N) * N, Math.floor(y / N) * N);
+};
+var ceilCell = (cellPos, N = 1) => {
+	const x = cellPos instanceof Vector2D ? cellPos.x.value : cellPos[0];
+	const y = cellPos instanceof Vector2D ? cellPos.y.value : cellPos[1];
+	return vector2Ref(Math.ceil(x / N) * N, Math.ceil(y / N) * N);
+};
+var roundCell = (cellPos, N = 1) => {
+	const x = cellPos instanceof Vector2D ? cellPos.x.value : cellPos[0];
+	const y = cellPos instanceof Vector2D ? cellPos.y.value : cellPos[1];
+	return vector2Ref(Math.round(x / N) * N, Math.round(y / N) * N);
+};
+var snapToGridCell = (cellPos, layout) => {
+	const coord = cellPos instanceof Vector2D ? GridCoordUtils.create(cellPos.y.value, cellPos.x.value) : GridCoordUtils.create(cellPos[1], cellPos[0]);
+	const config = {
+		rows: numberRef(layout[1]),
+		cols: numberRef(layout[0]),
+		cellWidth: numberRef(1),
+		cellHeight: numberRef(1),
+		gap: numberRef(0),
+		padding: vector2Ref(0, 0)
+	};
+	const validCoord = GridCoordUtils.create(Math.max(0, Math.min(coord.row.value, config.rows.value - 1)), Math.max(0, Math.min(coord.col.value, config.cols.value - 1)));
+	return vector2Ref(validCoord.col.value, validCoord.row.value);
+};
+var getCellDistance = (cellA, cellB) => {
+	const coordA = cellA instanceof Vector2D ? GridCoordUtils.create(cellA.y.value, cellA.x.value) : GridCoordUtils.create(cellA[1], cellA[0]);
+	const coordB = cellB instanceof Vector2D ? GridCoordUtils.create(cellB.y.value, cellB.x.value) : GridCoordUtils.create(cellB[1], cellB[0]);
+	return GridCoordUtils.manhattanDistance(coordA, coordB).value;
+};
+var getAdjacentCells = (cellPos, layout) => {
+	const centerCoord = cellPos instanceof Vector2D ? GridCoordUtils.create(cellPos.y.value, cellPos.x.value) : GridCoordUtils.create(cellPos[1], cellPos[0]);
+	const config = {
+		rows: numberRef(layout[1]),
+		cols: numberRef(layout[0]),
+		cellWidth: numberRef(1),
+		cellHeight: numberRef(1),
+		gap: numberRef(0),
+		padding: vector2Ref(0, 0)
+	};
+	const adjacent = [];
+	for (const direction of [
+		"up",
+		"down",
+		"left",
+		"right"
+	]) {
+		const adjacentCoord = GridCoordUtils.adjacent(centerCoord, direction);
+		if (GridCoordUtils.isValid(adjacentCoord, config).value) adjacent.push(vector2Ref(adjacentCoord.col.value, adjacentCoord.row.value));
+	}
+	return adjacent;
+};
+var getCellsInRange = (centerCell, radius, layout) => {
+	const centerCoord = centerCell instanceof Vector2D ? GridCoordUtils.create(centerCell.y.value, centerCell.x.value) : GridCoordUtils.create(centerCell[1], centerCell[0]);
+	numberRef(layout[1]), numberRef(layout[0]), numberRef(1), numberRef(1), numberRef(0), vector2Ref(0, 0);
+	const cellsInRange = [];
+	for (let row = Math.max(0, centerCoord.row.value - radius); row <= Math.min(layout[1] - 1, centerCoord.row.value + radius); row++) for (let col = Math.max(0, centerCoord.col.value - radius); col <= Math.min(layout[0] - 1, centerCoord.col.value + radius); col++) {
+		const testCoord = GridCoordUtils.create(row, col);
+		if (GridCoordUtils.manhattanDistance(centerCoord, testCoord).value <= radius) cellsInRange.push(vector2Ref(col, row));
+	}
+	return cellsInRange;
+};
+var findPathBetweenCells = (startCell, endCell, layout, obstacles = []) => {
+	const startCoord = startCell instanceof Vector2D ? GridCoordUtils.create(startCell.y.value, startCell.x.value) : GridCoordUtils.create(startCell[1], startCell[0]);
+	const endCoord = endCell instanceof Vector2D ? GridCoordUtils.create(endCell.y.value, endCell.x.value) : GridCoordUtils.create(endCell[1], endCell[0]);
+	const obstacleSet = new Set(obstacles.map((obs) => {
+		const coord = obs instanceof Vector2D ? GridCoordUtils.create(obs.y.value, obs.x.value) : GridCoordUtils.create(obs[1], obs[0]);
+		return `${coord.row.value},${coord.col.value}`;
+	}));
+	const config = {
+		rows: numberRef(layout[1]),
+		cols: numberRef(layout[0]),
+		cellWidth: numberRef(1),
+		cellHeight: numberRef(1),
+		gap: numberRef(0),
+		padding: vector2Ref(0, 0)
+	};
+	const openSet = /* @__PURE__ */ new Map();
+	const closedSet = /* @__PURE__ */ new Set();
+	const startKey = `${startCoord.row.value},${startCoord.col.value}`;
+	openSet.set(startKey, {
+		coord: startCoord,
+		f: GridCoordUtils.manhattanDistance(startCoord, endCoord).value,
+		g: 0,
+		parent: null
+	});
+	while (openSet.size > 0) {
+		let currentKey = "";
+		let lowestF = Infinity;
+		for (const [key, node] of openSet) if (node.f < lowestF) {
+			lowestF = node.f;
+			currentKey = key;
+		}
+		const current = openSet.get(currentKey);
+		openSet.delete(currentKey);
+		closedSet.add(currentKey);
+		if (current.coord.row.value === endCoord.row.value && current.coord.col.value === endCoord.col.value) {
+			const path = [];
+			let node = current;
+			while (node) {
+				path.unshift(vector2Ref(node.coord.col.value, node.coord.row.value));
+				if (!node.parent) break;
+				const parentKey = `${node.parent.row.value},${node.parent.col.value}`;
+				node = openSet.get(parentKey) || null;
+			}
+			return path;
+		}
+		for (const direction of [
+			"up",
+			"down",
+			"left",
+			"right"
+		]) {
+			const neighborCoord = GridCoordUtils.adjacent(current.coord, direction);
+			const neighborKey = `${neighborCoord.row.value},${neighborCoord.col.value}`;
+			if (!GridCoordUtils.isValid(neighborCoord, config).value || closedSet.has(neighborKey) || obstacleSet.has(neighborKey)) continue;
+			const gScore = current.g + 1;
+			const fScore = gScore + GridCoordUtils.manhattanDistance(neighborCoord, endCoord).value;
+			const existing = openSet.get(neighborKey);
+			if (!existing || gScore < existing.g) openSet.set(neighborKey, {
+				coord: neighborCoord,
+				f: fScore,
+				g: gScore,
+				parent: current.coord
+			});
+		}
+	}
+	return [];
+};
+var checkCellCollision = (cellA, cellB, cellSizeA = [1, 1], cellSizeB = [1, 1]) => {
+	const coordA = cellA instanceof Vector2D ? GridCoordUtils.create(cellA.y.value, cellA.x.value) : GridCoordUtils.create(cellA[1], cellA[0]);
+	const coordB = cellB instanceof Vector2D ? GridCoordUtils.create(cellB.y.value, cellB.x.value) : GridCoordUtils.create(cellB[1], cellB[0]);
+	const gridCellA = GridCellUtils.create(coordA.row.value, coordA.col.value, cellSizeA[1], cellSizeA[0]);
+	const gridCellB = GridCellUtils.create(coordB.row.value, coordB.col.value, cellSizeB[1], cellSizeB[0]);
+	return GridCellUtils.overlaps(gridCellA, gridCellB).value;
+};
+var optimizeCellLayout = (cells, layout) => {
+	const config = {
+		rows: numberRef(layout[1]),
+		cols: numberRef(layout[0]),
+		cellWidth: numberRef(1),
+		cellHeight: numberRef(1),
+		gap: numberRef(0),
+		padding: vector2Ref(0, 0)
+	};
+	const gridCells = cells.map((cell, index) => {
+		const coord = cell.pos instanceof Vector2D ? GridCoordUtils.create(cell.pos.y.value, cell.pos.x.value) : GridCoordUtils.create(cell.pos[1], cell.pos[0]);
+		return GridCellUtils.create(coord.row.value, coord.col.value, cell.size[1], cell.size[0]);
+	});
+	return GridLayoutUtils.fitCells(gridCells, config).map((fittedCell, index) => ({
+		pos: vector2Ref(fittedCell.col.value, fittedCell.row.value),
+		size: [fittedCell.colSpan.value, fittedCell.rowSpan.value]
+	}));
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/design/anchor/CSSAdapter.ts
+var CSSUnitConverter = class {
+	static unitPatterns = {
+		px: /(-?\d*\.?\d+)px/g,
+		em: /(-?\d*\.?\d+)em/g,
+		rem: /(-?\d*\.?\d+)rem/g,
+		vh: /(-?\d*\.?\d+)vh/g,
+		vw: /(-?\d*\.?\d+)vw/g,
+		vmin: /(-?\d*\.?\d+)vmin/g,
+		vmax: /(-?\d*\.?\d+)vmax/g,
+		percent: /(-?\d*\.?\d+)%/g
+	};
+	static toPixels(value, element) {
+		if (!value) return 0;
+		const testElement = element || document.body;
+		const testDiv = document.createElement("div");
+		testDiv.style.position = "absolute";
+		testDiv.style.visibility = "hidden";
+		testDiv.style.width = value;
+		testElement.appendChild(testDiv);
+		const pixels = testDiv.offsetWidth;
+		testElement.removeChild(testDiv);
+		return pixels;
+	}
+	static fromPixels(pixels, unit = "px") {
+		switch (unit) {
+			case "em": return `${pixels / parseFloat(getComputedStyle(document.body).fontSize)}em`;
+			case "rem": return `${pixels / parseFloat(getComputedStyle(document.documentElement).fontSize)}rem`;
+			case "%": return `${pixels / globalThis.innerWidth * 100}%`;
+			default: return `${pixels}px`;
+		}
+	}
+	static parseValue(cssValue) {
+		const match = cssValue.match(/^(-?\d*\.?\d+)([a-z%]+)?$/);
+		if (!match) return {
+			value: 0,
+			unit: "px"
+		};
+		return {
+			value: parseFloat(match[1]),
+			unit: match[2] || "px"
+		};
+	}
+	static convertUnits(value, fromUnit, toUnit, element) {
+		if (fromUnit === toUnit) return value;
+		let pixels;
+		switch (fromUnit) {
+			case "px":
+				pixels = value;
+				break;
+			case "em":
+				pixels = value * parseFloat(getComputedStyle(element || document.body).fontSize);
+				break;
+			case "rem":
+				pixels = value * parseFloat(getComputedStyle(document.documentElement).fontSize);
+				break;
+			case "%":
+				pixels = value / 100 * globalThis.innerWidth;
+				break;
+			case "vw":
+				pixels = value / 100 * globalThis.innerWidth;
+				break;
+			case "vh":
+				pixels = value / 100 * globalThis.innerHeight;
+				break;
+			default: pixels = value;
+		}
+		switch (toUnit) {
+			case "px": return pixels;
+			case "em":
+				const fontSize = parseFloat(getComputedStyle(element || document.body).fontSize);
+				return pixels / fontSize;
+			case "rem":
+				const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+				return pixels / rootFontSize;
+			case "%": return pixels / globalThis.innerWidth * 100;
+			case "vw": return pixels / globalThis.innerWidth * 100;
+			case "vh": return pixels / globalThis.innerHeight * 100;
+			default: return pixels;
+		}
+	}
+};
+var CSSTransform = class {
+	static translate2D(vector) {
+		return operated([vector.x, vector.y], () => `translate(${vector.x.value}px, ${vector.y.value}px)`);
+	}
+	static translate3D(vector, z = numberRef(0)) {
+		return operated([
+			vector.x,
+			vector.y,
+			z
+		], () => `translate3d(${vector.x.value}px, ${vector.y.value}px, ${z.value}px)`);
+	}
+	static scale2D(vector) {
+		return operated([vector.x, vector.y], () => `scale(${vector.x.value}, ${vector.y.value})`);
+	}
+	static rotate(angle) {
+		return operated([angle], () => `rotate(${angle.value}deg)`);
+	}
+	static combine(transforms) {
+		return operated(transforms, () => transforms.map((t) => t.value).join(" "));
+	}
+	static matrix2D(matrix) {
+		return operated(matrix.elements, () => `matrix(${matrix.elements.map((e) => e.value).join(", ")})`);
+	}
+	static matrix3D(matrix) {
+		return operated(matrix.elements, () => `matrix3d(${matrix.elements.map((e) => e.value).join(", ")})`);
+	}
+};
+var CSSPosition = class {
+	static leftTop(vector) {
+		return {
+			left: operated([vector.x], () => `${vector.x.value}px`),
+			top: operated([vector.y], () => `${vector.y.value}px`)
+		};
+	}
+	static inset(vector) {
+		return { inset: operated([vector.x, vector.y], () => `${vector.y.value}px ${vector.x.value}px`) };
+	}
+	static size(vector) {
+		return {
+			width: operated([vector.x], () => `${vector.x.value}px`),
+			height: operated([vector.y], () => `${vector.y.value}px`)
+		};
+	}
+};
+var CSSBinder = class {
+	static bindTransform(element, vector, animationType = "instant", options) {
+		const transformValue = CSSTransform.translate2D(vector);
+		return (animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring)(element, "transform", transformValue, options) ?? (() => {});
+	}
+	static bindPosition(element, vector, animationType = "instant", options) {
+		const position = CSSPosition.leftTop(vector);
+		const binder = animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring;
+		const unsubLeft = binder(element, "left", position.left, options) ?? (() => {});
+		const unsubTop = binder(element, "top", position.top, options) ?? (() => {});
+		return () => {
+			unsubLeft?.();
+			unsubTop?.();
+		};
+	}
+	static bindSize(element, vector, animationType = "instant", options) {
+		const size = CSSPosition.size(vector);
+		const binder = animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring;
+		const unsubWidth = binder(element, "width", size.width, options) ?? (() => {});
+		const unsubHeight = binder(element, "height", size.height, options) ?? (() => {});
+		return () => {
+			unsubWidth?.();
+			unsubHeight?.();
+		};
+	}
+	static bindWithUnit(element, property, value, unit = "px", animationType = "instant", options) {
+		const cssValue = operated([value], () => `${value.value}${unit}`);
+		return (animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring)(element, property, cssValue, options) ?? (() => {});
+	}
+	static bindVectorWithUnit(element, vector, unit = "px", animationType = "instant", options) {
+		const cssValue = operated([vector.x, vector.y], () => `${vector.x.value}${unit} ${vector.y.value}${unit}`);
+		return (animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring)(element, "transform", cssValue, {
+			...options,
+			handler: animationType === "instant" ? void 0 : (el, val) => {
+				el.style.setProperty("transform", `translate(${val})`);
+			}
+		}) ?? (() => {});
+	}
+	static bindTransformMorph(element, transformProps, options = {}) {
+		const transforms = {};
+		if (transformProps.translate) transforms.transform = operated([transformProps.translate.x, transformProps.translate.y], () => `translate(${transformProps.translate.x.value}px, ${transformProps.translate.y.value}px)`);
+		if (transformProps.scale) {
+			const scaleStr = transformProps.scale instanceof Vector2D ? operated([transformProps.scale.x, transformProps.scale.y], () => `scale(${transformProps.scale.x.value}, ${transformProps.scale.y.value})`) : operated([transformProps.scale], () => `scale(${transformProps.scale.value})`);
+			transforms.transform = transforms.transform ? operated([transforms.transform, scaleStr], (t, s) => `${t} ${s}`) : scaleStr;
+		}
+		if (transformProps.rotate) {
+			const rotateStr = operated([transformProps.rotate], () => `rotate(${transformProps.rotate.value}deg)`);
+			transforms.transform = transforms.transform ? operated([transforms.transform, rotateStr], (t, r) => `${t} ${r}`) : rotateStr;
+		}
+		if (transformProps.skew) {
+			const skewStr = operated([transformProps.skew.x, transformProps.skew.y], () => `skew(${transformProps.skew.x.value}deg, ${transformProps.skew.y.value}deg)`);
+			transforms.transform = transforms.transform ? operated([transforms.transform, skewStr], (t, s) => `${t} ${s}`) : skewStr;
+		}
+		return bindMorph(element, transforms, options);
+	}
+	static bindColor(element, property, color, animationType = "transition", options = {
+		duration: 300,
+		easing: "ease-in-out"
+	}) {
+		return (animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : bindTransition)(element, property, typeof color === "string" ? color : operated([color], () => `hsl(${color.value}, 70%, 50%)`), options) ?? (() => {});
+	}
+	static bindOpacity(element, opacity, animationType = "transition", options = {
+		duration: 200,
+		easing: "ease-in-out"
+	}) {
+		return (animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring)(element, "opacity", opacity, options) ?? (() => {});
+	}
+	static bindBorderRadius(element, radius, animationType = "animate", options = {
+		duration: 300,
+		easing: "ease-out"
+	}) {
+		return (animationType === "instant" ? bindWith : animationType === "animate" ? bindAnimated : animationType === "transition" ? bindTransition : bindSpring)(element, "border-radius", radius instanceof Vector2D ? operated([radius.x, radius.y], () => `${radius.x.value}px ${radius.y.value}px`) : operated([radius], () => `${radius.value}px`), options) ?? (() => {});
+	}
+};
 var CSSCalc = class {
 	static add(a, b, unit = "px") {
 		return operated([a, b], () => `calc(${a.value}${unit} + ${b.value}${unit})`);
@@ -7996,6 +10073,1103 @@ var CSSCalc = class {
 		return operated([a, b], () => `max(${a.value}${unit}, ${b.value}${unit})`);
 	}
 };
+var DOMMatrixAdapter = class {
+	static toDOMMatrix(matrix) {
+		return new DOMMatrix(matrix.elements.map((e) => e.value));
+	}
+	static fromDOMMatrix(domMatrix) {
+		const elements = Array.from(domMatrix.toFloat32Array()).map((v) => numberRef(v));
+		return new Matrix4D(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5], elements[6], elements[7], elements[8], elements[9], elements[10], elements[11], elements[12], elements[13], elements[14], elements[15]);
+	}
+	static applyTransform(domMatrix, transform) {
+		this.fromDOMMatrix(domMatrix);
+		return domMatrix.multiplySelf(this.toDOMMatrix(transform));
+	}
+};
+var CSSCustomProps = class {
+	static bindProperty(element, propName, value, unit = "") {
+		return operated([value], () => {
+			element.style.setProperty(propName, `${value.value}${unit}`);
+			return () => {};
+		});
+	}
+	static bindVectorProperties(element, baseName, vector, unit = "px") {
+		const unsubX = this.bindProperty(element, `${baseName}-x`, vector.x, unit);
+		const unsubY = this.bindProperty(element, `${baseName}-y`, vector.y, unit);
+		return () => {
+			unsubX();
+			unsubY();
+		};
+	}
+	static getReactiveProperty(element, propName) {
+		const initialValue = parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0;
+		const reactiveValue = numberRef(initialValue);
+		new MutationObserver(() => {
+			const newValue = parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0;
+			reactiveValue.value = newValue;
+		}).observe(element, {
+			attributes: true,
+			attributeFilter: ["style"]
+		});
+		return reactiveValue;
+	}
+};
+var CSSUnitUtils = class {
+	static asPx(value) {
+		if (typeof value === "number") return `${value || 0}px`;
+		if (typeof value === "string") return value || "0px";
+		return operated([value], (v) => `${v || 0}px`);
+	}
+	static asPercent(value) {
+		if (typeof value === "number") return `${value || 0}%`;
+		if (typeof value === "string") return value || "0%";
+		return operated([value], (v) => `${v || 0}%`);
+	}
+	static asEm(value) {
+		if (typeof value === "number") return `${value || 0}em`;
+		if (typeof value === "string") return value || "0em";
+		return operated([value], (v) => `${v || 0}em`);
+	}
+	static asRem(value) {
+		if (typeof value === "number") return `${value || 0}rem`;
+		if (typeof value === "string") return value || "0rem";
+		return operated([value], (v) => `${v || 0}rem`);
+	}
+	static asVw(value) {
+		if (typeof value === "number") return `${value || 0}vw`;
+		if (typeof value === "string") return value || "0vw";
+		return operated([value], (v) => `${v || 0}vw`);
+	}
+	static asVh(value) {
+		if (typeof value === "number") return `${value || 0}vh`;
+		if (typeof value === "string") return value || "0vh";
+		return operated([value], (v) => `${v || 0}vh`);
+	}
+	static asUnit(value, unit, fallbackValue = 0) {
+		if (typeof value === "number") return `${value || fallbackValue}${unit}`;
+		if (typeof value === "string") return value || `${fallbackValue}${unit}`;
+		return operated([value], (v) => `${v || fallbackValue}${unit}`);
+	}
+	static calc(expression) {
+		return `calc(${expression})`;
+	}
+	static reactiveCalc(operands, operator) {
+		return operated(operands, (...values) => {
+			return `calc(${values.join(` ${operator} `)})`;
+		});
+	}
+	static clamp(min, value, max) {
+		return operated([
+			typeof min === "number" || typeof min === "string" ? min : operated([min], (v) => v),
+			typeof value === "number" || typeof value === "string" ? value : operated([value], (v) => v),
+			typeof max === "number" || typeof max === "string" ? max : operated([max], (v) => v)
+		].filter((v) => typeof v !== "string"), () => {
+			return `clamp(${typeof min === "number" ? min : typeof min === "string" ? min : min.value}, ${typeof value === "number" ? value : typeof value === "string" ? value : value.value}, ${typeof max === "number" ? max : typeof max === "string" ? max : max.value})`;
+		});
+	}
+	static max(values) {
+		return operated(values.filter((v) => typeof v !== "string"), (...nums) => {
+			return `max(${values.map((v) => typeof v === "number" ? v : typeof v === "string" ? v : v.value).join(", ")})`;
+		});
+	}
+	static min(values) {
+		return operated(values.filter((v) => typeof v !== "string"), (...nums) => {
+			return `min(${values.map((v) => typeof v === "number" ? v : typeof v === "string" ? v : v.value).join(", ")})`;
+		});
+	}
+};
+var CSSInputControls = class {
+	static bindSliderThumb(thumbElement, value, min, max, trackWidth) {
+		const position = operated([
+			value,
+			min,
+			max,
+			trackWidth
+		], () => {
+			return `translateX(${(value.value - min.value) / (max.value - min.value) * 100}%)`;
+		});
+		return CSSBinder.bindTransform(thumbElement, position);
+	}
+	static bindProgressFill(fillElement, progress) {
+		return bindWith(fillElement, "width", operated([progress], () => `${progress.value * 100}%`), handleStyleChange) ?? (() => {});
+	}
+	static bindToggleState(element, checked) {
+		const scale = operated([checked], () => checked.value ? "scale(1)" : "scale(0)");
+		const opacity = operated([checked], () => checked.value ? "1" : "0");
+		const unsubScale = CSSBinder.bindTransform(element, scale);
+		const unsubOpacity = bindWith(element, "opacity", opacity, handleStyleChange) ?? (() => {});
+		return () => {
+			unsubScale?.();
+			unsubOpacity?.();
+		};
+	}
+};
+var CSSScrollbarControls = class {
+	static bindScrollbarThumb(thumbElement, scrollPosition, contentSize, containerSize, axis = "vertical") {
+		const thumbSize = operated([contentSize, containerSize], () => {
+			const ratio = containerSize.value / contentSize.value;
+			return Math.max(20, ratio * containerSize.value);
+		});
+		const thumbPosition = operated([
+			scrollPosition,
+			contentSize,
+			containerSize,
+			thumbSize
+		], () => {
+			const maxScroll = Math.max(0, contentSize.value - containerSize.value);
+			return (maxScroll > 0 ? scrollPosition.value / maxScroll : 0) * (containerSize.value - thumbSize.value);
+		});
+		const transform = axis === "vertical" ? operated([thumbPosition], () => `translateY(${thumbPosition.value}px)`) : operated([thumbPosition], () => `translateX(${thumbPosition.value}px)`);
+		const unsubSize = axis === "vertical" ? bindWith(thumbElement, "height", operated([thumbSize], (s) => `${s}px`), handleStyleChange) : bindWith(thumbElement, "width", operated([thumbSize], (s) => `${s}px`), handleStyleChange);
+		const unsubTransform = CSSBinder.bindTransform(thumbElement, transform);
+		return () => {
+			unsubSize?.();
+			unsubTransform?.();
+		};
+	}
+	static bindScrollbarVisibility(scrollbarElement, isVisible, transitionDuration = 300) {
+		const opacity = operated([isVisible], () => isVisible.value);
+		const visibility = operated([isVisible], () => isVisible.value > 0 ? "visible" : "hidden");
+		const pointerEvents = operated([isVisible], () => isVisible.value > 0 ? "auto" : "none");
+		const unsubOpacity = bindWith(scrollbarElement, "opacity", opacity, handleStyleChange);
+		const unsubVisibility = bindWith(scrollbarElement, "visibility", visibility, handleStyleChange);
+		const unsubPointerEvents = bindWith(scrollbarElement, "pointer-events", pointerEvents, handleStyleChange);
+		scrollbarElement.style.transition = `opacity ${transitionDuration}ms ease-in-out`;
+		return () => {
+			unsubOpacity?.();
+			unsubVisibility?.();
+			unsubPointerEvents?.();
+		};
+	}
+	static bindScrollbarTheme(scrollbarElement, theme) {
+		const unbinders = [];
+		if (theme.trackColor) unbinders.push(bindWith(scrollbarElement, "--scrollbar-track-color", operated([theme.trackColor], (c) => `rgba(${c.value}, ${c.value}, ${c.value}, 0.1)`), handleStyleChange) ?? (() => {}));
+		if (theme.thumbColor) unbinders.push(bindWith(scrollbarElement, "--scrollbar-thumb-color", operated([theme.thumbColor], (c) => `rgba(${c.value}, ${c.value}, ${c.value}, 0.5)`), handleStyleChange) ?? (() => {}));
+		if (theme.borderRadius) unbinders.push(bindWith(scrollbarElement, "--scrollbar-border-radius", operated([theme.borderRadius], (r) => `${r.value}px`), handleStyleChange) ?? (() => {}));
+		if (theme.thickness) unbinders.push(bindWith(scrollbarElement, "--scrollbar-thickness", operated([theme.thickness], (t) => `${t.value}px`), handleStyleChange) ?? (() => {}));
+		return () => unbinders.forEach((unbind) => unbind?.());
+	}
+};
+var CSSMomentumScrolling = class {
+	static createMomentumScroll(element, velocity, deceleration = .92) {
+		return new Promise((resolve) => {
+			let animationId;
+			const animate = () => {
+				velocity.value *= deceleration;
+				if (Math.abs(velocity.value) < .1) {
+					velocity.value = 0;
+					cancelAnimationFrame(animationId);
+					resolve();
+					return;
+				}
+				element.scrollBy({
+					top: velocity.value,
+					behavior: "instant"
+				});
+				animationId = requestAnimationFrame(animate);
+			};
+			animate();
+		});
+	}
+	static createBounceBack(element, overScroll, duration = 300) {
+		return new Promise((resolve) => {
+			const startTime = performance.now();
+			const startValue = overScroll.value;
+			const animate = (currentTime) => {
+				const elapsed = currentTime - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				const eased = 1 - Math.pow(1 - progress, 3);
+				overScroll.value = startValue * (1 - eased);
+				if (progress < 1) requestAnimationFrame(animate);
+				else {
+					overScroll.value = 0;
+					resolve();
+				}
+			};
+			requestAnimationFrame(animate);
+		});
+	}
+};
+var CSSInteractionStates = class {
+	static bindFocusRing(element, isFocused, ringColor = "rgba(59, 130, 246, 0.5)") {
+		return bindWith(element, "box-shadow", operated([isFocused], () => isFocused.value ? `0 0 0 2px ${ringColor}` : "none"), handleStyleChange) ?? (() => {});
+	}
+	static bindHoverState(element, isHovered, hoverTransform = "scale(1.05)") {
+		const transform = operated([isHovered], () => isHovered.value ? hoverTransform : "none");
+		return CSSBinder.bindTransform(element, transform) ?? (() => {});
+	}
+	static bindActiveState(element, isActive, activeTransform = "scale(0.95)") {
+		const transform = operated([isActive], () => isActive.value ? activeTransform : "none");
+		return CSSBinder.bindTransform(element, transform) ?? (() => {});
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/Draggable.ts
+var DragHandler = class {
+	#holder;
+	#dragging;
+	#raf = 0;
+	#pending;
+	#options;
+	#subscriptions;
+	get #parent() {
+		return this.#holder.offsetParent ?? this.#holder?.host ?? ROOT;
+	}
+	constructor(holder, options) {
+		if (!holder) throw Error("Element is null...");
+		doObserve(this.#holder = holder, this.#parent);
+		this.#dragging = vector2Ref(0, 0);
+		this.#pending = vector2Ref(0, 0);
+		this.#options = options;
+		setStyleProperty(this.#holder, "--drag-x", 0);
+		setStyleProperty(this.#holder, "--drag-y", 0);
+		this.#attachObservers();
+		if (options) this.draggable(options);
+	}
+	#queueFrame(x = 0, y = 0) {
+		let constrainedX = x || 0;
+		let constrainedY = y || 0;
+		if (this.#options?.constraints?.bounds) {
+			const bounds = this.#options.constraints.bounds;
+			const centerOffset = this.#options.constraints.centerOffset || vector2Ref(0, 0);
+			const elementSize = vector2Ref(this.#holder.offsetWidth, this.#holder.offsetHeight);
+			createRect2D(constrainedX, constrainedY, elementSize.x, elementSize.y);
+			const constrainedPos = clampPointToRect(new Vector2D(constrainedX + centerOffset.x.value, constrainedY + centerOffset.y.value), bounds);
+			constrainedX = constrainedPos.x.value - centerOffset.x.value;
+			constrainedY = constrainedPos.y.value - centerOffset.y.value;
+		}
+		if (this.#options?.constraints?.snapToGrid) {
+			const { size: gridSize, offset: gridOffset } = this.#options.constraints.snapToGrid;
+			constrainedX = Math.round((constrainedX - gridOffset.x.value) / gridSize.x.value) * gridSize.x.value + gridOffset.x.value;
+			constrainedY = Math.round((constrainedY - gridOffset.y.value) / gridSize.y.value) * gridSize.y.value + gridOffset.y.value;
+		}
+		this.#pending.x.value = constrainedX;
+		this.#pending.y.value = constrainedY;
+		if (this.#raf) return;
+		this.#raf = requestAnimationFrame(() => {
+			this.#raf = 0;
+			const dx = this.#pending.x.value;
+			const dy = this.#pending.y.value;
+			setStyleProperty(this.#holder, "transform", `translate3d(
+                clamp(calc(-1px * var(--shift-x, 0)), ${dx || 0}px, calc(100cqi - 100% - var(--shift-x, 0) * 1px)),
+                clamp(calc(-1px * var(--shift-y, 0)), ${dy || 0}px, calc(100cqb - 100% - var(--shift-y, 0) * 1px)),
+                0px)`.trim?.()?.replaceAll?.(/\s+/g, " ")?.replaceAll?.(/\n+/g, " ")?.trim?.() ?? "");
+		});
+	}
+	#attachObservers() {
+		if (this.#subscriptions) return;
+		const emit = () => {
+			this.#queueFrame(this.#dragging.x.value, this.#dragging.y.value);
+		};
+		this.#subscriptions = [affected(this.#dragging.x, emit), affected(this.#dragging.y, emit)];
+		emit();
+	}
+	draggable(options) {
+		const handler = options.handler ?? this.#holder;
+		this.#dragging;
+		this.#attachObservers();
+		const weak = new WeakRef(this.#holder);
+		const binding = (grabAction) => handler.addEventListener("pointerdown", makeShiftTrigger((ev) => grabAction(ev, this.#holder), this.#holder));
+		const dragResolve = (dragging) => {
+			const holder = weak?.deref?.();
+			holder?.style?.removeProperty?.("will-change");
+			queueMicrotask(() => {
+				holder?.removeAttribute?.("data-dragging");
+				holder?.style?.removeProperty?.("transform");
+			});
+			const box = holder?.getBoundingClientRect?.();
+			this.#dragging.x.value = 0;
+			this.#dragging.y.value = 0;
+			this.#queueFrame(0, 0);
+			setStyleProperty(holder, "--shift-x", `${box?.left || 0}px`);
+			setStyleProperty(holder, "--shift-y", `${box?.top || 0}px`);
+		};
+		return bindDraggable(binding, dragResolve, [this.#dragging.x, this.#dragging.y], () => {
+			const holder = weak?.deref?.();
+			holder?.setAttribute?.("data-dragging", "");
+			holder?.style?.setProperty("will-change", "inset, translate, transform, opacity, z-index");
+			this.#queueFrame(this.#dragging.x.value, this.#dragging.y.value);
+			return [0, 0];
+		});
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/Resizable.ts
+var ResizeHandler = class {
+	#holder;
+	#resizing;
+	get #parent() {
+		return this.#holder.offsetParent ?? this.#holder?.host ?? ROOT;
+	}
+	constructor(holder, options) {
+		if (!holder) throw Error("Element is null...");
+		doObserve(this.#holder = holder, this.#parent);
+		this.#resizing = vector2Ref(0, 0);
+		if (options) this.resizable(options);
+	}
+	limitResize(real, virtual, holder, container) {
+		const widthDiff = cbw(holder) - (bbw(holder) - (this.#resizing.x.value || 0));
+		const heightDiff = cbh(holder) - (bbh(holder) - (this.#resizing.y.value || 0));
+		real[0] = clamp(0, virtual?.[0] || 0, widthDiff) || 0;
+		real[1] = clamp(0, virtual?.[1] || 0, heightDiff) || 0;
+		return real;
+	}
+	resizable(options) {
+		const handler = options.handler ?? this.#holder;
+		this.#resizing;
+		const weak = new WeakRef(this.#holder), self_w = new WeakRef(this);
+		const dragResolve = (dragging) => {
+			const holder = weak?.deref?.();
+			holder?.style?.removeProperty?.("will-change");
+			queueMicrotask(() => {
+				holder?.removeAttribute?.("data-resizing");
+			});
+		};
+		const binding = (grabAction) => handler.addEventListener("pointerdown", makeShiftTrigger((ev) => grabAction(ev, this.#holder), this.#holder));
+		const initDrag = () => {
+			const starting = [this.#resizing.x.value || 0, this.#resizing.y.value || 0];
+			const holder = weak?.deref?.();
+			const parent = this.#parent;
+			self_w?.deref?.()?.limitResize?.(starting, starting, holder, parent);
+			holder?.setAttribute?.("data-resizing", "");
+			return starting;
+		};
+		const resizingArray = [this.#resizing.x, this.#resizing.y];
+		E(this.#holder, { style: {
+			"--resize-x": this.#resizing.x,
+			"--resize-y": this.#resizing.y
+		} });
+		return bindDraggable(binding, dragResolve, resizingArray, initDrag);
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/Selection.ts
+/**
+* Selection controller for creating snipping rectangles on screen/canvas
+* Supports drag-to-create, resize, constraints, and grid snapping
+*/
+var SelectionController = class {
+	target;
+	options;
+	selectionRect;
+	overlayElement;
+	isActive = false;
+	startPoint;
+	currentPoint;
+	dragStart;
+	resizeHandle;
+	constructor(options = {}) {
+		this.options = {
+			target: document.body,
+			minSize: vector2Ref(10, 10),
+			maxSize: vector2Ref(globalThis.innerWidth, globalThis.innerHeight),
+			showHandles: true,
+			style: {
+				border: "2px solid #007acc",
+				background: "rgba(0, 122, 204, 0.1)",
+				borderRadius: "0",
+				zIndex: 9999
+			},
+			...options
+		};
+		this.target = this.options.target;
+	}
+	/**
+	* Start selection mode - attaches event listeners
+	*/
+	start() {
+		if (this.isActive) return;
+		this.isActive = true;
+		this.createOverlay();
+		this.attachEvents();
+	}
+	/**
+	* Stop selection mode - removes event listeners and overlay
+	*/
+	stop() {
+		if (!this.isActive) return;
+		this.isActive = false;
+		this.removeOverlay();
+		this.detachEvents();
+		this.options.onCancel?.();
+	}
+	/**
+	* Get current selection rectangle
+	*/
+	getSelection() {
+		return this.selectionRect || null;
+	}
+	/**
+	* Set selection programmatically
+	*/
+	setSelection(rect) {
+		this.selectionRect = rect;
+		this.updateOverlay();
+		this.options.onChange?.(rect);
+	}
+	/**
+	* Clear current selection
+	*/
+	clearSelection() {
+		this.selectionRect = void 0;
+		this.updateOverlay();
+		this.options.onCancel?.();
+	}
+	createOverlay() {
+		if (this.overlayElement) return;
+		this.overlayElement = document.createElement("div");
+		Object.assign(this.overlayElement.style, {
+			position: "fixed",
+			pointerEvents: "none",
+			boxSizing: "border-box",
+			...this.options.style
+		});
+		if (this.options.showHandles) this.createResizeHandles();
+		this.target.appendChild(this.overlayElement);
+	}
+	createResizeHandles() {
+		if (!this.overlayElement) return;
+		const handles = [
+			"nw",
+			"ne",
+			"sw",
+			"se",
+			"n",
+			"s",
+			"e",
+			"w"
+		];
+		const handleElements = [];
+		handles.forEach((handle) => {
+			const handleEl = document.createElement("div");
+			handleEl.setAttribute("data-handle", handle);
+			Object.assign(handleEl.style, {
+				position: "absolute",
+				width: handle.length === 1 ? "100%" : "8px",
+				height: handle.length === 1 ? "8px" : "100%",
+				background: this.options.style?.border || "#007acc",
+				cursor: this.getCursorForHandle(handle),
+				pointerEvents: "auto"
+			});
+			this.positionHandle(handleEl, handle);
+			handleEl.addEventListener("pointerdown", (e) => {
+				e.stopPropagation();
+				this.startResize(handle, vector2Ref(e.clientX, e.clientY));
+			});
+			this.overlayElement.appendChild(handleEl);
+			handleElements.push(handleEl);
+		});
+	}
+	positionHandle(handleEl, handle) {
+		const style = handleEl.style;
+		switch (handle) {
+			case "nw":
+				style.top = style.left = "0";
+				break;
+			case "ne":
+				style.top = "0";
+				style.right = "0";
+				break;
+			case "sw":
+				style.bottom = style.left = "0";
+				break;
+			case "se":
+				style.bottom = style.right = "0";
+				break;
+			case "n":
+				style.top = "0";
+				style.left = "50%";
+				style.transform = "translateX(-50%)";
+				break;
+			case "s":
+				style.bottom = "0";
+				style.left = "50%";
+				style.transform = "translateX(-50%)";
+				break;
+			case "e":
+				style.top = "50%";
+				style.right = "0";
+				style.transform = "translateY(-50%)";
+				break;
+			case "w":
+				style.top = "50%";
+				style.left = "0";
+				style.transform = "translateY(-50%)";
+		}
+	}
+	getCursorForHandle(handle) {
+		return {
+			"nw": "nw-resize",
+			"ne": "ne-resize",
+			"sw": "sw-resize",
+			"se": "se-resize",
+			"n": "n-resize",
+			"s": "s-resize",
+			"e": "e-resize",
+			"w": "w-resize"
+		}[handle] || "pointer";
+	}
+	attachEvents() {
+		this.target.addEventListener("pointerdown", this.handlePointerDown);
+		this.target.addEventListener("pointermove", this.handlePointerMove);
+		this.target.addEventListener("pointerup", this.handlePointerUp);
+		document.addEventListener("keydown", this.handleKeyDown);
+	}
+	detachEvents() {
+		this.target.removeEventListener("pointerdown", this.handlePointerDown);
+		this.target.removeEventListener("pointermove", this.handlePointerMove);
+		this.target.removeEventListener("pointerup", this.handlePointerUp);
+		document.removeEventListener("keydown", this.handleKeyDown);
+	}
+	handlePointerDown = (e) => {
+		if (e.button !== 0) return;
+		const point = vector2Ref(e.clientX, e.clientY);
+		const handle = this.getHandleAtPoint(point);
+		if (handle) {
+			this.startResize(handle, point);
+			return;
+		}
+		if (this.selectionRect && rectContainsPoint(this.selectionRect, point).value) {
+			this.startDrag(point);
+			return;
+		}
+		this.startSelection(point);
+	};
+	handlePointerMove = (e) => {
+		const point = vector2Ref(e.clientX, e.clientY);
+		if (this.resizeHandle) this.updateResize(point);
+		else if (this.dragStart) this.updateDrag(point);
+		else if (this.startPoint) this.updateSelection(point);
+	};
+	handlePointerUp = (e) => {
+		if (this.resizeHandle) this.endResize();
+		else if (this.dragStart) this.endDrag();
+		else if (this.startPoint) this.endSelection();
+	};
+	handleKeyDown = (e) => {
+		if (e.key === "Escape") this.clearSelection();
+		else if (e.key === "Enter" && this.selectionRect) this.options.onSelect?.(this.selectionRect);
+	};
+	startSelection(point) {
+		this.startPoint = point;
+		this.currentPoint = point;
+		this.selectionRect = createRect2D(point.x, point.y, 0, 0);
+		this.updateOverlay();
+	}
+	updateSelection(point) {
+		if (!this.startPoint || !this.selectionRect) return;
+		this.currentPoint = point;
+		const minX = Math.min(this.startPoint.x.value, point.x.value);
+		const minY = Math.min(this.startPoint.y.value, point.y.value);
+		const maxX = Math.max(this.startPoint.x.value, point.x.value);
+		const maxY = Math.max(this.startPoint.y.value, point.y.value);
+		this.selectionRect.position.x.value = minX;
+		this.selectionRect.position.y.value = minY;
+		this.selectionRect.size.x.value = maxX - minX;
+		this.selectionRect.size.y.value = maxY - minY;
+		this.applyConstraints();
+		this.updateOverlay();
+		this.options.onChange?.(this.selectionRect);
+	}
+	endSelection() {
+		if (!this.selectionRect) return;
+		if (this.selectionRect.size.x.value < this.options.minSize.x.value || this.selectionRect.size.y.value < this.options.minSize.y.value) {
+			this.clearSelection();
+			return;
+		}
+		this.options.onSelect?.(this.selectionRect);
+		this.startPoint = void 0;
+		this.currentPoint = void 0;
+	}
+	startDrag(point) {
+		if (!this.selectionRect) return;
+		this.dragStart = point;
+	}
+	updateDrag(point) {
+		if (!this.dragStart || !this.selectionRect) return;
+		const delta = subtractVector2D(point, this.dragStart);
+		this.selectionRect.position = addVector2D(this.selectionRect.position, delta);
+		this.dragStart = point;
+		if (this.options.bounds) this.selectionRect.position = clampPointToRect(this.selectionRect.position, this.options.bounds);
+		this.updateOverlay();
+		this.options.onChange?.(this.selectionRect);
+	}
+	endDrag() {
+		this.dragStart = void 0;
+	}
+	startResize(handle, point) {
+		this.resizeHandle = handle;
+		this.dragStart = point;
+	}
+	updateResize(point) {
+		if (!this.resizeHandle || !this.dragStart || !this.selectionRect) return;
+		const delta = subtractVector2D(point, this.dragStart);
+		this.resizeFromHandle(this.resizeHandle, delta);
+		this.dragStart = point;
+		this.applyConstraints();
+		this.updateOverlay();
+		this.options.onChange?.(this.selectionRect);
+	}
+	resizeFromHandle(handle, delta) {
+		if (!this.selectionRect) return;
+		const rect = this.selectionRect;
+		let newX = rect.position.x.value;
+		let newY = rect.position.y.value;
+		let newWidth = rect.size.x.value;
+		let newHeight = rect.size.y.value;
+		switch (handle) {
+			case "nw":
+				newX += delta.x.value;
+				newY += delta.y.value;
+				newWidth -= delta.x.value;
+				newHeight -= delta.y.value;
+				break;
+			case "ne":
+				newY += delta.y.value;
+				newWidth += delta.x.value;
+				newHeight -= delta.y.value;
+				break;
+			case "sw":
+				newX += delta.x.value;
+				newWidth -= delta.x.value;
+				newHeight += delta.y.value;
+				break;
+			case "se":
+				newWidth += delta.x.value;
+				newHeight += delta.y.value;
+				break;
+			case "n":
+				newY += delta.y.value;
+				newHeight -= delta.y.value;
+				break;
+			case "s":
+				newHeight += delta.y.value;
+				break;
+			case "e":
+				newWidth += delta.x.value;
+				break;
+			case "w":
+				newX += delta.x.value;
+				newWidth -= delta.x.value;
+		}
+		if (newWidth < 0) {
+			newX += newWidth;
+			newWidth = -newWidth;
+		}
+		if (newHeight < 0) {
+			newY += newHeight;
+			newHeight = -newHeight;
+		}
+		rect.position.x.value = newX;
+		rect.position.y.value = newY;
+		rect.size.x.value = newWidth;
+		rect.size.y.value = newY;
+	}
+	endResize() {
+		this.resizeHandle = void 0;
+		this.dragStart = void 0;
+	}
+	applyConstraints() {
+		if (!this.selectionRect) return;
+		const rect = this.selectionRect;
+		if (this.options.aspectRatio) {
+			const currentRatio = rect.size.x.value / rect.size.y.value;
+			const targetRatio = this.options.aspectRatio;
+			if (Math.abs(currentRatio - targetRatio) > .01) {
+				if (currentRatio > targetRatio) rect.size.y.value = rect.size.x.value / targetRatio;
+				else rect.size.x.value = rect.size.y.value * targetRatio;
+			}
+		}
+		rect.size.x.value = Math.max(this.options.minSize.x.value, Math.min(this.options.maxSize.x.value, rect.size.x.value));
+		rect.size.y.value = Math.max(this.options.minSize.y.value, Math.min(this.options.maxSize.y.value, rect.size.y.value));
+		if (this.options.bounds) {
+			rect.position.x.value = Math.max(this.options.bounds.position.x.value, Math.min(rect.position.x.value, this.options.bounds.position.x.value + this.options.bounds.size.x.value - rect.size.x.value));
+			rect.position.y.value = Math.max(this.options.bounds.position.y.value, Math.min(rect.position.y.value, this.options.bounds.position.y.value + this.options.bounds.size.y.value - rect.size.y.value));
+		}
+		if (this.options.snapToGrid) {
+			const { size: gridSize, offset: gridOffset } = this.options.snapToGrid;
+			rect.position.x.value = Math.round((rect.position.x.value - gridOffset.x.value) / gridSize.x.value) * gridSize.x.value + gridOffset.x.value;
+			rect.position.y.value = Math.round((rect.position.y.value - gridOffset.y.value) / gridSize.y.value) * gridSize.y.value + gridOffset.y.value;
+		}
+	}
+	updateOverlay() {
+		if (!this.overlayElement) return;
+		if (!this.selectionRect) {
+			this.overlayElement.style.display = "none";
+			return;
+		}
+		const rect = this.selectionRect;
+		Object.assign(this.overlayElement.style, {
+			display: "block",
+			left: `${rect.position.x.value}px`,
+			top: `${rect.position.y.value}px`,
+			width: `${rect.size.x.value}px`,
+			height: `${rect.size.y.value}px`
+		});
+	}
+	removeOverlay() {
+		if (this.overlayElement) {
+			this.overlayElement.remove();
+			this.overlayElement = void 0;
+		}
+	}
+	getHandleAtPoint(point) {
+		if (!this.overlayElement || !this.selectionRect) return null;
+		this.selectionRect;
+		const handles = this.overlayElement.querySelectorAll("[data-handle]");
+		for (let i = 0; i < handles.length; i++) {
+			const handle = handles[i];
+			const handleRect = handle.getBoundingClientRect();
+			if (point.x.value >= handleRect.left && point.x.value <= handleRect.right && point.y.value >= handleRect.top && point.y.value <= handleRect.bottom) return handle.getAttribute("data-handle");
+		}
+		return null;
+	}
+	/**
+	* Get selection as image data (for canvas/screen capture)
+	*/
+	async getSelectionImage() {
+		if (!this.selectionRect) return null;
+		return null;
+	}
+	/**
+	* Destroy the selection controller
+	*/
+	destroy() {
+		this.stop();
+		this.clearSelection();
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/LongHover.ts
+var LongHoverHandler = class {
+	#holder;
+	#dispose = null;
+	constructor(holder, options, fx = (ev) => {
+		ev.target.dispatchEvent(new PointerEvent("long-hover", {
+			...ev,
+			bubbles: true
+		}));
+	}) {
+		this.#holder = holder;
+		holder["@control"] = this;
+		if (!holder) throw Error("Element is null...");
+		if (options) this.longHover(options, fx);
+	}
+	defaultHandler(ev, weakRef) {
+		return weakRef?.deref()?.dispatchEvent?.(new PointerEvent("long-hover", {
+			...ev,
+			bubbles: true
+		}));
+	}
+	longHover(options, fx = (ev) => {
+		ev.target.dispatchEvent(new PointerEvent("long-hover", {
+			...ev,
+			bubbles: true
+		}));
+	}) {
+		this.dispose();
+		const action = {
+			pointerId: -1,
+			timer: null
+		};
+		const initiate = ((evc) => {
+			const ev = evc;
+			if ((ev.target.matches(options.selector) || ev.target.closest(options.selector)) && action.pointerId < 0) {
+				action.pointerId = ev.pointerId;
+				action.timer = setTimeout(() => {
+					fx?.(ev);
+				}, options.holdTime ?? 300);
+			}
+		});
+		const cancelEv = ((evc) => {
+			const ev = evc;
+			if ((ev.target.matches(options.selector) || ev.target.closest(options.selector)) && action.pointerId == ev.pointerId) {
+				if (action.timer) clearTimeout(action.timer);
+				action.timer = null;
+				action.pointerId = -1;
+			}
+		});
+		const bindings = addEvents(ROOT, {
+			"pointerover": initiate,
+			"pointerdown": initiate,
+			"pointerout": cancelEv,
+			"pointerup": cancelEv,
+			"pointercancel": cancelEv
+		});
+		this.#dispose = () => {
+			bindings?.forEach?.((unbind) => unbind?.());
+			clearTimeout(action.timer);
+			action.timer = null;
+			action.pointerId = -1;
+		};
+		return this.#dispose;
+	}
+	/** Release root listeners and cancel a pending hover timer. */
+	dispose() {
+		const dispose = this.#dispose;
+		this.#dispose = null;
+		dispose?.();
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/LongPress.ts
+var defaultOptions = {
+	anyPointer: true,
+	mouseImmediate: true,
+	minHoldTime: 100,
+	maxHoldTime: 2e3,
+	maxOffsetRadius: 10
+};
+/** Suppress the synthetic click after long-press without blocking other listeners on the same target. */
+var preventor = [(ev) => {
+	ev.preventDefault();
+	ev.stopPropagation();
+}, { once: true }];
+var LongPressHandler = class {
+	#holder;
+	#preventedPointers;
+	#dispose = null;
+	constructor(holder, options = { ...defaultOptions }, fx) {
+		(this.#holder = holder)["@control"] = this;
+		this.#preventedPointers = /* @__PURE__ */ new Set();
+		if (!holder) throw Error("Element is null...");
+		if (!options) options = { ...defaultOptions };
+		const currentClone = { ...options };
+		Object.assign(options, defaultOptions, currentClone);
+		if (options) this.longPress(options, fx);
+	}
+	defaultHandler(ev, weakRef) {
+		return weakRef?.deref()?.dispatchEvent?.(new PointerEvent("long-press", {
+			...ev,
+			bubbles: true
+		}));
+	}
+	longPress(options = { ...defaultOptions }, fx) {
+		this.dispose();
+		const ROOT = document.documentElement;
+		const weakRef = new WeakRef(this.#holder);
+		const actionState = this.initializeActionState();
+		this.holding = {
+			actionState,
+			options,
+			fx: fx || ((ev) => this.defaultHandler(ev, weakRef))
+		};
+		const pointerDownListener = (ev) => this.onPointerDown(this.holding, ev, weakRef);
+		const pointerMoveListener = (ev) => this.onPointerMove(this.holding, ev);
+		const pointerUpListener = (ev) => this.onPointerUp(this.holding, ev);
+		const bindings = addEvents(ROOT, {
+			"pointerdown": pointerDownListener,
+			"pointermove": pointerMoveListener,
+			"pointerup": pointerUpListener,
+			"pointercancel": pointerUpListener
+		});
+		this.#dispose = () => {
+			bindings?.forEach?.((unbind) => unbind?.());
+			clearTimeout(actionState.timerId);
+			clearTimeout(actionState.immediateTimerId);
+			this.releasePreventing(this.#holder, actionState.pointerId);
+			actionState.pointerId = -1;
+		};
+		return this.#dispose;
+	}
+	/** Release root listeners and any pending long-press state. */
+	dispose() {
+		const dispose = this.#dispose;
+		this.#dispose = null;
+		dispose?.();
+	}
+	initializeActionState() {
+		return {
+			timerId: null,
+			immediateTimerId: null,
+			pointerId: -1,
+			startCoord: [0, 0],
+			lastCoord: [0, 0],
+			isReadyForLongPress: false,
+			cancelCallback: () => {},
+			cancelPromiseResolver: null,
+			cancelPromiseRejector: null
+		};
+	}
+	preventFromClicking(self, ev) {
+		if (!this.#preventedPointers.has(ev.pointerId)) {
+			this.#preventedPointers.add(ev.pointerId);
+			self?.addEventListener?.("click", ...preventor);
+			self?.addEventListener?.("contextmenu", ...preventor);
+		}
+	}
+	releasePreventing(self, pointerId) {
+		if (this.#preventedPointers.has(pointerId)) {
+			this.#preventedPointers.delete(pointerId);
+			self?.removeEventListener?.("click", ...preventor);
+			self?.removeEventListener?.("contextmenu", ...preventor);
+		}
+	}
+	onPointerDown(self, ev, weakRef) {
+		if (!this.isValidTarget(self, ev.target, weakRef) || !(self.options?.anyPointer || ev?.pointerType == "touch")) return;
+		ev.preventDefault();
+		this.resetAction(self, self.actionState);
+		const { actionState } = self;
+		actionState.pointerId = ev.pointerId;
+		actionState.startCoord = [ev.clientX, ev.clientY];
+		actionState.lastCoord = [...actionState.startCoord];
+		const $withResolver = Promise.withResolvers();
+		actionState.cancelPromiseResolver = $withResolver.resolve;
+		actionState.cancelPromiseRejector = $withResolver.reject;
+		actionState.cancelCallback = () => {
+			clearTimeout(actionState.timerId);
+			clearTimeout(actionState.immediateTimerId);
+			actionState.isReadyForLongPress = false;
+			$withResolver.resolve();
+			this.resetAction(self, actionState);
+		};
+		if (self.options?.mouseImmediate && ev.pointerType === "mouse") {
+			self.fx?.(ev);
+			return actionState.cancelCallback();
+		}
+		actionState.timerId = setTimeout(() => {
+			actionState.isReadyForLongPress = true;
+		}, self.options?.minHoldTime);
+		actionState.immediateTimerId = setTimeout(() => {
+			if (this.isInPlace(self)) {
+				this.preventFromClicking(self, ev);
+				self.fx?.(ev);
+				actionState.cancelCallback();
+			}
+		}, self.options?.maxHoldTime);
+		Promise.race([$withResolver.promise, new Promise((_, reject) => setTimeout(() => reject(/* @__PURE__ */ new Error("Timeout")), 3e3))]).catch(console.warn);
+	}
+	onPointerMove(self, ev) {
+		const { actionState } = self;
+		if (ev.pointerId !== actionState.pointerId) return;
+		actionState.lastCoord = [ev.clientX, ev.clientY];
+		if (!this.isInPlace(self)) return actionState.cancelCallback();
+		this.preventFromClicking(self, ev);
+		actionState.startCoord = [ev.clientX, ev.clientY];
+	}
+	resetAction(self, actionState) {
+		this.releasePreventing(self, actionState.pointerId);
+		actionState.pointerId = -1;
+		actionState.cancelPromiseResolver = null;
+		actionState.cancelPromiseRejector = null;
+		actionState.isReadyForLongPress = false;
+		actionState.cancelCallback = null;
+	}
+	onPointerUp(self, ev) {
+		const { actionState } = self;
+		if (ev.pointerId !== actionState.pointerId) return;
+		actionState.lastCoord = [ev.clientX, ev.clientY];
+		if (actionState.isReadyForLongPress && this.isInPlace(self)) {
+			self.fx?.(ev);
+			this.preventFromClicking(self, ev);
+		}
+		actionState.cancelCallback();
+		this.resetAction(self, actionState);
+	}
+	holding = {
+		fx: null,
+		options: {},
+		actionState: {}
+	};
+	hasParent(current, parent) {
+		while (current) {
+			if (current === parent) return true;
+			current = current.parentElement;
+		}
+	}
+	isInPlace(self) {
+		const { actionState } = self;
+		const [startX, startY] = actionState.startCoord;
+		const [lastX, lastY] = actionState.lastCoord;
+		return Math.hypot(lastX - startX, lastY - startY) <= self.options?.maxOffsetRadius;
+	}
+	isValidTarget(self, target, weakRef) {
+		const weakElement = weakRef?.deref?.();
+		return weakElement && (this.hasParent(target, weakElement) || target === weakElement) && (!self.options?.handler || target.matches(self.options?.handler));
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/Swipe.ts
+var SwipeHandler = class {
+	#holder;
+	#dispose = null;
+	constructor(holder, options) {
+		(this.#holder = holder)["@control"] = this;
+		if (!holder) throw Error("Element is null...");
+		if (options) this.swipe(options);
+	}
+	swipe(options) {
+		this.dispose();
+		if (options?.handler) {
+			const swipes = /* @__PURE__ */ new Map([]);
+			const swipes_w = new WeakRef(swipes);
+			const registerMove = (evc) => {
+				const ev = evc;
+				if (swipes?.has?.(ev.pointerId)) {
+					const swipe = swipes?.get?.(ev.pointerId);
+					Object.assign(swipe || {}, {
+						current: [...ev.client || [ev?.clientX, ev?.clientY]],
+						pointerId: ev.pointerId,
+						time: performance.now()
+					});
+				}
+			};
+			const compAngle = (a, c) => {
+				return (a - c + 540) % 360 - 180;
+			};
+			const completeSwipe = (ev) => {
+				const pointerId = ev.pointerId;
+				if (swipes?.has?.(pointerId)) {
+					const swipe = swipes_w?.deref()?.get?.(pointerId);
+					const diffP = [swipe.start[0] - swipe.current[0], swipe.start[1] - swipe.current[1]];
+					const diffT = performance.now() - swipe.startTime;
+					if ((swipe.speed = Math.hypot(...diffP) / diffT) > (options.threshold || .5)) {
+						swipe.direction = "name";
+						swipe.swipeAngle = Math.atan2(swipe.current[1] - swipe.start[1], swipe.current[0] - swipe.start[0]);
+						if (Math.abs(compAngle(swipe.swipeAngle * (180 / Math.PI), 0)) <= 20) swipe.direction = "left";
+						if (Math.abs(compAngle(swipe.swipeAngle * (180 / Math.PI), 180)) <= 20) swipe.direction = "right";
+						if (Math.abs(compAngle(swipe.swipeAngle * (180 / Math.PI), 270)) <= 20) swipe.direction = "up";
+						if (Math.abs(compAngle(swipe.swipeAngle * (180 / Math.PI), 90)) <= 20) swipe.direction = "down";
+						options?.trigger?.(swipe);
+					}
+					swipes_w?.deref()?.delete?.(pointerId);
+				}
+			};
+			const takeAction = ((evc) => {
+				const ev = evc;
+				if (ev.target == options?.handler) {
+					swipes?.set(ev.pointerId, {
+						target: ev.target,
+						start: [...ev.client || [ev?.clientX, ev?.clientY]],
+						current: [...ev.client || [ev?.clientX, ev?.clientY]],
+						pointerId: ev.pointerId,
+						startTime: performance.now(),
+						time: performance.now(),
+						speed: 0
+					});
+					ev?.capture?.();
+				}
+			});
+			const bindings = addEvents(ROOT, {
+				"pointerdown": takeAction,
+				"pointermove": registerMove,
+				"pointerup": completeSwipe,
+				"pointercancel": completeSwipe
+			});
+			this.#dispose = () => {
+				bindings?.forEach?.((unbind) => unbind?.());
+				swipes.clear();
+			};
+			return this.#dispose;
+		}
+	}
+	/** Release root listeners and discard in-progress swipe state. */
+	dispose() {
+		const dispose = this.#dispose;
+		this.#dispose = null;
+		dispose?.();
+	}
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/controllers/Handler.ts
 var handleByPointer = (cb, root = typeof document != "undefined" ? document?.documentElement : null) => {
@@ -8015,6 +11189,16 @@ var handleByPointer = (cb, root = typeof document != "undefined" ? document?.doc
 	];
 	return () => {
 		listening.forEach((ub) => ub?.());
+	};
+};
+var handleForFixPosition = (container, cb, root = typeof document != "undefined" ? document?.documentElement : null) => {
+	if (!root) return () => {};
+	const ptu = (ev) => cb?.(ev);
+	const listening = [addEvent(container, "scroll", ptu), addEvent(root, "resize", ptu)];
+	const obs = observeContentBox(container, ptu);
+	return () => {
+		listening.forEach((ub) => ub?.());
+		obs?.disconnect?.();
 	};
 };
 //#endregion
@@ -8374,7 +11558,224 @@ new JunctionSelectMixin();
 new JunctionDragMixin();
 new JunctionResizeMixin();
 //#endregion
+//#region ../../modules/projects/lur.e/src/interactive/mixins/Draggable.ts
+/**
+* Anchorable drag / resize: wires `data-mixin` junction controllers + optional CSS Anchor Positioning names.
+*
+* WHY: `--jx-frame` / `--jx-drag-handle` / `--jx-resize-handle` pair with `position-anchor` / `anchor()`
+* in author styles without imperative `DragHandler` setup.
+*/
+var ANCHOR_IDENT = /^--[-\w]+$/;
+function tokenSelector(el, attr, value) {
+	el.setAttribute(attr, value);
+	return `[${attr}="${value}"]`;
+}
+function resolveHandleSelector(frame, handle, attrPrefix) {
+	if (!handle || handle === frame) return void 0;
+	return tokenSelector(handle, "data-jx-anchor-ctl", `${attrPrefix}-${Math.random().toString(36).slice(2, 10)}`);
+}
+/** Apply `anchor-name` when valid dashed ident. */
+function applyAnchorName(el, name) {
+	if (!el || !name) return;
+	if (!ANCHOR_IDENT.test(name)) return;
+	el.style.setProperty("anchor-name", name);
+}
+/**
+* Declaratively enable junction drag (+ optional resize) and publish CSS anchor names.
+* Returns teardown (restores previous `data-mixin` text only; anchor-name cleanup is best-effort).
+*/
+function bindAnchorableDragResize(opts) {
+	const { frame } = opts;
+	const prevMixinAttr = frame.getAttribute("data-mixin") ?? "";
+	const prevDragSel = frame.getAttribute("data-junction-drag-handle");
+	const prevResizeSel = frame.getAttribute("data-junction-resize-handle");
+	const prevMinW = frame.getAttribute("data-junction-resize-min-w");
+	const prevMinH = frame.getAttribute("data-junction-resize-min-h");
+	const wantResize = opts.resizeHandle !== null;
+	const mixins = new Set(prevMixinAttr.split(/\s+/).filter(Boolean));
+	mixins.add("ui-junction-drag");
+	if (wantResize) mixins.add("ui-junction-resize");
+	else mixins.delete("ui-junction-resize");
+	frame.setAttribute("data-mixin", [...mixins].join(" "));
+	if (typeof opts.dragHandle === "string") frame.setAttribute("data-junction-drag-handle", opts.dragHandle);
+	else if (opts.dragHandle instanceof HTMLElement) {
+		const sel = resolveHandleSelector(frame, opts.dragHandle, "drag");
+		if (sel) frame.setAttribute("data-junction-drag-handle", sel);
+	}
+	if (wantResize) {
+		if (typeof opts.resizeHandle === "string") frame.setAttribute("data-junction-resize-handle", opts.resizeHandle);
+		else if (opts.resizeHandle instanceof HTMLElement) {
+			const sel = resolveHandleSelector(frame, opts.resizeHandle, "rz");
+			if (sel) frame.setAttribute("data-junction-resize-handle", sel);
+		}
+	} else frame.removeAttribute("data-junction-resize-handle");
+	if (opts.minWidth != null) frame.setAttribute("data-junction-resize-min-w", String(opts.minWidth));
+	if (opts.minHeight != null) frame.setAttribute("data-junction-resize-min-h", String(opts.minHeight));
+	const a = opts.anchors ?? {};
+	const frameAnchor = a.frame ?? "--jx-frame";
+	const dragA = a.dragHandle ?? "--jx-drag-handle";
+	const rzA = a.resizeHandle ?? "--jx-resize-handle";
+	applyAnchorName(frame, frameAnchor);
+	let dragEl;
+	if (typeof opts.dragHandle === "string") dragEl = frame.querySelector(opts.dragHandle);
+	else dragEl = opts.dragHandle;
+	applyAnchorName(dragEl, dragEl && dragEl !== frame ? dragA : void 0);
+	let rzEl;
+	if (wantResize) {
+		if (typeof opts.resizeHandle === "string") rzEl = frame.querySelector(opts.resizeHandle);
+		else rzEl = opts.resizeHandle ?? void 0;
+		applyAnchorName(rzEl, rzA);
+	}
+	updateAllMixins(frame);
+	return () => {
+		if (prevMixinAttr) frame.setAttribute("data-mixin", prevMixinAttr);
+		else frame.removeAttribute("data-mixin");
+		if (prevDragSel != null) frame.setAttribute("data-junction-drag-handle", prevDragSel);
+		else frame.removeAttribute("data-junction-drag-handle");
+		if (prevResizeSel != null) frame.setAttribute("data-junction-resize-handle", prevResizeSel);
+		else frame.removeAttribute("data-junction-resize-handle");
+		if (prevMinW != null) frame.setAttribute("data-junction-resize-min-w", prevMinW);
+		else frame.removeAttribute("data-junction-resize-min-w");
+		if (prevMinH != null) frame.setAttribute("data-junction-resize-min-h", prevMinH);
+		else frame.removeAttribute("data-junction-resize-min-h");
+		frame.style.removeProperty("anchor-name");
+		dragEl?.style?.removeProperty("anchor-name");
+		rzEl?.removeAttribute("data-jx-anchor-ctl");
+		dragEl?.removeAttribute("data-jx-anchor-ctl");
+		rzEl?.style?.removeProperty("anchor-name");
+		updateAllMixins(frame);
+	};
+}
+//#endregion
 //#region ../../modules/projects/lur.e/src/design/anchor/Utils.ts
+var generateAnchorId = () => {
+	return "--" + Math.random().toString(36).substring(2, 15).replace(/[0-9]/g, "");
+};
+var getComputedZIndex = (element) => {
+	if (element?.computedStyleMap) return Number(element.computedStyleMap().get("z-index")?.toString() || 0) || 0;
+	else return Number(getComputedStyle(element?.element ?? element).getPropertyValue("z-index") || 0) || 0;
+};
+var getExistsZIndex = (element) => {
+	if (!element) return 0;
+	if (element?.attributeStyleMap && element.attributeStyleMap.get("z-index") != null) return Number(element.attributeStyleMap.get("z-index")?.value ?? 0) || 0;
+	if (element?.style && "zIndex" in element.style && element.style.zIndex != null) return Number(element.style.zIndex || 0) || 0;
+	return getComputedZIndex(element);
+};
+var ReactiveCSSValue = class {
+	value;
+	unit;
+	constructor(initialValue, unit = "px") {
+		const parsed = typeof initialValue === "string" ? CSSUnitConverter.parseValue(initialValue) : {
+			value: initialValue,
+			unit
+		};
+		this.value = numberRef(parsed.value);
+		this.unit = parsed.unit;
+	}
+	get cssValue() {
+		return CSSBinder.bindWithUnit({}, "", this.value, this.unit);
+	}
+	toUnit(targetUnit) {
+		return CSSCalc.multiply(this.value, numberRef(1));
+	}
+	bindTo(element, property) {
+		return CSSBinder.bindWithUnit(element, property, this.value, this.unit);
+	}
+};
+var ReactiveTransform = class {
+	transforms = [];
+	translate(x, y) {
+		const vector = typeof x === "number" && typeof y === "number" ? {
+			x: numberRef(x),
+			y: numberRef(y)
+		} : {
+			x: typeof x === "number" ? numberRef(x) : x,
+			y: typeof y === "number" ? numberRef(y) : y
+		};
+		this.transforms.push(CSSTransform.translate2D(vector));
+		return this;
+	}
+	scale(x, y) {
+		const scaleX = typeof x === "number" ? numberRef(x) : x;
+		const scaleY = y !== void 0 ? typeof y === "number" ? numberRef(y) : y : scaleX;
+		this.transforms.push(CSSTransform.scale2D({
+			x: scaleX,
+			y: scaleY
+		}));
+		return this;
+	}
+	rotate(angle) {
+		const angleRef = typeof angle === "number" ? numberRef(angle) : angle;
+		this.transforms.push(CSSTransform.rotate(angleRef));
+		return this;
+	}
+	get value() {
+		return CSSTransform.combine(this.transforms);
+	}
+	bindTo(element) {
+		return CSSBinder.bindTransform(element, {
+			x: numberRef(0),
+			y: numberRef(0)
+		});
+	}
+};
+var ReactiveAnimation = class {
+	element;
+	properties;
+	duration;
+	easing;
+	constructor(element, duration = 1e3, easing = "ease-out") {
+		this.element = element;
+		this.properties = /* @__PURE__ */ new Map();
+		this.duration = duration;
+		this.easing = easing;
+	}
+	animateProperty(property, from, to) {
+		const value = numberRef(from);
+		this.properties.set(property, value);
+		CSSBinder.bindWithUnit(this.element, property, value);
+		this.animateValue(value, from, to);
+		return this;
+	}
+	animateValue(ref, from, to) {
+		const startTime = performance.now();
+		const animate = (currentTime) => {
+			const elapsed = currentTime - startTime;
+			const progress = Math.min(elapsed / this.duration, 1);
+			const easedProgress = this.applyEasing(progress);
+			ref.value = from + (to - from) * easedProgress;
+			if (progress < 1) requestAnimationFrame(animate);
+		};
+		requestAnimationFrame(animate);
+	}
+	applyEasing(t) {
+		switch (this.easing) {
+			case "ease-out": return 1 - Math.pow(1 - t, 3);
+			case "ease-in": return t * t * t;
+			case "ease-in-out": return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+			default: return t;
+		}
+	}
+};
+var ReactiveMediaQuery = class {
+	query;
+	matches;
+	constructor(query) {
+		this.query = query;
+		this.matches = numberRef(0);
+		const mediaQuery = window?.matchMedia(query);
+		this.matches.value = mediaQuery.matches ? 1 : 0;
+		mediaQuery?.addEventListener("change", (e) => {
+			this.matches.value = e.matches ? 1 : 0;
+		});
+	}
+	get reactiveMatches() {
+		return this.matches;
+	}
+	valueIfMatches(ifTrue, ifFalse) {
+		return this.matches.value ? ifTrue : ifFalse;
+	}
+};
 var ReactiveViewport = class {
 	static width = numberRef(typeof window != "undefined" ? window?.innerWidth : 0);
 	static height = numberRef(typeof window != "undefined" ? window?.innerHeight : 0);
@@ -8393,6 +11794,1135 @@ var ReactiveViewport = class {
 	}
 };
 ReactiveViewport.init();
+var ReactiveElementSize = class {
+	element;
+	size;
+	observer;
+	constructor(element) {
+		this.element = element;
+		this.size = {
+			width: numberRef(element.offsetWidth),
+			height: numberRef(element.offsetHeight)
+		};
+		this.observer = new ResizeObserver((entries) => {
+			for (const entry of entries) if (entry.target === element) {
+				this.size.width.value = entry.contentRect.width;
+				this.size.height.value = entry.contentRect.height;
+			}
+		});
+		this.observer.observe(element);
+	}
+	get width() {
+		return this.size.width;
+	}
+	get height() {
+		return this.size.height;
+	}
+	center() {
+		return {
+			x: CSSCalc.divide(this.size.width, numberRef(2)),
+			y: CSSCalc.divide(this.size.height, numberRef(2))
+		};
+	}
+	destroy() {
+		this.observer.disconnect();
+	}
+};
+var ReactiveScroll = class {
+	element;
+	scrollLeft;
+	scrollTop;
+	constructor(element = document.documentElement) {
+		this.element = element;
+		this.scrollLeft = numberRef(element.scrollLeft);
+		this.scrollTop = numberRef(element.scrollTop);
+		element.addEventListener("scroll", () => {
+			this.scrollLeft.value = element.scrollLeft;
+			this.scrollTop.value = element.scrollTop;
+		});
+	}
+	get left() {
+		return this.scrollLeft;
+	}
+	get top() {
+		return this.scrollTop;
+	}
+	progress(axis = "y") {
+		const scrollSize = axis === "x" ? this.element.scrollWidth - this.element.clientWidth : this.element.scrollHeight - this.element.clientHeight;
+		const scrollPos = axis === "x" ? this.scrollLeft : this.scrollTop;
+		return CSSCalc.divide(scrollPos, numberRef(Math.max(scrollSize, 1)));
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/layers/stacking.ts
+var defaultZIndexShift = (role) => role === "underlying" ? -1 : 1;
+/**
+* Returns numeric z-index to apply, or null to leave unset
+* (order-equal when main has no explicit z-index — DOM paint order wins).
+*/
+function resolveLayerZIndex(main, options) {
+	const role = options.role;
+	const stackMode = options.stackMode ?? "shift";
+	const mainZ = getExistsZIndex(main);
+	const mainStyleZ = (main.style?.zIndex ?? "").trim();
+	const mainIsAuto = !mainStyleZ || mainStyleZ === "auto";
+	if (stackMode === "order-equal") {
+		if (mainIsAuto) return null;
+		return mainZ;
+	}
+	const shift = options.zIndexShift ?? defaultZIndexShift(role);
+	return Math.max(mainIsAuto ? 0 : mainZ + shift, 0);
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/CSSAnchor.ts
+var registeredAnchorIds = /* @__PURE__ */ new WeakMap();
+var registeredAnchors = /* @__PURE__ */ new WeakMap();
+var CSSAnchor = class {
+	source;
+	anchorId;
+	constructor(source) {
+		this.source = source;
+		registeredAnchors.set(source, this);
+		this.anchorId = registeredAnchorIds.getOrInsert(source, generateAnchorId());
+		this.source.style.setProperty("anchor-name", this.anchorId);
+		this.source.style.setProperty("position-visibility", `always`);
+	}
+	connectElement(connect, { placement = "fill", zIndexShift = 1, inset = 0, size = "100%", transformOrigin = "50% 50%" }) {
+		if (placement == "fill") {
+			connect.style.setProperty("inset-block-start", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("inset-inline-start", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("inset-block-end", `anchor(end, ${inset}px)`);
+			connect.style.setProperty("inset-inline-end", `anchor(end, ${inset}px)`);
+			connect.style.setProperty("inline-size", `anchor-size(inline, ${size})`);
+			connect.style.setProperty("block-size", `anchor-size(block, ${size})`);
+			connect.style.setProperty("transform-origin", transformOrigin);
+		} else if (placement == "bottom") {
+			connect.style.setProperty("inset-block-start", `anchor(end, ${inset}px)`);
+			connect.style.setProperty("inset-inline-start", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("inline-size", `anchor-size(self-inline, ${size})`);
+			connect.style.setProperty("transform-origin", transformOrigin);
+		} else if (placement == "top") {
+			connect.style.setProperty("inset-block-end", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("inset-inline-start", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("inline-size", `anchor-size(self-inline, ${size})`);
+			connect.style.setProperty("transform-origin", transformOrigin);
+		} else if (placement == "left") {
+			connect.style.setProperty("inset-inline-start", `anchor(end, ${inset}px)`);
+			connect.style.setProperty("inset-block-start", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("block-size", `anchor-size(self-block, ${size})`);
+			connect.style.setProperty("transform-origin", transformOrigin);
+		} else if (placement == "right") {
+			connect.style.setProperty("inset-inline-end", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("inset-block-start", `anchor(start, ${inset}px)`);
+			connect.style.setProperty("block-size", `anchor-size(self-block, ${size})`);
+			connect.style.setProperty("transform-origin", transformOrigin);
+		} else if (placement == "center") {
+			connect.style.setProperty("inset-inline-start", `anchor(center, ${inset}px)`);
+			connect.style.setProperty("inset-block-start", `anchor(center, ${inset}px)`);
+			connect.style.setProperty("inline-size", `anchor-size(self-inline, ${size})`);
+			connect.style.setProperty("block-size", `anchor-size(self-block, ${size})`);
+			connect.style.setProperty("transform-origin", transformOrigin);
+		}
+		connect.style.setProperty("position-visibility", `always`);
+		connect.style.setProperty("position-anchor", this.anchorId);
+		connect.style.setProperty("position", `absolute`);
+		connect.style.setProperty("position-area", `span-all`);
+		connect.style.setProperty("z-index", String(getExistsZIndex(this.source ?? connect) + zIndexShift));
+		return this;
+	}
+	connectWithContainerQuery(connect, { placement = "fill", containerQuery = "(min-width: 768px)", fallbackPlacement = "bottom", zIndexShift = 1, inset = 0, size = "100%" }) {
+		const mediaQuery = globalThis.matchMedia ? globalThis.matchMedia(containerQuery) : null;
+		const updatePosition = () => {
+			if (CSS.supports && CSS.supports("anchor-name", this.anchorId) && mediaQuery?.matches) this.connectElement(connect, {
+				placement,
+				zIndexShift,
+				inset,
+				size
+			});
+			else {
+				connect.style.removeProperty("position-anchor");
+				connect.style.removeProperty("anchor-name");
+				connect.style.setProperty("position", "absolute");
+				connect.style.setProperty("z-index", String(getExistsZIndex(this.source ?? connect) + zIndexShift));
+				const sourceRect = this.source.getBoundingClientRect();
+				if (fallbackPlacement === "bottom") {
+					connect.style.setProperty("top", `${sourceRect.bottom + inset}px`);
+					connect.style.setProperty("left", `${sourceRect.left + inset}px`);
+					connect.style.setProperty("width", size);
+				} else if (fallbackPlacement === "top") {
+					connect.style.setProperty("bottom", `${globalThis.innerHeight - sourceRect.top + inset}px`);
+					connect.style.setProperty("left", `${sourceRect.left + inset}px`);
+					connect.style.setProperty("width", size);
+				} else if (fallbackPlacement === "right") {
+					connect.style.setProperty("top", `${sourceRect.top + inset}px`);
+					connect.style.setProperty("left", `${sourceRect.right + inset}px`);
+					connect.style.setProperty("height", size);
+				} else if (fallbackPlacement === "left") {
+					connect.style.setProperty("top", `${sourceRect.top + inset}px`);
+					connect.style.setProperty("right", `${globalThis.innerWidth - sourceRect.left + inset}px`);
+					connect.style.setProperty("height", size);
+				}
+			}
+		};
+		if (mediaQuery) {
+			mediaQuery.addEventListener("change", updatePosition);
+			updatePosition();
+		}
+		return () => mediaQuery?.removeEventListener("change", updatePosition);
+	}
+};
+var makeAnchorElement = (anchorElement) => {
+	return registeredAnchors.getOrInsert(anchorElement, new CSSAnchor(anchorElement));
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/BBoxAnchor.ts
+function boundingBoxAnchorRef(anchor, options) {
+	if (!anchor) return () => {};
+	const position = vector2Ref(0, 0);
+	const size = vector2Ref(0, 0);
+	const area = [
+		position.x,
+		position.y,
+		size.x,
+		size.y,
+		numberRef(0),
+		numberRef(0)
+	];
+	const rect = {
+		position,
+		size
+	};
+	const center = rectCenter(rect);
+	const reactiveArea = rectArea(rect);
+	const { root = anchor?.offsetParent ?? document.documentElement, observeResize = true, observeMutations = false } = options || {};
+	const elementSize = new ReactiveElementSize(anchor);
+	function updateArea() {
+		const rect = anchor?.getBoundingClientRect?.() ?? {};
+		position.x.value = rect?.left;
+		position.y.value = rect?.top;
+		size.x.value = rect?.right - rect?.left;
+		size.y.value = rect?.bottom - rect?.top;
+		area[4].value = rect?.right;
+		area[5].value = rect?.bottom;
+	}
+	const listening = [
+		addEvent(root, "scroll", updateArea, { capture: true }),
+		addEvent(window, "resize", updateArea),
+		addEvent(window, "scroll", updateArea, { capture: true })
+	];
+	let resizeObs;
+	if (observeResize && "ResizeObserver" in window && typeof ResizeObserver != "undefined") {
+		resizeObs = typeof ResizeObserver != "undefined" ? new ResizeObserver(updateArea) : void 0;
+		resizeObs?.observe(anchor);
+	}
+	let mutationObs;
+	if (observeMutations) {
+		mutationObs = typeof MutationObserver != "undefined" ? new MutationObserver(updateArea) : void 0;
+		mutationObs?.observe(anchor, {
+			attributes: true,
+			childList: true,
+			subtree: true
+		});
+	}
+	updateArea();
+	function destroy() {
+		listening.forEach((ub) => ub?.());
+		resizeObs?.disconnect?.();
+		mutationObs?.disconnect?.();
+	}
+	if (destroy) area.forEach((ub) => addToCallChain(ub, Symbol.dispose, destroy));
+	return Object.assign(area, {
+		position,
+		size,
+		rect,
+		center,
+		area: reactiveArea,
+		elementSize,
+		containsPoint: (point) => rectContainsPoint(rect, point),
+		intersects: (otherRect) => rectIntersects(rect, otherRect),
+		clampPoint: (point) => clampPointToRect(point, rect),
+		distanceToPoint: (point) => pointToRectDistance(point, rect),
+		bindPosition: (element) => CSSBinder.bindPosition(element, position),
+		bindSize: (element) => CSSBinder.bindSize(element, size),
+		bindCenter: (element) => CSSBinder.bindPosition(element, center),
+		destroy: () => {
+			elementSize.destroy();
+			destroy();
+		}
+	});
+}
+var bindWithRect = (anchor, area, options) => {
+	if (!anchor) return () => {};
+	if (area?.connectElement) return area?.connectElement?.(anchor, options || {});
+	const [left, top, width, height, right, bottom] = area;
+	const usb = [];
+	if (options?.placement == "fill") {
+		usb.push(bindWith(anchor, "inset-block-start", CSSUnitUtils.asPx(left), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-inline-start", CSSUnitUtils.asPx(top), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-block-end", CSSUnitUtils.asPx(right), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-inline-end", CSSUnitUtils.asPx(bottom), handleStyleChange));
+		usb.push(bindWith(anchor, "inline-size", CSSUnitUtils.asPx(width), handleStyleChange));
+		usb.push(bindWith(anchor, "block-size", CSSUnitUtils.asPx(height), handleStyleChange));
+	} else if (options?.placement == "bottom") {
+		usb.push(bindWith(anchor, "inset-block-start", CSSUnitUtils.asPx(bottom), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-inline-start", CSSUnitUtils.asPx(left), handleStyleChange));
+		usb.push(bindWith(anchor, "inline-size", CSSUnitUtils.asPx(width), handleStyleChange));
+	} else if (options?.placement == "top") {
+		usb.push(bindWith(anchor, "inset-block-end", CSSUnitUtils.asPx(top), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-inline-start", CSSUnitUtils.asPx(left), handleStyleChange));
+		usb.push(bindWith(anchor, "inline-size", CSSUnitUtils.asPx(width), handleStyleChange));
+	} else if (options?.placement == "left") {
+		usb.push(bindWith(anchor, "inset-inline-end", CSSUnitUtils.asPx(right), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-block-start", CSSUnitUtils.asPx(top), handleStyleChange));
+		usb.push(bindWith(anchor, "block-size", CSSUnitUtils.asPx(height), handleStyleChange));
+	} else if (options?.placement == "right") {
+		usb.push(bindWith(anchor, "inset-inline-start", CSSUnitUtils.asPx(left), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-block-start", CSSUnitUtils.asPx(top), handleStyleChange));
+		usb.push(bindWith(anchor, "block-size", CSSUnitUtils.asPx(height), handleStyleChange));
+	} else if (options?.placement == "center") {
+		usb.push(bindWith(anchor, "inset-inline-start", CSSUnitUtils.asPx(left), handleStyleChange));
+		usb.push(bindWith(anchor, "inset-block-start", CSSUnitUtils.asPx(top), handleStyleChange));
+		usb.push(bindWith(anchor, "inline-size", CSSUnitUtils.asPx(width), handleStyleChange));
+		usb.push(bindWith(anchor, "block-size", CSSUnitUtils.asPx(height), handleStyleChange));
+	}
+	return () => {
+		usb?.forEach?.((ub) => ub?.());
+	};
+};
+var bindScrollbarPosition = (scrollbar, anchorBox, axis, options) => {
+	const { useIntersection = false, zIndexShift = 1 } = options || {};
+	const usb = [];
+	if (anchorBox?.connectElement) return anchorBox?.connectElement?.(scrollbar, Object.assign(options || {}, { placement: axis == "horizontal" ? "bottom" : "right" }));
+	scrollbar.style.position = useIntersection ? "fixed" : "absolute";
+	scrollbar.style.zIndex = `${zIndexShift}`;
+	if (useIntersection) {
+		if (axis === "horizontal") {
+			usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
+		} else {
+			usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[4]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[1]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "height", CSSUnitUtils.asPx(anchorBox[3]), handleStyleChange));
+		}
+	} else if (axis === "horizontal") {
+		usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
+		usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
+		usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
+	} else {
+		usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[4]), handleStyleChange));
+		usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[1]), handleStyleChange));
+		usb.push(bindWith(scrollbar, "height", CSSUnitUtils.asPx(anchorBox[3]), handleStyleChange));
+	}
+	return () => {
+		usb?.forEach?.((ub) => ub?.());
+	};
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/IntersectionAnchor.ts
+var computeIntersectionRect = (anchor, root = document.documentElement, includeExtendedInfo = false) => {
+	const rootRect = getBoundingOrientRect(root) ?? root?.getBoundingClientRect?.();
+	const anchorRect = getBoundingOrientRect(anchor) ?? anchor?.getBoundingClientRect?.();
+	if (!anchorRect) return includeExtendedInfo ? {
+		intersection: {
+			left: 0,
+			top: 0,
+			right: 0,
+			bottom: 0,
+			width: 0,
+			height: 0
+		},
+		anchor: {
+			left: 0,
+			top: 0,
+			width: 0,
+			height: 0
+		},
+		root: rootRect
+	} : {
+		left: 0,
+		top: 0,
+		right: 0,
+		bottom: 0,
+		width: 0,
+		height: 0
+	};
+	const intersectionLeft = Math.max(rootRect.left, anchorRect.left);
+	const intersectionTop = Math.max(rootRect.top, anchorRect.top);
+	const intersectionRight = Math.min(rootRect.right, anchorRect.right);
+	const intersectionBottom = Math.min(rootRect.bottom, anchorRect.bottom);
+	const intersection = intersectionRight > intersectionLeft && intersectionBottom > intersectionTop ? {
+		left: intersectionLeft,
+		top: intersectionTop,
+		right: intersectionRight,
+		bottom: intersectionBottom,
+		width: intersectionRight - intersectionLeft,
+		height: intersectionBottom - intersectionTop
+	} : {
+		left: 0,
+		top: 0,
+		right: 0,
+		bottom: 0,
+		width: 0,
+		height: 0
+	};
+	if (includeExtendedInfo) return {
+		intersection,
+		anchor: anchorRect,
+		root: rootRect,
+		anchorLeft: anchorRect.left,
+		anchorTop: anchorRect.top,
+		anchorRight: anchorRect.right,
+		anchorBottom: anchorRect.bottom,
+		anchorWidth: anchorRect.width,
+		anchorHeight: anchorRect.height,
+		rootLeft: rootRect.left,
+		rootTop: rootRect.top,
+		rootWidth: rootRect.width,
+		rootHeight: rootRect.height
+	};
+	return intersection;
+};
+function intersectionBoxAnchorRef(anchor, options) {
+	if (!anchor) return () => {};
+	const area = [
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0)
+	];
+	const { root = anchor?.offsetParent ?? document.documentElement, iterateResize = true, iterateMutations = true, iterateIntersection = true } = options || {};
+	function updateArea(intersectionRect) {
+		const rect = intersectionRect ? {
+			left: intersectionRect.left,
+			top: intersectionRect.top,
+			width: intersectionRect.width,
+			height: intersectionRect.height,
+			right: intersectionRect.right,
+			bottom: intersectionRect.bottom
+		} : computeIntersectionRect(anchor, root, false);
+		area[0].value = rect?.left ?? 0;
+		area[1].value = rect?.top ?? 0;
+		area[2].value = rect?.width ?? 0;
+		area[3].value = rect?.height ?? 0;
+		area[4].value = rect?.right ?? 0;
+		area[5].value = rect?.bottom ?? 0;
+	}
+	let resizeObs;
+	if (observeResize && "ResizeObserver" in window && typeof ResizeObserver != "undefined") {
+		resizeObs = typeof ResizeObserver != "undefined" ? new ResizeObserver((entries) => {
+			for (const entry of entries) updateArea(entry.contentRect);
+		}) : void 0;
+		resizeObs?.observe(anchor);
+	}
+	let mutationObs;
+	if (observeMutations) {
+		mutationObs = typeof MutationObserver != "undefined" ? new MutationObserver((mutations) => {
+			for (const mutation of mutations) updateArea(computeIntersectionRect(anchor, root, false));
+		}) : void 0;
+		mutationObs?.observe(anchor, {
+			attributes: true,
+			childList: true,
+			subtree: true
+		});
+	}
+	let intersectionObs;
+	if (observeIntersection) {
+		intersectionObs = typeof IntersectionObserver != "undefined" ? new IntersectionObserver((entries) => {
+			for (const entry of entries) updateArea(entry.intersectionRect);
+		}, {
+			root: root instanceof HTMLElement ? root : null,
+			threshold: [0],
+			rootMargin: "0px"
+		}) : void 0;
+		intersectionObs?.observe(anchor);
+	}
+	const listening = [
+		addEvent(root, "scroll", () => updateArea(computeIntersectionRect(anchor, root, false)), { capture: true }),
+		addEvent(window, "resize", () => updateArea(computeIntersectionRect(anchor, root, false))),
+		addEvent(window, "scroll", () => updateArea(computeIntersectionRect(anchor, root, false)), { capture: true })
+	];
+	updateArea(computeIntersectionRect(anchor, root, false));
+	function destroy() {
+		listening.forEach((ub) => ub?.());
+		resizeObs?.disconnect?.();
+		mutationObs?.disconnect?.();
+		intersectionObs?.disconnect?.();
+	}
+	if (destroy) area.forEach((ub) => addToCallChain(ub, Symbol.dispose, destroy));
+	return area;
+}
+function enhancedIntersectionBoxAnchorRef(anchor, options) {
+	if (!anchor) return () => {};
+	const area = [
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0),
+		numberRef(0)
+	];
+	const { root = anchor?.offsetParent ?? document.documentElement, iterateResize = true, iterateMutations = true, iterateIntersection = true } = options || {};
+	function updateArea(intersectionRect) {
+		const data = intersectionRect ? {
+			intersection: {
+				left: intersectionRect.left,
+				top: intersectionRect.top,
+				right: intersectionRect.right,
+				bottom: intersectionRect.bottom,
+				width: intersectionRect.width,
+				height: intersectionRect.height
+			},
+			anchor: getBoundingOrientRect(anchor) ?? anchor?.getBoundingClientRect?.(),
+			root: (root instanceof HTMLElement ? getBoundingOrientRect(root) ?? root?.getBoundingClientRect?.() : null) ?? {
+				left: 0,
+				top: 0,
+				right: globalThis.innerWidth,
+				bottom: globalThis.innerHeight,
+				width: globalThis.innerWidth,
+				height: globalThis.innerHeight
+			}
+		} : computeIntersectionRect(anchor, root, true);
+		if (!data.anchor) return;
+		area[0].value = data.intersection.left ?? 0;
+		area[1].value = data.intersection.top ?? 0;
+		area[2].value = data.intersection.width ?? 0;
+		area[3].value = data.intersection.height ?? 0;
+		area[4].value = data.intersection.right ?? 0;
+		area[5].value = data.intersection.bottom ?? 0;
+		area[6].value = data.anchor.left ?? 0;
+		area[7].value = data.anchor.top ?? 0;
+		area[8].value = data.anchor.width ?? 0;
+		area[9].value = data.anchor.height ?? 0;
+		area[10].value = data.root.left ?? 0;
+		area[11].value = data.root.top ?? 0;
+		area[12].value = data.root.width ?? 0;
+		area[13].value = data.root.height ?? 0;
+	}
+	let resizeObs;
+	if (observeResize && "ResizeObserver" in window && typeof ResizeObserver != "undefined") {
+		resizeObs = typeof ResizeObserver != "undefined" ? new ResizeObserver((entries) => {
+			for (const entry of entries) updateArea(entry.contentRect);
+		}) : void 0;
+		resizeObs?.observe(anchor);
+	}
+	let mutationObs;
+	if (observeMutations) {
+		mutationObs = typeof MutationObserver != "undefined" ? new MutationObserver((mutations) => {
+			for (const mutation of mutations) updateArea(computeIntersectionRect(anchor, root, true).intersection);
+		}) : void 0;
+		mutationObs?.observe(anchor, {
+			attributes: true,
+			childList: true,
+			subtree: true
+		});
+	}
+	let intersectionObs;
+	if (observeIntersection) {
+		intersectionObs = typeof IntersectionObserver != "undefined" ? new IntersectionObserver((entries) => {
+			for (const entry of entries) updateArea(entry.intersectionRect);
+		}, {
+			root: root instanceof HTMLElement ? root : null,
+			threshold: [
+				0,
+				.1,
+				.2,
+				.3,
+				.4,
+				.5,
+				.6,
+				.7,
+				.8,
+				.9,
+				1
+			],
+			rootMargin: "0px"
+		}) : void 0;
+		intersectionObs?.observe(anchor);
+	}
+	const listening = [
+		addEvent(root, "scroll", () => updateArea(computeIntersectionRect(anchor, root, true).intersection), { capture: true }),
+		addEvent(window, "resize", () => updateArea(computeIntersectionRect(anchor, root, true).intersection)),
+		addEvent(window, "scroll", () => updateArea(computeIntersectionRect(anchor, root, true).intersection), { capture: true })
+	];
+	updateArea(computeIntersectionRect(anchor, root, true).intersection);
+	function destroy() {
+		listening.forEach((ub) => ub?.());
+		resizeObs?.disconnect?.();
+		mutationObs?.disconnect?.();
+		intersectionObs?.disconnect?.();
+	}
+	if (destroy) area.forEach((ub) => addToCallChain(ub, Symbol.dispose, destroy));
+	return area;
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/layers/AnchorOverlay.ts
+var getParentOrShadowRoot = (element) => {
+	if (element?.parentElement) return !(element?.parentElement instanceof DocumentFragment) ? element?.parentElement : void 0;
+	return element?.host?.shadowRoot;
+};
+var observeDisconnect = (element, handleMutation) => {
+	if (!element?.isConnected) return handleMutation();
+	const observer = new MutationObserver((mutationList, observer) => {
+		for (const mutation of mutationList) if (mutation.type == "childList") {
+			if (Array.from(mutation?.removedNodes || []).some((node) => node === element || node?.contains?.(element))) {
+				queueMicrotask(() => handleMutation(mutation));
+				observer?.disconnect?.();
+			}
+		}
+	});
+	const parent = getParentOrShadowRoot(element) ?? document.documentElement;
+	const observed = (parent instanceof HTMLElement ? parent : parent?.host) ?? parent;
+	queueMicrotask(() => observer.observe(observed, {
+		subtree: true,
+		childList: true
+	}));
+};
+var observeConnect = (element, handleMutation) => {
+	if (element?.isConnected) return handleMutation();
+	const observer = new MutationObserver((_mutationList, obs) => {
+		if (!element?.isConnected) return;
+		queueMicrotask(() => handleMutation());
+		obs?.disconnect?.();
+	});
+	const parent = getParentOrShadowRoot(element);
+	const observed = (parent instanceof HTMLElement && parent.isConnected ? parent : null) ?? document.documentElement;
+	queueMicrotask(() => {
+		if (element?.isConnected) {
+			handleMutation();
+			observer.disconnect();
+			return;
+		}
+		observer.observe(observed, {
+			subtree: true,
+			childList: true
+		});
+	});
+};
+var connectWithPlacement = (anchorBinder, layer, placement, zIndexShift, inset, size, transformOrigin) => {
+	if (placement === "scrollbar-x") anchorBinder.connectElement(layer, {
+		placement: "bottom",
+		zIndexShift,
+		inset,
+		size,
+		transformOrigin
+	});
+	else if (placement === "scrollbar-y") anchorBinder.connectElement(layer, {
+		placement: "right",
+		zIndexShift,
+		inset,
+		size,
+		transformOrigin
+	});
+	else anchorBinder.connectElement(layer, {
+		placement,
+		zIndexShift,
+		inset,
+		size,
+		transformOrigin
+	});
+};
+/**
+* Insert `layer` as a sibling of `anchor` (before = underlying, after = overlaying),
+* bind CSS anchor placement, and apply hybrid stacking.
+*/
+var appendAsLayer = (anchor, layer, self, options) => {
+	const role = options?.role ?? "overlaying";
+	const stackMode = options?.stackMode ?? "shift";
+	const zIndexShift = options?.zIndexShift ?? defaultZIndexShift(role);
+	const placement = options?.placement ?? "fill";
+	const positioning = options?.positioning ?? "anchor";
+	const inset = options?.inset ?? 0;
+	const size = options?.size ?? "100%";
+	const transformOrigin = options?.transformOrigin ?? "50% 50%";
+	anchor ??= self?.children?.[0] ?? anchor;
+	if (!anchor && (self?.children?.length ?? 0) < 1) {
+		const fillAnchorBox = document.createElement("div");
+		fillAnchorBox.classList.add("ui-window-frame-anchor-box");
+		fillAnchorBox.style.position = "relative";
+		fillAnchorBox.style.inlineSize = "stretch";
+		fillAnchorBox.style.blockSize = "stretch";
+		fillAnchorBox.style.zIndex = String(Math.max(zIndexShift - 0, 0));
+		fillAnchorBox.style.pointerEvents = "none";
+		fillAnchorBox.style.opacity = "1";
+		fillAnchorBox.style.visibility = "visible";
+		fillAnchorBox.style.backgroundColor = "transparent";
+		self?.append?.(anchor = fillAnchorBox);
+	}
+	if (anchor == null || layer == null) return;
+	const resolvedZ = resolveLayerZIndex(anchor, {
+		role,
+		stackMode,
+		zIndexShift
+	});
+	if (resolvedZ == null) layer.style.removeProperty("z-index");
+	else layer.style.setProperty("z-index", String(resolvedZ));
+	if (role === "underlying") {
+		if (!layer.style.pointerEvents) layer.style.pointerEvents = "none";
+	}
+	if (positioning === "contain") {
+		const host = (self instanceof HTMLElement ? self : null) ?? getParentOrShadowRoot(anchor) ?? anchor.parentElement;
+		if (host instanceof HTMLElement) {
+			if (getComputedStyle(host).position === "static") host.style.position = "relative";
+		}
+		layer.style.position = "absolute";
+		layer.style.inset = inset ? `${inset}px` : "0";
+		layer.style.inlineSize = "auto";
+		layer.style.blockSize = "auto";
+		layer.style.removeProperty("position-anchor");
+		layer.style.removeProperty("position-area");
+		layer.style.removeProperty("anchor-name");
+		observeConnect(anchor, () => {
+			const parent = (self instanceof HTMLElement ? self : null) ?? getParentOrShadowRoot(anchor) ?? anchor.parentElement;
+			if (role === "underlying") anchor?.before?.(layer);
+			else anchor?.after?.(layer);
+			observeDisconnect(parent ?? anchor, () => layer?.remove?.());
+		});
+		return anchor;
+	}
+	const anchorBinder = makeAnchorElement(anchor);
+	connectWithPlacement(anchorBinder, layer, placement, zIndexShift, inset, size, transformOrigin);
+	if (resolvedZ == null) layer.style.removeProperty("z-index");
+	else layer.style.setProperty("z-index", String(resolvedZ));
+	observeConnect(anchor, () => {
+		const parent = getParentOrShadowRoot(anchor) ?? self;
+		(parent instanceof HTMLElement ? parent : parent?.host)?.style?.setProperty?.("anchor-scope", anchorBinder.anchorId);
+		if (role === "underlying") anchor?.before?.(layer);
+		else anchor?.after?.(layer);
+		observeDisconnect(parent, () => layer?.remove?.());
+	});
+	return anchor;
+};
+var appendAsUnderlying = (main, layer, options, maybeOptions) => {
+	let self = null;
+	let opts;
+	if (options && typeof options.nodeType === "number") {
+		self = options;
+		opts = maybeOptions;
+	} else opts = options;
+	return appendAsLayer(main, layer, self, {
+		placement: "fill",
+		...opts,
+		role: "underlying"
+	});
+};
+/** COMPAT: existing callers pass (anchor, overlay?, self?, options?). */
+var appendAsOverlay = (anchor, overlay, self, options) => {
+	return appendAsLayer(anchor, overlay, self, {
+		...options,
+		placement: options?.placement ?? "fill",
+		zIndexShift: options?.zIndexShift ?? 1,
+		stackMode: options?.stackMode ?? "shift",
+		role: "overlaying"
+	});
+};
+var appendScrollbarOverlay = (content, scrollbar, axis, options) => {
+	const { zIndexShift = 1, autoPosition = true, useIntersection = false, theme = "default" } = options || {};
+	scrollbar.classList.add(`scrollbar-theme-${theme}`);
+	scrollbar.setAttribute("data-axis", axis);
+	const cleanupFunctions = [];
+	if (autoPosition) {
+		if (useIntersection) {
+			const intersectionBox = enhancedIntersectionBoxAnchorRef(content, {
+				root: window,
+				observeResize: true,
+				observeMutations: true,
+				observeIntersection: true
+			});
+			cleanupFunctions.push(bindScrollbarPosition(scrollbar, intersectionBox, axis, {
+				useIntersection: true,
+				zIndexShift
+			}));
+		} else {
+			const box = boundingBoxAnchorRef(content, {
+				observeResize: true,
+				observeMutations: true
+			});
+			cleanupFunctions.push(bindScrollbarPosition(scrollbar, box, axis, {
+				useIntersection: false,
+				zIndexShift
+			}));
+		}
+	}
+	if (!scrollbar.parentNode) document.body.appendChild(scrollbar);
+	observeDisconnect(content, () => {
+		cleanupFunctions.forEach((cleanup) => cleanup());
+		scrollbar.remove();
+	});
+	return scrollbar;
+};
+var createReactiveScrollbarOverlay = (content, axis = "vertical") => {
+	const scrollbar = document.createElement("div");
+	scrollbar.className = `reactive-scrollbar reactive-scrollbar-${axis}`;
+	scrollbar.style.background = "rgba(0,0,0,0.3)";
+	scrollbar.style.borderRadius = "4px";
+	scrollbar.style.position = "absolute";
+	scrollbar.style.zIndex = "1000";
+	if (axis === "horizontal") {
+		scrollbar.style.height = "8px";
+		scrollbar.style.width = "100px";
+	} else {
+		scrollbar.style.width = "8px";
+		scrollbar.style.height = "100px";
+	}
+	return appendScrollbarOverlay(content, scrollbar, axis, {
+		autoPosition: true,
+		useIntersection: true,
+		theme: "default"
+	});
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/layers/Register.ts
+var registered = /* @__PURE__ */ new Map();
+var registerLayerElement = (name, construct, opts = { role: "overlaying" }) => {
+	const withIt = /* @__PURE__ */ new WeakMap();
+	const bindWith = (content, holder, inputChange) => {
+		if (content?.style?.anchorName || withIt?.has?.(content)) return false;
+		if (content) {
+			const self = construct?.(content, holder, inputChange);
+			withIt?.set?.(content, self);
+			if (opts.role === "underlying") appendAsUnderlying(content, self, holder);
+			else appendAsOverlay(content, self, holder);
+		}
+		return true;
+	};
+	class LayerModifier extends DOMMixin {
+		constructor(n) {
+			super(n);
+		}
+		connect(ws) {
+			const self = ws?.deref?.() ?? ws;
+			if (withIt?.has?.(self)) return;
+			bindWith(self);
+		}
+	}
+	const pack = [
+		withIt,
+		bindWith,
+		LayerModifier
+	];
+	registered.set(name, pack);
+	new LayerModifier(name);
+	return pack;
+};
+/** COMPAT: previous overlay-only registrar. */
+var registerOverlayElement = (name, construct) => registerLayerElement(name, construct, { role: "overlaying" });
+var registerUnderlyingElement = (name, construct) => registerLayerElement(name, construct, { role: "underlying" });
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/layers/UnderlyingShadow.ts
+var UnderlyingShadow = class {
+	shadowContainer;
+	shadowElement;
+	geometryClone;
+	target;
+	options;
+	anchorBox;
+	cleanupFunctions = [];
+	constructor(options) {
+		this.target = options.target;
+		this.options = {
+			shadowType: "drop-shadow",
+			shadowColor: "rgba(0, 0, 0, 0.25)",
+			shadowBlur: 8,
+			shadowOffsetX: 0,
+			shadowOffsetY: 4,
+			spreadRadius: 0,
+			opacity: 1,
+			inset: 0,
+			zIndexShift: -1,
+			useIntersection: false,
+			cloneGeometry: true,
+			updateOnScroll: true,
+			updateOnResize: true,
+			positioning: "contain",
+			...options
+		};
+		this.createShadowElements();
+		this.setupPositioning();
+		this.setupGeometryCloning();
+		this.applyShadowStyle();
+		this.attachToDOM();
+	}
+	get positioningMode() {
+		return this.options.positioning ?? "contain";
+	}
+	get geometryHost() {
+		return this.options.geometrySource ?? this.target;
+	}
+	createShadowElements() {
+		this.shadowContainer = document.createElement("div");
+		this.shadowContainer.className = ["underlying-shadow-container", this.options.className || ""].filter(Boolean).join(" ");
+		this.shadowContainer.setAttribute("aria-hidden", "true");
+		this.shadowContainer.style.pointerEvents = "none";
+		this.shadowContainer.style.overflow = "visible";
+		this.shadowContainer.style.isolation = "isolate";
+		this.shadowContainer.style.contentVisibility = "visible";
+		if (this.options.cloneGeometry) {
+			this.geometryClone = document.createElement("div");
+			this.geometryClone.className = "underlying-shadow-geometry underlying-shadow-element";
+			this.geometryClone.style.width = "100%";
+			this.geometryClone.style.height = "100%";
+			this.geometryClone.style.position = "relative";
+			this.geometryClone.style.overflow = "hidden";
+			this.geometryClone.style.contentVisibility = "visible";
+			this.geometryClone.style.visibility = "visible";
+			this.shadowContainer.appendChild(this.geometryClone);
+			this.shadowElement = this.geometryClone;
+		} else {
+			this.shadowElement = document.createElement("div");
+			this.shadowElement.className = "underlying-shadow-element";
+			this.shadowElement.style.width = "100%";
+			this.shadowElement.style.height = "100%";
+			this.shadowElement.style.position = "relative";
+			this.shadowElement.style.overflow = "hidden";
+			this.shadowElement.style.contentVisibility = "visible";
+			this.shadowElement.style.visibility = "visible";
+			this.shadowContainer.appendChild(this.shadowElement);
+		}
+	}
+	setupPositioning() {
+		const mode = this.positioningMode;
+		if (mode === "contain") {
+			this.shadowContainer.style.position = "absolute";
+			return;
+		}
+		if (mode === "anchor") return;
+		if (mode === "fixed") this.shadowContainer.style.position = "fixed";
+		else this.shadowContainer.style.position = "absolute";
+		if (this.options.useIntersection) {
+			this.anchorBox = enhancedIntersectionBoxAnchorRef(this.target, {
+				root: window,
+				observeResize: this.options.updateOnResize,
+				observeMutations: true,
+				observeIntersection: true
+			});
+			bindWith(this.shadowContainer, "left", CSSUnitUtils.asPx(this.anchorBox?.[6]), handleStyleChange);
+			bindWith(this.shadowContainer, "top", CSSUnitUtils.asPx(this.anchorBox?.[7]), handleStyleChange);
+			bindWith(this.shadowContainer, "width", CSSUnitUtils.asPx(this.anchorBox?.[8]), handleStyleChange);
+			bindWith(this.shadowContainer, "height", CSSUnitUtils.asPx(this.anchorBox?.[9]), handleStyleChange);
+		} else {
+			this.anchorBox = boundingBoxAnchorRef(this.target, {
+				observeResize: this.options.updateOnResize,
+				observeMutations: true
+			});
+			bindWith(this.shadowContainer, "left", CSSUnitUtils.asPx(this.anchorBox?.[0]), handleStyleChange);
+			bindWith(this.shadowContainer, "top", CSSUnitUtils.asPx(this.anchorBox?.[1]), handleStyleChange);
+			bindWith(this.shadowContainer, "width", CSSUnitUtils.asPx(this.anchorBox?.[2]), handleStyleChange);
+			bindWith(this.shadowContainer, "height", CSSUnitUtils.asPx(this.anchorBox?.[3]), handleStyleChange);
+		}
+		if (this.options.inset !== 0) {
+			const insetPx = CSSUnitUtils.asPx(this.options.inset);
+			setProperty(this.shadowContainer, "left", `calc(var(--left) + ${insetPx})`);
+			setProperty(this.shadowContainer, "top", `calc(var(--top) + ${insetPx})`);
+			setProperty(this.shadowContainer, "width", `calc(var(--width) - ${2 * insetPx})`);
+			setProperty(this.shadowContainer, "height", `calc(var(--height) - ${2 * insetPx})`);
+		}
+	}
+	setupGeometryCloning() {
+		if (!this.geometryClone) return;
+		const cloneGeometry = () => {
+			const host = this.geometryHost;
+			const computedStyle = getComputedStyle(host);
+			const borderRadius = computedStyle.borderRadius;
+			if (borderRadius && borderRadius !== "0px") this.geometryClone.style.borderRadius = borderRadius;
+			const clipPath = computedStyle.clipPath;
+			if (clipPath && clipPath !== "none") this.geometryClone.style.clipPath = clipPath;
+			if (computedStyle.borderShape && computedStyle.borderShape !== "none") this.geometryClone.style.borderShape = computedStyle.borderShape;
+			if (computedStyle.cornerShape && computedStyle.cornerShape !== "none") this.geometryClone.style.cornerShape = computedStyle.cornerShape;
+			const maskImage = computedStyle.maskImage || computedStyle.webkitMaskImage;
+			if (maskImage && maskImage !== "none") {
+				this.geometryClone.style.maskImage = maskImage;
+				this.geometryClone.style.webkitMaskImage = maskImage;
+			}
+			const shape = host.getAttribute("data-shape");
+			if (shape) this.geometryClone.setAttribute("data-shape", shape);
+			const borderWidth = computedStyle.borderWidth;
+			const borderStyle = computedStyle.borderStyle;
+			if (borderWidth && borderWidth !== "0px" && borderStyle !== "none") this.geometryClone.style.border = `${borderWidth} ${borderStyle} transparent`;
+			if (this.options.shadowType !== "box-shadow") this.geometryClone.style.background = "#000000";
+			this.geometryClone.style.opacity = "1";
+		};
+		cloneGeometry();
+		const observer = new MutationObserver(cloneGeometry);
+		observer.observe(this.geometryHost, {
+			attributes: true,
+			attributeFilter: [
+				"style",
+				"class",
+				"data-shape"
+			]
+		});
+		this.cleanupFunctions.push(() => observer.disconnect());
+	}
+	applyShadowStyle() {
+		const { shadowType, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, spreadRadius, opacity } = this.options;
+		if (shadowType === "drop-shadow") {
+			const filterValue = `drop-shadow(${CSSUnitUtils.asPx(shadowOffsetX || 0)} ${CSSUnitUtils.asPx(shadowOffsetY || 0)} ${CSSUnitUtils.asPx(shadowBlur || 0)} ${shadowColor})`;
+			this.shadowContainer.style.filter = filterValue;
+			this.shadowContainer.style.opacity = opacity.toString() || "1";
+			this.shadowContainer.style.boxShadow = "none";
+		} else if (shadowType === "blur") {
+			const filterValue = `blur(${CSSUnitUtils.asPx(shadowBlur || 0)})`;
+			this.shadowContainer.style.filter = filterValue;
+			this.shadowContainer.style.opacity = opacity.toString() || "1";
+			if (this.geometryClone) this.geometryClone.style.backgroundColor = shadowColor;
+		} else if (shadowType === "box-shadow") {
+			const boxShadowValue = `${CSSUnitUtils.asPx(shadowOffsetX || 0)} ${CSSUnitUtils.asPx(shadowOffsetY || 0)} ${CSSUnitUtils.asPx(shadowBlur || 0)} ${CSSUnitUtils.asPx(spreadRadius || 0)} ${shadowColor}`;
+			this.shadowContainer.style.background = "transparent";
+			this.shadowContainer.style.boxShadow = "none";
+			if (this.geometryClone) this.geometryClone.style.boxShadow = boxShadowValue;
+			else if (this.shadowElement) this.shadowElement.style.boxShadow = boxShadowValue;
+			this.shadowContainer.style.filter = "none";
+			this.shadowContainer.style.opacity = opacity.toString() || "1";
+		}
+	}
+	attachToDOM() {
+		if (!this.shadowContainer) return;
+		const mode = this.positioningMode;
+		if (mode === "fixed") {
+			const layer = this.shadowContainer;
+			layer.style.position = "fixed";
+			layer.style.pointerEvents = "none";
+			const shift = this.options.zIndexShift ?? -1;
+			const mainZ = Number.parseInt(getComputedStyle(this.target).zIndex || "0", 10);
+			layer.style.zIndex = String(Number.isFinite(mainZ) ? mainZ + shift : shift);
+			const insert = () => {
+				if (!this.target.isConnected) return;
+				this.target.before(layer);
+			};
+			observeConnect(this.target, insert);
+			if (this.target.isConnected) insert();
+		} else appendAsUnderlying(this.target, this.shadowContainer, {
+			stackMode: "shift",
+			zIndexShift: this.options.zIndexShift ?? -1,
+			placement: "fill",
+			positioning: mode === "contain" ? "contain" : "anchor",
+			useIntersection: this.options.useIntersection
+		});
+		const parent = this.target.parentElement ?? document.body;
+		const disconnectObserver = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				mutation.removedNodes.forEach((node) => {
+					if (node === this.target || node.contains?.(this.target)) this.destroy();
+				});
+			});
+		});
+		if (parent) {
+			disconnectObserver.observe(parent, {
+				childList: true,
+				subtree: true
+			});
+			this.cleanupFunctions.push(() => disconnectObserver.disconnect());
+		}
+	}
+	updateOptions(newOptions) {
+		Object.assign(this.options, newOptions);
+		this.applyShadowStyle();
+		if (newOptions.cloneGeometry !== void 0) this.setupGeometryCloning();
+	}
+	setVisible(visible) {
+		this.shadowContainer.style.display = visible ? "block" : "none";
+	}
+	getShadowElement() {
+		return this.shadowContainer;
+	}
+	destroy() {
+		this.cleanupFunctions.forEach((cleanup) => cleanup());
+		if (this.shadowContainer?.parentNode) this.shadowContainer.parentNode.removeChild(this.shadowContainer);
+		if (this.anchorBox) this.anchorBox.forEach((anchor) => {
+			if (anchor && typeof anchor[Symbol.dispose] === "function") anchor[Symbol.dispose]();
+		});
+	}
+};
+function createUnderlyingShadow(options) {
+	return new UnderlyingShadow(options);
+}
+function createDropShadow(target, options) {
+	return createUnderlyingShadow({
+		target,
+		shadowType: "drop-shadow",
+		shadowColor: "rgba(0, 0, 0, 0.6)",
+		shadowBlur: 6,
+		shadowOffsetX: 0,
+		shadowOffsetY: 3,
+		positioning: "contain",
+		...options
+	});
+}
+function createBlurShadow(target, options) {
+	return createUnderlyingShadow({
+		target,
+		shadowType: "blur",
+		shadowColor: "rgba(0, 0, 0, 0.2)",
+		shadowBlur: 4,
+		shadowOffsetX: 0,
+		shadowOffsetY: 2,
+		positioning: "contain",
+		...options
+	});
+}
+function createBoxShadow(target, options) {
+	return createUnderlyingShadow({
+		target,
+		shadowType: "box-shadow",
+		shadowColor: "rgba(0, 0, 0, 0.2)",
+		shadowBlur: 8,
+		shadowOffsetX: 0,
+		shadowOffsetY: 4,
+		spreadRadius: 0,
+		positioning: "contain",
+		...options
+	});
+}
+/**
+* Shaped under-glow for glass tiles (`backdrop-filter` on main).
+* INVARIANT: `target` is the grid `.ui-ws-item` (under is a preceding sibling in the grid);
+* shape/radius clones from `geometrySource` (usually `.ui-ws-item-icon`).
+*/
+function createShapedTileShadow(target, options) {
+	return createBoxShadow(target, {
+		shadowType: "blur",
+		className: "ui-ws-item-icon-under",
+		shadowColor: "rgba(0, 0, 0, 0.6)",
+		shadowBlur: 24,
+		shadowOffsetY: 6,
+		shadowOffsetX: 0,
+		spreadRadius: -8,
+		opacity: 1,
+		cloneGeometry: true,
+		positioning: "anchor",
+		geometrySource: options?.geometrySource ?? target.querySelector(".ui-ws-item-icon") ?? target,
+		...options
+	});
+}
+/**
+* Under-shadow for fixed chrome panels (context menus) that may use backdrop-filter.
+*/
+function createPanelUnderShadow(target, options) {
+	return createBoxShadow(target, {
+		className: "cw-context-menu-under",
+		shadowColor: "rgba(0, 0, 0, 0.45)",
+		shadowBlur: 36,
+		shadowOffsetY: 14,
+		shadowOffsetX: 0,
+		spreadRadius: 0,
+		cloneGeometry: true,
+		positioning: "fixed",
+		updateOnScroll: true,
+		updateOnResize: true,
+		...options
+	});
+}
 //#endregion
 //#region ../../modules/projects/lur.e/src/design/overlays/OverlayHost.ts
 /**
@@ -8449,14 +12979,149 @@ var registerTransientOverlay = ({ id, kind, element = null, isActive, close, pri
 	});
 	return dispose;
 };
-typeof document !== "undefined" && document?.documentElement && addProxiedEvent(document.documentElement, "contextmenu", {
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/modules/CtxMenu.ts
+var itemClickHandle = (ev, ctxMenuDesc) => {
+	const id = Q(`[data-id]`, ev?.target, 0, "parent")?.getAttribute?.("data-id");
+	const item = ctxMenuDesc?.items?.find?.((I) => I?.some?.((I) => I?.id == id))?.find?.((I) => I?.id == id);
+	(item?.action ?? ctxMenuDesc?.defaultAction)?.(ctxMenuDesc?.openedWith?.initiator, item, ctxMenuDesc?.openedWith?.event ?? ev);
+	ctxMenuDesc?.openedWith?.close?.();
+	const vr = getBoundVisibleRef(ctxMenuDesc?.openedWith?.element);
+	if (vr != null) vr.value = false;
+};
+var visibleMap = /* @__PURE__ */ new WeakMap();
+var registerCtxMenu = typeof document !== "undefined" && document?.documentElement ? addProxiedEvent(document.documentElement, "contextmenu", {
 	capture: true,
 	passive: false
 }, {
 	strategy: "closest",
 	preventDefault: "handled",
 	stopImmediatePropagation: "handled"
-});
+}) : (_el, _handler) => () => {};
+var getBoundVisibleRef = (menuElement) => {
+	if (menuElement == null) return null;
+	return visibleMap?.getOrInsertComputed?.(menuElement, () => visibleRef(menuElement, false));
+};
+var bindMenuItemClickHandler = (menuElement, menuDesc) => {
+	const handler = (ev) => {
+		itemClickHandle(ev, menuDesc);
+	};
+	const listening = addEvent(menuElement, "click", handler, { composed: true });
+	return () => listening?.();
+};
+var getGlobalContextMenu = (parent = document) => {
+	let menu = Q("ui-modal[type=\"contextmenu\"]", parent);
+	if (!menu) {
+		menu = H`<ui-modal type="contextmenu"></ui-modal>`;
+		(parent instanceof Document ? parent.body : parent).append(menu);
+	}
+	return menu;
+};
+var makeMenuHandler = (triggerElement, placement, ctxMenuDesc, menuElement) => {
+	return (ev) => {
+		let handled = false;
+		const menu = menuElement || getGlobalContextMenu();
+		const visibleRef = getBoundVisibleRef(menu);
+		const initiator = ev?.target ?? triggerElement ?? document.elementFromPoint(ev?.clientX || 0, ev?.clientY || 0);
+		const details = {
+			event: ev,
+			initiator,
+			trigger: triggerElement,
+			menu,
+			ctxMenuDesc
+		};
+		ctxMenuDesc.context = details;
+		if (ctxMenuDesc?.onBeforeOpen?.(details) === false) return handled;
+		const builtItems = ctxMenuDesc?.buildItems?.(details);
+		if (Array.isArray(builtItems) && builtItems.length) ctxMenuDesc.items = builtItems;
+		if (visibleRef?.value && ev?.type !== "contextmenu") {
+			visibleRef.value = false;
+			ctxMenuDesc?.openedWith?.close?.();
+			return handled;
+		}
+		if (initiator && visibleRef) {
+			handled = true;
+			menu.innerHTML = "";
+			visibleRef.value = true;
+			menu?.append?.(...ctxMenuDesc?.items?.map?.((section, sIdx) => {
+				const items = section?.map?.((item) => H`<li data-id=${item?.id || ""}><ui-icon icon=${item?.icon || ""} icon-style="duotone"></ui-icon><span>${item?.label || ""}</span></li>`);
+				const separator = section?.length > 1 && sIdx !== (ctxMenuDesc?.items?.length || 0) - 1 ? H`<li class="ctx-menu-separator"></li>` : null;
+				return [...items, separator];
+			})?.flat?.()?.filter?.((E) => !!E) || []);
+			const where = withInsetWithPointer?.(menu, placement?.(ev, initiator));
+			const unbindClick = bindMenuItemClickHandler(menu, ctxMenuDesc);
+			const untrigger = makeInterruptTrigger?.(menu, (e) => {
+				const menuAny = menu;
+				if (!(menu?.contains?.(e?.target ?? null) || e?.target == (menuAny?.element ?? menuAny)) || !e?.target) {
+					ctxMenuDesc?.openedWith?.close?.();
+					const vr = getBoundVisibleRef(menu);
+					if (vr != null) vr.value = false;
+				}
+			}, [
+				"click",
+				"pointerdown",
+				"scroll"
+			]);
+			const unmenuCtx = registerCtxMenu(menu, () => true);
+			ctxMenuDesc.openedWith = {
+				initiator,
+				element: menu,
+				event: ev,
+				context: ctxMenuDesc?.context,
+				close() {
+					visibleRef.value = false;
+					ctxMenuDesc.openedWith = null;
+					unbindClick?.();
+					where?.();
+					untrigger?.();
+					unmenuCtx?.();
+					if (ctxMenuDesc._backUnreg) {
+						ctxMenuDesc._backUnreg();
+						ctxMenuDesc._backUnreg = null;
+					}
+				}
+			};
+			if (!ctxMenuDesc._backUnreg && visibleRef) ctxMenuDesc._backUnreg = registerContextMenu(menu, visibleRef, () => {
+				ctxMenuDesc?.openedWith?.close?.();
+			});
+		}
+		return handled;
+	};
+};
+var ctxMenuTrigger = (triggerElement, ctxMenuDesc, menuElement) => {
+	const evHandler = makeMenuHandler(triggerElement, (ev) => [
+		ev?.clientX,
+		ev?.clientY,
+		200
+	], ctxMenuDesc, menuElement);
+	const unbindConnected = bindWhileConnected(triggerElement, () => {
+		return registerCtxMenu(triggerElement, evHandler);
+	});
+	return () => {
+		unbindConnected?.();
+	};
+};
+var dropMenuTrigger = (triggerElement, ctxMenuDesc, menuElement) => {
+	const menu = menuElement || Q("ui-modal[type=\"menulist\"]", document.body) || getGlobalContextMenu();
+	const anchorElement = triggerElement;
+	const evHandler = makeMenuHandler(triggerElement, (ev) => boundingBoxAnchorRef(anchorElement)?.slice?.(0, 3), ctxMenuDesc, menu);
+	const untrigger = makeInterruptTrigger?.(menu, (ev) => {
+		if (!(menu?.contains?.(ev?.target) || ev?.target == (triggerElement?.element ?? triggerElement)) || !ev?.target) {
+			ctxMenuDesc?.openedWith?.close?.();
+			const vr = getBoundVisibleRef(menu);
+			if (vr != null) vr.value = false;
+		}
+	}, [
+		"click",
+		"pointerdown",
+		"scroll"
+	]);
+	const listening = addEvent(triggerElement, "click", evHandler, { composed: true });
+	return () => {
+		untrigger?.();
+		listening?.();
+	};
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/Clipboard.ts
 var CLIPBOARD_CHANNEL = "rs-clipboard";
@@ -8672,6 +13337,34 @@ var convertToPng = async (blob) => {
 	});
 };
 /**
+* Read text from clipboard
+*/
+var readText = async () => {
+	return new Promise((resolve) => {
+		scheduleClipboardFrame(() => {
+			const tryReadClipboard = async () => {
+				try {
+					if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+						resolve({
+							ok: true,
+							data: await navigator.clipboard.readText(),
+							method: "clipboard-api"
+						});
+						return;
+					}
+				} catch (err) {
+					console.warn("[Clipboard] Read failed:", err);
+				}
+				resolve({
+					ok: false,
+					error: "Clipboard read not available"
+				});
+			};
+			tryReadClipboard();
+		});
+	});
+};
+/**
 * Unified copy function with automatic type detection
 */
 var copy = async (data, options = {}) => {
@@ -8707,6 +13400,22 @@ var broadcastClipboardFeedback = (result) => {
 		channel.close();
 	} catch (e) {
 		console.warn("[Clipboard] Feedback broadcast failed:", e);
+	}
+};
+/**
+* Request clipboard operation via broadcast (for service worker → client)
+*/
+var requestCopy = (data, options) => {
+	try {
+		const channel = new BroadcastChannel(CLIPBOARD_CHANNEL);
+		channel.postMessage({
+			type: "copy",
+			data,
+			options
+		});
+		channel.close();
+	} catch (e) {
+		console.warn("[Clipboard] Request broadcast failed:", e);
 	}
 };
 /** One logical listener for rs-clipboard — multiple initClipboardReceiver calls must not stack handlers (duplicate copy() freezes UI). */
@@ -8763,6 +13472,101 @@ var listenForClipboardRequests = () => {
 */
 var initClipboardReceiver = () => {
 	return listenForClipboardRequests();
+};
+/**
+* Check if clipboard API is available
+*/
+var isClipboardAvailable = () => {
+	return typeof navigator !== "undefined" && !!navigator.clipboard;
+};
+/**
+* Check if clipboard write is available
+*/
+var isClipboardWriteAvailable = () => {
+	return typeof navigator !== "undefined" && typeof navigator.clipboard?.writeText === "function";
+};
+/**
+* Check if running in Chrome extension context
+*/
+var isChromeExtension = () => {
+	try {
+		return typeof chrome !== "undefined" && !!chrome?.runtime?.id;
+	} catch {
+		return false;
+	}
+};
+/**
+* Request copy via Chrome extension message (for CRX service worker → content script)
+* Falls back to offscreen document or BroadcastChannel if content script fails
+*/
+var requestCopyViaCRX = async (data, tabIdOrOptions) => {
+	const { tabId, offscreenFallback } = typeof tabIdOrOptions === "number" ? { tabId: tabIdOrOptions } : tabIdOrOptions || {};
+	const text = toText(data).trim();
+	if (!text) return {
+		ok: false,
+		error: "Empty content"
+	};
+	if (isChromeExtension() && typeof chrome?.tabs?.sendMessage === "function") {
+		try {
+			if (typeof tabId === "number" && tabId >= 0) {
+				const response = await chrome.tabs.sendMessage(tabId, {
+					type: "COPY_HACK",
+					data: text
+				});
+				if (response?.ok) return {
+					ok: true,
+					data: response?.data,
+					method: response?.method ?? "broadcast"
+				};
+			} else {
+				const tabs = await chrome.tabs.query({
+					currentWindow: true,
+					active: true
+				});
+				for (const tab of tabs || []) if (tab?.id != null && tab.id >= 0) try {
+					const response = await chrome.tabs.sendMessage(tab.id, {
+						type: "COPY_HACK",
+						data: text
+					});
+					if (response?.ok) return {
+						ok: true,
+						data: response?.data,
+						method: response?.method ?? "broadcast"
+					};
+				} catch {}
+			}
+		} catch (err) {
+			console.warn("[Clipboard] CRX content script message failed:", err);
+		}
+		if (offscreenFallback) try {
+			if (await offscreenFallback(text)) return {
+				ok: true,
+				data: text,
+				method: "offscreen"
+			};
+		} catch (err) {
+			console.warn("[Clipboard] Offscreen fallback failed:", err);
+		}
+	}
+	requestCopy(data, { showFeedback: true });
+	return {
+		ok: false,
+		error: "Broadcast sent, result pending",
+		method: "broadcast"
+	};
+};
+/**
+* COPY_HACK - Legacy API for Chrome extension clipboard operations
+* Now delegates to unified Clipboard module
+*/
+var COPY_HACK = async (data) => {
+	return (await writeText$1(toText(data))).ok;
+};
+/**
+* Copy with result - returns full ClipboardResult for more control
+*/
+var copyWithResult = async (data) => {
+	return writeText$1(toText(data));
 };
 var collectProviders = (ev, action) => {
 	const providers = /* @__PURE__ */ new Set();
@@ -8843,6 +13647,27 @@ var safeGet = (key) => {
 		return null;
 	}
 };
+var safeSet$1 = (key, value) => {
+	try {
+		localStorage.setItem(key, value);
+	} catch {}
+};
+var safeRemove = (key) => {
+	try {
+		localStorage.removeItem(key);
+	} catch {}
+};
+/** Encode grid state as compact JSON (ISO timestamp for debugging / sync). */
+function encodeDesktopState(columns, rows, items) {
+	const payload = {
+		v: 2,
+		updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+		columns,
+		rows,
+		items
+	};
+	return JSON.stringify(payload);
+}
 /**
 * Decode persisted JSON. Accepts v2 envelope or legacy flat `{ columns, rows, items }`.
 */
@@ -8886,12 +13711,206 @@ function loadDesktopRaw() {
 	if (Number.isFinite(draftT) && Number.isFinite(mainT) && draftT > mainT) return draft;
 	return main;
 }
+/** Write main snapshot and drop draft (commit). */
+function persistDesktopMain(columns, rows, items) {
+	safeSet$1(DESKTOP_MAIN_KEY, encodeDesktopState(columns, rows, items));
+	safeRemove(DESKTOP_DRAFT_KEY);
+}
+/** Intermediate snapshot only (e.g. while dragging). */
+function persistDesktopDraft(columns, rows, items) {
+	safeSet$1(DESKTOP_DRAFT_KEY, encodeDesktopState(columns, rows, items));
+}
+function clearDesktopDraft() {
+	safeRemove(DESKTOP_DRAFT_KEY);
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/modules/DesktopItemIconCodec.ts
+/**
+* Desktop / launcher tiles: avoid persisting or hydrating `data:` / `blob:` icon URLs
+* (DevTools, clipboard, localStorage stay small). Favicons use a short `g:hostname` ref.
+*
+* INVARIANT: Auto-favicon only for *external* http(s) hosts. Bare view tokens
+* (`settings`, `/workcenter`) resolve to the local origin — those must keep the
+* Phosphor glyph, not a Google s2 fetch for the LAN IP (often blank / 404).
+*/
+var GOOGLE_FAVICON_RE = /^https:\/\/www\.google\.com\/s2\/favicons\?[^#]*domain=([^&]+)/i;
+var isLoopbackOrPrivateHost = (hostname) => {
+	const h = String(hostname || "").trim().toLowerCase().replace(/\.$/, "");
+	if (!h) return true;
+	if (h === "localhost" || h.endsWith(".local") || h === "::1") return true;
+	if (/^127\.\d+\.\d+\.\d+$/.test(h)) return true;
+	if (/^10\.\d+\.\d+\.\d+$/.test(h)) return true;
+	if (/^192\.168\.\d+\.\d+$/.test(h)) return true;
+	if (/^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/.test(h)) return true;
+	if (/^0\.0\.0\.0$/.test(h)) return true;
+	return false;
+};
+/** Only external public http(s) hosts get an auto favicon ref. */
+var isExternalHttpHrefForFavicon = (href, baseHref) => {
+	const raw = String(href || "").trim();
+	if (!raw) return false;
+	try {
+		const base = baseHref || (typeof location !== "undefined" ? location.href : "https://local.invalid/");
+		const u = new URL(raw, base);
+		if (!/^https?:$/i.test(u.protocol)) return false;
+		const host = String(u.hostname || "").toLowerCase();
+		if (!host || isLoopbackOrPrivateHost(host)) return false;
+		if (typeof location !== "undefined" && location.hostname && host === location.hostname.toLowerCase()) return false;
+		if (typeof location !== "undefined" && u.origin === location.origin) return false;
+		return true;
+	} catch {
+		return false;
+	}
+};
+/** Strip scheme prefix for JSON (`S` = https, `H` = http, `R` = other e.g. mailto). */
+var packHrefInline = (href) => {
+	const h = String(href || "").trim();
+	if (!h) return "";
+	if (h.startsWith("https://")) return `S${h.slice(8)}`;
+	if (h.startsWith("http://")) return `H${h.slice(7)}`;
+	return `R${h}`;
+};
+var unpackHrefInline = (packed) => {
+	const p = String(packed || "").trim();
+	if (!p) return "";
+	if (p.startsWith("S")) return `https://${p.slice(1)}`;
+	if (p.startsWith("H")) return `http://${p.slice(1)}`;
+	if (p.startsWith("R")) return p.slice(1);
+	return p;
+};
+var hostnameToFaviconRef = (hostname) => {
+	const h = String(hostname || "").trim().toLowerCase().replace(/\.$/, "");
+	if (!h || isLoopbackOrPrivateHost(h)) return "";
+	if (typeof location !== "undefined" && location.hostname && h === location.hostname.toLowerCase()) return "";
+	return `g:${h}`;
+};
+var faviconUrlForHostname = (hostname) => {
+	const h = String(hostname || "").trim();
+	if (!h || isLoopbackOrPrivateHost(h)) return "";
+	try {
+		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(h.replace(/^\./, ""))}&sz=128`;
+	} catch {
+		return "";
+	}
+};
+/** Favicon ref for an href, or "" when the link is local / view-path / non-http. */
+var faviconRefForHref = (href, baseHref) => {
+	if (!isExternalHttpHrefForFavicon(href, baseHref)) return "";
+	try {
+		const base = baseHref || (typeof location !== "undefined" ? location.href : "https://local.invalid/");
+		return hostnameToFaviconRef(new URL(String(href || "").trim(), base).hostname);
+	} catch {
+		return "";
+	}
+};
+/**
+* Normalize payload from JSON/import: never keep base64/blob; collapse Google favicon URLs to `g:`.
+* WHY: drop persisted `g:192.168.x.x` / same-host refs that blanked tiles after Open-link edits.
+*/
+var normalizeIconSrcFromPayload = (iconSrcRaw, hrefRaw, action) => {
+	const raw = String(iconSrcRaw || "").trim();
+	if (/^(data:|blob:)/i.test(raw)) return "";
+	if (raw.startsWith("g:")) return hostnameToFaviconRef(raw.slice(2).trim().toLowerCase());
+	const m = raw.match(GOOGLE_FAVICON_RE);
+	if (m) try {
+		return hostnameToFaviconRef(decodeURIComponent(m[1]).toLowerCase());
+	} catch {
+		return "";
+	}
+	if (/^https?:\/\//i.test(raw) && raw.length < 2048) try {
+		const u = new URL(raw);
+		if (isLoopbackOrPrivateHost(u.hostname)) return "";
+		if (typeof location !== "undefined" && u.origin === location.origin) return "";
+		return raw;
+	} catch {
+		return raw;
+	}
+	if (!raw && String(action || "") === "open-link" && hrefRaw) return faviconRefForHref(String(hrefRaw));
+	return "";
+};
+/** Value safe to assign to `<img src>` (never data:/blob:). */
+var expandIconSrcForDom = (stored) => {
+	const s = String(stored || "").trim();
+	if (!s) return "";
+	if (/^(data:|blob:)/i.test(s)) return "";
+	if (s.startsWith("g:")) {
+		const host = s.slice(2);
+		if (!hostnameToFaviconRef(host)) return "";
+		return faviconUrlForHostname(host);
+	}
+	return s;
+};
+/** Shrink icon field before JSON.stringify / localStorage. */
+var compactIconSrcForStorage = (iconSrc, action, href) => {
+	const raw = String(iconSrc || "").trim();
+	if (/^(data:|blob:)/i.test(raw)) return "";
+	if (raw.startsWith("g:")) return hostnameToFaviconRef(raw.slice(2));
+	const m = raw.match(GOOGLE_FAVICON_RE);
+	if (m) try {
+		return hostnameToFaviconRef(decodeURIComponent(m[1]).toLowerCase());
+	} catch {
+		return "";
+	}
+	if (String(action || "") === "open-link" && href) {
+		const fromHref = faviconRefForHref(String(href));
+		if (fromHref) return fromHref;
+	}
+	if (/^https?:\/\//i.test(raw) && raw.length < 2048) try {
+		const u = new URL(raw);
+		if (isLoopbackOrPrivateHost(u.hostname)) return "";
+		if (typeof location !== "undefined" && u.origin === location.origin) return "";
+		return raw;
+	} catch {
+		return raw;
+	}
+	return "";
+};
+/** Compact single-item clipboard / debug (no pretty-print, short keys, packed href). */
+var ITEM_COMPACT_KIND = "cw-sdi";
+var serializeDesktopItemCompact = (item) => {
+	const u = item.href ? packHrefInline(item.href) : "";
+	const g = compactIconSrcForStorage(String(item.iconSrc || ""), item.action, item.href);
+	return JSON.stringify({
+		k: ITEM_COMPACT_KIND,
+		v: 1,
+		i: {
+			id: item.id,
+			l: item.label,
+			n: item.icon,
+			c: item.cell,
+			a: item.action || "open-view",
+			w: item.viewId,
+			...u ? { u } : {},
+			...g ? { g } : {},
+			...item.shape ? { s: item.shape } : {}
+		}
+	});
+};
+var parseDesktopItemCompact = (raw) => {
+	if (!raw || typeof raw !== "object") return null;
+	const o = raw;
+	if (o.k !== "cw-sdi" || !o.i || typeof o.i !== "object") return null;
+	const i = o.i;
+	const cell = i.c;
+	const cx = Array.isArray(cell) ? Number(cell[0]) : NaN;
+	const cy = Array.isArray(cell) ? Number(cell[1]) : NaN;
+	const hrefPacked = typeof i.u === "string" ? i.u : "";
+	const href = hrefPacked ? unpackHrefInline(hrefPacked) : "";
+	const action = String(i.a || (href ? "open-link" : "open-view"));
+	return {
+		id: String(i.id || ""),
+		label: String(i.l ?? "Item"),
+		icon: String(i.n ?? "sparkle"),
+		iconSrc: typeof i.g === "string" ? String(i.g) : "",
+		viewId: String(i.w ?? (action === "open-link" ? "home" : "viewer")),
+		cell: [Number.isFinite(cx) ? cx : 0, Number.isFinite(cy) ? cy : 0],
+		action,
+		href,
+		shape: i.s
+	};
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/HistoryManager.ts
-var HistoryManager_exports = /* @__PURE__ */ __exportAll({
-	HistoryManager: () => HistoryManager,
-	createHistoryManager: () => createHistoryManager
-});
 var HistoryManager = class {
 	storageKey;
 	maxEntries;
@@ -9616,6 +14635,68 @@ async function getSpeechPrompt(options = {}) {
 		voiceManager.destroy();
 	}
 }
+/**
+* Check if speech recognition is available
+*/
+function isSpeechRecognitionAvailable() {
+	return !!window.SpeechRecognition || !!window.webkitSpeechRecognition;
+}
+/**
+* Get user media permission for microphone (if needed)
+*/
+async function requestMicrophonePermission() {
+	try {
+		(await navigator.mediaDevices.getUserMedia({ audio: true })).getTracks().forEach((track) => track.stop());
+		return true;
+	} catch {
+		return false;
+	}
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/modules/HookEvent.ts
+var allowedElements = "ui-tabbed-box";
+var implementPasteEvent = (container, handler) => {
+	(container || globalThis)?.addEventListener("paste", (event) => {
+		if (isInFocus(event?.target, allowedElements)) {
+			const dataTransfer = event.clipboardData;
+			const items = dataTransfer?.items;
+			const files = dataTransfer?.files ?? [];
+			if (items || files && files?.length > 0) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			if (dataTransfer) handler(dataTransfer);
+			else navigator.clipboard?.read()?.then?.((items) => {
+				if (items && items.length > 0) handler({
+					items,
+					files
+				});
+			}).catch((error) => {
+				console.error("Failed to read clipboard:", error);
+				return null;
+			});
+		}
+	});
+};
+var implementDropEvent = (container, handler) => {
+	container.addEventListener("dragover", (event) => {
+		if (isInFocus(event?.target, allowedElements)) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+	});
+	container.addEventListener("drop", (event) => {
+		if (isInFocus(event?.target, allowedElements)) {
+			const dataTransfer = event.dataTransfer;
+			const files = dataTransfer?.files ?? [];
+			if (dataTransfer?.items || files && files?.length > 0) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			handler(dataTransfer);
+		}
+	});
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/design/anchor/PointerAnchor.ts
 /** INVARIANT: use interactive/controllers (not legacy md-2025 path). */
@@ -9629,9 +14710,875 @@ var pointerAnchorRef = (root = typeof document != "undefined" ? document?.docume
 	if (coordinate[2]?.deref?.() ?? coordinate[2]) addToCallChain(coordinate, Symbol.dispose, coordinate[2]?.deref?.() ?? coordinate[2]);
 	return coordinate;
 };
+var visibleBySelectorRef = (selector) => {
+	const visRef = booleanRef(false), usub = handleByPointer((ev) => {
+		const target = typeof document != "undefined" ? document.elementFromPoint(ev.clientX, ev.clientY) : null;
+		visRef.value = target?.matches?.(selector) ?? false;
+	});
+	if (usub) addToCallChain(visRef, Symbol.dispose, usub);
+	return visRef;
+};
+var showAttributeRef = (attribute = "data-tooltip") => {
+	const valRef = stringRef(""), usub = handleByPointer((ev) => {
+		const target = typeof document != "undefined" ? document.elementFromPoint(ev.clientX, ev.clientY) : null;
+		valRef.value = target?.getAttribute?.(attribute)?.(`[${attribute}]`) ?? "";
+	});
+	if (usub) addToCallChain(valRef, Symbol.dispose, usub);
+	return valRef;
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/CSSTimeline.ts
+var $extract = Symbol.for("__extract");
+var $element = Symbol.for("__element");
+var timelineHandler = {
+	[Symbol.for("__extract")](target) {
+		return target.source;
+	},
+	get(target, prop, receiver) {
+		if (prop in target) return Reflect.get(target, prop, receiver ?? target);
+		if (prop == "value") return (target?.currentTime ?? 0) / (target?.duration ?? 1);
+		if (prop == $affected && (target instanceof ScrollTimeline || target instanceof ViewTimeline)) return (cb, prop) => {
+			const $cb = () => {
+				queueMicrotask(() => cb((target?.currentTime ?? 0) / (target?.duration ?? 1), "value"));
+			};
+			if (target instanceof ScrollTimeline) {
+				target?.source?.addEventListener?.("scroll", $cb);
+				const $observer = new ResizeObserver((entries) => entries.forEach((entry) => $cb?.()));
+				$observer.observe(target?.source, { box: "content-box" });
+				target?.source?.addEventListener?.("scroll", $cb);
+				return () => {
+					$observer.disconnect();
+					target?.source?.removeEventListener?.("scroll", $cb);
+				};
+			} else if (target instanceof ViewTimeline) {
+				const $observer = new IntersectionObserver((entries) => entries.forEach((entry) => $cb?.()), target?.observerOptions ?? {
+					root: target?.source?.offsetParent ?? document.documentElement,
+					rootMargin: "0px",
+					threshold: [
+						0,
+						.1,
+						.2,
+						.3,
+						.4,
+						.5,
+						.6,
+						.7,
+						.8,
+						.9,
+						1
+					]
+				});
+				$observer.observe(target?.source);
+				target?.source?.addEventListener?.("scroll", $cb);
+				return () => {
+					$observer.disconnect();
+					target?.source?.removeEventListener?.("scroll", $cb);
+				};
+			}
+		};
+		if (prop == $extract) return target;
+		if (prop == $element || prop == "element") return target.source?.element ?? target.source;
+		return Reflect.get(target.source, prop, receiver ?? target.source);
+	},
+	set(target, prop, value, receiver) {
+		if (prop in target) Reflect.set(target, prop, value, receiver ?? target);
+		else if (target.source) Reflect.set(target.source, prop, value, receiver ?? target.source);
+		return true;
+	},
+	has(target, prop) {
+		return Reflect.has(target, prop) || Reflect.has(target.source, prop);
+	},
+	deleteProperty(target, prop) {
+		if (prop in target) return Reflect.deleteProperty(target, prop);
+		else if (target.source) return Reflect.deleteProperty(target.source, prop);
+		return true;
+	},
+	ownKeys(target) {
+		return [...Reflect.ownKeys(target), ...Reflect.ownKeys(target.source)];
+	},
+	getOwnPropertyDescriptor(target, prop) {
+		return {
+			...Reflect.getOwnPropertyDescriptor(target, prop),
+			...Reflect.getOwnPropertyDescriptor(target.source, prop)
+		};
+	},
+	getPrototypeOf(target) {
+		return Reflect.getPrototypeOf(target);
+	},
+	setPrototypeOf(target, proto) {
+		return Reflect.setPrototypeOf(target, proto);
+	},
+	isExtensible(target) {
+		return Reflect.isExtensible(target);
+	},
+	preventExtensions(target) {
+		return Reflect.preventExtensions(target);
+	}
+};
+var $makeScrollTimeline = (source, axis) => {
+	return new Proxy(new ScrollTimeline({
+		source: source?.element ?? source,
+		axis
+	}), timelineHandler);
+};
+var EnhancedScrollTimeline = class {
+	source;
+	axis;
+	timeline;
+	anchor;
+	constructor(sourceOrOptions, $options) {
+		let options = !(sourceOrOptions instanceof HTMLElement) ? sourceOrOptions : {};
+		if (sourceOrOptions instanceof HTMLElement) {
+			this.source = sourceOrOptions;
+			this.axis = typeof $options == "string" ? $options : "inline";
+		} else {
+			this.source = options?.source;
+			this.axis = options?.axis ?? "inline";
+			this.anchor = options?.anchorElement;
+		}
+		this.timeline = $makeScrollTimeline(this.source, this.axis);
+		if (!(typeof $options == "string") && $options?.useAnchor && !this.anchor) this.anchor = makeAnchorElement(this.source);
+	}
+	get [$extract]() {
+		return this.timeline?.source ?? this.source;
+	}
+	get [$affected]() {
+		return (cb, prop) => {
+			const $cb = () => {
+				queueMicrotask(() => cb((this.timeline?.currentTime ?? 0) / (this.timeline?.duration ?? 1), "value"));
+			};
+			this.timeline?.addEventListener?.("scroll", $cb);
+			return () => this.timeline?.removeEventListener?.("scroll", $cb);
+		};
+	}
+	get element() {
+		const $src = this.timeline?.source ?? this.source;
+		return $src?.element ?? $src;
+	}
+	get value() {
+		return this.progress;
+	}
+	get currentTime() {
+		return this.timeline?.currentTime ?? 0;
+	}
+	get duration() {
+		return this.timeline?.duration ?? 1;
+	}
+	get progress() {
+		try {
+			const maxScroll = this.source[["scrollWidth", "scrollHeight"][this.axis === "inline" ? 0 : 1]] - this.source[["clientWidth", "clientHeight"][this.axis === "inline" ? 0 : 1]];
+			const currentScroll = this.source[["scrollLeft", "scrollTop"][this.axis === "inline" ? 0 : 1]];
+			return maxScroll > 0 ? currentScroll / maxScroll : 0;
+		} catch {
+			return 0;
+		}
+	}
+	scrollTo(progress, smooth = true) {
+		const maxScroll = this.source[["scrollWidth", "scrollHeight"][this.axis === "inline" ? 0 : 1]] - this.source[["clientWidth", "clientHeight"][this.axis === "inline" ? 0 : 1]];
+		const scrollPos = Math.max(0, Math.min(1, progress)) * maxScroll;
+		this.source.scrollTo({
+			[["left", "top"][this.axis === "inline" ? 0 : 1]]: scrollPos,
+			behavior: smooth ? "smooth" : "instant"
+		});
+	}
+	scrollBy(delta, smooth = true) {
+		this.source.scrollBy({
+			[["left", "top"][this.axis === "inline" ? 0 : 1]]: delta,
+			behavior: smooth ? "smooth" : "instant"
+		});
+	}
+	getScrollInfo() {
+		const axisIdx = this.axis === "inline" ? 0 : 1;
+		return {
+			scrollSize: this.source[["scrollWidth", "scrollHeight"][axisIdx]],
+			clientSize: this.source[["clientWidth", "clientHeight"][axisIdx]],
+			scrollPos: this.source[["scrollLeft", "scrollTop"][axisIdx]],
+			maxScroll: this.source[["scrollWidth", "scrollHeight"][axisIdx]] - this.source[["clientWidth", "clientHeight"][axisIdx]],
+			progress: this.progress
+		};
+	}
+};
+var makeScrollTimeline = (source, axis) => {
+	if (typeof ScrollTimeline != "undefined") return new EnhancedScrollTimeline({
+		source: source?.element ?? source,
+		axis
+	});
+	const target = toRef$1(source);
+	const scroll = scrollRef(source, ["inline", "block"][axis]);
+	const content = computed(sizeRef(source, ["inline", "block"][axis], "content-box"), (v) => v + getPadding(source, ["inline", "block"][axis]));
+	const percent = computed(scroll, (vl) => (vl || 0) / (deref$1(target)?.[["scrollWidth", "scrollHeight"][axis]] - content?.value || 1));
+	affected(content, (vl) => (scroll?.value || 0) / (deref$1(target)?.[["scrollWidth", "scrollHeight"][axis]] - vl || 1));
+	return percent;
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/ContainerQuery.ts
+var ContainerQueryManager = class {
+	container;
+	queries;
+	activeQueries = /* @__PURE__ */ new Set();
+	queryStates = /* @__PURE__ */ new Map();
+	constructor(options = {}) {
+		this.container = options.container || document.documentElement;
+		this.queries = /* @__PURE__ */ new Map();
+		const defaultQueries = {
+			"mobile": "(max-width: 767px)",
+			"tablet": "(min-width: 768px) and (max-width: 1023px)",
+			"desktop": "(min-width: 1024px)",
+			"touch": "(hover: none) and (pointer: coarse)",
+			"hover": "(hover: hover) and (pointer: fine)",
+			"dark": "(prefers-color-scheme: dark)",
+			"light": "(prefers-color-scheme: light)",
+			"reduced-motion": "(prefers-reduced-motion: reduce)",
+			...options.queries || {}
+		};
+		for (const [name, query] of Object.entries(defaultQueries)) this.addQuery(name, query);
+		if (options.defaultQuery && this.queries.has(options.defaultQuery)) this.activeQueries.add(options.defaultQuery);
+	}
+	addQuery(name, query) {
+		const mediaQuery = globalThis.matchMedia(query);
+		this.queries.set(name, mediaQuery);
+		this.queryStates.set(name, numberRef(mediaQuery.matches ? 1 : 0));
+		mediaQuery.addEventListener("change", (e) => {
+			const stateRef = this.queryStates.get(name);
+			if (stateRef) stateRef.value = e.matches ? 1 : 0;
+			if (e.matches) this.activeQueries.add(name);
+			else this.activeQueries.delete(name);
+		});
+		if (mediaQuery.matches) this.activeQueries.add(name);
+	}
+	removeQuery(name) {
+		if (this.queries.get(name)) {
+			this.queries.delete(name);
+			this.queryStates.delete(name);
+			this.activeQueries.delete(name);
+		}
+	}
+	matches(name) {
+		return this.activeQueries.has(name);
+	}
+	getState(name) {
+		return this.queryStates.get(name);
+	}
+	getActiveQueries() {
+		return Array.from(this.activeQueries);
+	}
+	onQueryChange(name, callback) {
+		const stateRef = this.queryStates.get(name);
+		if (stateRef) return affected(stateRef, (value) => callback(value === 1));
+		return () => {};
+	}
+	destroy() {
+		this.queries.clear();
+		this.queryStates.clear();
+		this.activeQueries.clear();
+	}
+};
+var ContainerSizeTracker = class {
+	container;
+	sizeRef = numberRef(0);
+	widthRef = numberRef(0);
+	heightRef = numberRef(0);
+	aspectRatioRef = numberRef(0);
+	resizeObserver;
+	constructor(container) {
+		this.container = container;
+		this.updateSize();
+		if (typeof ResizeObserver !== "undefined") {
+			this.resizeObserver = new ResizeObserver(() => {
+				this.updateSize();
+			});
+			this.resizeObserver.observe(container);
+		} else addEvent(window, "resize", () => this.updateSize());
+	}
+	updateSize() {
+		const rect = this.container.getBoundingClientRect();
+		this.widthRef.value = rect.width;
+		this.heightRef.value = rect.height;
+		this.sizeRef.value = Math.sqrt(rect.width * rect.height);
+		this.aspectRatioRef.value = rect.width / rect.height;
+	}
+	get width() {
+		return this.widthRef;
+	}
+	get height() {
+		return this.heightRef;
+	}
+	get size() {
+		return this.sizeRef;
+	}
+	get aspectRatio() {
+		return this.aspectRatioRef;
+	}
+	destroy() {
+		this.resizeObserver?.disconnect();
+	}
+};
+function createResponsiveScrollbarConfig(container) {
+	const sizeTracker = new ContainerSizeTracker(container);
+	const queryManager = new ContainerQueryManager({ container });
+	const configs = {
+		mobile: {
+			thickness: 12,
+			showOnHover: false,
+			autoHide: false,
+			fadeDelay: 0
+		},
+		tablet: {
+			thickness: 10,
+			showOnHover: true,
+			autoHide: true,
+			fadeDelay: 1e3
+		},
+		desktop: {
+			thickness: 8,
+			showOnHover: true,
+			autoHide: true,
+			fadeDelay: 1500
+		}
+	};
+	const currentConfig = numberRef(0);
+	const updateConfig = () => {
+		if (queryManager.matches("desktop")) currentConfig.value = 2;
+		else if (queryManager.matches("tablet")) currentConfig.value = 1;
+		else currentConfig.value = 0;
+	};
+	queryManager.onQueryChange("desktop", updateConfig);
+	queryManager.onQueryChange("tablet", updateConfig);
+	queryManager.onQueryChange("mobile", updateConfig);
+	updateConfig();
+	return {
+		sizeTracker,
+		queryManager,
+		configs,
+		currentConfig,
+		getCurrentConfig: () => {
+			const index = currentConfig.value;
+			return configs[Object.keys(configs)[index]];
+		},
+		destroy: () => {
+			sizeTracker.destroy();
+			queryManager.destroy();
+		}
+	};
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/color/ScrollbarTheme.ts
+var scrollbarThemes = {
+	light: {
+		trackColor: "rgba(0, 0, 0, 0.1)",
+		thumbColor: "rgba(0, 0, 0, 0.3)",
+		thumbHoverColor: "rgba(0, 0, 0, 0.5)",
+		thumbActiveColor: "rgba(0, 0, 0, 0.7)",
+		thickness: 8,
+		borderRadius: 4,
+		minThumbSize: 30,
+		showOnHover: true,
+		autoHide: true,
+		fadeDelay: 1500,
+		smoothScroll: true,
+		transitionDuration: .2,
+		transitionEasing: "ease-out",
+		focusOutlineColor: "#007acc",
+		focusOutlineWidth: 2
+	},
+	dark: {
+		trackColor: "rgba(255, 255, 255, 0.1)",
+		thumbColor: "rgba(255, 255, 255, 0.3)",
+		thumbHoverColor: "rgba(255, 255, 255, 0.5)",
+		thumbActiveColor: "rgba(255, 255, 255, 0.7)",
+		thickness: 8,
+		borderRadius: 4,
+		minThumbSize: 30,
+		showOnHover: true,
+		autoHide: true,
+		fadeDelay: 1500,
+		smoothScroll: true,
+		transitionDuration: .2,
+		transitionEasing: "ease-out",
+		focusOutlineColor: "#00aacc",
+		focusOutlineWidth: 2
+	},
+	minimal: {
+		trackColor: "transparent",
+		thumbColor: "rgba(0, 0, 0, 0.2)",
+		thumbHoverColor: "rgba(0, 0, 0, 0.4)",
+		thumbActiveColor: "rgba(0, 0, 0, 0.6)",
+		thickness: 6,
+		borderRadius: 3,
+		minThumbSize: 20,
+		showOnHover: true,
+		autoHide: true,
+		fadeDelay: 1e3,
+		smoothScroll: true,
+		transitionDuration: .15,
+		transitionEasing: "ease-out",
+		focusOutlineColor: "#666",
+		focusOutlineWidth: 1
+	},
+	rounded: {
+		trackColor: "rgba(0, 0, 0, 0.05)",
+		thumbColor: "rgba(0, 0, 0, 0.3)",
+		thumbHoverColor: "rgba(0, 0, 0, 0.5)",
+		thumbActiveColor: "rgba(0, 0, 0, 0.7)",
+		thickness: 10,
+		borderRadius: 5,
+		minThumbSize: 40,
+		showOnHover: true,
+		autoHide: true,
+		fadeDelay: 2e3,
+		smoothScroll: true,
+		transitionDuration: .3,
+		transitionEasing: "ease-in-out",
+		focusOutlineColor: "#007acc",
+		focusOutlineWidth: 2
+	},
+	colorful: {
+		trackColor: "rgba(255, 255, 255, 0.1)",
+		thumbColor: "linear-gradient(45deg, #ff6b6b, #4ecdc4)",
+		thumbHoverColor: "linear-gradient(45deg, #ff5252, #26d0ce)",
+		thumbActiveColor: "linear-gradient(45deg, #ff3838, #00b8d4)",
+		thickness: 12,
+		borderRadius: 6,
+		minThumbSize: 50,
+		showOnHover: true,
+		autoHide: false,
+		fadeDelay: 0,
+		smoothScroll: true,
+		transitionDuration: .4,
+		transitionEasing: "cubic-bezier(0.4, 0, 0.2, 1)",
+		focusOutlineColor: "#ff6b6b",
+		focusOutlineWidth: 3
+	}
+};
+var ScrollbarThemeManager = class {
+	currentTheme;
+	scrollbarElement;
+	styleElement;
+	constructor(scrollbarElement, initialTheme = scrollbarThemes.light) {
+		this.scrollbarElement = scrollbarElement;
+		this.currentTheme = { ...initialTheme };
+		this.applyTheme();
+	}
+	setTheme(theme) {
+		if (typeof theme === "string") {
+			const presetTheme = scrollbarThemes[theme];
+			if (presetTheme) this.currentTheme = { ...presetTheme };
+			else {
+				console.warn(`Scrollbar theme "${theme}" not found. Using light theme as fallback.`);
+				this.currentTheme = { ...scrollbarThemes.light };
+			}
+		} else this.currentTheme = { ...theme };
+		this.applyTheme();
+	}
+	updateTheme(updates) {
+		this.currentTheme = {
+			...this.currentTheme,
+			...updates
+		};
+		this.applyTheme();
+	}
+	getCurrentTheme() {
+		return { ...this.currentTheme };
+	}
+	applyTheme() {
+		const theme = this.currentTheme;
+		const cssVars = {
+			"--scrollbar-thickness": `${theme.thickness}px`,
+			"--scrollbar-border-radius": `${theme.borderRadius}px`,
+			"--scrollbar-min-thumb-size": `${theme.minThumbSize}px`,
+			"--scrollbar-track-color": theme.trackColor,
+			"--scrollbar-thumb-color": theme.thumbColor,
+			"--scrollbar-thumb-hover-color": theme.thumbHoverColor,
+			"--scrollbar-thumb-active-color": theme.thumbActiveColor,
+			"--scrollbar-transition-duration": `${theme.transitionDuration}s`,
+			"--scrollbar-transition-easing": theme.transitionEasing,
+			"--scrollbar-focus-outline-color": theme.focusOutlineColor,
+			"--scrollbar-focus-outline-width": `${theme.focusOutlineWidth}px`
+		};
+		Object.entries(cssVars).forEach(([prop, value]) => {
+			this.scrollbarElement.style.setProperty(prop, value || "");
+		});
+		this.scrollbarElement.setAttribute("data-scrollbar-autohide", theme.autoHide ? "true" : "false");
+		this.scrollbarElement.setAttribute("data-scrollbar-hover", theme.showOnHover ? "true" : "false");
+		this.scrollbarElement.setAttribute("data-scrollbar-smooth", theme.smoothScroll ? "true" : "false");
+		if (theme.customCSS) {
+			this.ensureStyleElement();
+			if (this.styleElement) this.styleElement.textContent = theme.customCSS;
+		} else if (this.styleElement) this.styleElement.textContent = "";
+	}
+	ensureStyleElement() {
+		if (!this.styleElement) {
+			this.styleElement = document.createElement("style");
+			this.styleElement.setAttribute("data-scrollbar-theme", "custom");
+			document.head.appendChild(this.styleElement);
+		}
+	}
+	static light() {
+		return scrollbarThemes.light;
+	}
+	static dark() {
+		return scrollbarThemes.dark;
+	}
+	static minimal() {
+		return scrollbarThemes.minimal;
+	}
+	static rounded() {
+		return scrollbarThemes.rounded;
+	}
+	static colorful() {
+		return scrollbarThemes.colorful;
+	}
+	destroy() {
+		if (this.styleElement && this.styleElement.parentNode) this.styleElement.parentNode.removeChild(this.styleElement);
+	}
+};
+function generateScrollbarCSS(selector, theme) {
+	return `
+        ${selector} {
+            --scrollbar-thickness: ${theme.thickness}px;
+            --scrollbar-border-radius: ${theme.borderRadius}px;
+            --scrollbar-min-thumb-size: ${theme.minThumbSize}px;
+            --scrollbar-track-color: ${theme.trackColor};
+            --scrollbar-thumb-color: ${theme.thumbColor};
+            --scrollbar-thumb-hover-color: ${theme.thumbHoverColor};
+            --scrollbar-thumb-active-color: ${theme.thumbActiveColor};
+            --scrollbar-transition-duration: ${theme.transitionDuration}s;
+            --scrollbar-transition-easing: ${theme.transitionEasing};
+            --scrollbar-focus-outline-color: ${theme.focusOutlineColor};
+            --scrollbar-focus-outline-width: ${theme.focusOutlineWidth}px;
+        }
+
+        ${selector}::-webkit-scrollbar {
+            width: var(--scrollbar-thickness);
+            height: var(--scrollbar-thickness);
+        }
+
+        ${selector}::-webkit-scrollbar-track {
+            background: var(--scrollbar-track-color);
+            border-radius: var(--scrollbar-border-radius);
+        }
+
+        ${selector}::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb-color);
+            border-radius: var(--scrollbar-border-radius);
+            transition: background-color var(--scrollbar-transition-duration) var(--scrollbar-transition-easing);
+        }
+
+        ${selector}::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover-color);
+        }
+
+        ${selector}::-webkit-scrollbar-thumb:active {
+            background: var(--scrollbar-thumb-active-color);
+        }
+
+        ${selector}[data-scrollbar-autohide="true"] {
+            scrollbar-width: thin;
+        }
+
+        ${selector}[data-scrollbar-autohide="true"]:not(:hover)::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        ${selector}:focus {
+            outline: var(--scrollbar-focus-outline-width) solid var(--scrollbar-focus-outline-color);
+            outline-offset: 2px;
+        }
+    `;
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/controllers/EnhancedGestures.ts
+var EnhancedGestureHandler = class {
+	element;
+	options;
+	isActive = false;
+	startTime = 0;
+	startPosition = {
+		x: 0,
+		y: 0
+	};
+	currentPosition = {
+		x: 0,
+		y: 0
+	};
+	velocity = {
+		x: 0,
+		y: 0
+	};
+	lastPosition = {
+		x: 0,
+		y: 0
+	};
+	lastTime = 0;
+	pointers = /* @__PURE__ */ new Map();
+	initialDistance = 0;
+	currentDistance = 0;
+	onStart;
+	onMove;
+	onEnd;
+	onMomentum;
+	onSwipe;
+	onPinch;
+	momentumFrame;
+	constructor(element, options = {}) {
+		this.element = element;
+		this.options = {
+			enableMomentum: true,
+			momentumDecay: .95,
+			minVelocity: .01,
+			maxVelocity: 4,
+			enablePinch: false,
+			pinchThreshold: 10,
+			enableSwipe: true,
+			swipeThreshold: 50,
+			touchAction: "none",
+			...options
+		};
+		this.setupEventListeners();
+		this.element.style.touchAction = this.options.touchAction;
+	}
+	setupEventListeners() {
+		const events = {
+			"pointerdown": this.handlePointerDown.bind(this),
+			"pointermove": this.handlePointerMove.bind(this),
+			"pointerup": this.handlePointerUp.bind(this),
+			"pointercancel": this.handlePointerCancel.bind(this),
+			"pointerleave": this.handlePointerCancel.bind(this)
+		};
+		addEvents(this.element, events);
+	}
+	handlePointerDown(event) {
+		event.preventDefault();
+		this.pointers.set(event.pointerId, event);
+		this.element.setPointerCapture(event.pointerId);
+		if (this.pointers.size === 1) this.startGesture(event);
+		else if (this.pointers.size === 2 && this.options.enablePinch) this.startPinch();
+	}
+	handlePointerMove(event) {
+		event.preventDefault();
+		this.pointers.set(event.pointerId, event);
+		if (this.pointers.size === 1 && this.isActive) this.updateGesture(event);
+		else if (this.pointers.size === 2 && this.options.enablePinch) this.updatePinch();
+	}
+	handlePointerUp(event) {
+		event.preventDefault();
+		this.pointers.delete(event.pointerId);
+		this.element.releasePointerCapture(event.pointerId);
+		if (this.pointers.size === 0 && this.isActive) this.endGesture();
+	}
+	handlePointerCancel(event) {
+		this.pointers.delete(event.pointerId);
+		this.element.releasePointerCapture(event.pointerId);
+		if (this.pointers.size === 0 && this.isActive) this.cancelGesture();
+	}
+	startGesture(event) {
+		this.isActive = true;
+		this.startTime = performance.now();
+		this.lastTime = this.startTime;
+		this.startPosition = {
+			x: event.clientX,
+			y: event.clientY
+		};
+		this.currentPosition = { ...this.startPosition };
+		this.lastPosition = { ...this.startPosition };
+		this.velocity = {
+			x: 0,
+			y: 0
+		};
+		this.onStart?.({
+			startPosition: this.startPosition,
+			timestamp: this.startTime
+		});
+	}
+	updateGesture(event) {
+		const currentTime = performance.now();
+		const deltaTime = currentTime - this.lastTime;
+		this.lastPosition = { ...this.currentPosition };
+		this.currentPosition = {
+			x: event.clientX,
+			y: event.clientY
+		};
+		if (deltaTime > 0) {
+			this.velocity.x = (this.currentPosition.x - this.lastPosition.x) / deltaTime;
+			this.velocity.y = (this.currentPosition.y - this.lastPosition.y) / deltaTime;
+			this.velocity.x = Math.max(-this.options.maxVelocity, Math.min(this.options.maxVelocity, this.velocity.x));
+			this.velocity.y = Math.max(-this.options.maxVelocity, Math.min(this.options.maxVelocity, this.velocity.y));
+		}
+		this.lastTime = currentTime;
+		this.onMove?.({
+			currentPosition: this.currentPosition,
+			delta: {
+				x: this.currentPosition.x - this.lastPosition.x,
+				y: this.currentPosition.y - this.lastPosition.y
+			},
+			velocity: this.velocity,
+			timestamp: currentTime
+		});
+	}
+	endGesture() {
+		this.isActive = false;
+		const gestureDuration = performance.now() - this.startTime;
+		const totalDelta = {
+			x: this.currentPosition.x - this.startPosition.x,
+			y: this.currentPosition.y - this.startPosition.y
+		};
+		if (this.options.enableSwipe && gestureDuration < 500) {
+			if (Math.hypot(totalDelta.x, totalDelta.y) > this.options.swipeThreshold) {
+				const angle = Math.atan2(totalDelta.y, totalDelta.x) * 180 / Math.PI;
+				let direction = "";
+				if (angle >= -45 && angle < 45) direction = "right";
+				else if (angle >= 45 && angle < 135) direction = "down";
+				else if (angle >= -135 && angle < -45) direction = "up";
+				else direction = "left";
+				const speed = Math.hypot(this.velocity.x, this.velocity.y);
+				this.onSwipe?.(direction, speed);
+			}
+		}
+		if (this.options.enableMomentum && Math.hypot(this.velocity.x, this.velocity.y) > this.options.minVelocity) this.startMomentum();
+		this.onEnd?.({
+			startPosition: this.startPosition,
+			endPosition: this.currentPosition,
+			totalDelta,
+			velocity: this.velocity,
+			duration: gestureDuration
+		});
+	}
+	cancelGesture() {
+		this.isActive = false;
+		if (this.momentumFrame) {
+			cancelAnimationFrame(this.momentumFrame);
+			this.momentumFrame = void 0;
+		}
+	}
+	startPinch() {
+		const pointers = Array.from(this.pointers.values());
+		const p1 = pointers[0];
+		const p2 = pointers[1];
+		this.initialDistance = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+	}
+	updatePinch() {
+		if (!this.options.enablePinch) return;
+		const pointers = Array.from(this.pointers.values());
+		const p1 = pointers[0];
+		const p2 = pointers[1];
+		this.currentDistance = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+		if (Math.abs(this.currentDistance - this.initialDistance) > this.options.pinchThreshold) {
+			const scale = this.currentDistance / this.initialDistance;
+			const center = {
+				x: (p1.clientX + p2.clientX) / 2,
+				y: (p1.clientY + p2.clientY) / 2
+			};
+			this.onPinch?.(scale, center);
+		}
+	}
+	startMomentum() {
+		let currentVelocity = { ...this.velocity };
+		const animate = () => {
+			currentVelocity.x *= this.options.momentumDecay;
+			currentVelocity.y *= this.options.momentumDecay;
+			if (Math.hypot(currentVelocity.x, currentVelocity.y) > this.options.minVelocity) {
+				this.onMomentum?.(currentVelocity);
+				this.momentumFrame = requestAnimationFrame(animate);
+			} else this.momentumFrame = void 0;
+		};
+		this.momentumFrame = requestAnimationFrame(animate);
+	}
+	setCallbacks(callbacks) {
+		Object.assign(this, callbacks);
+	}
+	destroy() {
+		if (this.momentumFrame) cancelAnimationFrame(this.momentumFrame);
+		removeEvents(this.element, [
+			"pointerdown",
+			"pointermove",
+			"pointerup",
+			"pointercancel",
+			"pointerleave"
+		]);
+		this.pointers.clear();
+	}
+};
+var ScrollbarGestureHandler = class extends EnhancedGestureHandler {
+	scrollbar;
+	content;
+	axis;
+	scrollPosition = 0;
+	constructor(scrollbar, content, axis, options) {
+		super(scrollbar, {
+			enableMomentum: true,
+			enableSwipe: false,
+			enablePinch: false,
+			...options
+		});
+		this.scrollbar = scrollbar;
+		this.content = content;
+		this.axis = axis;
+		this.setCallbacks({
+			onStart: this.handleGestureStart.bind(this),
+			onMove: this.handleGestureMove.bind(this),
+			onEnd: this.handleGestureEnd.bind(this),
+			onMomentum: this.handleMomentum.bind(this)
+		});
+	}
+	handleGestureStart(gesture) {
+		this.scrollPosition = this.axis === "horizontal" ? this.content.scrollLeft : this.content.scrollTop;
+	}
+	handleGestureMove(gesture) {
+		const scrollbarSize = this.axis === "horizontal" ? this.scrollbar.offsetWidth : this.scrollbar.offsetHeight;
+		const contentSize = this.axis === "horizontal" ? this.content.scrollWidth : this.content.scrollHeight;
+		const containerSize = this.axis === "horizontal" ? this.content.clientWidth : this.content.clientHeight;
+		if (containerSize >= contentSize) return;
+		const effectiveScrollbarSize = scrollbarSize * (containerSize / contentSize);
+		const scrollDelta = (this.axis === "horizontal" ? gesture.delta.x : gesture.delta.y) / (scrollbarSize - effectiveScrollbarSize) * (contentSize - containerSize);
+		const newScrollPosition = Math.max(0, Math.min(contentSize - containerSize, this.scrollPosition + scrollDelta));
+		if (this.axis === "horizontal") this.content.scrollLeft = newScrollPosition;
+		else this.content.scrollTop = newScrollPosition;
+	}
+	handleGestureEnd(gesture) {}
+	handleMomentum(velocity) {
+		const momentumVelocity = this.axis === "horizontal" ? velocity.x : velocity.y;
+		const scrollbarSize = this.axis === "horizontal" ? this.scrollbar.offsetWidth : this.scrollbar.offsetHeight;
+		const contentSize = this.axis === "horizontal" ? this.content.scrollWidth : this.content.scrollHeight;
+		const containerSize = this.axis === "horizontal" ? this.content.clientWidth : this.content.clientHeight;
+		if (containerSize >= contentSize) return;
+		const scrollDelta = momentumVelocity / (scrollbarSize - scrollbarSize * (containerSize / contentSize)) * (contentSize - containerSize);
+		if (this.axis === "horizontal") this.content.scrollBy({
+			left: scrollDelta,
+			behavior: "auto"
+		});
+		else this.content.scrollBy({
+			top: scrollDelta,
+			behavior: "auto"
+		});
+	}
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/ScrollBar.ts
+var axisConfig = [{
+	name: "x",
+	tName: "inline",
+	cssScrollProperty: ["--scroll-left", "calc(var(--percent-x, 0) * max(calc(var(--scroll-size, 1) - var(--content-size, 1)), 0))"],
+	cssPercentProperty: "--percent-x"
+}, {
+	name: "y",
+	tName: "block",
+	cssScrollProperty: ["--scroll-top", "calc(var(--percent-y, 0) * max(calc(var(--scroll-size, 1) - var(--content-size, 1)), 0))"],
+	cssPercentProperty: "--percent-y"
+}];
+var CAXIS = ["clientX", "clientY"];
+var asWeak$1 = (source) => {
+	return source instanceof WeakRef || typeof source?.deref == "function" ? source : new WeakRef(source);
+};
 makeRAFCycle();
+var effectProperty = {
+	fill: "both",
+	delay: 0,
+	easing: "linear",
+	rangeStart: "cover 0%",
+	rangeEnd: "cover 100%",
+	duration: 1
+};
 try {
 	CSS.registerProperty({
 		name: "--percent-x",
@@ -9712,6 +15659,565 @@ try {
 		initialValue: "0px"
 	});
 } catch (e) {}
+var makeInteractive = (holder, content, scrollbar, axis = 0, status = {}, inputChange, draggingState) => {
+	const status_w = asWeak$1(status);
+	const content_w = asWeak$1(content);
+	const dragging_w = asWeak$1(draggingState);
+	const moveScroll = (evc) => {
+		const ev = evc;
+		const status = status_w?.deref?.();
+		if (self && status?.pointerId == ev.pointerId) {
+			evc?.preventDefault?.();
+			const cm = ev[CAXIS[axis]] || 0;
+			const dm = cm - status.point || 0;
+			const contentScrollSize = content?.[["scrollWidth", "scrollHeight"][axis]] - content?.[["clientWidth", "clientHeight"][axis]];
+			const trackSize = scrollbar?.[["clientWidth", "clientHeight"][axis]] - handler?.[["offsetWidth", "offsetHeight"][axis] || 0];
+			const DT = dm * contentScrollSize / trackSize;
+			status.point = cm;
+			content_w?.deref?.()?.scrollBy?.({
+				[["left", "top"][axis]]: DT,
+				behavior: "instant"
+			});
+		}
+	};
+	const handler = scrollbar?.querySelector?.("*") ?? scrollbar;
+	const stopScroll = (evc) => {
+		const ev = evc;
+		const status = status_w?.deref?.();
+		if (status && status?.pointerId == ev.pointerId) {
+			evc?.preventDefault?.();
+			status.point = ev[CAXIS[axis]] || 0;
+			if (dragging_w?.deref?.()) dragging_w.deref().value = 0;
+			(handler?.element ?? ev.target)?.releasePointerCapture?.(status.pointerId);
+			status.pointerId = -1;
+			removeEvents(handler, {
+				"pointerup": stopScroll,
+				"pointermove": moveScroll,
+				"pointercancel": stopScroll
+			});
+		}
+	};
+	if (handler) addEvent(handler, "pointerdown", (evc) => {
+		const ev = evc;
+		const status = status_w?.deref?.();
+		if (self && status?.pointerId < 0) {
+			evc?.preventDefault?.();
+			(handler?.element ?? ev.target)?.setPointerCapture?.(status.pointerId = ev.pointerId || 0);
+			if (dragging_w?.deref?.()) dragging_w.deref().value = 1;
+			status.point = ev[CAXIS[axis]] || 0;
+			status.scroll = content_w?.deref?.()?.[["scrollLeft", "scrollTop"][axis]] || 0;
+			addEvents(handler, {
+				"pointerup": stopScroll,
+				"pointermove": moveScroll,
+				"pointercancel": stopScroll
+			});
+		}
+	});
+};
+var ScrollBar = class {
+	scrollbar;
+	content;
+	status;
+	holder;
+	inputChange;
+	layout;
+	preferAutoHide;
+	axis = 0;
+	_thumbSyncCleanup;
+	spatialAnchor;
+	pointerAnchor;
+	_spatialAnchorCleanup;
+	_pointerAnchorCleanup;
+	enhancedTimeline;
+	isVisible = numberRef(1);
+	isDragging = numberRef(0);
+	thumbPosition = vector2Ref(0, 0);
+	thumbSize = vector2Ref(20, 20);
+	containerSize = vector2Ref(0, 0);
+	thumbTransform = new ReactiveTransform();
+	scrollbarOpacity = numberRef(1);
+	responsiveConfig;
+	_unsubscribeAutoHide;
+	_unsubscribeAccessibility;
+	gestureHandler;
+	themeManager;
+	constructor({ holder, scrollbar, content, inputChange, layout = "anchored", autoHide = true }, axis = 0) {
+		this.scrollbar = scrollbar;
+		this.holder = holder;
+		this.content = content;
+		this.status = {
+			delta: 0,
+			scroll: 0,
+			point: 0,
+			pointerId: -1
+		};
+		this.inputChange = inputChange;
+		this.layout = layout;
+		this.preferAutoHide = autoHide;
+		this.axis = axis;
+		if (this.layout === "anchored") {
+			this.scrollbarOpacity.value = 1;
+			makeInteractive(this.holder, this.content, this.scrollbar, axis, this.status, this.inputChange, this.isDragging);
+			this.bindThumbMetrics(axis);
+			this.setupAccessibility();
+			return;
+		}
+		this.initializeResponsiveBehavior();
+		this.initializeGestureHandling(axis);
+		this.initializeTheming();
+		if (this.preferAutoHide) this.setupAutoHideBehavior();
+		else this.scrollbarOpacity.value = 1;
+		this.setupAccessibility();
+		const currAxis = axisConfig[axis];
+		const bar = this.scrollbar;
+		const source = this.content ?? this.holder;
+		bar?.style?.setProperty(...currAxis.cssScrollProperty, "");
+		const properties = { [currAxis.cssPercentProperty]: [0, 1] };
+		if (this.enhancedTimeline = makeScrollTimeline(source, axis === 0 ? "inline" : "block")) animateByTimeline(bar, properties, this.enhancedTimeline);
+		makeInteractive(this.holder, this.content, this.scrollbar, axis, this.status, this.inputChange, this.isDragging);
+		bindWith(this.scrollbar, "--content-size", CSSUnitUtils.asPx(paddingBoxSize(this.content, axis, this.inputChange)), handleStyleChange);
+		bindWith(this.scrollbar, "--scroll-size", CSSUnitUtils.asPx(scrollSize(this.content, axis, this.inputChange)), handleStyleChange);
+		bindWith(this.scrollbar, "opacity", this.scrollbarOpacity, handleStyleChange);
+		bindWith(this.scrollbar, "--is-dragging", this.isDragging, handleStyleChange);
+		this.bindThumbMetrics(axis);
+		if (this.layout === "spatial") this.initializeSpatialAwareness(axis);
+	}
+	/**
+	* Size + offset the thumb from real scrollWidth/clientWidth (or height).
+	* Also writes --percent-* so CSS consumers stay in sync.
+	*/
+	bindThumbMetrics(axis) {
+		const thumb = this.scrollbar.querySelector(".ui-thumb, .thumb, *") ?? null;
+		if (!thumb) return;
+		const percentProp = axisConfig[axis].cssPercentProperty;
+		let tries = 0;
+		const trackSizeOf = () => {
+			const rect = this.scrollbar.getBoundingClientRect();
+			const viaRect = axis === 0 ? rect.width : rect.height;
+			if (viaRect > 0) return viaRect;
+			return axis === 0 ? this.scrollbar.clientWidth : this.scrollbar.clientHeight;
+		};
+		const update = () => {
+			const scrollSizePx = this.content[["scrollWidth", "scrollHeight"][axis]] || 1;
+			const clientSizePx = this.content[["clientWidth", "clientHeight"][axis]] || 1;
+			const scrollPos = this.content[["scrollLeft", "scrollTop"][axis]] || 0;
+			const maxScroll = Math.max(0, scrollSizePx - clientSizePx);
+			const trackSize = trackSizeOf();
+			if (trackSize <= 0) {
+				if (tries++ < 120) requestAnimationFrame(update);
+				return;
+			}
+			tries = 0;
+			const thumbLen = maxScroll <= 0 ? trackSize : Math.max(20, clientSizePx / scrollSizePx * trackSize);
+			const maxOffset = Math.max(0, trackSize - thumbLen);
+			const progress = maxScroll <= 0 ? 0 : Math.min(1, Math.max(0, scrollPos / maxScroll));
+			if (axis === 0) {
+				thumb.style.boxSizing = "border-box";
+				thumb.style.width = `${thumbLen}px`;
+				thumb.style.height = "100%";
+				thumb.style.transform = `translate3d(${maxOffset * progress}px, 0, 0)`;
+				this.thumbSize.x.value = thumbLen;
+			} else {
+				thumb.style.boxSizing = "border-box";
+				thumb.style.height = `${thumbLen}px`;
+				thumb.style.width = "100%";
+				thumb.style.transform = `translate3d(0, ${maxOffset * progress}px, 0)`;
+				this.thumbSize.y.value = thumbLen;
+			}
+			this.scrollbar.style.setProperty(percentProp, String(progress));
+			this.scrollbar.style.setProperty("--scroll-coef", String(maxScroll <= 0 ? 1 : clientSizePx / scrollSizePx));
+			this.scrollbar.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
+		};
+		const onScroll = () => update();
+		this.content.addEventListener("scroll", onScroll, { passive: true });
+		const ro = new ResizeObserver(() => update());
+		ro.observe(this.content);
+		ro.observe(this.scrollbar);
+		const mo = new MutationObserver(() => queueMicrotask(update));
+		mo.observe(this.content, {
+			childList: true,
+			subtree: true,
+			characterData: true
+		});
+		queueMicrotask(update);
+		requestAnimationFrame(update);
+		this._thumbSyncCleanup = () => {
+			this.content.removeEventListener("scroll", onScroll);
+			ro.disconnect();
+			mo.disconnect();
+		};
+	}
+	initializeSpatialAwareness(axis) {
+		const spatialResult = boundingBoxAnchorRef(this.content, {
+			observeResize: true,
+			observeMutations: true
+		});
+		if (Array.isArray(spatialResult)) this.spatialAnchor = spatialResult;
+		const pointerResult = pointerAnchorRef(this.holder);
+		if (Array.isArray(pointerResult)) {
+			this.pointerAnchor = pointerResult.slice(0, 2);
+			this._pointerAnchorCleanup = pointerResult[2];
+		}
+		if (this.spatialAnchor) affected(this.spatialAnchor[axis === 0 ? 2 : 3], () => {
+			this.updateSpatialPosition(axis);
+		});
+	}
+	initializeResponsiveBehavior() {
+		this.responsiveConfig = createResponsiveScrollbarConfig(this.holder);
+		affected(this.responsiveConfig.currentConfig, () => {
+			const config = this.responsiveConfig.getCurrentConfig();
+			this.updateScrollbarThickness(config.thickness);
+		});
+		const initialConfig = this.responsiveConfig.getCurrentConfig();
+		this.updateScrollbarThickness(initialConfig.thickness);
+	}
+	updateScrollbarThickness(thickness) {
+		this.scrollbar.style.setProperty("--scrollbar-thickness", `${thickness}px`);
+		if (this.axis === 0) {
+			if (!this.scrollbar.style.height || !this.scrollbar.style.height.includes("var(--scrollbar-thickness)")) this.scrollbar.style.height = `${thickness}px`;
+		} else if (!this.scrollbar.style.width || !this.scrollbar.style.width.includes("var(--scrollbar-thickness)")) this.scrollbar.style.width = `${thickness}px`;
+	}
+	initializeGestureHandling(axis) {
+		this.gestureHandler = new ScrollbarGestureHandler(this.scrollbar, this.content, axis === 0 ? "horizontal" : "vertical", {
+			enableMomentum: true,
+			momentumDecay: .92,
+			minVelocity: .1,
+			maxVelocity: 3,
+			touchAction: "none"
+		});
+		this.gestureHandler.setCallbacks({
+			onStart: (gesture) => {
+				this.isDragging.value = 1;
+			},
+			onEnd: (gesture) => {
+				this.isDragging.value = 0;
+			}
+		});
+	}
+	updateSpatialPosition(axis) {
+		if (!this.spatialAnchor || !this.scrollbar) return;
+		const [x, y, width, height] = this.spatialAnchor;
+		axis === 0 ? this.scrollbar.offsetWidth : this.scrollbar.offsetHeight;
+		axis === 0 ? width.value : height.value;
+		if (axis === 0) {
+			this.scrollbar.style.left = `${x.value}px`;
+			this.scrollbar.style.top = `${y.value + height.value}px`;
+			this.scrollbar.style.width = `${width.value}px`;
+		} else {
+			this.scrollbar.style.left = `${x.value + width.value}px`;
+			this.scrollbar.style.top = `${y.value}px`;
+			this.scrollbar.style.height = `${height.value}px`;
+		}
+	}
+	setupAutoHideBehavior() {
+		let hideTimeout;
+		let unsubscribeConfig;
+		const getConfig = () => this.responsiveConfig?.getCurrentConfig() || {
+			showOnHover: true,
+			autoHide: true,
+			fadeDelay: 1500
+		};
+		const showScrollbar = () => {
+			const config = getConfig();
+			if (!config.autoHide) return;
+			this.scrollbarOpacity.value = 1;
+			clearTimeout(hideTimeout);
+			hideTimeout = globalThis.setTimeout(() => {
+				if (this.isDragging.value === 0) this.scrollbarOpacity.value = 0;
+			}, config.fadeDelay);
+		};
+		const hideScrollbar = () => {
+			const config = getConfig();
+			if (!config.autoHide) return;
+			if (this.isDragging.value === 0) hideTimeout = globalThis.setTimeout(() => {
+				this.scrollbarOpacity.value = 0;
+			}, config.fadeDelay);
+		};
+		const setupEvents = () => {
+			const config = getConfig();
+			addEvent(this.content, "scroll", showScrollbar, { passive: true });
+			if (config.showOnHover) {
+				addEvent(this.scrollbar, "mouseenter", showScrollbar);
+				addEvent(this.scrollbar, "mouseleave", hideScrollbar);
+			}
+			addEvent(this.scrollbar, "focus", showScrollbar);
+			this.scrollbarOpacity.value = config.autoHide ? 0 : 1;
+		};
+		unsubscribeConfig = affected(this.responsiveConfig.currentConfig, () => {
+			setupEvents();
+		});
+		setupEvents();
+		this._unsubscribeAutoHide = () => {
+			unsubscribeConfig?.();
+			clearTimeout(hideTimeout);
+			removeEvents(this.content, ["scroll"]);
+			removeEvents(this.scrollbar, [
+				"mouseenter",
+				"mouseleave",
+				"focus"
+			]);
+		};
+	}
+	setupAccessibility() {
+		const orientation = (this.content.scrollWidth > this.content.clientWidth ? 0 : 1) === 0 ? "horizontal" : "vertical";
+		if (!this.content.id) this.content.id = `scrollable-content-${Math.random().toString(36).substr(2, 9)}`;
+		this.scrollbar.setAttribute("role", "scrollbar");
+		this.scrollbar.setAttribute("aria-controls", this.content.id);
+		this.scrollbar.setAttribute("aria-orientation", orientation);
+		this.scrollbar.setAttribute("tabindex", "0");
+		this.scrollbar.setAttribute("aria-label", `Scroll ${orientation}`);
+		const liveRegion = document.createElement("div");
+		liveRegion.setAttribute("aria-live", "polite");
+		liveRegion.setAttribute("aria-atomic", "true");
+		liveRegion.style.position = "absolute";
+		liveRegion.style.left = "-10000px";
+		liveRegion.style.width = "1px";
+		liveRegion.style.height = "1px";
+		liveRegion.style.overflow = "hidden";
+		this.scrollbar.appendChild(liveRegion);
+		const updateAriaValues = () => {
+			const scrollInfo = this.getScrollInfo();
+			if (!scrollInfo) return;
+			const percentage = Math.round(scrollInfo.progress * 100);
+			const maxValue = 100;
+			const currentValue = percentage;
+			this.scrollbar.setAttribute("aria-valuenow", currentValue.toString());
+			this.scrollbar.setAttribute("aria-valuemin", "0");
+			this.scrollbar.setAttribute("aria-valuemax", maxValue.toString());
+			liveRegion.textContent = `Scrolled ${percentage}% ${orientation}`;
+			this.scrollbar.setAttribute("aria-valuetext", `${percentage}% scrolled`);
+		};
+		updateAriaValues();
+		const unaffected = affected(this.enhancedTimeline?.["progress"] || numberRef(0), updateAriaValues);
+		addEvent(this.content, "scroll", updateAriaValues, { passive: true });
+		addEvent(this.scrollbar, "focus", () => {
+			this.scrollbar.setAttribute("aria-expanded", "true");
+			this.scrollbarOpacity.value = 1;
+		});
+		addEvent(this.scrollbar, "blur", () => {
+			this.scrollbar.setAttribute("aria-expanded", "false");
+		});
+		this._unsubscribeAccessibility = () => {
+			unaffected?.();
+			removeEvent(this.content, "scroll", updateAriaValues);
+			removeEvent(this.scrollbar, "keydown", () => {});
+			removeEvent(this.scrollbar, "focus", () => {});
+			removeEvent(this.scrollbar, "blur", () => {});
+		};
+	}
+	initializeTheming() {
+		this.themeManager = new ScrollbarThemeManager(this.scrollbar);
+	}
+	setTheme(theme) {
+		this.themeManager?.setTheme(theme);
+		return this;
+	}
+	updateTheme(updates) {
+		this.themeManager?.updateTheme(updates);
+		return this;
+	}
+	getTheme() {
+		return this.themeManager?.getCurrentTheme();
+	}
+	scrollTo(progress, smooth = true) {
+		this.enhancedTimeline?.scrollTo(progress, smooth);
+	}
+	scrollBy(delta, smooth = true) {
+		this.enhancedTimeline?.scrollBy(delta, smooth);
+	}
+	getScrollInfo() {
+		return this.enhancedTimeline?.getScrollInfo();
+	}
+	destroy() {
+		this._thumbSyncCleanup?.();
+		this._thumbSyncCleanup = void 0;
+		this.spatialAnchor?.forEach((anchor) => {
+			if (anchor && typeof anchor[Symbol.dispose] === "function") anchor[Symbol.dispose]();
+		});
+		this._pointerAnchorCleanup?.();
+		this.responsiveConfig?.destroy();
+		this._unsubscribeAutoHide?.();
+		this.gestureHandler?.destroy();
+		this._unsubscribeAccessibility?.();
+		this.themeManager?.destroy();
+		removeEvents(this.content, ["scroll"]);
+		removeEvents(this.scrollbar, [
+			"mouseenter",
+			"mouseleave",
+			"focus",
+			"keydown"
+		]);
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/modules/InputExt.ts
+var boolDepIconRef = (cnd) => conditional(cnd, "badge-check", "badge");
+var indicationRef = (ref) => computed(ref, (v) => (parseFloat(v) || 0)?.toLocaleString?.("en-US", {
+	minimumFractionDigits: 0,
+	maximumFractionDigits: 1
+}));
+var reactiveInputPosition = (input, container) => {
+	const elementSize = container ? new ReactiveElementSize(container) : null;
+	const value = clampedValueRef(input);
+	return operated([value, elementSize?.width || numberRef(100)], () => {
+		const containerWidth = elementSize?.width.value || 100;
+		return value.value * containerWidth;
+	});
+};
+var reactiveInputHandleTransform = (input, container) => {
+	const position = reactiveInputPosition(input, container);
+	new ReactiveTransform();
+	return operated([position], () => `translateX(${position.value}px)`);
+};
+var convertValueToPointer = (input) => {
+	const [value, min, max] = getInputValues(input);
+	if (input?.type == "number" || input?.type == "range") return (value - min) / (max - min);
+	else if (input?.type == "checkbox") return value ? 1 : 0;
+	else if (input?.type == "radio") {
+		const all = [...input?.parentNode?.querySelectorAll?.("input[type=\"radio\"]")], len = all?.length;
+		return all.indexOf(input) / (len - 1);
+	}
+	return value;
+};
+var convertPointerToValueShift = (input, shift, container) => {
+	const dec = (shift?.[0]?.value || 0) / (container?.offsetWidth || 1);
+	const [_, min, max] = getInputValues(input);
+	if (input?.type == "checkbox") return Math.sign(shift?.[0]?.value);
+	else if (input?.type == "range" || input?.type == "number") return dec * (max - min);
+	else if (input?.type == "radio") return Math.round(dec * max);
+	return dec;
+};
+var correctValue = (input, val) => {
+	if (input?.type == "number" || input?.type == "range") return val;
+	else if (input?.type == "checkbox") return val > .5 ? true : false;
+	else if (input?.type == "radio") {
+		const len = [...input?.parentNode?.querySelectorAll?.("input[type=\"radio\"]")].length;
+		return Math.max(Math.min(Math.round(val), len), 0);
+	}
+};
+var convertPointerToValue = (input, relateFromCorner, container) => {
+	const clamped = relateFromCorner / (container?.offsetWidth || 1);
+	const [_, min, max] = getInputValues(input);
+	return correctValue(input, clamped * (max - min) + min);
+};
+var getValueWithShift = (input, valueShift) => {
+	return correctValue(input, getInputValues(input)?.[0] + valueShift);
+};
+var setInputValue = (input, value) => {
+	const [_, min, max] = getInputValues(input);
+	if (input?.type == "number" || input?.type == "range") {
+		if (value != input.valueAsNumber) {
+			input.valueAsNumber = value;
+			input?.dispatchEvent?.(new Event("change", { bubbles: true }));
+		}
+	} else if (input?.type == "checkbox") setChecked(input, value > .5 ? true : false);
+	else if (input?.type == "radio") {
+		const all = [...input?.parentNode?.querySelectorAll?.("input[type=\"radio\"]")];
+		if (value != 0) setChecked(all[Math.max(Math.min(Math.round(value), max), min)], value);
+	}
+};
+var setValueByShift = (input, valueShift) => {
+	return setInputValue(input, getValueWithShift(input, valueShift));
+};
+var setValueByPointer = (input, pointer, container) => {
+	return setInputValue(input, convertPointerToValue(input, pointer, container));
+};
+var resolveDragging = (input, dragging, container) => {
+	setValueByShift(input, convertPointerToValueShift(input, dragging, container));
+	try {
+		dragging[0].value = 0, dragging[1].value = 0;
+	} catch (e) {}
+	return [0, 0];
+};
+var getInputValues = (inp) => {
+	if ((inp?.type == "number" || inp?.type == "range") && inp?.valueAsNumber != null) return [
+		inp?.valueAsNumber || 0,
+		parseFloat(inp?.min || 0),
+		parseFloat(inp?.max || 0)
+	];
+	else if (inp?.type == "checkbox") return [
+		inp?.checked ? 1 : 0,
+		0,
+		1
+	];
+	else if (inp?.type == "radio") {
+		const all = [...inp?.parentNode?.querySelectorAll?.("input[type=\"radio\"]")];
+		const len = all?.length;
+		return [
+			all?.indexOf?.(inp) ?? -1,
+			0,
+			len - 1
+		];
+	}
+	return [
+		0,
+		0,
+		0
+	];
+};
+var progress = (value, min, max) => {
+	return (value - min) / (max - min);
+};
+var getClampedValue = (inp) => {
+	return progress(...getInputValues(inp));
+};
+var clampedValueRef = (inp) => {
+	const rf = numberRef(getClampedValue(inp));
+	const ctr = (ev) => {
+		rf.value = getClampedValue(ev?.target ?? inp);
+	};
+	bindCtrl?.(inp, ctr);
+	return rf;
+};
+var dragSlider = (thumb, handler, input) => {
+	const usedPointer = { id: -1 };
+	const correctOffset = () => {
+		try {
+			dragging[0].value = 0, dragging[1].value = 0;
+		} catch (e) {}
+		return [0, 0];
+	};
+	const customTrigger = (doGrab) => {
+		const $handler = makeShiftTrigger((ev) => {
+			thumb?.setPointerCapture?.(usedPointer.id = ev?.pointerId);
+			thumb?.setAttribute?.("data-dragging", "true");
+			correctOffset();
+			doGrab?.(ev, thumb);
+		}, thumb);
+		const ub = addEvent(handler, "pointerdown", $handler);
+		const ubt = addEvent(thumb, "pointerdown", $handler);
+		listening.push(ub, ubt);
+		return ub;
+	};
+	const listening = [addEvent(handler, "click", (ev) => {
+		if (input?.type == "checkbox" || input?.type == "radio") setChecked(input, input?.checked, ev);
+	}), addEvent(handler, "pointerdown", (ev) => {
+		if (!(ev?.target?.matches?.(".ui-thumb") || ev?.target?.closest?.(".ui-thumb"))) {
+			if (ev?.target == (handler?.element ?? handler) || handler.contains(ev?.target)) setValueByPointer(input, ev?.layerX || 0, handler);
+		}
+	})];
+	const dragging = [numberRef(0), numberRef(0)];
+	const dragTransform = operated([dragging[0]], () => `translateX(${dragging[0].value}px)`);
+	reactiveInputPosition(input, handler);
+	CSSBinder.bindTransform(thumb, dragTransform);
+	CSSBinder.bindTransform(handler, dragTransform);
+	const relativeValue = operated([dragging[0]], (dx) => convertPointerToValueShift(input, dragging, handler));
+	const clampedValue = clampedValueRef(input);
+	bindWith?.(handler, "--relate", relativeValue, handleStyleChange);
+	bindWith?.(handler, "--value", clampedValue, handleStyleChange);
+	const obj = bindDraggable(customTrigger, (dragging) => {
+		thumb?.removeAttribute?.("data-dragging");
+		if (usedPointer.id >= 0) {
+			thumb?.releasePointerCapture?.(usedPointer.id);
+			usedPointer.id = -1;
+		}
+		resolveDragging(input, dragging, handler);
+	}, dragging, correctOffset);
+	return () => {
+		listening.forEach((ub) => ub?.());
+		obj?.dispose?.();
+	};
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/TemplateManager.ts
 var TemplateManager = class {
@@ -9989,6 +16495,62 @@ function createTemplateManager(options) {
 	return new TemplateManager(options);
 }
 //#endregion
+//#region ../../modules/projects/lur.e/src/design/anchor/Status.ts
+var batteryStatusRef = () => {
+	const rv = ref("battery-charging");
+	const batteryStatus = navigator.getBattery?.();
+	const batteryIcons = /* @__PURE__ */ new Map([
+		[0, "battery-warning"],
+		[25, "battery"],
+		[50, "battery-low"],
+		[75, "battery-medium"],
+		[100, "battery-full"]
+	]);
+	const byLevel = (lv = 1) => batteryIcons.get(Math.max(Math.min(Math.round(lv * 4) * 25, 100), 0)) || "battery";
+	const changeBatteryStatus = () => {
+		let battery = "battery-charging";
+		if (!batteryStatus) rv.value = battery;
+		else batteryStatus?.then?.((btr) => {
+			if (btr.charging) battery = "battery-charging";
+			else battery = byLevel(btr.level) || "battery";
+			rv.value = battery;
+		})?.catch?.(console.warn.bind(console));
+	};
+	changeBatteryStatus();
+	setIdleInterval(changeBatteryStatus, 1e3);
+	batteryStatus?.then?.((btr) => {
+		addEvent(btr, "chargingchange", changeBatteryStatus);
+		addEvent(btr, "levelchange", changeBatteryStatus);
+		changeBatteryStatus();
+	});
+	return rv;
+};
+var timeStatusRef = () => {
+	const rv = ref("00:00:00");
+	const updateTime = () => rv.value = (/* @__PURE__ */ new Date()).toLocaleTimeString(navigator.language, {
+		hour12: false,
+		timeStyle: "short"
+	});
+	setIdleInterval(updateTime, 15e3);
+	document.addEventListener("DOMContentLoaded", updateTime, { once: true });
+	return rv;
+};
+var signalStatusRef = () => {
+	const rv = ref("wifi-off");
+	const changeSignal = () => rv.value = signalIcons[navigator.onLine ? navigator?.connection?.effectiveType || "4g" : "offline"];
+	const signalIcons = {
+		"offline": "wifi-off",
+		"4g": "wifi",
+		"3g": "wifi-high",
+		"2g": "wifi-low",
+		"slow-2g": "wifi-zero"
+	};
+	addEvent(navigator.connection, "change", changeSignal);
+	setIdleInterval(changeSignal, 1e3);
+	changeSignal?.();
+	return rv;
+};
+//#endregion
 //#region ../../modules/projects/lur.e/src/design/anchor/Placement.ts
 /**
 * Shared overlay placement in the same client-coordinate space as DOM rects.
@@ -10238,6 +16800,100 @@ var placeOverlay = (overlay, { origin, placement = "bottom-start", fallbacks, ga
 	};
 };
 //#endregion
+//#region ../../modules/projects/lur.e/src/design/color/Renderer.ts
+var makeRenderer = () => {
+	const canvas = document.createElement("canvas");
+	const fallback = document.createElement("div");
+	canvas.width = 1;
+	canvas.height = 1;
+	canvas.classList.add("u2-renderer");
+	canvas.classList.add("u2-implement");
+	fallback.classList.add("u2-fallback");
+	fallback.classList.add("u2-renderer");
+	fallback.style.inlineSize = "stretch";
+	fallback.style.blockSize = "stretch";
+	fallback.style.contain = "layout paint";
+	fallback.style.containIntrinsicInlineSize = "1px";
+	fallback.style.containIntrinsicBlockSize = "1px";
+	fallback.style.maxInlineSize = "min(100cqi, 100dvi)";
+	fallback.style.maxBlockSize = "min(100cqb, 100dvb)";
+	fallback.style.pointerEvents = "auto";
+	canvas.style.inlineSize = "stretch";
+	canvas.style.blockSize = "stretch";
+	canvas.style.objectFit = "contain";
+	canvas.style.objectPosition = "center";
+	canvas.style.imageRendering = "auto";
+	canvas.style.imageRendering = "optimizeQuality";
+	canvas.style.imageRendering = "smooth";
+	canvas.style.imageRendering = "high-quality";
+	canvas.style.contain = "layout paint";
+	canvas.style.containIntrinsicInlineSize = "1px";
+	canvas.style.containIntrinsicBlockSize = "1px";
+	canvas.style.maxInlineSize = "min(100cqi, 100dvi)";
+	canvas.style.maxBlockSize = "min(100cqb, 100dvb)";
+	canvas.style.pointerEvents = "auto";
+	canvas.layoutsubtree = true;
+	canvas.setAttribute("layoutsubtree", "true");
+	const ctx = canvas?.getContext?.("2d");
+	if (!ctx) return fallback;
+	if (ctx?.drawElement == null && ctx?.drawElementImage == null) return fallback;
+	const drawElementAct = ctx?.drawElementImage != null ? ctx?.drawElementImage?.bind?.(ctx) : ctx?.drawElement?.bind?.(ctx);
+	if (drawElementAct == null) return fallback;
+	const makeInteractive = (element) => {
+		const drawElement = element ?? canvas.children?.[0];
+		if (drawElement == null) return;
+		try {
+			ctx.setHitTestRegions([{
+				element: drawElement,
+				rect: {
+					x: 0,
+					y: 0,
+					width: drawElement?.offsetWidth * devicePixelRatio,
+					height: drawElement?.offsetHeight * devicePixelRatio
+				}
+			}]);
+		} catch (e) {
+			console.warn(e);
+		}
+	};
+	const rafDebounce = RAFBehavior();
+	const doRender = () => {
+		const drawElement = canvas.children?.[0];
+		if (drawElementAct == null || drawElement == null || !canvas.checkVisibility() || canvas.dataset.dragging != null || canvas.closest?.("[data-dragging]") != null) return;
+		ctx.reset();
+		ctx.save();
+		ctx.scale(devicePixelRatio || 1, devicePixelRatio || 1);
+		try {
+			drawElementAct(drawElement, 0, 0, canvas.width / devicePixelRatio, canvas.height / devicePixelRatio);
+		} catch (e) {
+			console.warn(e);
+		}
+		makeInteractive();
+		ctx.restore();
+	};
+	const resizeObserver = new ResizeObserver((entries) => {
+		const entry = entries.find((entry) => entry.target === canvas);
+		const newWidth = Math.min(entry?.devicePixelContentBoxSize?.[0]?.inlineSize || canvas.width, (canvas?.offsetParent || document.documentElement)?.clientWidth * devicePixelRatio);
+		const newHeight = Math.min(entry?.devicePixelContentBoxSize?.[0]?.blockSize || canvas.height, (canvas?.offsetParent || document.documentElement)?.clientHeight * devicePixelRatio);
+		if (newWidth != canvas.width) canvas.width = newWidth;
+		if (newHeight != canvas.height) canvas.height = newHeight;
+		if (newWidth != canvas.width || newHeight != canvas.height) rafDebounce(doRender);
+	});
+	queueMicrotask(() => {
+		resizeObserver.observe(canvas, {
+			box: ["device-pixel-content-box"],
+			fireOnEveryPaint: true
+		});
+	});
+	(async () => {
+		while (true) {
+			await new Promise((resolve) => requestAnimationFrame(resolve));
+			if (canvas.checkVisibility() && canvas.dataset.dragging == null && canvas.closest?.("[data-dragging]") == null) doRender();
+		}
+	})();
+	return canvas;
+};
+//#endregion
 //#region ../../modules/projects/lur.e/src/design/color/DynamicEngine.ts
 var runWhenIdle = (cb, timeout = 100) => {
 	if (typeof globalThis.requestIdleCallback === "function") return globalThis.requestIdleCallback(cb, { timeout });
@@ -10258,11 +16914,11 @@ function extractAlpha(input) {
 		if (hex.length === 5) {
 			const a = hex[4];
 			const aa = a + a;
-			return clamp$3(parseInt(aa, 16) / 255, 0, 1);
+			return clamp$4(parseInt(aa, 16) / 255, 0, 1);
 		}
 		if (hex.length === 9) {
 			const aa = hex.slice(7, 9);
-			return clamp$3(parseInt(aa, 16) / 255, 0, 1);
+			return clamp$4(parseInt(aa, 16) / 255, 0, 1);
 		}
 		return null;
 	}
@@ -10274,7 +16930,7 @@ function extractAlpha(input) {
 		const slashIdx = body.lastIndexOf("/");
 		if (slashIdx !== -1) {
 			const a = parseAlphaComponent(body.slice(slashIdx + 1).trim());
-			if (a != null) return clamp$3(a, 0, 1);
+			if (a != null) return clamp$4(a, 0, 1);
 			return null;
 		}
 	}
@@ -10282,7 +16938,7 @@ function extractAlpha(input) {
 		const parts = body.split(",").map((s) => s.trim());
 		if (parts.length >= 4) {
 			const a = parseAlphaComponent(parts[3]);
-			if (a != null) return clamp$3(a, 0, 1);
+			if (a != null) return clamp$4(a, 0, 1);
 			return null;
 		}
 		return 1;
@@ -10300,7 +16956,7 @@ function parseAlphaComponent(str) {
 	if (Number.isNaN(n)) return null;
 	return n;
 }
-function clamp$3(v, min, max) {
+function clamp$4(v, min, max) {
 	return Math.min(max, Math.max(min, v));
 }
 var tacp = (color) => {
@@ -10444,6 +17100,36 @@ var dynamicTheme = (ROOT = document.documentElement) => {
 	addEvent(window, "load", () => runWhenIdle(updater, 100));
 	addEvent(document, "visibilitychange", () => runWhenIdle(updater, 100));
 	setIdleInterval$1(updater, 500);
+};
+var currentColorFromPointRef = (x, y, ROOT = document.documentElement, timeout = 500) => {
+	const color = pickBgColor(x, y, ROOT);
+	const rfc = stringRef(color);
+	const updater = () => {
+		const color = pickBgColor(x, y, ROOT);
+		rfc.value = color;
+	};
+	addEvent(ROOT, "u2-appear", () => runWhenIdle(updater, 100));
+	addEvent(ROOT, "u2-hidden", () => runWhenIdle(updater, 100));
+	addEvent(ROOT, "u2-theme-change", () => runWhenIdle(updater, 100));
+	addEvent(window, "load", () => runWhenIdle(updater, 100));
+	addEvent(document, "visibilitychange", () => runWhenIdle(updater, 100));
+	setIdleInterval$1(updater, timeout);
+	return rfc;
+};
+var currentColorFromCenterRef = (element, ROOT = document.documentElement, timeout = 500) => {
+	const color = pickFromCenter(element);
+	const rfc = stringRef(color);
+	const updater = () => {
+		const color = pickFromCenter(element);
+		rfc.value = color;
+	};
+	addEvent(ROOT, "u2-appear", () => runWhenIdle(updater, 100));
+	addEvent(ROOT, "u2-hidden", () => runWhenIdle(updater, 100));
+	addEvent(ROOT, "u2-theme-change", () => runWhenIdle(updater, 100));
+	addEvent(window, "load", () => runWhenIdle(updater, 100));
+	addEvent(document, "visibilitychange", () => runWhenIdle(updater, 100));
+	setIdleInterval$1(updater, timeout);
+	return rfc;
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/design/color/ThemeEngine.ts
@@ -13511,8 +20197,8 @@ var definition = {
 		}
 	}
 };
-var clamp$2 = (value) => Math.max(0, Math.min(1, value || 0));
-var fixup = (value) => Math.round(clamp$2(value) * 255);
+var clamp$3 = (value) => Math.max(0, Math.min(1, value || 0));
+var fixup = (value) => Math.round(clamp$3(value) * 255);
 var rgb$1 = converter("rgb");
 var serializeHex = (color) => {
 	if (color === void 0) return;
@@ -13552,6 +20238,78 @@ useMode(definition$3);
 useMode(definition$2);
 useMode(definition$1);
 useMode(definition);
+//#endregion
+//#region ../../modules/projects/lur.e/src/design/color/StyleRules.ts
+var isValidColor$1 = (color) => Boolean(parse(color));
+var registerColorProperty$1 = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
+/**
+* Set brand seed on `:root`. Prefer {@link applyThemeFromWallpaper} from `fest/image`
+* when the source is a wallpaper; this helper remains for manual / persisted overrides.
+*/
+var updateThemeBase = async (originColor = null) => {
+	const primaryRef = localStorageRef("--primary", originColor);
+	if (originColor != null && primaryRef.value != originColor) primaryRef.value = originColor;
+	const seed = String(primaryRef.value || originColor || "").trim();
+	if (!isValidColor$1(seed)) return;
+	registerColorProperty$1("--color-primary", seed);
+	registerColorProperty$1("--base-color", seed);
+	registerColorProperty$1("--wf-md-primary", seed);
+	registerColorProperty$1("--wf-md-seed", seed);
+	E(document.documentElement, { style: {
+		"--primary": primaryRef,
+		...seed ? {
+			"--color-primary": seed,
+			"--base-color": seed,
+			"--wf-md-primary": seed,
+			"--wf-md-seed": seed
+		} : {}
+	} });
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--wf-md-primary", seed);
+	globalQuery.style.setProperty("--wf-md-seed", seed);
+	if (seed) document.dispatchEvent(new CustomEvent("u2-theme-change", { detail: {
+		source: "style-rules",
+		primary: seed
+	} }));
+	return [primaryRef];
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/lure/core/FormBinding.ts
+/**
+* Lifecycle-aware form control bindings built on existing Linker presets.
+* Keeps form semantics in Links/object while Binding owns connection tracking.
+*/
+/**
+* Bind a control through the Linker presets, optionally tracking mount/unmount.
+* The returned disposer is also attached to a reactive ref's Symbol.dispose.
+*/
+var bindFormControl = (element, value, kind = "text", options = {}) => {
+	if (!element) return () => {};
+	const bind = () => formLink(element, value, kind, options) ?? (() => {});
+	const dispose = options.connect === false ? bind() : bindWhileConnected(element, bind);
+	if (value && (typeof value === "object" || typeof value === "function")) addToCallChain(value, Symbol.dispose, dispose);
+	return dispose;
+};
+/** Create a type-appropriate ref and bind it to a common form control family. */
+var formRef = (element, kind = "text", options = {}) => {
+	const initial = options.initial;
+	const value = kind === "number" ? numberRef(Number(initial) || 0) : kind === "checked" ? booleanRef(Boolean(initial)) : stringRef(initial == null ? "" : String(initial));
+	bindFormControl(element, value, kind, options);
+	return value;
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.uniform.worker.ts?worker
 function WorkerWrapper(options) {
@@ -13764,6 +20522,21 @@ var getDir = (dest) => {
 	const p1 = !dest?.trim()?.endsWith("/") ? dest + "/" : dest;
 	return !p1?.startsWith("/") ? "/" + p1 : p1;
 };
+var imageImportDesc = {
+	startIn: "pictures",
+	multiple: false,
+	types: [{
+		description: "wallpaper",
+		accept: { "image/*": [
+			".png",
+			".gif",
+			".jpg",
+			".jpeg",
+			".webp",
+			".jxl"
+		] }
+	}]
+};
 var generalFileImportDesc = {
 	startIn: "documents",
 	multiple: false,
@@ -13879,6 +20652,25 @@ var unregisterDirectoryRoot = (root) => {
 	const segs = key.split("/").filter(Boolean);
 	if (segs[0] === "mounts" && segs[1]) currentHandleMap.delete(segs[1]);
 };
+var mountAsRoot = async (forId, copyFromInternal) => {
+	const cleanId = forId?.trim?.()?.replace?.(/^\//, "")?.trim?.()?.split?.("/")?.filter?.((p) => !!p?.trim?.())?.at?.(0);
+	const rootHandle = currentHandleMap?.get(cleanId) ?? await showDirectoryPicker?.({
+		mode: "readwrite",
+		id: `${cleanId}`
+	})?.catch?.(console.warn.bind(console));
+	if (rootHandle && cleanId && typeof cleanId == "string") currentHandleMap?.set?.(cleanId, rootHandle);
+	if (rootHandle && typeof localStorage != "undefined") localStorage?.setItem?.("opfs.mounted", JSON.stringify([...JSON.parse(localStorage?.getItem?.("opfs.mounted") || "[]"), cleanId]));
+	if (rootHandle) post("mount", {
+		id: cleanId,
+		handle: rootHandle
+	});
+	if (copyFromInternal && rootHandle && cleanId == "user") await copyFromOneHandlerToAnother(await navigator?.storage?.getDirectory?.(), rootHandle, {})?.catch?.(console.warn.bind(console));
+	return rootHandle;
+};
+var unmountAsRoot = async (forId) => {
+	if (typeof localStorage != "undefined") localStorage?.setItem?.("opfs.mounted", JSON.stringify(JSON.parse(localStorage?.getItem?.("opfs.mounted") || "[]").filter((id) => id != forId)));
+	post("unmount", { id: forId });
+};
 async function resolveRootHandle(rootHandle, relPath = "") {
 	if (rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) rootHandle = "/user/";
 	const cleanId = typeof rootHandle == "string" ? rootHandle?.trim?.()?.replace?.(/^\//, "")?.trim?.()?.split?.("/")?.filter?.((p) => !!p?.trim?.())?.at?.(0) : null;
@@ -13902,7 +20694,7 @@ async function resolveRootHandle(rootHandle, relPath = "") {
 		return await navigator?.storage?.getDirectory?.();
 	}
 }
-function normalizePath(basePath = "", relPath) {
+function normalizePath$1(basePath = "", relPath) {
 	if (!relPath?.trim()) return basePath;
 	const cleanRelPath = relPath.trim();
 	if (cleanRelPath.startsWith("/")) return cleanRelPath;
@@ -13915,7 +20707,7 @@ function normalizePath(basePath = "", relPath) {
 	return "/" + baseParts.join("/");
 }
 async function resolvePath(rootHandle, relPath, basePath = "") {
-	const normalizedRelPath = normalizePath(basePath, relPath);
+	const normalizedRelPath = normalizePath$1(basePath, relPath);
 	return {
 		rootHandle: await resolveRootHandle(rootHandle, normalizedRelPath),
 		resolvedPath: normalizedRelPath
@@ -13927,6 +20719,9 @@ function handleError(logger, status, message) {
 }
 function defaultLogger(status, message) {
 	console.trace(`[${status}] ${message}`);
+}
+function getFileExtension(path) {
+	return path?.trim?.()?.split?.(".")?.[1];
 }
 function detectTypeByRelPath(relPath) {
 	if (relPath?.trim()?.endsWith?.("/")) return "directory";
@@ -14016,7 +20811,25 @@ async function getHandler(rootHandle, relPath, options = {}, logger = defaultLog
 		return handleError(logger, "error", `getHandler: ${e.message}`);
 	}
 }
+async function createHandler(rootHandle, relPath, options = {}, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRootHandle, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		if (detectTypeByRelPath(resolvedPath) == "directory") return await getDirectoryHandle(resolvedRootHandle, resolvedPath?.trim?.()?.replace?.(/\/$/, ""), options, logger);
+		else return await getFileHandle(resolvedRootHandle, resolvedPath, options, logger);
+	} catch (e) {
+		return handleError(logger, "error", `createHandler: ${e.message}`);
+	}
+}
 var directoryCacheMap = /* @__PURE__ */ new Map();
+var mayNotPromise = (pms, cb, errCb = console.warn.bind(console)) => {
+	if (typeof pms?.then == "function") return pms?.then?.(cb)?.catch?.(errCb);
+	else try {
+		return cb(pms);
+	} catch (e) {
+		errCb(e);
+		return null;
+	}
+};
 function openDirectory(rootHandle, relPath, options = { create: false }, logger = defaultLogger) {
 	let cacheKey = "";
 	let localMapCache = observe(/* @__PURE__ */ new Map());
@@ -14157,6 +20970,23 @@ async function readFile(rootHandle, relPath, options = {}, logger = defaultLogge
 		return handleError(logger, "error", `readFile: ${e.message}`);
 	}
 }
+async function readAsObjectURL(rootHandle, relPath, options = {}, logger = defaultLogger) {
+	try {
+		const file = await readFile(rootHandle, relPath, options, logger);
+		return file ? URL.createObjectURL(file) : null;
+	} catch (e) {
+		return handleError(logger, "error", `readAsObjectURL: ${e.message}`);
+	}
+}
+async function readFileUTF8(rootHandle, relPath, options = {}, logger = defaultLogger) {
+	try {
+		const file = await readFile(rootHandle, relPath, options, logger);
+		if (!file) return "";
+		return await file.text();
+	} catch (e) {
+		return handleError(logger, "error", `readFileUTF8: ${e.message}`);
+	}
+}
 async function writeFile(rootHandle, relPath, data, logger = defaultLogger) {
 	if (data instanceof FileSystemFileHandle) data = await data.getFile();
 	if (data instanceof FileSystemDirectoryHandle) {
@@ -14171,6 +21001,14 @@ async function writeFile(rootHandle, relPath, data, logger = defaultLogger) {
 		}, resolvedRoot ? [resolvedRoot] : []) !== false;
 	} catch (e) {
 		return handleError(logger, "error", `writeFile: ${e.message}`);
+	}
+}
+async function getFileWriter(rootHandle, relPath, options = { create: true }, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRootHandle, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		return (await getFileHandle(resolvedRootHandle, resolvedPath, options, logger))?.createWritable?.();
+	} catch (e) {
+		return handleError(logger, "error", `getFileWriter: ${e.message}`);
 	}
 }
 async function removeFile(rootHandle, relPath, options = { recursive: true }, logger = defaultLogger) {
@@ -14191,6 +21029,13 @@ async function removeFile(rootHandle, relPath, options = { recursive: true }, lo
 		return handleError(logger, "error", `removeFile: ${e.message}`);
 	}
 }
+async function removeDirectory(rootHandle, relPath, options = { recursive: true }, logger = defaultLogger) {
+	try {
+		return removeFile(rootHandle, relPath, options, logger);
+	} catch (e) {
+		return handleError(logger, "error", `removeDirectory: ${e.message}`);
+	}
+}
 async function remove(rootHandle, relPath, options = {}, logger = defaultLogger) {
 	try {
 		return removeFile(rootHandle, relPath, {
@@ -14201,6 +21046,10 @@ async function remove(rootHandle, relPath, options = {}, logger = defaultLogger)
 		return handleError(logger, "error", `remove: ${e.message}`);
 	}
 }
+var openImageFilePicker = async () => {
+	const $e = "showOpenFilePicker";
+	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => Promise.resolve().then(() => showOpenFilePicker_exports), void 0, import.meta.url))?.[$e])(imageImportDesc);
+};
 var downloadFile = async (file, filename) => {
 	if (file instanceof FileSystemFileHandle) file = await file.getFile();
 	if (typeof file == "string") file = await provide(file);
@@ -14288,6 +21137,10 @@ var provide = async (req = "", rw = false) => {
 	}
 	return null;
 };
+var getLeast = (item) => {
+	if (item?.types?.length > 0) return item?.getType?.(Array.from(item?.types || [])?.at?.(-1));
+	return null;
+};
 var dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 	const fs = await resolveRootHandle(null);
 	const user = getDir(stripUserScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
@@ -14296,6 +21149,18 @@ var dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), cu
 	await writeFile(fs, fp, file);
 	current?.set?.("/user" + fp?.trim?.()?.replace?.(/\s+/g, "-"), file);
 	return "/user" + fp?.trim?.();
+};
+var uploadDirectory = async (dest = "/user/", id = null) => {
+	dest = stripUserScopePrefix(dest);
+	if (!globalThis.showDirectoryPicker) return;
+	const srcHandle = await showDirectoryPicker?.({
+		mode: "readonly",
+		id
+	})?.catch?.(console.warn.bind(console));
+	if (!srcHandle) return;
+	const dstHandle = await getDirectoryHandle(await resolveRootHandle(null), dest + (dest?.trim?.()?.endsWith?.("/") ? "" : "/") + srcHandle.name?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
+	if (!dstHandle) return;
+	return await copyFromOneHandlerToAnother(srcHandle, dstHandle, {})?.catch?.(console.warn.bind(console));
 };
 var uploadFile = async (dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 	const $e = "showOpenFilePicker";
@@ -14316,6 +21181,33 @@ if (ghostImage) {
 		ghostImage.src = URL.createObjectURL(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 384 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128z"/></svg>`], { type: "image/svg+xml" }));
 	} catch (e) {}
 }
+var attachFile = (transfer, file, path = "") => {
+	try {
+		const url = URL.createObjectURL(file);
+		if (file?.type && file?.type != "text/plain") transfer?.items?.add?.(file, file?.type || "text/plain");
+		else transfer?.add?.(file);
+		if (path) transfer?.items?.add?.(path, "text/plain");
+		transfer?.setData?.("text/uri-list", url);
+		transfer?.setData?.("DownloadURL", file?.type + ":" + file?.name + ":" + url);
+	} catch (e) {}
+};
+var dropAsTempFile = async (data) => {
+	const item = (data?.items)?.[0];
+	const isImage = item?.types?.find?.((n) => n?.startsWith?.("image/"));
+	return dropFile(await (data?.files?.[0] ?? ((isImage ? item?.getType?.(isImage) : null) || getLeast(item))), "/user/temp/".trim?.()?.replace?.(/\s+/g, "-"));
+};
+var clearAllInDirectory = async (rootHandle = null, relPath = "", options = {}, logger = defaultLogger) => {
+	try {
+		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		await post("remove", {
+			rootId: "",
+			path: stripUserScopePrefix(resolvedPath),
+			recursive: true
+		}, resolvedRoot ? [resolvedRoot] : []);
+	} catch (e) {
+		return handleError(logger, "error", `clearAllInDirectory: ${e.message}`);
+	}
+};
 var copyFromOneHandlerToAnother = async (fromHandle, toHandle, options = {}, logger = defaultLogger) => {
 	return post("copy", {
 		from: fromHandle,
@@ -14402,11 +21294,480 @@ var handleIncomingEntries = (data, destPath = "/user/", rootHandle = null, onIte
 	});
 };
 //#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/file-utils.ts
+/**
+* File Utilities
+*
+* Common file handling utilities used across views.
+*/
+/**
+* Check if a file is a markdown file
+*/
+function isMarkdownFile(file) {
+	const name = typeof file === "string" ? file : file.name;
+	const type = typeof file === "string" ? "" : file.type;
+	return /\.(md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/i.test(name) || type === "text/markdown";
+}
+/**
+* Check if a file is a text file
+*/
+function isTextFile(file) {
+	const name = typeof file === "string" ? file : file.name;
+	if ((typeof file === "string" ? "" : file.type).startsWith("text/")) return true;
+	return /\.(txt|text|log|json|xml|yaml|yml|toml|ini|cfg|conf)$/i.test(name);
+}
+/**
+* Check if a file is an image
+*/
+function isImageFile(file) {
+	const name = typeof file === "string" ? file : file.name;
+	if ((typeof file === "string" ? "" : file.type).startsWith("image/")) return true;
+	return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif)$/i.test(name);
+}
+/**
+* Check if a file is a code file
+*/
+function isCodeFile(file) {
+	const name = typeof file === "string" ? file : file.name;
+	return /\.(js|ts|jsx|tsx|py|rb|go|rs|c|cpp|h|hpp|java|kt|swift|php|cs|css|scss|sass|less|html|vue|svelte)$/i.test(name);
+}
+/**
+* Read a file as text
+*/
+async function readFileAsText(file) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = () => reject(/* @__PURE__ */ new Error("Failed to read file"));
+		reader.readAsText(file);
+	});
+}
+/**
+* Read a file as data URL
+*/
+async function readFileAsDataURL(file) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = () => reject(/* @__PURE__ */ new Error("Failed to read file"));
+		reader.readAsDataURL(file);
+	});
+}
+/**
+* Read a file as array buffer
+*/
+async function readFileAsArrayBuffer(file) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = () => reject(/* @__PURE__ */ new Error("Failed to read file"));
+		reader.readAsArrayBuffer(file);
+	});
+}
+/**
+* Create a text file
+*/
+function createTextFile(content, filename, mimeType = "text/plain") {
+	return new File([content], filename, { type: mimeType });
+}
+/**
+* Create a markdown file
+*/
+function createMarkdownFile(content, filename = "document.md") {
+	return new File([content], filename, { type: "text/markdown" });
+}
+/**
+* Create a JSON file
+*/
+function createJsonFile(data, filename = "data.json") {
+	const content = JSON.stringify(data, null, 2);
+	return new File([content], filename, { type: "application/json" });
+}
+/**
+* Trigger a file download
+*/
+/**
+* Download text content as a file
+*/
+function downloadTextFile(content, filename, mimeType = "text/plain") {
+	downloadFile(new Blob([content], { type: mimeType }), filename);
+}
+/**
+* Download markdown content
+*/
+function downloadMarkdown(content, filename = "document.md") {
+	downloadTextFile(content, filename, "text/markdown");
+}
+/**
+* Open a file picker dialog
+*/
+async function pickFile(accept = "*") {
+	return new Promise((resolve) => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = accept;
+		input.onchange = () => {
+			resolve(input.files?.[0] || null);
+		};
+		input.oncancel = () => resolve(null);
+		input.click();
+	});
+}
+/**
+* Open a file picker for multiple files
+*/
+async function pickFiles(accept = "*") {
+	return new Promise((resolve) => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = accept;
+		input.multiple = true;
+		input.onchange = () => {
+			resolve(Array.from(input.files || []));
+		};
+		input.oncancel = () => resolve([]);
+		input.click();
+	});
+}
+/**
+* Save file using File System Access API (with fallback)
+*/
+async function saveFile(content, suggestedName = "document.md", types = [{
+	description: "Markdown",
+	accept: { "text/markdown": [".md"] }
+}]) {
+	try {
+		if ("showSaveFilePicker" in window) {
+			const writable = await (await window.showSaveFilePicker({
+				suggestedName,
+				types
+			})).createWritable();
+			await writable.write(content);
+			await writable.close();
+			return true;
+		}
+	} catch (error) {
+		if (error.name === "AbortError") return false;
+	}
+	downloadTextFile(content, suggestedName);
+	return true;
+}
+/**
+* Open file using File System Access API (with fallback)
+*/
+async function openFile(types = [{
+	description: "Markdown",
+	accept: { "text/markdown": [".md", ".markdown"] }
+}]) {
+	try {
+		if ("showOpenFilePicker" in window) {
+			const [handle] = await window.showOpenFilePicker({ types });
+			const file = await handle.getFile();
+			return {
+				content: await file.text(),
+				filename: file.name
+			};
+		}
+	} catch (error) {
+		if (error.name === "AbortError") return null;
+	}
+	const file = await pickFile();
+	if (!file) return null;
+	return {
+		content: await readFileAsText(file),
+		filename: file.name
+	};
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/index.ts
+/**
+* Storage Module
+*
+* Unified storage utilities for persistent state.
+* Provides wrappers for localStorage, sessionStorage, and IndexedDB.
+*/
+/**
+* Common storage keys used across the app
+*/
+var StorageKeys = {
+	FRONTEND_CHOICE: "rs-frontend-choice",
+	FRONTEND_REMEMBER: "rs-frontend-choice-remember",
+	THEME: "rs-theme",
+	SETTINGS: "rs-settings",
+	BOOT_STYLE: "rs-boot-style",
+	BOOT_SHELL: "rs-boot-shell",
+	/** Last-focused app window shell (JSON `{ shell, t }`); see shell-preference.ts */
+	BOOT_SHELL_LAST_ACTIVE: "rs-boot-shell-last-active",
+	BOOT_VIEW: "rs-boot-view",
+	BOOT_REMEMBER: "rs-boot-remember",
+	SHELL_CHOICE: "rs-shell-choice",
+	SHELL_REMEMBER: "rs-shell-remember",
+	WORKCENTER_STATE: "rs-workcenter-state",
+	VIEWER_STATE: "rs-viewer-state",
+	EDITOR_STATE: "rs-editor-state",
+	EXPLORER_STATE: "view-explorer-state",
+	EXPLORER_PATH: "view-explorer-path",
+	LAST_MARKDOWN: "rs-last-markdown",
+	HISTORY: "rs-history",
+	RECENT_FILES: "rs-recent-files",
+	AI_CONFIG: "rs-ai-config"
+};
+/**
+* Get item from localStorage with type safety
+*/
+function getItem(key, defaultValue) {
+	try {
+		const stored = localStorage.getItem(key);
+		if (stored === null) return defaultValue;
+		return JSON.parse(stored);
+	} catch {
+		return defaultValue;
+	}
+}
+/**
+* Set item in localStorage
+*/
+function setItem(key, value) {
+	try {
+		localStorage.setItem(key, JSON.stringify(value));
+		return true;
+	} catch {
+		return false;
+	}
+}
+/**
+* Remove item from localStorage
+*/
+function removeItem(key) {
+	try {
+		localStorage.removeItem(key);
+		return true;
+	} catch {
+		return false;
+	}
+}
+/**
+* Get raw string from localStorage
+*/
+function getString(key, defaultValue = "") {
+	try {
+		return localStorage.getItem(key) || defaultValue;
+	} catch {
+		return defaultValue;
+	}
+}
+/**
+* Set raw string to localStorage
+*/
+function setString(key, value) {
+	try {
+		localStorage.setItem(key, value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+/**
+* Check if localStorage is available
+*/
+function isLocalStorageAvailable() {
+	try {
+		const test = "__storage_test__";
+		localStorage.setItem(test, test);
+		localStorage.removeItem(test);
+		return true;
+	} catch {
+		return false;
+	}
+}
+/**
+* Get item from sessionStorage
+*/
+function getSessionItem(key, defaultValue) {
+	try {
+		const stored = sessionStorage.getItem(key);
+		if (stored === null) return defaultValue;
+		return JSON.parse(stored);
+	} catch {
+		return defaultValue;
+	}
+}
+/**
+* Set item in sessionStorage
+*/
+function setSessionItem(key, value) {
+	try {
+		sessionStorage.setItem(key, JSON.stringify(value));
+		return true;
+	} catch {
+		return false;
+	}
+}
+/**
+* Remove item from sessionStorage
+*/
+function removeSessionItem(key) {
+	try {
+		sessionStorage.removeItem(key);
+		return true;
+	} catch {
+		return false;
+	}
+}
+var DEFAULT_DB_NAME = "crossword-storage";
+var DEFAULT_STORE_NAME = "keyvalue";
+var DB_VERSION = 1;
+var dbPromise = null;
+/**
+* Get IndexedDB database instance
+*/
+function getDB(dbName = DEFAULT_DB_NAME, storeName = DEFAULT_STORE_NAME) {
+	if (dbPromise) return dbPromise;
+	dbPromise = new Promise((resolve, reject) => {
+		const request = indexedDB.open(dbName, DB_VERSION);
+		request.onerror = () => reject(request.error);
+		request.onsuccess = () => resolve(request.result);
+		request.onupgradeneeded = () => {
+			const db = request.result;
+			if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName);
+		};
+	});
+	return dbPromise;
+}
+/**
+* Get value from IndexedDB
+*/
+async function getIDBItem(key) {
+	try {
+		const db = await getDB();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction(DEFAULT_STORE_NAME, "readonly").objectStore(DEFAULT_STORE_NAME).get(key);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve(request.result ?? null);
+		});
+	} catch {
+		return null;
+	}
+}
+/**
+* Set value in IndexedDB
+*/
+async function setIDBItem(key, value) {
+	try {
+		const db = await getDB();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction(DEFAULT_STORE_NAME, "readwrite").objectStore(DEFAULT_STORE_NAME).put(value, key);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve(true);
+		});
+	} catch {
+		return false;
+	}
+}
+/**
+* Remove value from IndexedDB
+*/
+async function removeIDBItem(key) {
+	try {
+		const db = await getDB();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction(DEFAULT_STORE_NAME, "readwrite").objectStore(DEFAULT_STORE_NAME).delete(key);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve(true);
+		});
+	} catch {
+		return false;
+	}
+}
+/**
+* IndexedDB wrapper for structured object storage
+*/
+var IDBStorage = class {
+	dbName;
+	storeName;
+	db = null;
+	constructor(dbName, storeName) {
+		this.dbName = dbName;
+		this.storeName = storeName;
+	}
+	async open() {
+		if (this.db) return this.db;
+		return new Promise((resolve, reject) => {
+			const request = indexedDB.open(this.dbName, 1);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => {
+				this.db = request.result;
+				resolve(this.db);
+			};
+			request.onupgradeneeded = (event) => {
+				const db = event.target.result;
+				if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName, { keyPath: "id" });
+			};
+		});
+	}
+	async get(id) {
+		const db = await this.open();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction([this.storeName], "readonly").objectStore(this.storeName).get(id);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve(request.result || null);
+		});
+	}
+	async set(id, value) {
+		const db = await this.open();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction([this.storeName], "readwrite").objectStore(this.storeName).put({
+				id,
+				...value
+			});
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve();
+		});
+	}
+	async delete(id) {
+		const db = await this.open();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction([this.storeName], "readwrite").objectStore(this.storeName).delete(id);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve();
+		});
+	}
+	async getAll() {
+		const db = await this.open();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction([this.storeName], "readonly").objectStore(this.storeName).getAll();
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve(request.result || []);
+		});
+	}
+	async clear() {
+		const db = await this.open();
+		return new Promise((resolve, reject) => {
+			const request = db.transaction([this.storeName], "readwrite").objectStore(this.storeName).clear();
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve();
+		});
+	}
+	close() {
+		this.db?.close();
+		this.db = null;
+	}
+};
+/** WorkCenter data storage */
+var workCenterStorage = new IDBStorage("rs-workcenter", "data");
+/** History entries storage */
+var historyStorage = new IDBStorage("rs-history", "entries");
+/** Settings/config storage */
+var settingsStorage = new IDBStorage("rs-settings", "config");
+//#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/Base64Data.ts
 var DEFAULT_MIME = "application/octet-stream";
 var DATA_URL_RE = /^data:(?<mime>[^;,]+)?(?<params>(?:;[^,]*)*?),(?<data>[\s\S]*)$/i;
 function canUseFromBase64() {
 	return typeof Uint8Array.fromBase64 === "function";
+}
+function canUseToBase64(u8) {
+	return typeof u8.toBase64 === "function";
 }
 function tryDecodeURIComponent(s) {
 	try {
@@ -14417,6 +21778,10 @@ function tryDecodeURIComponent(s) {
 }
 function likelyUriComponent(s) {
 	return /%[0-9A-Fa-f]{2}/.test(s) || s.includes("+");
+}
+function isTextMime(mimeType) {
+	const t = (mimeType || "").toLowerCase();
+	return t.startsWith("text/") || t.includes("json") || t.includes("xml") || t.includes("svg") || t.includes("javascript") || t.includes("ecmascript");
 }
 function bytesToArrayBuffer(bytes) {
 	const buf = bytes.buffer;
@@ -14452,9 +21817,36 @@ function decodeBase64ToBytes(base64, options = {}) {
 	for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
 	return out;
 }
+function encodeBytesToBase64(bytes, options = {}) {
+	const alphabet = options.alphabet || "base64";
+	if (canUseToBase64(bytes)) return bytes.toBase64({ alphabet });
+	const chunkSize = 32768;
+	let binary = "";
+	for (let i = 0; i < bytes.length; i += chunkSize) binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+	const b64 = typeof btoa === "function" ? btoa(binary) : "";
+	if (alphabet !== "base64url") return b64;
+	return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
 async function blobToBytes(blob) {
 	const ab = await blob.arrayBuffer();
 	return new Uint8Array(ab);
+}
+async function blobToText$1(blob, encoding = "utf-8") {
+	if (typeof blob.text === "function") return await blob.text();
+	const bytes = await blobToBytes(blob);
+	return new TextDecoder(encoding).decode(bytes);
+}
+async function blobToBase64(blob, options = {}) {
+	return encodeBytesToBase64(await blobToBytes(blob), options);
+}
+async function blobToDataUrl(blob, options = {}) {
+	const mimeType = (options.mimeType || blob.type || DEFAULT_MIME).trim() || DEFAULT_MIME;
+	if (options.base64 ?? !isTextMime(mimeType)) return `data:${mimeType};base64,${await blobToBase64(blob, options.base64Options || {})}`;
+	const text = await blobToText$1(blob, options.textEncoding || "utf-8");
+	return `data:${mimeType},${options.uriComponent ? encodeURIComponent(text) : text}`;
+}
+async function fileToDataUrl(file, options = {}) {
+	return await blobToDataUrl(file, options);
 }
 function looksLikeBase64(s) {
 	const t = (s || "").trim();
@@ -14634,6 +22026,245 @@ async function stringToBlob(input, options = {}) {
 		asFile: false
 	});
 }
+async function stringToFile(input, filename, options = {}) {
+	return await stringToBlobOrFile(input, {
+		...options,
+		asFile: true,
+		filename
+	});
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/OPFSMod.ts
+/**
+* Recursive JSON transformation helper for OPFS directories.
+*
+* WHY: bulk migrations and cleanup tasks often need to walk an existing OPFS
+* subtree, parse each JSON/JSOX file, transform the data, and write back only
+* when the normalized output actually changed.
+*/
+/**
+* @typedef {Object} OpfsModifyOptions
+* @property {string} dirPath Относительный путь от корня OPFS (например, "data/configs")
+* @property {(data:any, ctx:{path:string,name:string,fullPath:string}) => any|Promise<any>} transform
+*           Функция-трансформация. Должна вернуть новый объект (или исходный, если без изменений).
+*           Можно вернуть undefined, чтобы пропустить запись.
+* @property {(name:string, fullPath:string) => boolean} [filter]
+*           Доп. фильтр по имени/пути (true — обрабатывать).
+* @property {number} [indent=2] Кол-во пробелов для JSOX.stringify
+* @property {boolean} [dryRun=false] Если true — только показывает, что было бы изменено, без записи.
+* @property {boolean} [prettyStable=true] Если true — сортирует ключи (стабильный вывод).
+*/
+/**
+* Walk a directory tree inside OPFS, apply a transform to every JSON-like file,
+* and optionally perform a dry run without writing changes.
+*/
+async function opfsModifyJson(options) {
+	const { dirPath, transform, filter, indent = 2, dryRun = false, prettyStable = true } = options;
+	assertOpfs();
+	const root = await navigator.storage.getDirectory()?.catch?.(() => null);
+	if (!root) return {
+		processed: 0,
+		changed: 0,
+		errors: 0
+	};
+	const normDirPath = normalizePath(dirPath);
+	const dir = await getDirByPath(root, normDirPath);
+	if (!dir) return {
+		processed: 0,
+		changed: 0,
+		errors: 0
+	};
+	let processed = 0;
+	let changed = 0;
+	let errors = 0;
+	for await (const { handle, name, fullPath } of walk(dir, normDirPath)) {
+		if (handle.kind !== "file" || !name.toLowerCase().endsWith(".json")) continue;
+		if (filter && !filter(name, fullPath)) continue;
+		try {
+			const originalText = await (await handle.getFile()).text();
+			let data;
+			try {
+				data = originalText.trim() === "" ? null : JSOX.parse(originalText);
+			} catch (_) {
+				try {
+					data = originalText.trim() === "" ? null : JSON.parse(originalText);
+				} catch (e) {
+					console.warn(`JSON parse error: ${fullPath}`, e);
+					errors++;
+					continue;
+				}
+			}
+			const result = await transform(data, {
+				path: normDirPath,
+				name,
+				fullPath
+			});
+			if (typeof result === "undefined") {
+				processed++;
+				continue;
+			}
+			const newText = serializeJSON(result, {
+				indent,
+				prettyStable
+			});
+			if (normalizeEol(newText) === normalizeEol(originalText)) {
+				processed++;
+				continue;
+			}
+			if (dryRun) console.log(`[dry-run] Would update: ${fullPath}`);
+			else {
+				const writable = await handle.createWritable();
+				await writable.truncate(0);
+				await writable.write(newText);
+				await writable.close();
+				console.log(`Updated: ${fullPath}`);
+			}
+			processed++;
+			changed++;
+		} catch (e) {
+			console.error(`Failed on ${fullPath}:`, e);
+			errors++;
+		}
+	}
+	return {
+		processed,
+		changed,
+		errors
+	};
+}
+function normalizePath(p) {
+	if (!p || p === "/" || p === ".") return "";
+	return p.split("/").filter(Boolean).join("/");
+}
+function assertOpfs() {
+	if (!("storage" in navigator) || typeof navigator.storage.getDirectory !== "function") throw new Error("OPFS is not available in this browser/context. Need navigator.storage.getDirectory().");
+}
+async function getDirByPath(rootDirHandle, path) {
+	if (!path || path === "/" || path === ".") return rootDirHandle;
+	const parts = path.split("/").map((s) => s.trim()).filter(Boolean);
+	let dir = rootDirHandle;
+	for (const part of parts) {
+		try {
+			dir = await dir?.getDirectoryHandle?.(part, { create: false });
+		} catch (e) {
+			if (e?.name === "NotFoundError") return null;
+			if (e?.name === "AbortError") return null;
+			throw e;
+		}
+		if (!dir) return null;
+	}
+	return dir;
+}
+/** Async generator for recursively walking an OPFS directory tree. */
+async function* walk(dirHandle, basePath = "") {
+	for await (const [name, handle] of dirHandle.entries()) {
+		const fullPath = basePath ? `${basePath}/${name}` : name;
+		if (handle.kind === "directory") yield* walk(handle, fullPath);
+		else yield {
+			handle,
+			name,
+			fullPath
+		};
+	}
+}
+function serializeJSON(obj, { indent = 2, prettyStable = true } = {}) {
+	return JSON.stringify(obj, prettyStable ? stableReplacer : void 0, indent) + "\n";
+}
+/** Stable key ordering for deterministic JSON output and smaller diffs. */
+function stableReplacer(key, value) {
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		const out = {};
+		for (const k of Object.keys(value).sort()) out[k] = value[k];
+		return out;
+	}
+	return value;
+}
+function normalizeEol(s) {
+	return s.replace(/\r\n/g, "\n");
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/FileOps.ts
+/**
+* UI-facing filesystem operations.
+*
+* These helpers connect browser picker/clipboard/drop interactions with the
+* higher-level storage and recognition pipelines so views do not have to know
+* about OPFS handles or import-heavy recognition modules directly.
+*/
+/** Bind drag-and-drop ingestion for a directory target and emit a local `dir-dropped` event on success. */
+var bindDropToDir = (host, dir) => {
+	const onDragOver = (ev) => {
+		ev.preventDefault();
+		host.dataset.dragover = "true";
+	};
+	const onDragLeave = () => {
+		delete host.dataset.dragover;
+	};
+	const onDrop = async (ev) => {
+		ev.preventDefault();
+		delete host.dataset.dragover;
+		try {
+			await handleIncomingEntries(ev.dataTransfer, dir);
+			const count = ev.dataTransfer?.items?.length || ev.dataTransfer?.files?.length || 0;
+			host.dispatchEvent(new CustomEvent("dir-dropped", {
+				detail: { count },
+				bubbles: true
+			}));
+		} catch (e) {
+			console.warn(e);
+		}
+	};
+	host.addEventListener("dragover", onDragOver);
+	host.addEventListener("dragleave", onDragLeave);
+	host.addEventListener("drop", onDrop);
+	return () => {
+		host.removeEventListener("dragover", onDragOver);
+		host.removeEventListener("dragleave", onDragLeave);
+		host.removeEventListener("drop", onDrop);
+	};
+};
+/** Write every provided file into the target directory using the canonical smart-write helper. */
+var writeFilesToDir = async (dir, files) => {
+	const items = Array.from(files);
+	for (const file of items) {
+		dir = dir?.trim?.();
+		dir = dir?.endsWith?.("/") ? dir : dir + "/";
+		await writeFileSmart(null, dir, file);
+	}
+	return items.length;
+};
+/** Open a native file picker and write the selected files into the target directory. */
+var openPickerAndWrite = async (dir, accept = "*/*", multiple = true) => {
+	const input = document.createElement("input");
+	input.type = "file";
+	input.accept = accept;
+	input.multiple = multiple;
+	return await new Promise((resolve) => {
+		input.onchange = async () => {
+			dir = dir?.trim?.();
+			dir = dir?.endsWith?.("/") ? dir : dir + "/";
+			try {
+				resolve(await writeFilesToDir(dir, input.files || []));
+			} catch {
+				resolve(0);
+			}
+		};
+		input.click();
+	});
+};
+/** Download a file that already exists in OPFS by path. */
+var downloadByPath = async (path, suggestedName) => {
+	const lastSlash = path.lastIndexOf("/");
+	const dir = path.slice(0, Math.max(0, lastSlash + 1));
+	const name = suggestedName || path.slice(lastSlash + 1);
+	const file = await (await (await getDirectoryHandle(null, dir)).getFileHandle(name, { create: false })).getFile();
+	const url = URL.createObjectURL(file);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = name;
+	a.click();
+	setTimeout(() => URL.revokeObjectURL(url), 1e3);
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/WriteFileSmart-v2.ts
 var lureFsPromise = null;
@@ -14643,6 +22274,11 @@ var getLureFs = () => {
 		writeFile: m.writeFile
 	})), void 0, import.meta.url);
 	return lureFsPromise;
+};
+var sanitizeFileName = (name, fallbackExt = "") => {
+	const base = (String(name || "").split("/").pop() || "").replace(/\s+/g, "-").replace(/[^a-zA-Z0-9_.\-+#&]/g, "-");
+	if (fallbackExt && !base.includes(".")) return `${base || Date.now()}${fallbackExt.startsWith(".") ? "" : "."}${fallbackExt}`;
+	return base || `${Date.now()}`;
 };
 var toSlug = (input, toLower = true) => {
 	let s = String(input || "").trim();
@@ -14839,6 +22475,43 @@ channel.addEventListener("message", (event) => {
 		}
 	}
 });
+var stopAllWatchers = () => watchers.clear();
+var watchFsDirectory = (dir, listener) => {
+	if (!dir || typeof listener !== "function") return () => void 0;
+	const normalized = dir.endsWith("/") ? dir : `${dir}/`;
+	let listeners = watchers.get(normalized);
+	if (!listeners) {
+		listeners = /* @__PURE__ */ new Set();
+		watchers.set(normalized, listeners);
+	}
+	listeners.add(listener);
+	return () => {
+		const current = watchers.get(normalized);
+		if (!current) return;
+		current.delete(listener);
+		if (!current.size) watchers.delete(normalized);
+	};
+};
+/** Read a markdown-capable file handle into text, returning an empty string for missing content. */
+var getMarkDownFromFile = async (handle) => {
+	return await (await handle?.getFile?.())?.text?.() || "";
+};
+/** Parse the first file handle as JSON/JSOX and return `null` when the handle is missing. */
+var getJSONFromFile = async (handle) => {
+	if (Array.isArray(handle)) handle = handle?.[0];
+	if (!handle) return null;
+	return parseJsonSafely(await (await handle?.getFile?.())?.text?.() || "{}");
+};
+var parseJsonSafely = (text) => {
+	if (!text) return null;
+	if (typeof text != "string") return text;
+	try {
+		return JSON.parse(text);
+	} catch (_) {
+		console.warn("Failed to parse JSON", text);
+		return text;
+	}
+};
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/FileHandling.ts
 var FileHandler = class {
@@ -15151,6 +22824,37 @@ var FileHandler = class {
 function createFileHandler(options) {
 	return new FileHandler(options);
 }
+/**
+* Utility function to read markdown file from URL
+*/
+async function readMarkdownFromUrl(url) {
+	try {
+		const response = await fetch(url, {
+			credentials: "include",
+			cache: "no-store"
+		});
+		if (!response.ok) return null;
+		const contentType = response.headers.get("content-type") || "";
+		if (!contentType.includes("text") && !contentType.includes("markdown")) return null;
+		return await response.text();
+	} catch {
+		return null;
+	}
+}
+/**
+* Extract text from DataTransfer (for paste/drop operations)
+*/
+async function extractTextFromDataTransfer(dt) {
+	try {
+		const uriList = dt.getData("text/uri-list");
+		if (uriList?.trim()) return uriList.trim();
+	} catch {}
+	try {
+		const text = dt.getData("text/plain");
+		if (text?.trim()) return text;
+	} catch {}
+	return null;
+}
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/markdown-assets.ts
 /** True for `./assets/x`, `docs/a.md` — not http(s)/blob/data/#. */
@@ -15181,7 +22885,7 @@ var provideBoundRelative = async (mountRoot, originalRel, sourceUrl) => {
 	if (mountRoot) bases.push(mountRoot);
 	const seen = /* @__PURE__ */ new Set();
 	for (const base of bases) for (const candidate of relPathCandidates(rel)) {
-		const path = normalizePath(base, candidate);
+		const path = normalizePath$1(base, candidate);
 		if (!path || seen.has(path)) continue;
 		seen.add(path);
 		const file = await provide(path).catch(() => null);
@@ -15524,6 +23228,19 @@ async function getCachedComponent(cacheKey, importFn, options) {
 	componentCache.set(cacheKey, lazyComponent);
 	return lazyComponent;
 }
+/**
+* Clear component cache (useful for development/testing)
+*/
+function clearComponentCache() {
+	componentCache.clear();
+}
+/**
+* Dispose of cached components
+*/
+function disposeCachedComponents() {
+	for (const [, lazyComponent] of componentCache) if (lazyComponent.dispose) lazyComponent.dispose();
+	componentCache.clear();
+}
 //#endregion
 //#region ../../modules/projects/lur.e/src/index.ts
 var src_exports$1 = /* @__PURE__ */ __exportAll({
@@ -15533,21 +23250,41 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	$observeAttribute: () => $observeAttribute,
 	$observeInput: () => $observeInput,
 	$virtual: () => $virtual,
-	ANIMATABLE_BRAND: () => ANIMATABLE_BRAND,
 	C: () => C,
+	COPY_HACK: () => COPY_HACK,
 	CSM: () => CSM,
+	CSSAnchor: () => CSSAnchor,
+	CSSBinder: () => CSSBinder,
 	CSSCalc: () => CSSCalc,
+	CSSCustomProps: () => CSSCustomProps,
+	CSSInputControls: () => CSSInputControls,
+	CSSInteractionStates: () => CSSInteractionStates,
+	CSSMomentumScrolling: () => CSSMomentumScrolling,
+	CSSPosition: () => CSSPosition,
+	CSSScrollbarControls: () => CSSScrollbarControls,
+	CSSTransform: () => CSSTransform,
+	CSSUnitConverter: () => CSSUnitConverter,
+	CSSUnitUtils: () => CSSUnitUtils,
 	ClosePriority: () => ClosePriority,
 	DESKTOP_DRAFT_KEY: () => DESKTOP_DRAFT_KEY,
 	DESKTOP_MAIN_KEY: () => DESKTOP_MAIN_KEY,
+	DOMMatrixAdapter: () => DOMMatrixAdapter,
+	DecorWith: () => DecorWith,
+	DragHandler: () => DragHandler,
 	E: () => E,
 	EventHandler: () => EventHandler,
 	FileHandler: () => FileHandler,
 	Fragment: () => Fragment,
 	GLitElement: () => GLitElement,
+	GridAnimationUtils: () => GridAnimationUtils,
+	GridCellUtils: () => GridCellUtils,
+	GridCoordUtils: () => GridCoordUtils,
+	GridInteractionUtils: () => GridInteractionUtils,
+	GridLayoutUtils: () => GridLayoutUtils,
 	H: () => H,
 	HistoryManager: () => HistoryManager,
 	I: () => I,
+	IDBStorage: () => IDBStorage,
 	ITEM_COMPACT_KIND: () => ITEM_COMPACT_KIND,
 	JUNCTION_DRAG_EVENTS: () => JUNCTION_DRAG_EVENTS,
 	JUNCTION_RESIZE_EVENTS: () => JUNCTION_RESIZE_EVENTS,
@@ -15555,191 +23292,521 @@ var src_exports$1 = /* @__PURE__ */ __exportAll({
 	JunctionDragMixin: () => JunctionDragMixin,
 	JunctionResizeMixin: () => JunctionResizeMixin,
 	JunctionSelectMixin: () => JunctionSelectMixin,
+	LongHoverHandler: () => LongHoverHandler,
+	LongPressHandler: () => LongPressHandler,
 	M: () => M$1,
+	Matrix2D: () => Matrix2D,
+	Matrix3D: () => Matrix3D,
+	Matrix4D: () => Matrix4D,
+	OOBTrigger: () => OOBTrigger,
 	Q: () => Q,
 	Qp: () => Qp,
+	ReactiveAnimation: () => ReactiveAnimation,
+	ReactiveCSSValue: () => ReactiveCSSValue,
+	ReactiveElementSize: () => ReactiveElementSize,
+	ReactiveMediaQuery: () => ReactiveMediaQuery,
+	ReactiveScroll: () => ReactiveScroll,
+	ReactiveTransform: () => ReactiveTransform,
 	ReactiveViewport: () => ReactiveViewport,
-	S: () => S,
+	ResizeHandler: () => ResizeHandler,
+	ScrollBar: () => ScrollBar,
+	ScrollbarThemeManager: () => ScrollbarThemeManager,
+	SelectionController: () => SelectionController,
+	StorageKeys: () => StorageKeys,
 	SwM: () => SwM,
+	SwipeHandler: () => SwipeHandler,
+	T: () => T,
 	Task: () => Task,
 	TemplateManager: () => TemplateManager,
+	UnderlyingShadow: () => UnderlyingShadow,
+	Vector2D: () => Vector2D,
+	Vector3D: () => Vector3D,
+	Vector4D: () => Vector4D,
 	VoiceInputManager: () => VoiceInputManager,
+	absolutePosition: () => absolutePosition,
+	absoluteRef: () => absoluteRef,
+	acosRef: () => acosRef,
 	addProxiedEvent: () => addProxiedEvent,
+	addRef: () => addRef,
 	addToBank: () => addToBank,
+	addVector2D: () => addVector2D,
+	addVector3D: () => addVector3D,
+	addVector4D: () => addVector4D,
+	agWrapEvent: () => agWrapEvent,
 	alives: () => alives,
-	applyNormalizedInlineStyle: () => applyNormalizedInlineStyle,
+	appendAsLayer: () => appendAsLayer,
+	appendAsOverlay: () => appendAsOverlay,
+	appendAsUnderlying: () => appendAsUnderlying,
+	appendChild: () => appendChild,
+	appendScrollbarOverlay: () => appendScrollbarOverlay,
+	applyAnchorName: () => applyAnchorName,
+	asinRef: () => asinRef,
+	atan2Ref: () => atan2Ref,
+	atanRef: () => atanRef,
+	attachFile: () => attachFile,
 	attrLink: () => attrLink,
 	attrRef: () => attrRef,
+	bank: () => bank,
+	batteryStatusRef: () => batteryStatusRef,
+	bindAnchorableDragResize: () => bindAnchorableDragResize,
+	bindAnimated: () => bindAnimated,
+	bindAnimatedBatch: () => bindAnimatedBatch,
+	bindBeh: () => bindBeh,
+	bindConditionalAnimation: () => bindConditionalAnimation,
 	bindCtrl: () => bindCtrl,
 	bindDirectoryForLaunchedFiles: () => bindDirectoryForLaunchedFiles,
+	bindDraggable: () => bindDraggable,
+	bindDropToDir: () => bindDropToDir,
+	bindFormControl: () => bindFormControl,
+	bindForms: () => bindForms,
 	bindHandler: () => bindHandler,
+	bindMenuItemClickHandler: () => bindMenuItemClickHandler,
+	bindMorph: () => bindMorph,
 	bindOutsideDismiss: () => bindOutsideDismiss,
-	bindStyle: () => bindStyle,
+	bindPreset: () => bindPreset,
+	bindScrollbarPosition: () => bindScrollbarPosition,
+	bindSpring: () => bindSpring,
+	bindTransition: () => bindTransition,
 	bindTriggerHandlers: () => bindTriggerHandlers,
+	bindWhileConnected: () => bindWhileConnected,
 	bindWith: () => bindWith,
+	bindWithAnimation: () => bindWithAnimation,
+	bindWithRect: () => bindWithRect,
+	blobToBase64: () => blobToBase64,
 	blobToBytes: () => blobToBytes,
+	blobToDataUrl: () => blobToDataUrl,
+	blobToText: () => blobToText$1,
+	boolDepIconRef: () => boolDepIconRef,
+	booleanRef: () => booleanRef$1,
+	boundingBoxAnchorRef: () => boundingBoxAnchorRef,
+	cancelAnimations: () => cancelAnimations,
+	ceilCell: () => ceilCell,
+	checkCellCollision: () => checkCellCollision,
 	checkedLink: () => checkedLink,
 	checkedRef: () => checkedRef,
+	clampCell: () => clampCell,
+	clampPointToRect: () => clampPointToRect,
+	clampRef: () => clampRef,
+	clampedValueRef: () => clampedValueRef,
+	clearAllInDirectory: () => clearAllInDirectory,
+	clearComponentCache: () => clearComponentCache,
+	clearDesktopDraft: () => clearDesktopDraft,
+	clickPrevention: () => clickPrevention,
+	closeByGroup: () => closeByGroup,
 	closeHighestPriority: () => closeHighestPriority,
 	collectRelativeMarkdownAssetRefs: () => collectRelativeMarkdownAssetRefs,
 	colorScheme: () => colorScheme,
-	compileInlineStyleAttribute: () => compileInlineStyleAttribute,
+	compactIconSrcForStorage: () => compactIconSrcForStorage,
+	constrainRectAspectRatio: () => constrainRectAspectRatio,
+	convertPointerToValue: () => convertPointerToValue,
+	convertPointerToValueShift: () => convertPointerToValueShift,
+	convertValueToPointer: () => convertValueToPointer,
 	copy: () => copy,
 	copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
+	copyWithResult: () => copyWithResult,
+	correctValue: () => correctValue,
+	cosRef: () => cosRef,
+	createAnimatedRef: () => createAnimatedRef,
+	createAnimationSequence: () => createAnimationSequence,
+	createBackNavigableModal: () => createBackNavigableModal,
+	createBlurShadow: () => createBlurShadow,
+	createBoxShadow: () => createBoxShadow,
+	createDropShadow: () => createDropShadow,
 	createElement: () => createElement,
 	createFileHandler: () => createFileHandler,
+	createHandler: () => createHandler,
 	createHistoryManager: () => createHistoryManager,
+	createJsonFile: () => createJsonFile,
+	createMarkdownFile: () => createMarkdownFile,
+	createPanelUnderShadow: () => createPanelUnderShadow,
+	createReactiveScrollbarOverlay: () => createReactiveScrollbarOverlay,
+	createRect2D: () => createRect2D,
+	createShapedTileShadow: () => createShapedTileShadow,
 	createTemplateManager: () => createTemplateManager,
+	createTextFile: () => createTextFile,
+	createUnderlyingShadow: () => createUnderlyingShadow,
+	crossProduct3D: () => crossProduct3D,
+	cssVarLink: () => cssVarLink,
+	cssVarRef: () => cssVarRef,
+	ctxMenuTrigger: () => ctxMenuTrigger,
+	cubeRootRef: () => cubeRootRef,
+	currentColorFromCenterRef: () => currentColorFromCenterRef,
+	currentColorFromPointRef: () => currentColorFromPointRef,
 	currentHandleMap: () => currentHandleMap,
+	customElement: () => customElement,
+	datasetLink: () => datasetLink,
+	datasetRef: () => datasetRef,
 	decodeBase64ToBytes: () => decodeBase64ToBytes,
 	decodeDesktopState: () => decodeDesktopState,
 	defaultLogger: () => defaultLogger,
+	defaultZIndexShift: () => defaultZIndexShift,
 	defineElement: () => defineElement,
 	detectTypeByRelPath: () => detectTypeByRelPath,
 	directHandlers: () => directHandlers,
 	directoryCacheMap: () => directoryCacheMap,
+	disposeCachedComponents: () => disposeCachedComponents,
+	divideRef: () => divideRef,
+	divideVector2D: () => divideVector2D,
+	divideVector3D: () => divideVector3D,
+	divideVector4D: () => divideVector4D,
+	doObserve: () => doObserve,
+	dotProduct2D: () => dotProduct2D,
+	dotProduct3D: () => dotProduct3D,
+	dotProduct4D: () => dotProduct4D,
+	downloadByPath: () => downloadByPath,
 	downloadFile: () => downloadFile,
+	downloadMarkdown: () => downloadMarkdown,
+	downloadTextFile: () => downloadTextFile,
+	dragSlider: () => dragSlider,
+	draggingPointerMap: () => draggingPointerMap,
+	dropAsTempFile: () => dropAsTempFile,
 	dropFile: () => dropFile,
+	dropMenuTrigger: () => dropMenuTrigger,
 	dynamicBgColors: () => dynamicBgColors,
 	dynamicNativeFrame: () => dynamicNativeFrame,
 	dynamicTheme: () => dynamicTheme,
+	easeInOutCubic: () => easeInOutCubic,
+	easeOutBounce: () => easeOutBounce,
+	effectProperty: () => effectProperty,
 	elMap: () => elMap$1,
 	electronAPI: () => electronAPI,
 	elementPointerMap: () => elementPointerMap,
-	ensureHostStyles: () => ensureHostStyles,
+	encodeBytesToBase64: () => encodeBytesToBase64,
+	encodeDesktopState: () => encodeDesktopState,
+	enhancedIntersectionBoxAnchorRef: () => enhancedIntersectionBoxAnchorRef,
 	ensureWorker: () => ensureWorker,
 	eventTrigger: () => eventTrigger,
+	expandIconSrcForDom: () => expandIconSrcForDom,
+	extendQueryPrototype: () => extendQueryPrototype,
+	extractTextFromDataTransfer: () => extractTextFromDataTransfer,
+	faviconRefForHref: () => faviconRefForHref,
+	faviconUrlForHostname: () => faviconUrlForHostname,
+	fileToDataUrl: () => fileToDataUrl,
 	findEntryRelPath: () => findEntryRelPath,
+	findPathBetweenCells: () => findPathBetweenCells,
+	floorCell: () => floorCell,
+	formLink: () => formLink,
+	formRef: () => formRef,
 	generalFileImportDesc: () => generalFileImportDesc,
+	generateAnchorId: () => generateAnchorId,
+	generateName: () => generateName,
+	generateScrollbarCSS: () => generateScrollbarCSS,
 	getActiveCloseable: () => getActiveCloseable,
 	getActiveCloseables: () => getActiveCloseables,
+	getAdjacentCells: () => getAdjacentCells,
 	getBy: () => getBy,
 	getCachedComponent: () => getCachedComponent,
+	getCellDistance: () => getCellDistance,
+	getCellsInRange: () => getCellsInRange,
+	getClampedValue: () => getClampedValue,
+	getComputedZIndex: () => getComputedZIndex,
 	getDir: () => getDir,
 	getDirectoryHandle: () => getDirectoryHandle,
+	getExistsZIndex: () => getExistsZIndex,
+	getFileExtension: () => getFileExtension,
 	getFileHandle: () => getFileHandle,
+	getFileWriter: () => getFileWriter,
 	getFocused: () => getFocused,
+	getGlobalContextMenu: () => getGlobalContextMenu,
 	getHandler: () => getHandler,
+	getIDBItem: () => getIDBItem,
 	getIgnoreNextPopState: () => getIgnoreNextPopState,
+	getInputValues: () => getInputValues,
+	getItem: () => getItem,
+	getJSONFromFile: () => getJSONFromFile,
+	getLeast: () => getLeast,
+	getMarkDownFromFile: () => getMarkDownFromFile,
 	getMimeTypeByFilename: () => getMimeTypeByFilename,
+	getParentOrShadowRoot: () => getParentOrShadowRoot,
+	getSessionItem: () => getSessionItem,
 	getSpeechPrompt: () => getSpeechPrompt,
+	getString: () => getString,
+	getValueWithShift: () => getValueWithShift,
 	ghostImage: () => ghostImage,
+	grabForDrag: () => grabForDrag,
 	handleByPointer: () => handleByPointer,
 	handleError: () => handleError,
+	handleForFixPosition: () => handleForFixPosition,
 	handleIncomingEntries: () => handleIncomingEntries,
 	hasActiveCloseable: () => hasActiveCloseable,
 	hasFileExtension: () => hasFileExtension,
+	hasInBank: () => hasInBank,
+	hashTargetLink: () => hashTargetLink,
+	hashTargetRef: () => hashTargetRef,
+	historyBack: () => historyBack,
 	historyState: () => historyState,
+	historyStorage: () => historyStorage,
+	historyViewRef: () => historyViewRef,
+	hostnameToFaviconRef: () => hostnameToFaviconRef,
 	html: () => html,
 	htmlBuilder: () => htmlBuilder,
+	hypotRef: () => hypotRef,
 	ignoreNextPopState: () => ignoreNextPopState,
+	imageImportDesc: () => imageImportDesc,
+	implementDropEvent: () => implementDropEvent,
+	implementPasteEvent: () => implementPasteEvent,
 	indexDirectoryFiles: () => indexDirectoryFiles,
+	indicationRef: () => indicationRef,
 	initBackNavigation: () => initBackNavigation,
 	initClipboardReceiver: () => initClipboardReceiver,
 	initGlobalClipboard: () => initGlobalClipboard,
 	initHistory: () => initHistory,
-	isAnimatableValue: () => isAnimatableValue,
+	intersectionBoxAnchorRef: () => intersectionBoxAnchorRef,
 	isBase64Like: () => isBase64Like,
-	isEffectivelyEmptyStyleText: () => isEffectivelyEmptyStyleText,
+	isChromeExtension: () => isChromeExtension,
+	isClipboardAvailable: () => isClipboardAvailable,
+	isClipboardWriteAvailable: () => isClipboardWriteAvailable,
+	isCodeFile: () => isCodeFile,
+	isExternalHttpHrefForFavicon: () => isExternalHttpHrefForFavicon,
+	isImageFile: () => isImageFile,
+	isLocalStorageAvailable: () => isLocalStorageAvailable,
+	isMarkdownFile: () => isMarkdownFile,
 	isMarkdownRelativeRef: () => isMarkdownRelativeRef,
-	isNativeCSSStyleValue: () => isNativeCSSStyleValue,
 	isNotExtended: () => isNotExtended,
-	isReactiveStyleValue: () => isReactiveStyleValue,
-	isStyleBinding: () => isStyleBinding,
+	isSpeechRecognitionAvailable: () => isSpeechRecognitionAvailable,
+	isTextFile: () => isTextFile,
+	isValidColor: () => isValidColor$1,
 	isVirtualFsPath: () => isVirtualFsPath,
+	itemClickHandle: () => itemClickHandle,
+	jsx: () => jsx,
+	jsxDEV: () => jsxDEV,
+	jsxs: () => jsxs,
 	junctionToBox: () => junctionToBox,
 	lazyAddEventListener: () => lazyAddEventListener,
 	lazyLoadComponent: () => lazyLoadComponent,
 	listenForClipboardRequests: () => listenForClipboardRequests,
 	listenerOptionsFor: () => listenerOptionsFor,
-	loadCachedStyles: () => loadCachedStyles,
 	loadDesktopRaw: () => loadDesktopRaw,
 	localStorageLink: () => localStorageLink,
 	localStorageLinkMap: () => localStorageLinkMap,
 	localStorageRef: () => localStorageRef,
+	magnitude2D: () => magnitude2D,
+	magnitude3D: () => magnitude3D,
+	magnitude4D: () => magnitude4D,
+	makeAnchorElement: () => makeAnchorElement,
+	makeClickOutsideTrigger: () => makeClickOutsideTrigger,
+	makeInteractive: () => makeInteractive,
+	makeInterruptTrigger: () => makeInterruptTrigger,
 	makeLinker: () => makeLinker,
+	makeMenuHandler: () => makeMenuHandler,
 	makeRef: () => makeRef,
+	makeRenderer: () => makeRenderer,
+	makeShiftTrigger: () => makeShiftTrigger,
 	makeTask: () => makeTask,
+	makeTasks: () => makeTasks,
 	makeUIState: () => makeUIState,
+	makeWeakRef: () => makeWeakRef,
 	mappedRoots: () => mappedRoots,
 	markdownNeedsBoundDirectory: () => markdownNeedsBoundDirectory,
 	matchMappedRoot: () => matchMappedRoot,
 	matchMediaLink: () => matchMediaLink,
 	matchMediaRef: () => matchMediaRef,
+	matrix2x2Ref: () => matrix2x2Ref,
+	matrix3x3Ref: () => matrix3x3Ref,
+	matrix4x4Ref: () => matrix4x4Ref,
+	mayNotPromise: () => mayNotPromise,
 	maybeStartThemeEngine: () => maybeStartThemeEngine,
 	mergeByKey: () => mergeByKey,
 	mixinDisposers: () => mixinDisposers,
+	modulusRef: () => modulusRef,
+	momentumScroll: () => momentumScroll,
+	mountAsRoot: () => mountAsRoot,
 	mountPickedDirectory: () => mountPickedDirectory,
+	multiplyRef: () => multiplyRef,
+	multiplyVector2D: () => multiplyVector2D,
+	multiplyVector3D: () => multiplyVector3D,
+	multiplyVector4D: () => multiplyVector4D,
 	mutationTrigger: () => mutationTrigger,
 	navigate: () => navigate,
 	navigationEnable: () => navigationEnable,
+	normalize2D: () => normalize2D,
+	normalize3D: () => normalize3D,
+	normalize4D: () => normalize4D,
 	normalizeDataAsset: () => normalizeDataAsset,
-	normalizePath: () => normalizePath,
+	normalizeIconSrcFromPayload: () => normalizeIconSrcFromPayload,
+	normalizePath: () => normalizePath$1,
 	numberRef: () => numberRef$1,
+	observeConnect: () => observeConnect,
+	observeDisconnect: () => observeDisconnect,
 	observeFileSystemHandle: () => observeFileSystemHandle,
+	observeSizeLink: () => observeSizeLink,
 	openDirectory: () => openDirectory,
+	openFile: () => openFile,
+	openImageFilePicker: () => openImageFilePicker,
+	openPickerAndWrite: () => openPickerAndWrite,
+	operated: () => operated,
+	opfsModifyJson: () => opfsModifyJson,
+	optimizeCellLayout: () => optimizeCellLayout,
+	orientLink: () => orientLink,
+	orientRef: () => orientRef,
+	originalBack: () => originalBack,
 	originalForward: () => originalForward,
 	originalGo: () => originalGo,
 	originalPush: () => originalPush,
 	originalRelFromRef: () => originalRelFromRef,
 	originalReplace: () => originalReplace,
+	packHrefInline: () => packHrefInline,
+	paddingBoxSize: () => paddingBoxSize,
 	parseDataUrl: () => parseDataUrl,
+	parseDesktopItemCompact: () => parseDesktopItemCompact,
+	parseJsonSafely: () => parseJsonSafely,
+	persistDesktopDraft: () => persistDesktopDraft,
+	persistDesktopMain: () => persistDesktopMain,
 	pickAssetDirectory: () => pickAssetDirectory,
 	pickBgColor: () => pickBgColor,
+	pickFile: () => pickFile,
+	pickFiles: () => pickFiles,
 	pickFromCenter: () => pickFromCenter,
 	pickMarkdownFile: () => pickMarkdownFile,
 	pickSidecarDirectoryFiles: () => pickSidecarDirectoryFiles,
 	placeOverlay: () => placeOverlay,
+	pointToRectDistance: () => pointToRectDistance,
 	pointerAnchorRef: () => pointerAnchorRef,
+	pointerEventLink: () => pointerEventLink,
+	pointerEventRef: () => pointerEventRef,
 	post: () => post,
+	powerRef: () => powerRef,
+	progress: () => progress,
 	propStore: () => propStore,
 	property: () => property,
 	provide: () => provide,
 	provideBoundRelative: () => provideBoundRelative,
-	pruneEmptyStyleAttribute: () => pruneEmptyStyleAttribute,
+	radioValueLink: () => radioValueLink,
+	radioValueRef: () => radioValueRef,
+	reactiveInputHandleTransform: () => reactiveInputHandleTransform,
+	reactiveInputPosition: () => reactiveInputPosition,
+	reactiveScrollbarSize: () => reactiveScrollbarSize,
+	readAsObjectURL: () => readAsObjectURL,
 	readFile: () => readFile,
+	readFileAsArrayBuffer: () => readFileAsArrayBuffer,
+	readFileAsDataURL: () => readFileAsDataURL,
+	readFileAsText: () => readFileAsText,
+	readFileUTF8: () => readFileUTF8,
+	readMarkdownFromUrl: () => readMarkdownFromUrl,
+	readText: () => readText,
+	rectArea: () => rectArea,
+	rectCenter: () => rectCenter,
+	rectContainsPoint: () => rectContainsPoint,
+	rectIntersects: () => rectIntersects,
+	rectUnion: () => rectUnion,
+	refCtl: () => refCtl,
+	refTrigger: () => refTrigger,
 	reflectControllers: () => reflectControllers,
 	registerCloseable: () => registerCloseable,
+	registerColorProperty: () => registerColorProperty$1,
+	registerContextMenu: () => registerContextMenu,
 	registerDirectoryRoot: () => registerDirectoryRoot,
+	registerLayerElement: () => registerLayerElement,
 	registerModal: () => registerModal,
+	registerOverlay: () => registerOverlay,
+	registerOverlayElement: () => registerOverlayElement,
+	registerSidebar: () => registerSidebar,
 	registerTask: () => registerTask,
 	registerTransientOverlay: () => registerTransientOverlay,
-	rehydrateAdoptedStyleSheets: () => rehydrateAdoptedStyleSheets,
+	registerUnderlyingElement: () => registerUnderlyingElement,
 	relPathCandidates: () => relPathCandidates,
+	relativePosition: () => relativePosition,
 	reloadInto: () => reloadInto,
 	remove: () => remove,
+	removeChild: () => removeChild,
+	removeDirectory: () => removeDirectory,
 	removeFile: () => removeFile,
 	removeFromBank: () => removeFromBank,
+	removeIDBItem: () => removeIDBItem,
+	removeItem: () => removeItem,
+	removeSessionItem: () => removeSessionItem,
+	replaceChildren: () => replaceChildren,
+	requestCopy: () => requestCopy,
+	requestCopyViaCRX: () => requestCopyViaCRX,
+	requestMicrophonePermission: () => requestMicrophonePermission,
+	resizeTrigger: () => resizeTrigger,
+	resolveDragging: () => resolveDragging,
 	resolveFileUnderDirectory: () => resolveFileUnderDirectory,
+	resolveLayerZIndex: () => resolveLayerZIndex,
 	resolveOverlayHost: () => resolveOverlayHost,
 	resolvePath: () => resolvePath,
 	resolvePlacement: () => resolvePlacement,
 	resolveRootHandle: () => resolveRootHandle,
+	rotate2D: () => rotate2D,
+	roundCell: () => roundCell,
+	sanitizeFileName: () => sanitizeFileName,
+	saveFile: () => saveFile,
 	saveMarkdownBlob: () => saveMarkdownBlob,
 	saveUIState: () => saveUIState,
-	scheduleEnsureHostStyles: () => scheduleEnsureHostStyles,
+	scale2D: () => scale2D,
+	scaleRectAroundCenter: () => scaleRectAroundCenter,
+	screenToControlValue: () => screenToControlValue,
+	scrollBoundsWithBounce: () => scrollBoundsWithBounce,
 	scrollLink: () => scrollLink,
 	scrollRef: () => scrollRef,
+	scrollSize: () => scrollSize,
+	scrollbarMetrics: () => scrollbarMetrics,
+	scrollbarThemes: () => scrollbarThemes,
+	selectLink: () => selectLink,
+	serializeDesktopItemCompact: () => serializeDesktopItemCompact,
+	setIDBItem: () => setIDBItem,
 	setIgnoreNextPopState: () => setIgnoreNextPopState,
+	setInputValue: () => setInputValue,
+	setItem: () => setItem,
+	setSessionItem: () => setSessionItem,
+	setString: () => setString,
+	setValueByPointer: () => setValueByPointer,
+	setValueByShift: () => setValueByShift,
+	settingsStorage: () => settingsStorage,
+	showAttributeRef: () => showAttributeRef,
+	signRef: () => signRef,
+	signalStatusRef: () => signalStatusRef,
+	sinRef: () => sinRef,
 	sizeLink: () => sizeLink,
 	sizeRef: () => sizeRef,
+	sliderThumbPosition: () => sliderThumbPosition,
+	smoothValueTransition: () => smoothValueTransition,
+	snapToGridCell: () => snapToGridCell,
+	squareRootRef: () => squareRootRef,
+	stopAllWatchers: () => stopAllWatchers,
 	stringToBlob: () => stringToBlob,
 	stringToBlobOrFile: () => stringToBlobOrFile,
-	styleCache: () => styleCache,
-	styleElementCache: () => styleElementCache,
+	stringToFile: () => stringToFile,
+	stylePropLink: () => stylePropLink,
+	stylePropRef: () => stylePropRef,
+	subtractRef: () => subtractRef,
+	subtractVector2D: () => subtractVector2D,
+	subtractVector3D: () => subtractVector3D,
+	subtractVector4D: () => subtractVector4D,
+	tanRef: () => tanRef,
+	timeStatusRef: () => timeStatusRef,
 	toText: () => toText,
+	transformRect2D: () => transformRect2D,
+	translate2D: () => translate2D,
+	unmountAsRoot: () => unmountAsRoot,
+	unpackHrefInline: () => unpackHrefInline,
 	unregisterCloseable: () => unregisterCloseable,
 	unregisterDirectoryRoot: () => unregisterDirectoryRoot,
+	updateInput: () => updateInput,
+	updateThemeBase: () => updateThemeBase,
+	uploadDirectory: () => uploadDirectory,
 	uploadFile: () => uploadFile,
 	valueAsNumberLink: () => valueAsNumberLink,
 	valueAsNumberRef: () => valueAsNumberRef,
 	valueLink: () => valueLink,
 	valueRef: () => valueRef,
+	vector2Ref: () => vector2Ref,
+	vector3Ref: () => vector3Ref,
+	vector4Ref: () => vector4Ref,
+	vectorFromArray: () => vectorFromArray,
+	vectorToArray: () => vectorToArray,
+	visibleBySelectorRef: () => visibleBySelectorRef,
+	visibleLink: () => visibleLink,
+	visibleRef: () => visibleRef,
 	walkExactFile: () => walkExactFile,
+	watchFsDirectory: () => watchFsDirectory,
+	withInsetWithPointer: () => withInsetWithPointer,
 	withProperties: () => withProperties,
 	withTriggerModifiers: () => withTriggerModifiers,
+	workCenterStorage: () => workCenterStorage,
 	writeFile: () => writeFile,
 	writeFileSmart: () => writeFileSmart,
+	writeFilesToDir: () => writeFilesToDir,
 	writeHTML: () => writeHTML,
 	writeImage: () => writeImage$1,
 	writeText: () => writeText$1
@@ -15893,7 +23960,7 @@ var SEED_PROPS = [
 	["--secondary", "secondary"],
 	["--tertiary", "tertiary"]
 ];
-var clamp$1 = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+var clamp$2 = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 var hexOklch = (l, c, h, fallback) => formatHex({
 	mode: "oklch",
 	l,
@@ -15947,7 +24014,7 @@ var deriveWallpaperPaperTokensFromSamples = (samples, pixelLuma) => {
 	const ls = samples.map((s) => s.l).sort((a, b) => a - b);
 	const meanL = samples.length ? samples.reduce((sum, s) => sum + s.l, 0) / samples.length : pixelLuma;
 	const medianL = ls.length ? ls[Math.floor(ls.length / 2)] : meanL;
-	const paperL = clamp$1(pixelLuma != null && isUsablePaperLuma(pixelLuma) ? pixelLuma : Math.max(meanL, medianL), .08, .94);
+	const paperL = clamp$2(pixelLuma != null && isUsablePaperLuma(pixelLuma) ? pixelLuma : Math.max(meanL, medianL), .08, .94);
 	const paper = samples.length ? [...samples].sort((a, b) => a.c - b.c || Math.abs(a.l - paperL) - Math.abs(b.l - paperL))[0] : null;
 	const paperC = paper ? Math.min(PAPER_CHROMA_CAP, Math.max(0, paper.c * .2)) : 0;
 	const h = paper?.h || 0;
@@ -16081,11 +24148,11 @@ var applyWallpaperPaperTokens = (paper, extraHosts = []) => {
 	registerColorProperty("--env-launcher-fg-shadow", shadow);
 	registerColorProperty("--env-launcher-fg-glow", glow);
 	for (const host of hosts) {
-		host.style.setProperty("--wallpaper-underlying-color", paper.underlying);
-		host.style.setProperty("--wallpaper-contrast-color", paper.contrast);
-		host.style.setProperty("--env-launcher-fg", paper.contrast);
-		host.style.setProperty("--env-launcher-fg-shadow", shadow);
-		host.style.setProperty("--env-launcher-fg-glow", glow);
+		setStyleProperty(host, "--wallpaper-underlying-color", paper.underlying);
+		setStyleProperty(host, "--wallpaper-contrast-color", paper.contrast);
+		setStyleProperty(host, "--env-launcher-fg", paper.contrast);
+		setStyleProperty(host, "--env-launcher-fg-shadow", shadow);
+		setStyleProperty(host, "--env-launcher-fg-glow", glow);
 	}
 	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
 	globalQuery.style.setProperty("--wallpaper-underlying-color", paper.underlying);
@@ -16143,15 +24210,15 @@ var applyWallpaperThemeSeeds = (seeds) => {
 	} catch {}
 	if (hasWallpaperPaper(next)) applyWallpaperPaperTokens(next);
 	if (!wallpaperSeedsMayPaint()) return;
-	for (const host of themeHosts()) for (const [prop, key] of SEED_PROPS) host.style.setProperty(prop, next[key]);
+	for (const host of themeHosts()) for (const [prop, key] of SEED_PROPS) setStyleProperty(host, prop, next[key]);
 	if (!isValidColor(next.primary)) return;
 	if (!isValidColor(next.secondary)) return;
 	if (!isValidColor(next.tertiary)) return;
 	document.querySelectorAll("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host").forEach((el) => {
-		el.style.setProperty("--color-primary", next.primary);
-		el.style.setProperty("--base-color", next.primary);
-		el.style.setProperty("--color-secondary", next.secondary);
-		el.style.setProperty("--color-tertiary", next.tertiary);
+		setStyleProperty(el, "--color-primary", next.primary);
+		setStyleProperty(el, "--base-color", next.primary);
+		setStyleProperty(el, "--color-secondary", next.secondary);
+		setStyleProperty(el, "--color-tertiary", next.tertiary);
 	});
 	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
 	globalQuery.style.setProperty("--color-primary", next.primary);
@@ -16816,9 +24883,9 @@ function __decorate(decorators, target, key, desc) {
 //#region ../../modules/projects/fl.ui/src/ui/base/UIElement.ts
 var UIElement = class UIElement extends GLitElement() {
 	theme = "default";
-	render = function() {
+	render(_weak) {
 		return H`<slot></slot>`;
-	};
+	}
 	constructor() {
 		super();
 	}
@@ -16828,6 +24895,7 @@ var UIElement = class UIElement extends GLitElement() {
 	connectedCallback() {
 		const self = super.connectedCallback?.() ?? this;
 		self.loadStyleLibrary(ensureStyleSheet());
+		scheduleEnsureHostStyles(self);
 		return self;
 	}
 	onInitialize() {
@@ -18503,7 +26571,7 @@ function resolveAppLaunchSpec(packageName) {
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
-var clamp = (value, min, max) => {
+var clamp$1 = (value, min, max) => {
 	return Math.max(min, Math.min(max, value));
 };
 var positiveInteger = (value, fallback) => {
@@ -18530,7 +26598,7 @@ var visualLayout = (layout, orient) => {
 };
 var clampVisualCell = (cell, layout, orient) => {
 	const [columns, rows] = visualLayout(layout, orient);
-	return [clamp(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
+	return [clamp$1(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp$1(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
 };
 /** Convert visible CSS-grid coordinates back to persisted logical coordinates. */
 var visualToLogicalCell = (cell, layout, orient) => {
@@ -18553,13 +26621,13 @@ var pointToLogicalCell = (point, size, layout, orient, mode = "floor") => {
 	const visible = visualLayout(layout, orient);
 	const width = Math.max(1, Number(size?.[0]) || 1);
 	const height = Math.max(1, Number(size?.[1]) || 1);
-	const xRatio = clamp((Number(point?.[0]) || 0) / width, 0, 1);
-	const yRatio = clamp((Number(point?.[1]) || 0) / height, 0, 1);
+	const xRatio = clamp$1((Number(point?.[0]) || 0) / width, 0, 1);
+	const yRatio = clamp$1((Number(point?.[1]) || 0) / height, 0, 1);
 	const project = (ratio, count) => {
 		const value = ratio * count;
 		return mode === "round" ? Math.round(value - .5) : Math.floor(value);
 	};
-	return visualToLogicalCell([clamp(project(xRatio, visible[0]), 0, visible[0] - 1), clamp(project(yRatio, visible[1]), 0, visible[1] - 1)], layout, orient);
+	return visualToLogicalCell([clamp$1(project(xRatio, visible[0]), 0, visible[0] - 1), clamp$1(project(yRatio, visible[1]), 0, visible[1] - 1)], layout, orient);
 };
 var cellKey = (cell) => `${cell[0]}:${cell[1]}`;
 var normalizeSpan = (span) => [Math.max(1, Math.min(8, Math.floor(Number(span?.[0]) || 1))), Math.max(1, Math.min(8, Math.floor(Number(span?.[1]) || 1)))];
@@ -18592,7 +26660,7 @@ var findNearestFreeRect = (preferred, span, occupied, layout, maxSearchRadius) =
 	const [columns, rows] = normalizedLayout;
 	const maxX = Math.max(0, columns - sx);
 	const maxY = Math.max(0, rows - sy);
-	const start = [clamp(Math.floor(Number(preferred?.[0]) || 0), 0, maxX), clamp(Math.floor(Number(preferred?.[1]) || 0), 0, maxY)];
+	const start = [clamp$1(Math.floor(Number(preferred?.[0]) || 0), 0, maxX), clamp$1(Math.floor(Number(preferred?.[1]) || 0), 0, maxY)];
 	if (spanFits(start, [sx, sy], normalizedLayout) && !rectConflicts(start, [sx, sy], occupied)) return start;
 	const maxRadius = Math.min(Math.max(columns, rows), Number.isFinite(Number(maxSearchRadius)) ? Math.max(0, Math.floor(Number(maxSearchRadius))) : Math.max(columns, rows));
 	for (let radius = 1; radius <= maxRadius; radius += 1) for (let y = Math.max(0, start[1] - radius); y <= Math.min(maxY, start[1] + radius); y += 1) for (let x = Math.max(0, start[0] - radius); x <= Math.min(maxX, start[0] + radius); x += 1) {
@@ -18605,7 +26673,7 @@ var findNearestFreeRect = (preferred, span, occupied, layout, maxSearchRadius) =
 /** Clamp a logical cell to the supplied grid. */
 var clampLogicalCell = (cell, layout) => {
 	const [columns, rows] = normalizeLayout(layout);
-	return [clamp(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
+	return [clamp$1(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp$1(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
 };
 var readCell = (item) => [Math.floor(Number(item?.cell?.[0]) || 0), Math.floor(Number(item?.cell?.[1]) || 0)];
 var writeCell = (item, cell) => {
@@ -28853,145 +36921,13 @@ function getFlUIConfig() {
 	await loadInlineStyle(styles_default);
 })()?.catch?.(() => void 0);
 //#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/index.ts
-/**
-* Storage Module
-*
-* Unified storage utilities for persistent state.
-* Provides wrappers for localStorage, sessionStorage, and IndexedDB.
-*/
-/**
-* Common storage keys used across the app
-*/
-var StorageKeys = {
-	FRONTEND_CHOICE: "rs-frontend-choice",
-	FRONTEND_REMEMBER: "rs-frontend-choice-remember",
-	THEME: "rs-theme",
-	SETTINGS: "rs-settings",
-	BOOT_STYLE: "rs-boot-style",
-	BOOT_SHELL: "rs-boot-shell",
-	/** Last-focused app window shell (JSON `{ shell, t }`); see shell-preference.ts */
-	BOOT_SHELL_LAST_ACTIVE: "rs-boot-shell-last-active",
-	BOOT_VIEW: "rs-boot-view",
-	BOOT_REMEMBER: "rs-boot-remember",
-	SHELL_CHOICE: "rs-shell-choice",
-	SHELL_REMEMBER: "rs-shell-remember",
-	WORKCENTER_STATE: "rs-workcenter-state",
-	VIEWER_STATE: "rs-viewer-state",
-	EDITOR_STATE: "rs-editor-state",
-	EXPLORER_STATE: "view-explorer-state",
-	EXPLORER_PATH: "view-explorer-path",
-	LAST_MARKDOWN: "rs-last-markdown",
-	HISTORY: "rs-history",
-	RECENT_FILES: "rs-recent-files",
-	AI_CONFIG: "rs-ai-config"
-};
-/**
-* Get raw string from localStorage
-*/
-function getString(key, defaultValue = "") {
-	try {
-		return localStorage.getItem(key) || defaultValue;
-	} catch {
-		return defaultValue;
-	}
-}
-/**
-* Set raw string to localStorage
-*/
-function setString(key, value) {
-	try {
-		localStorage.setItem(key, value);
-		return true;
-	} catch {
-		return false;
-	}
-}
-/**
-* IndexedDB wrapper for structured object storage
-*/
-var IDBStorage = class {
-	dbName;
-	storeName;
-	db = null;
-	constructor(dbName, storeName) {
-		this.dbName = dbName;
-		this.storeName = storeName;
-	}
-	async open() {
-		if (this.db) return this.db;
-		return new Promise((resolve, reject) => {
-			const request = indexedDB.open(this.dbName, 1);
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => {
-				this.db = request.result;
-				resolve(this.db);
-			};
-			request.onupgradeneeded = (event) => {
-				const db = event.target.result;
-				if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName, { keyPath: "id" });
-			};
-		});
-	}
-	async get(id) {
-		const db = await this.open();
-		return new Promise((resolve, reject) => {
-			const request = db.transaction([this.storeName], "readonly").objectStore(this.storeName).get(id);
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => resolve(request.result || null);
-		});
-	}
-	async set(id, value) {
-		const db = await this.open();
-		return new Promise((resolve, reject) => {
-			const request = db.transaction([this.storeName], "readwrite").objectStore(this.storeName).put({
-				id,
-				...value
-			});
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => resolve();
-		});
-	}
-	async delete(id) {
-		const db = await this.open();
-		return new Promise((resolve, reject) => {
-			const request = db.transaction([this.storeName], "readwrite").objectStore(this.storeName).delete(id);
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => resolve();
-		});
-	}
-	async getAll() {
-		const db = await this.open();
-		return new Promise((resolve, reject) => {
-			const request = db.transaction([this.storeName], "readonly").objectStore(this.storeName).getAll();
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => resolve(request.result || []);
-		});
-	}
-	async clear() {
-		const db = await this.open();
-		return new Promise((resolve, reject) => {
-			const request = db.transaction([this.storeName], "readwrite").objectStore(this.storeName).clear();
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => resolve();
-		});
-	}
-	close() {
-		this.db?.close();
-		this.db = null;
-	}
-};
-new IDBStorage("rs-workcenter", "data");
-new IDBStorage("rs-history", "entries");
-new IDBStorage("rs-settings", "config");
-//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManagerContent.scss?inline
-var FileManagerContent_default$1 = "@layer ux-file-manager-content{:host(ui-file-manager-content){background-color:#f7f8fc;background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border:0 transparent;border-radius:0;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;contain:none;container-type:size;display:flex;flex:1 1 auto;flex-direction:column;grid-column:1/-1;inline-size:100%;margin:0;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:auto;position:relative;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid{align-content:start;block-size:100%;border:0 transparent;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:none;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-rows{align-content:start;block-size:100%;contain:none;contain-intrinsic-size:1px var(--ui-explorer-row-height,var(--touch-min,3rem));content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;gap:var(--gap-sm,.5rem);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;pointer-events:auto;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-gutter:stable;scrollbar-width:thin;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid-rows slot{display:contents!important}:host(ui-file-manager-content) :where(.row){background-color:color-mix(in oklab,var(--color-on-surface,#fff) 3%,transparent);block-size:auto;border:none;border-radius:var(--radius-lg,.75rem);box-sizing:border-box;color:var(--color-on-surface);cursor:pointer;display:grid;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;grid-template-rows:minmax(var(--ui-explorer-row-height,var(--touch-min,3rem)),auto);inline-size:100%;min-block-size:var(--ui-explorer-row-height,var(--touch-min,3rem));min-inline-size:0;order:var(--order,1)!important;place-content:center;place-items:center;justify-items:start;padding:.35rem .65rem;place-self:stretch;pointer-events:auto;touch-action:manipulation;user-drag:none;-webkit-user-drag:none;flex-wrap:nowrap;gap:.35rem;letter-spacing:normal;overflow:hidden;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}@media (hover:hover) and (pointer:fine){:host(ui-file-manager-content) :where(.row){user-drag:element;-webkit-user-drag:element}}:host(ui-file-manager-content) :where(.row) ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size);flex-shrink:0;inline-size:var(--ui-icon-size);min-block-size:var(--ui-icon-size);min-inline-size:var(--ui-icon-size);place-content:center;place-items:center}:host(ui-file-manager-content) :where(.row) :is(a,span){background-color:initial!important}:host(ui-file-manager-content) :where(.row)>*{background-color:initial!important;block-size:auto;min-block-size:0}:host(ui-file-manager-content) .row:hover{background-color:color-mix(in oklab,var(--color-on-surface) 8%,transparent)}:host(ui-file-manager-content) .row:active{background-color:color-mix(in oklab,var(--color-on-surface) 11%,transparent)}:host(ui-file-manager-content) .row:focus-visible{outline:2px solid var(--color-primary,#5a7fff);outline-offset:-2px}:host(ui-file-manager-content) .c:not(.icon){block-size:auto;color:inherit;display:flex;flex-direction:row;inline-size:auto;min-inline-size:0;overflow:hidden;place-content:center;justify-content:start;min-block-size:0;place-items:center;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}:host(ui-file-manager-content) :is(.c.date,.c.name,.c.size){color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);display:block;-webkit-text-fill-color:currentColor}:host(ui-file-manager-content) .c .t{color:inherit;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;-webkit-text-fill-color:currentColor}:host(ui-file-manager-content) .icon{aspect-ratio:1;block-size:1.5rem;display:flex;flex-shrink:0;grid-column:icon;inline-size:1.5rem;min-block-size:1.5rem;min-inline-size:1.5rem;overflow:visible;place-content:center;place-items:center}:host(ui-file-manager-content) .icon :is(img,ui-icon){--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important;object-fit:contain}:host(ui-file-manager-content) .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .actions{grid-column:actions}:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(4.5rem,1fr) [size] 3.75rem [date] 0 [actions] 6.4rem}:host(ui-file-manager-content) .date{display:none!important}}:host(ui-file-manager-content) .actions{background-color:color-mix(in oklab,var(--color-on-surface,#fff) 5%,transparent);block-size:2.125rem;border:none;border-radius:999px;color:var(--color-on-surface);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:6.4rem;max-inline-size:stretch;padding:.2rem;place-content:center;justify-content:flex-end;place-items:center;place-self:center;justify-self:end;max-inline-size:6.4rem;overflow:hidden;pointer-events:none}:host(ui-file-manager-content) .action-btn{appearance:none;aspect-ratio:1;background-color:initial;block-size:1.85rem;border:none;border-radius:999px;box-shadow:none;color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-shrink:0;inline-size:1.85rem;min-block-size:1.85rem;min-inline-size:1.85rem;overflow:hidden;padding:0;place-content:center;place-items:center;pointer-events:auto;position:relative;transition:background .14s ease,transform .1s ease}:host(ui-file-manager-content) .action-btn:hover{background-color:color-mix(in oklab,var(--color-on-surface) 12%,transparent)}:host(ui-file-manager-content) .action-btn:active{transform:scale(.94)}:host(ui-file-manager-content) .action-btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager-content) .action-btn ui-icon{--ui-icon-size:var(--ui-explorer-action-icon-size,1.15rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager-content) .fm-grid-header{background:color-mix(in oklab,var(--color-on-surface,#fff) 3.5%,transparent);border:none;border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);box-sizing:border-box;color:#5c5f66;color:light-dark(#5c5f66,#c4c7ce);color:var(--color-on-surface-variant);display:grid;font-size:.6875rem;font-weight:600;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;inline-size:100%;inset-block-start:0;letter-spacing:.04em;min-inline-size:0;padding:.4rem .65rem;position:sticky!important;text-transform:uppercase;z-index:2;-webkit-text-fill-color:currentColor;gap:.35rem;min-block-size:2rem;opacity:1;place-content:center;justify-content:start;place-items:center;justify-items:start;pointer-events:auto;text-align:start;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-header>*{inline-size:auto}:host(ui-file-manager-content) .fm-grid-header .c{font-weight:600}:host(ui-file-manager-content) .fm-grid-header .icon{grid-column:icon}:host(ui-file-manager-content) .fm-grid-header .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .fm-grid-header .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .actions{block-size:fit-content;border-radius:0;box-shadow:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.25rem;grid-column:actions;inline-size:stretch;max-inline-size:stretch;overflow:hidden;padding:0;place-content:center;justify-content:flex-end;place-items:center;justify-items:end;justify-self:end;text-align:end;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}}";
+var FileManagerContent_default = "@layer ux-file-manager-content{:host(ui-file-manager-content){background-color:#f7f8fc;background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border:0 transparent;border-radius:0;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;contain:none;container-type:size;display:flex;flex:1 1 auto;flex-direction:column;grid-column:1/-1;inline-size:100%;margin:0;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:auto;position:relative;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid{align-content:start;block-size:100%;border:0 transparent;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:none;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-rows{align-content:start;block-size:100%;contain:none;contain-intrinsic-size:1px var(--ui-explorer-row-height,var(--touch-min,3rem));content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;gap:var(--gap-sm,.5rem);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;pointer-events:auto;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-gutter:stable;scrollbar-width:thin;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid-rows slot{display:contents!important}:host(ui-file-manager-content) :where(.row){background-color:color-mix(in oklab,var(--color-on-surface,#fff) 3%,transparent);block-size:auto;border:none;border-radius:var(--radius-lg,.75rem);box-sizing:border-box;color:var(--color-on-surface);cursor:pointer;display:grid;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;grid-template-rows:minmax(var(--ui-explorer-row-height,var(--touch-min,3rem)),auto);inline-size:100%;min-block-size:var(--ui-explorer-row-height,var(--touch-min,3rem));min-inline-size:0;order:var(--order,1)!important;place-content:center;place-items:center;justify-items:start;padding:.35rem .65rem;place-self:stretch;pointer-events:auto;touch-action:manipulation;user-drag:none;-webkit-user-drag:none;flex-wrap:nowrap;gap:.35rem;letter-spacing:normal;overflow:hidden;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}@media (hover:hover) and (pointer:fine){:host(ui-file-manager-content) :where(.row){user-drag:element;-webkit-user-drag:element}}:host(ui-file-manager-content) :where(.row) ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size);flex-shrink:0;inline-size:var(--ui-icon-size);min-block-size:var(--ui-icon-size);min-inline-size:var(--ui-icon-size);place-content:center;place-items:center}:host(ui-file-manager-content) :where(.row) :is(a,span){background-color:initial!important}:host(ui-file-manager-content) :where(.row)>*{background-color:initial!important;block-size:auto;min-block-size:0}:host(ui-file-manager-content) .row:hover{background-color:color-mix(in oklab,var(--color-on-surface) 8%,transparent)}:host(ui-file-manager-content) .row:active{background-color:color-mix(in oklab,var(--color-on-surface) 11%,transparent)}:host(ui-file-manager-content) .row:focus-visible{outline:2px solid var(--color-primary,#5a7fff);outline-offset:-2px}:host(ui-file-manager-content) .c:not(.icon){block-size:auto;color:inherit;display:flex;flex-direction:row;inline-size:auto;min-inline-size:0;overflow:hidden;place-content:center;justify-content:start;min-block-size:0;place-items:center;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}:host(ui-file-manager-content) :is(.c.date,.c.name,.c.size){color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);display:block;-webkit-text-fill-color:currentColor}:host(ui-file-manager-content) .c .t{color:inherit;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;-webkit-text-fill-color:currentColor}:host(ui-file-manager-content) .icon{aspect-ratio:1;block-size:1.5rem;display:flex;flex-shrink:0;grid-column:icon;inline-size:1.5rem;min-block-size:1.5rem;min-inline-size:1.5rem;overflow:visible;place-content:center;place-items:center}:host(ui-file-manager-content) .icon :is(img,ui-icon){--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important;object-fit:contain}:host(ui-file-manager-content) .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .actions{grid-column:actions}:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(4.5rem,1fr) [size] 3.75rem [date] 0 [actions] 6.4rem}:host(ui-file-manager-content) .date{display:none!important}}:host(ui-file-manager-content) .actions{background-color:color-mix(in oklab,var(--color-on-surface,#fff) 5%,transparent);block-size:2.125rem;border:none;border-radius:999px;color:var(--color-on-surface);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:6.4rem;max-inline-size:stretch;padding:.2rem;place-content:center;justify-content:flex-end;place-items:center;place-self:center;justify-self:end;max-inline-size:6.4rem;overflow:hidden;pointer-events:none}:host(ui-file-manager-content) .action-btn{appearance:none;aspect-ratio:1;background-color:initial;block-size:1.85rem;border:none;border-radius:999px;box-shadow:none;color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-shrink:0;inline-size:1.85rem;min-block-size:1.85rem;min-inline-size:1.85rem;overflow:hidden;padding:0;place-content:center;place-items:center;pointer-events:auto;position:relative;transition:background .14s ease,transform .1s ease}:host(ui-file-manager-content) .action-btn:hover{background-color:color-mix(in oklab,var(--color-on-surface) 12%,transparent)}:host(ui-file-manager-content) .action-btn:active{transform:scale(.94)}:host(ui-file-manager-content) .action-btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager-content) .action-btn ui-icon{--ui-icon-size:var(--ui-explorer-action-icon-size,1.15rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager-content) .fm-grid-header{background:color-mix(in oklab,var(--color-on-surface,#fff) 3.5%,transparent);border:none;border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);box-sizing:border-box;color:#5c5f66;color:light-dark(#5c5f66,#c4c7ce);color:var(--color-on-surface-variant);display:grid;font-size:.6875rem;font-weight:600;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;inline-size:100%;inset-block-start:0;letter-spacing:.04em;min-inline-size:0;padding:.4rem .65rem;position:sticky!important;text-transform:uppercase;z-index:2;-webkit-text-fill-color:currentColor;gap:.35rem;min-block-size:2rem;opacity:1;place-content:center;justify-content:start;place-items:center;justify-items:start;pointer-events:auto;text-align:start;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-header>*{inline-size:auto}:host(ui-file-manager-content) .fm-grid-header .c{font-weight:600}:host(ui-file-manager-content) .fm-grid-header .icon{grid-column:icon}:host(ui-file-manager-content) .fm-grid-header .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .fm-grid-header .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .actions{block-size:fit-content;border-radius:0;box-shadow:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.25rem;grid-column:actions;inline-size:stretch;max-inline-size:stretch;overflow:hidden;padding:0;place-content:center;justify-content:flex-end;place-items:center;justify-items:end;justify-self:end;text-align:end;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}}";
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManagerContent.ts
 initGlobalClipboard();
 try {
-	preloadStyle(FileManagerContent_default$1);
+	preloadStyle(FileManagerContent_default);
 } catch {}
 var FileManagerContent = class FileManagerContent extends UIElement {
 	gridRowsEl;
@@ -29238,7 +37174,7 @@ var FileManagerContent = class FileManagerContent extends UIElement {
 		return itemEl;
 	}
 	/** WHY: pass CSS text so Glit can refill / shadow-fallback if the constructable sheet emptied. */
-	styles = () => FileManagerContent_default$1;
+	styles = () => FileManagerContent_default;
 	render = function() {
 		const self = this;
 		const fileHeader = H`<div class="fm-grid-header">
@@ -29279,7 +37215,6 @@ __decorate([property({
 	name: ".fm-grid"
 })], FileManagerContent.prototype, "gridEl", void 0);
 FileManagerContent = __decorate([defineElement("ui-file-manager-content")], FileManagerContent);
-var FileManagerContent_default = FileManagerContent;
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManager.scss?inline
 var FileManager_default = "@layer ux-file-manager{:host(ui-file-manager),:host(ui-file-manager) :where(*){box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}:host(ui-file-manager){background-color:#f7f8fc;background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border-radius:0;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;container-type:inline-size;content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;line-height:normal;margin:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;overflow:hidden;--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;--icon-color:light-dark(#1a1c1f,#e8eaed);--icon-color:var(--color-on-surface)}:host(ui-file-manager) .fm-root{block-size:100%;display:grid;flex:1 1 auto;gap:0;grid-template-columns:[content-col] minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;position:relative}:host(ui-file-manager) .fm-toolbar{background:#f7f8fc;background:light-dark(#f7f8fc,#1a1d24);background:var(--color-surface);border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);display:grid;gap:.625rem;grid-auto-flow:column;grid-column:1/-1;grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);grid-template-rows:minmax(0,1fr);line-height:normal;padding:.5rem .75rem;place-content:center;place-items:center}:host(ui-file-manager) .fm-toolbar :is(button,input){background-color:initial;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface)}:host(ui-file-manager) .fm-toolbar input{background:color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);block-size:stretch;border:none;border-radius:999px;font:.8125rem/1.35 ui-monospace,Cascadia Code,SF Mono,Consolas,monospace;inline-size:stretch;outline:none;overflow:auto;padding:.45rem .85rem}:host(ui-file-manager) .fm-toolbar input:focus-visible{box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary,#5a7fff) 45%,transparent)}:host(ui-file-manager) .fm-toolbar .btn{align-items:center;appearance:none;aspect-ratio:1/1;background:transparent;block-size:2.5rem;border:0;border-radius:999px;cursor:pointer;display:inline-flex;inline-size:2.5rem;justify-content:center;padding:0;transition:background .14s ease,transform .1s ease}:host(ui-file-manager) .fm-toolbar .btn ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager) .fm-toolbar .btn:hover{background:color-mix(in oklab,var(--color-on-surface) 9%,transparent)}:host(ui-file-manager) .fm-toolbar .btn:active{transform:scale(.96)}:host(ui-file-manager) .fm-toolbar .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager) .fm-toolbar>*{align-items:center;block-size:fit-content;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.2rem;min-block-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-left{grid-column:1}:host(ui-file-manager) .fm-toolbar :is(.fm-toolbar-left,.fm-toolbar-right){background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);border-radius:999px;padding:.2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);block-size:fit-content;border-radius:999px;flex-grow:1;grid-column:2;inline-size:stretch;min-block-size:2.5rem;overflow:hidden;padding:0;place-content:stretch;justify-content:start;place-items:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center>*{block-size:stretch;inline-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center input{background:transparent;inline-size:stretch;padding-inline:.9rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-right{grid-column:3}:host(ui-file-manager) .fm-sidebar{align-content:start;border-radius:.5rem;display:none;gap:.5rem;grid-column:sidebar-col;grid-row:2;justify-content:start;justify-items:start;line-height:normal;padding:.5rem;text-align:start}:host(ui-file-manager) .fm-sidebar .sec{display:grid;gap:.25rem;place-content:start;justify-content:start;place-items:start;justify-items:start}:host(ui-file-manager) .fm-sidebar .sec-title{font-weight:600;opacity:.8;padding-block:.25rem;place-self:start}:host(ui-file-manager) .fm-sidebar .link{appearance:none;border:0;border-radius:.375rem;cursor:pointer;line-height:normal;padding:.25rem .375rem;text-align:start}:host(ui-file-manager) .fm-root--settings .fm-content{pointer-events:none;visibility:hidden}:host(ui-file-manager) .fm-content{block-size:100%;border-radius:0;display:flex;flex:1 1 auto;flex-direction:column;grid-column:content-col;grid-row:2;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0 .35rem .45rem;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-width:thin}:host(ui-file-manager) .status{opacity:.8;padding:.5rem}:host(ui-file-manager) .status.error{color:var(--error-color,crimson)}@container (inline-size < 520px){:host(ui-file-manager) .fm-content{grid-column:1/-1}:host(ui-file-manager) .fm-root{grid-column:1/-1}:host(ui-file-manager) .fm-grid{grid-column:1/-1}:host(ui-file-manager) .fm-root[data-with-sidebar=true]{grid-template-columns:[content-col] minmax(0,1fr)}:host(ui-file-manager) .fm-sidebar{display:none!important}:host(ui-file-manager) .fm-toolbar{gap:.35rem;padding-inline:.4rem}:host(ui-file-manager) .fm-toolbar .btn{block-size:2rem;inline-size:2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{min-inline-size:0}}}";
@@ -29777,4 +37712,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 //#region ../../modules/projects/fl.ui/src/styles/ui/home-host-apply.scss?inline
 var home_host_apply_default = ":where(body):has(.speed-dial-root),:where(body):has([data-view=home]),:where(html):has(.speed-dial-root),:where(html[data-cwsp-shell-role=launcher]){block-size:var(--lv-height,100lvb);margin:0;max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);overflow:hidden}:where(main,[role=main]):has(>.view-home.env-home-workspace){background:transparent;border:none;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace,.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace){background:none;background-color:initial;border:0 transparent;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none;outline:0 none transparent}:where(main,[role=main]):has(>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace:not(.wf-mounted-view),.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}.env-home-workspace,.view-home.env-home-workspace{box-sizing:border-box;overflow:visible;pointer-events:none}.view-home.env-home-workspace{align-items:stretch;background:transparent;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:100%;justify-items:stretch;min-block-size:var(--lv-height,100lvb);min-inline-size:0;padding:0;position:relative}.view-home.env-home-workspace>.speed-dial-root{block-size:var(--lv-height,100%);inline-size:var(--lv-width,100%);inset:0 auto auto 0;max-block-size:var(--lv-height,100%);max-inline-size:var(--lv-width,100%);pointer-events:auto;position:absolute}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view{align-self:stretch;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:auto;border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;isolation:isolate;margin:0;margin-inline:0;max-inline-size:none;min-block-size:0;outline:none!important;position:relative;z-index:0}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root{block-size:var(--lv-height,100lvb);border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;inline-size:var(--lv-width,100%);max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);outline:none!important}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view{padding-block-end:env(safe-area-inset-block-end,0);padding-block-start:env(safe-area-inset-block-start,0);padding-inline-end:env(safe-area-inset-inline-end,0);padding-inline-start:env(safe-area-inset-inline-start,0)}.view-home.env-home-workspace:not(.wf-mounted-view){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin-inline:0;max-inline-size:none;min-block-size:var(--lv-height,100lvb);outline:none!important}";
 //#endregion
-export { resolveFsBackend as $, registerDirectoryRoot as $t, ICON_BITMAP_SCALE_OPTIONS as A, JSOX as An, mountPickedDirectory as At, pinLauncherAppEntry as B, createFileHandler as Bt, applyLauncherIconToUiIcon as C, closeHighestPriority as Cn, restoreWallpaperThemeCache as Ct, resolveIconResourceUrl as D, E as Dn, findEntryRelPath as Dt, getCachedLauncherIconObjectUrl as E, navigate as En, bindDirectoryForLaunchedFiles as Et, findNextFreeSpeedDialCell as F, pickSidecarDirectoryFiles as Ft, createTileUiIconElement as G, parseDataUrl as Gt, tileIconFetchSize as H, decodeBase64ToBytes as Ht, isClientPointOverSpeedDial as I, provideBoundRelative as It, normalizeIconDisplay as J, isVirtualFsPath as Jt, defaultIconScaleForDisplay as K, getDir as Kt, launcher_state_exports as L, relPathCandidates as Lt, applyIconScaleToPaintedNodes as M, originalRelFromRef as Mt, applyItemIconScaleToElement as N, pickAssetDirectory as Nt, tryLaunchSiblingView as O, M$1 as On, indexDirectoryFiles as Ot, buildLauncherAppDragEnvelope as P, pickMarkdownFile as Pt, listVirtualRootEntriesFromRouter as Q, provide as Qt, normalizeItemIconBitmapScale as R, resolveFileUnderDirectory as Rt, isBookmarksPath as S, vector2Ref as Sn, applyWallpaperPaperFromLuma as St, getCachedIconResourceObjectUrl as T, registerModal as Tn, getCachedComponent as Tt, ICON_DISPLAY_OPTIONS as U, isBase64Like as Ut, resolveSpeedDialCellFromClientPoint as V, writeFileSmart as Vt, TILE_SHAPE_OPTIONS as W, normalizeDataAsset as Wt, syncShapelessIconShadow as X, normalizePath as Xt, normalizeTileShape$1 as Y, matchMappedRoot as Yt, ensureDefaultFsBackends as Z, openDirectory as Zt, peekAppMenuSort as _, makeTask as _n, WALLPAPER_IDB_MARKER as _t, getString as a, makeUIState as an, getAppLaunchSpec as at, attachIconResourcePickButton as b, defineElement as bn, refreshAppWallpaperPaint as bt, overlay_back_exports as c, decodeDesktopState as cn, resolveAppLaunchSpec as ct, listWorkspacePages as d, initClipboardReceiver as dn, showSuccess as dt, dynamicTheme as en, subscribeFsBackendRegister as et, switchWorkspacePage as f, writeText$1 as fn, getSpeedDialViewOpener as ft, hydrateAppColorKeys as g, bindOutsideDismiss as gn, src_exports as gt, defaultDirForAppSort as h, elementPointerMap as hn, __decorate as ht, StorageKeys as i, getSpeechPrompt as in, clearAppLaunchSpec as it, addSpeedDialItem as j, __vitePreload as jn, observeFileSystemHandle as jt, isAndroidIconRef as k, Q as kn, isMarkdownRelativeRef as kt, WORKSPACE_PAGE_EVENT as l, loadDesktopRaw as ln, setAppLaunchSpec as lt, APP_MENU_SORT_OPTIONS as m, resolveOverlayHost as mn, UIElement_default as mt, FileManager as n, createTemplateManager as nn, resolveEntryIcon as nt, setString as o, saveUIState as on, isLauncherLaunchSpecEmpty as ot, APP_MENU_SORT_EVENT as p, registerTransientOverlay as pn, UIElement as pt, inferIconDisplay as q, handleIncomingEntries as qt, FileManagerContent_default as r, pointerAnchorRef as rn, toExplorerStoragePath as rt, installLauncherBackStack as s, HistoryManager_exports as sn, normalizeLauncherLaunchSpec as st, home_host_apply_default as t, placeOverlay as tn, storage_bridge_exports as tt, getActiveWorkspaceId as u, copy as un, showError as ut, sortLauncherApps as v, getBy as vn, getWallpaperStoragePointer as vt, ensureLauncherIconObjectUrl as w, hasActiveCloseable as wn, src_exports$1 as wt, openUnifiedContextMenu as x, H as xn, setAppWallpaperFromBlob as xt, writeAppMenuSort as y, navigationEnable as yn, initializeAppCanvasLayer as yt, parseSpeedDialItemFromJSON as z, saveMarkdownBlob as zt };
+export { clearAppLaunchSpec as $, createTemplateManager as $t, findNextFreeSpeedDialCell as A, pickSidecarDirectoryFiles as At, createTileUiIconElement as B, parseDataUrl as Bt, tryLaunchSiblingView as C, E as Cn, indexDirectoryFiles as Ct, applyIconScaleToPaintedNodes as D, __vitePreload as Dn, originalRelFromRef as Dt, addSpeedDialItem as E, JSOX as En, observeFileSystemHandle as Et, pinLauncherAppEntry as F, createFileHandler as Ft, syncShapelessIconShadow as G, isVirtualFsPath as Gt, inferIconDisplay as H, setString as Ht, resolveSpeedDialCellFromClientPoint as I, writeFileSmart as It, resolveFsBackend as J, openDirectory as Jt, ensureDefaultFsBackends as K, matchMappedRoot as Kt, tileIconFetchSize as L, decodeBase64ToBytes as Lt, launcher_state_exports as M, relPathCandidates as Mt, normalizeItemIconBitmapScale as N, resolveFileUnderDirectory as Nt, applyItemIconScaleToElement as O, pickAssetDirectory as Ot, parseSpeedDialItemFromJSON as P, saveMarkdownBlob as Pt, toExplorerStoragePath as Q, placeOverlay as Qt, ICON_DISPLAY_OPTIONS as R, isBase64Like as Rt, resolveIconResourceUrl as S, navigate as Sn, findEntryRelPath as St, ICON_BITMAP_SCALE_OPTIONS as T, Q as Tn, mountPickedDirectory as Tt, normalizeIconDisplay as U, getDir as Ut, defaultIconScaleForDisplay as V, StorageKeys as Vt, normalizeTileShape$1 as W, handleIncomingEntries as Wt, storage_bridge_exports as X, registerDirectoryRoot as Xt, subscribeFsBackendRegister as Y, provide as Yt, resolveEntryIcon as Z, dynamicTheme as Zt, isBookmarksPath as _, H as _n, applyWallpaperPaperFromLuma as _t, getActiveWorkspaceId as a, loadDesktopRaw as an, showError as at, getCachedIconResourceObjectUrl as b, hasActiveCloseable as bn, getCachedComponent as bt, APP_MENU_SORT_EVENT as c, writeText$1 as cn, UIElement as ct, hydrateAppColorKeys as d, elementPointerMap as dn, src_exports as dt, pointerAnchorRef as en, getAppLaunchSpec as et, peekAppMenuSort as f, bindOutsideDismiss as fn, WALLPAPER_IDB_MARKER as ft, openUnifiedContextMenu as g, defineElement as gn, setAppWallpaperFromBlob as gt, attachIconResourcePickButton as h, navigationEnable as hn, refreshAppWallpaperPaint as ht, WORKSPACE_PAGE_EVENT as i, decodeDesktopState as in, setAppLaunchSpec as it, isClientPointOverSpeedDial as j, provideBoundRelative as jt, buildLauncherAppDragEnvelope as k, pickMarkdownFile as kt, APP_MENU_SORT_OPTIONS as l, registerTransientOverlay as ln, UIElement_default as lt, writeAppMenuSort as m, getBy as mn, initializeAppCanvasLayer as mt, installLauncherBackStack as n, makeUIState as nn, normalizeLauncherLaunchSpec as nt, listWorkspacePages as o, copy as on, showSuccess as ot, sortLauncherApps as p, makeTask as pn, getWallpaperStoragePointer as pt, listVirtualRootEntriesFromRouter as q, normalizePath$1 as qt, overlay_back_exports as r, saveUIState as rn, resolveAppLaunchSpec as rt, switchWorkspacePage as s, initClipboardReceiver as sn, getSpeedDialViewOpener as st, home_host_apply_default as t, getSpeechPrompt as tn, isLauncherLaunchSpecEmpty as tt, defaultDirForAppSort as u, resolveOverlayHost as un, __decorate as ut, applyLauncherIconToUiIcon as v, vector2Ref as vn, restoreWallpaperThemeCache as vt, isAndroidIconRef as w, M$1 as wn, isMarkdownRelativeRef as wt, getCachedLauncherIconObjectUrl as x, registerModal as xn, bindDirectoryForLaunchedFiles as xt, ensureLauncherIconObjectUrl as y, closeHighestPriority as yn, src_exports$1 as yt, TILE_SHAPE_OPTIONS as z, normalizeDataAsset as zt };

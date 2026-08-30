@@ -1,8 +1,8 @@
 import { cn as CwsBridge } from "./boot-index.js";
-import { Dn as E, St as applyWallpaperPaperFromLuma, bn as defineElement, ht as __decorate, mt as UIElement_default, xn as H } from "../com/app.js";
+import { Cn as E, _n as H, _t as applyWallpaperPaperFromLuma, gn as defineElement, lt as UIElement_default, ut as __decorate } from "../com/app.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
-import { preloadStyle } from "/fest/dom.js";
+import { preloadStyle } from "/fest/style-lib.js";
 import { effect, ref } from "/fest/object.js";
 //#endregion
 //#region ../CWSP-document/src/frontend/shells/environment/components/statusbar/statusbar.ts

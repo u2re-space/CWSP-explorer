@@ -1,8 +1,8 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","../views/viewer.js","../vendor/dompurify.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./storage.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","../views/viewer.js","../vendor/dompurify.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
 import { Qn as isEnabledView } from "../shells/boot-index.js";
-import { Cn as closeHighestPriority, Ct as restoreWallpaperThemeCache, bt as refreshAppWallpaperPaint, wn as hasActiveCloseable, yt as initializeAppCanvasLayer } from "../com/app.js";
+import { bn as hasActiveCloseable, ht as refreshAppWallpaperPaint, mt as initializeAppCanvasLayer, vt as restoreWallpaperThemeCache, yn as closeHighestPriority } from "../com/app.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT, n as createEnvironmentShellContainer, r as defineEnvironmentShellContainer } from "../shells/environment-environment-overlay.js";
 import { i as mountViewModule, n as seedEnvironmentWallpaperIfUnset, r as createWorkspaceWindowLayer, t as mountEnvironmentChrome } from "../shells/environment-index.js";
@@ -80,14 +80,14 @@ function mergeNativeOpt(viewId, opts) {
 }
 var CWSP_VIEW_LOADERS = {
 	network: () => __vitePreload(() => import("./src7.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url),
-	settings: () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([8,3,1,2,4,5,6,9,10,11,12,13,14,15,16]), import.meta.url),
-	explorer: () => __vitePreload(() => import("./src.js"), __vite__mapDeps([17,3,1,2,4,5,6,11,12,16]), import.meta.url),
-	viewer: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([18,3,1,2,4,5,6,12,11]), import.meta.url),
-	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([18,3,1,2,4,5,6,12,11]), import.meta.url),
-	history: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([19,5,2,11,3,1,4,6,12,20]), import.meta.url),
-	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([21,3,5,2,22,1,4,6,23,24,25,26,27,15,14,28,29,30,31,32,33,34,12]), import.meta.url),
-	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([35,3,5,2,11,1,4,6,12]), import.meta.url),
-	home: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([36,5,2,11,3,1,4,6,12,37]), import.meta.url)
+	settings: () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([8,3,1,2,4,5,6,9,10,11,12,13,14,15]), import.meta.url),
+	explorer: () => __vitePreload(() => import("./src.js"), __vite__mapDeps([16,3,1,2,4,5,6,11,12]), import.meta.url),
+	viewer: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([17,3,1,2,4,5,6,12,11]), import.meta.url),
+	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([17,3,1,2,4,5,6,12,11]), import.meta.url),
+	history: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([18,5,2,11,3,1,4,6,12,19]), import.meta.url),
+	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([20,3,5,2,21,1,4,6,22,23,24,25,26,15,14,27,28,29,30,31,32,33,12]), import.meta.url),
+	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([34,3,5,2,11,1,4,6,12]), import.meta.url),
+	home: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([35,5,2,11,3,1,4,6,12,36]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */
 var CWSP_LAUNCHER_VIEWS = [
@@ -102,7 +102,7 @@ var CWSP_LAUNCHER_VIEWS = [
 ];
 async function seedCwspLauncherTiles() {
 	try {
-		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([37,2,5]), import.meta.url);
+		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([36,2,5]), import.meta.url);
 		const items = mod.speedDialItems;
 		if (!items || typeof items.findIndex !== "function") return;
 		let removedAirpad = false;
@@ -366,7 +366,7 @@ var EnvironmentShell = class extends ShellBase {
 		} else this.mountHomeDesktop(homeMount, shellContext);
 	}
 	mountHomeDesktop(homeMount, shellContext) {
-		mountViewModule(() => __vitePreload(() => import("./src6.js"), __vite__mapDeps([36,5,2,11,3,1,4,6,12,37]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
+		mountViewModule(() => __vitePreload(() => import("./src6.js"), __vite__mapDeps([35,5,2,11,3,1,4,6,12,36]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
 			this.homeUnmount = unmount;
 		}).catch((err) => {
 			console.warn("[EnvironmentShell] home-view failed", err);

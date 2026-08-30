@@ -2,10 +2,9 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { At as viewIdForOpenSink, Dt as skuForOpenSink, Et as sinkToOpenLinkTarget, J as ensureSpeedDialMeta, K as addSpeedDialItem, St as resolveOpenPlacement, X as persistSpeedDialMeta, Y as persistSpeedDialItems, Z as speedDialItems, bt as resolveExplorerOpenSink, dt as classifyOpenKindFromName, mt as looksLikePreviewableBinary, q as createEmptySpeedDialItem, rt as loadSettings, ut as classifyOpenKind, vt as peekOpenPolicy, xt as resolveHostOpenPolicy, yt as rememberOpenPolicyFromSettings } from "../shells/boot-index.js";
-import { $ as resolveFsBackend, S as isBookmarksPath, Z as ensureDefaultFsBackends, a as getString, i as StorageKeys, n as FileManager, o as setString, r as FileManagerContent_default, rt as toExplorerStoragePath, x as openUnifiedContextMenu } from "../com/app.js";
+import { J as resolveFsBackend, K as ensureDefaultFsBackends, Q as toExplorerStoragePath, _ as isBookmarksPath, g as openUnifiedContextMenu } from "../com/app.js";
 import { c as createViewConstructor, n as sendViewProtocolMessage, r as ExplorerChannelAction } from "../views/viewer.js";
-import "./storage.js";
-import { loadAsAdopted, removeAdopted } from "/fest/dom.js";
+import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";
 import { observe } from "/fest/object.js";
 //#region src/inject.ts
 /** Merge inject layers: menu items concatenate; handlers shallow-merge last-wins; onWire chains in order. */
@@ -131,6 +130,20 @@ var guessNextShortcutCell = () => {
 };
 //#endregion
 //#region src/runtime.ts
+/** WHY: do not import StorageKeys from the lure barrel — com/app.js letters desync. */
+var EXPLORER_PATH_LS_KEYS = ["view-explorer-path", "rs-explorer-path"];
+var lsGet = (key) => {
+	try {
+		return String(globalThis?.localStorage?.getItem?.(key) || "").trim();
+	} catch {
+		return "";
+	}
+};
+var lsSet = (key, value) => {
+	try {
+		globalThis?.localStorage?.setItem?.(key, value);
+	} catch {}
+};
 var openFileWithSystem = async (file, sourcePath, chooser) => {
 	const href = String(sourcePath || "").trim();
 	const mime = String(file.type || "").trim() || guessMimeFromName(file.name || href) || void 0;
@@ -197,7 +210,7 @@ var openExplorerSrcInTab = (sourcePath) => {
 /** WHY: `/sdcard/` `/saf/` open in one native IPC — no JS read, no WebView hop. */
 var openNativeStorageByPolicy = async (sourcePath, sink, mimeType) => {
 	const { openNativeStorageFile } = await __vitePreload(async () => {
-		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.tt);
+		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.X);
 		return { openNativeStorageFile };
 	}, __vite__mapDeps([5,2]), import.meta.url);
 	const mime = String(mimeType || "").trim() || guessMimeFromName(sourcePath);
@@ -227,7 +240,7 @@ var nativeViewUri = async (sourcePath) => {
 	if (/^(content|file|https?):/i.test(p)) return p;
 	try {
 		const { resolveNativeStorageUri } = await __vitePreload(async () => {
-			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.tt);
+			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.X);
 			return { resolveNativeStorageUri };
 		}, __vite__mapDeps([5,2]), import.meta.url);
 		const uri = await resolveNativeStorageUri(p);
@@ -322,22 +335,16 @@ var handoffFileToSku = async (sink, item, sourcePath) => {
 	});
 	return true;
 };
-/** lure uses `view-explorer-path`; runtime storage used `rs-explorer-path`. Read both. */
-var EXPLORER_PATH_KEYS = [
-	StorageKeys.EXPLORER_PATH,
-	"view-explorer-path",
-	"rs-explorer-path"
-];
 var readPersistedExplorerPath = () => {
-	for (const key of EXPLORER_PATH_KEYS) {
-		const value = String(getString(key, "") || "").trim();
+	for (const key of EXPLORER_PATH_LS_KEYS) {
+		const value = lsGet(key);
 		if (value) return value;
 	}
 	return "";
 };
 var writePersistedExplorerPath = (path) => {
 	const value = path || "/user/";
-	for (const key of EXPLORER_PATH_KEYS) setString(key, value);
+	for (const key of EXPLORER_PATH_LS_KEYS) lsSet(key, value);
 };
 function loadLastPath(explorer, initialPath) {
 	try {
@@ -609,7 +616,7 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		} catch {}
 		if (!item.file) try {
 			const { provide } = await __vitePreload(async () => {
-				const { provide } = await import("../com/app.js").then((n) => n.wt);
+				const { provide } = await import("../com/app.js").then((n) => n.yt);
 				return { provide };
 			}, __vite__mapDeps([5,2]), import.meta.url);
 			item.file = await provide(sourcePath);
@@ -850,7 +857,7 @@ function wireExplorerSubtree(shellRoot, wireOpts) {
 	if (fm) {
 		loadLastPath(fm, wireOpts.initialPath ?? null);
 		setupExplorerEvents(fm, wireOpts, injectMerged, signal);
-		__vitePreload(() => import("../com/app.js").then((n) => n.c).then((m) => m.installExplorerBackStack()), __vite__mapDeps([5,2]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app.js").then((n) => n.r).then((m) => m.installExplorerBackStack()), __vite__mapDeps([5,2]), import.meta.url).catch(() => {});
 		return {
 			cleanup: () => {
 				writePersistedExplorerPath(fm.path || "/user/");
@@ -972,9 +979,14 @@ function buildExplorerShell() {
 	const content = document.createElement("div");
 	content.className = "view-explorer__content";
 	content.setAttribute("data-explorer-content", "");
-	const fm = document.createElement("ui-file-manager");
-	fm.setAttribute("view-mode", "list");
-	content.append(fm);
+	try {
+		const fm = document.createElement("ui-file-manager");
+		fm.setAttribute("view-mode", "list");
+		content.append(fm);
+	} catch (err) {
+		console.error("[Explorer] ui-file-manager construct failed:", err);
+		return buildFallbackShell();
+	}
 	shell.append(content);
 	return shell;
 }
@@ -1088,7 +1100,12 @@ var CwViewExplorer = createViewConstructor(TAG, (Base) => {
 				this.detachExplorerWire();
 			}
 			const hasFileManager = Boolean(customElements.get("ui-file-manager"));
-			this.explorerRoot = hasFileManager ? buildExplorerShell() : buildFallbackShell();
+			try {
+				this.explorerRoot = hasFileManager ? buildExplorerShell() : buildFallbackShell();
+			} catch (err) {
+				console.error("[Explorer] render shell failed:", err);
+				this.explorerRoot = buildFallbackShell();
+			}
 			const scheme = resolveExplorerOptionsColorScheme(options) ?? resolveExplorerOptionsColorScheme(this.options);
 			applyExplorerColorScheme(this.explorerRoot, scheme ?? "system");
 			this.syncExplorerThemeSubscription();
@@ -1257,13 +1274,19 @@ var CwViewExplorer = createViewConstructor(TAG, (Base) => {
 		attachExplorerWire() {
 			if (!this.explorerRoot) return;
 			const shellOpts = this.options;
-			const { cleanup, fileManager } = wireExplorerSubtree(this.explorerRoot, {
-				shellContext: shellOpts?.shellContext,
-				initialPath: this.initialPath,
-				inject: this.explorerInject
-			});
-			this.explorerCleanup = cleanup;
-			this.wiredFileManager = fileManager;
+			try {
+				const { cleanup, fileManager } = wireExplorerSubtree(this.explorerRoot, {
+					shellContext: shellOpts?.shellContext,
+					initialPath: this.initialPath,
+					inject: this.explorerInject
+				});
+				this.explorerCleanup = cleanup;
+				this.wiredFileManager = fileManager;
+			} catch (err) {
+				console.error("[Explorer] wire failed:", err);
+				this.explorerCleanup = null;
+				this.wiredFileManager = null;
+			}
 		}
 		detachExplorerWire() {
 			this.explorerCleanup?.();
@@ -1276,4 +1299,4 @@ function createExplorerView(options) {
 	return new CwViewExplorer(options);
 }
 //#endregion
-export { CwViewExplorer, FileManager, FileManagerContent_default as FileManagerContent, TAG, applyExplorerColorScheme, createExplorerView, createExplorerView as default, getRegisteredExplorerInject, mergeExplorerInject, readAppDataTheme, registerExplorerInject, resolveExplorerColorSchemePreference, subscribeExplorerSystemTheme, wireExplorerSubtree };
+export { CwViewExplorer, TAG, applyExplorerColorScheme, createExplorerView, createExplorerView as default, getRegisteredExplorerInject, mergeExplorerInject, readAppDataTheme, registerExplorerInject, resolveExplorerColorSchemePreference, subscribeExplorerSystemTheme, wireExplorerSubtree };

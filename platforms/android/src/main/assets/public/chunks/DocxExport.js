@@ -1,4 +1,4 @@
-import { r as __require$1 } from "./rolldown-runtime.js";
+import { i as __require$1 } from "./rolldown-runtime.js";
 import { t as f } from "../vendor/marked.js";
 import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as src_default } from "../vendor/marked-katex-extension.js";

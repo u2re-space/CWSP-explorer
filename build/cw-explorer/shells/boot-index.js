@@ -1,13 +1,14 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../vendor/dompurify.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","../chunks/LogSanitizer.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/storage.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/crx-control-session.js","../chunks/sw-handling.js","../chunks/sku-ingress.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../vendor/dompurify.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","../chunks/LogSanitizer.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/crx-control-session.js","../chunks/sw-handling.js","../chunks/sku-ingress.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
-import { Vt as writeFileSmart, an as makeUIState, bn as defineElement, ht as __decorate, kn as JSOX, on as saveUIState, pt as UIElement, yt as initializeAppCanvasLayer } from "../com/app.js";
+import { En as JSOX, It as writeFileSmart, Tn as Q, ct as UIElement, gn as defineElement, mt as initializeAppCanvasLayer, nn as makeUIState, rn as saveUIState, ut as __decorate } from "../com/app.js";
 import { n as core_default, t as scss_default } from "../fest/veela.js";
-import { fixOrientToScreen, loadAsAdopted } from "/fest/dom.js";
+import { loadAsAdopted } from "/fest/style-lib.js";
 import { createProtocolEnvelope, createProtocolEnvelope as createProtocolEnvelope$2, createServiceChannelManager, getUnifiedMessaging, isProtocolEnvelope, normalizeProtocolEnvelope } from "/fest/uniform.js";
 import { withTimeout } from "/fest/core.js";
+import { fixOrientToScreen } from "/fest/dom.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
 import "/fest/icon.js";
 //#region ../CWSP-document/src/shared/routing/api/process-api.ts
@@ -3271,37 +3272,37 @@ function registerDefaultViews() {
 		id: "settings",
 		name: "Settings",
 		icon: "gear",
-		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([42,4,1,2,43,44,25,23,24,45,34,33,46]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([42,4,1,2,43,44,25,23,24,45,34,33]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "network",
 		name: "Network",
 		icon: "wifi-high",
-		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([47,1,2,48]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([46,1,2,47]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "history",
 		name: "History",
 		icon: "clock-counter-clockwise",
-		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([49,1,2,25,4,23,24,50]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([48,1,2,25,4,23,24,49]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "explorer",
 		name: "Explorer",
 		icon: "folder",
-		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([51,4,1,2,25,23,24,46]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([50,4,1,2,25,23,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "editor",
 		name: "Editor",
 		icon: "pencil",
-		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([52,4,1,2,25,23,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([51,4,1,2,25,23,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "home",
 		name: "Home",
 		icon: "house",
-		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([53,1,2,25,4,23,24,54]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([52,1,2,25,4,23,24,53]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "print",
@@ -7633,7 +7634,7 @@ var readControlSessionToken$1 = () => {
 var readCrxControlSessionTokenAsync$1 = async () => {
 	if (!isChromeExtensionPage$1()) return "";
 	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session2.js"), __vite__mapDeps([55,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
+		return await (await __vitePreload(() => import("../chunks/crx-control-session2.js"), __vite__mapDeps([54,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
 	} catch {
 		return "";
 	}
@@ -7702,7 +7703,7 @@ var webnativeControl$1 = async (path, init) => {
 			const g = globalThis;
 			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
 			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session2.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([55,1,2]), import.meta.url).catch(() => void 0);
+			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session2.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([54,1,2]), import.meta.url).catch(() => void 0);
 			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
 				status: res.status,
 				path
@@ -8789,7 +8790,7 @@ var isServiceWorkerScope$1 = () => {
 };
 var loadLureFs$1 = () => {
 	if (isServiceWorkerScope$1()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.wt).then((m) => ({
+	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.yt).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([1,2]), import.meta.url);
@@ -9953,7 +9954,7 @@ var readControlSessionToken = () => {
 var readCrxControlSessionTokenAsync = async () => {
 	if (!isChromeExtensionPage()) return "";
 	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([56,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
+		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([55,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
 	} catch {
 		return "";
 	}
@@ -10022,7 +10023,7 @@ var webnativeControl = async (path, init) => {
 			const g = globalThis;
 			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
 			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([56,1,2]), import.meta.url).catch(() => void 0);
+			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([55,1,2]), import.meta.url).catch(() => void 0);
 			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
 				status: res.status,
 				path
@@ -11205,7 +11206,7 @@ var isServiceWorkerScope = () => {
 };
 var loadLureFs = () => {
 	if (isServiceWorkerScope()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.wt).then((m) => ({
+	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.yt).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([1,2]), import.meta.url);
@@ -11809,6 +11810,18 @@ var rgbToHex$1 = (css) => {
 		m[3]
 	].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, "0")).join("")}`;
 };
+var registerColorProperty$1 = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
 var seedHosts$1 = () => {
 	const nodes = /* @__PURE__ */ new Set();
 	if (typeof document === "undefined") return [];
@@ -11825,6 +11838,14 @@ var SEED_PROPS$1 = [
 	"--primary",
 	"--current"
 ];
+var isValidColor$1 = (color) => {
+	try {
+		rgbToHex$1(color);
+		return true;
+	} catch {
+		return false;
+	}
+};
 var applyBaseColorSeed$1 = (hex, source, extras) => {
 	if (typeof document === "undefined") return;
 	const seed = normalizeHexColor$1(hex) || "#5a9ec8";
@@ -11833,6 +11854,15 @@ var applyBaseColorSeed$1 = (hex, source, extras) => {
 	const concrete = source === "user" ? "custom" : source === "system" ? "material-you" : source;
 	document.documentElement.dataset.baseSource = String(concrete);
 	document.documentElement.dataset.colorSource = String(concrete);
+	if (!isValidColor$1(seed)) return;
+	if (!isValidColor$1(secondary)) return;
+	if (!isValidColor$1(tertiary)) return;
+	registerColorProperty$1("--color-primary", seed);
+	registerColorProperty$1("--base-color", seed);
+	registerColorProperty$1("--color-secondary", secondary);
+	registerColorProperty$1("--color-tertiary", tertiary);
+	registerColorProperty$1("--secondary", secondary);
+	registerColorProperty$1("--tertiary", tertiary);
 	for (const host of seedHosts$1()) {
 		for (const prop of SEED_PROPS$1) host.style.setProperty(prop, seed);
 		host.style.setProperty("--color-secondary", secondary);
@@ -11840,6 +11870,13 @@ var applyBaseColorSeed$1 = (hex, source, extras) => {
 		host.style.setProperty("--secondary", secondary);
 		host.style.setProperty("--tertiary", tertiary);
 	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--color-secondary", secondary);
+	globalQuery.style.setProperty("--color-tertiary", tertiary);
+	globalQuery.style.setProperty("--secondary", secondary);
+	globalQuery.style.setProperty("--tertiary", tertiary);
 };
 /** CSS `AccentColor` when the engine maps it to a real system accent (not generic link blue). */
 var readCssAccentColor$1 = () => {
@@ -11886,7 +11923,7 @@ var cachedWallpaperPrimary$1 = () => {
 var extractFromImage$1 = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.gt);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.dt);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		return normalizeHexColor$1((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -11911,7 +11948,7 @@ var colorFromAppWallpaper$1 = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.gt);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.dt);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -12173,52 +12210,13 @@ var applyTheme$1 = (settings) => {
 	});
 	if (settings.grid) applyGridSettings(settings);
 };
-/**
-* Re-apply persisted appearance after a view adopts a document-level constructed stylesheet (Settings, Work Center, …).
-* WHY: First paint after cold boot can leave mixed shell chrome vs Veela `light-dark()` token resolution until
-* something triggers a full style pass; microtask + rAF + idle re-run matches navigating away/back.
-* INVARIANT: Safe to call multiple times; each pass is idempotent `applyTheme(loadSettings())`.
-*/
-var resyncThemeAfterAdoptedViewSheet$1 = () => {
-	if (typeof document === "undefined") return;
-	const run = async () => {
-		try {
-			applyTheme$1(await loadSettings());
-		} catch {}
-		try {
-			document.documentElement.offsetHeight;
-		} catch {}
-	};
-	(async () => {
-		await run();
-		queueMicrotask(() => {
-			run();
-		});
-		requestAnimationFrame(() => {
-			run();
-			try {
-				document.documentElement.dispatchEvent(new CustomEvent("u2-theme-change", { bubbles: true }));
-			} catch {}
-			requestAnimationFrame(() => {
-				run();
-				const ric = globalThis.requestIdleCallback;
-				if (typeof ric === "function") ric(() => {
-					run();
-				}, { timeout: 200 });
-				else globalThis.setTimeout(() => {
-					run();
-				}, 50);
-			});
-		});
-	})();
-};
 var restampExplorerShellScheme$1 = () => {
 	if (typeof document === "undefined") return;
 	try {
 		document.querySelectorAll(".view-explorer").forEach((el) => {
 			const scheme = el.dataset.explorerColorScheme;
 			if (scheme !== "light" && scheme !== "dark") return;
-			el.setAttribute("data-theme", scheme);
+			if (el.getAttribute("data-theme") !== scheme) el.setAttribute("data-theme", scheme);
 			el.style.setProperty("color-scheme", `${scheme} only`);
 		});
 	} catch {}
@@ -12252,21 +12250,16 @@ var resumeThemeAfterForeground$1 = (force = false) => {
 	if (!sawBackground$1) return;
 	(async () => {
 		try {
-			const { rehydrateConstructableSheets } = await __vitePreload(async () => {
-				const { rehydrateConstructableSheets } = await import("/fest/dom.js");
-				return { rehydrateConstructableSheets };
-			}, [], import.meta.url);
-			rehydrateConstructableSheets();
-		} catch {}
-		try {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
-				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.wt);
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.yt);
 				return { rehydrateAdoptedStyleSheets };
 			}, __vite__mapDeps([1,2]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
 		} catch {}
-		resyncThemeAfterAdoptedViewSheet$1();
 		restampChromeScheme$1();
+		try {
+			document.dispatchEvent(new CustomEvent("cwsp:theme-resume"));
+		} catch {}
 	})();
 };
 /** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
@@ -13494,6 +13487,18 @@ var rgbToHex = (css) => {
 		m[3]
 	].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, "0")).join("")}`;
 };
+var registerColorProperty = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
 var seedHosts = () => {
 	const nodes = /* @__PURE__ */ new Set();
 	if (typeof document === "undefined") return [];
@@ -13510,6 +13515,14 @@ var SEED_PROPS = [
 	"--primary",
 	"--current"
 ];
+var isValidColor = (color) => {
+	try {
+		rgbToHex(color);
+		return true;
+	} catch {
+		return false;
+	}
+};
 var applyBaseColorSeed = (hex, source, extras) => {
 	if (typeof document === "undefined") return;
 	const seed = normalizeHexColor(hex) || "#5a9ec8";
@@ -13518,6 +13531,15 @@ var applyBaseColorSeed = (hex, source, extras) => {
 	const concrete = source === "user" ? "custom" : source === "system" ? "material-you" : source;
 	document.documentElement.dataset.baseSource = String(concrete);
 	document.documentElement.dataset.colorSource = String(concrete);
+	if (!isValidColor(seed)) return;
+	if (!isValidColor(secondary)) return;
+	if (!isValidColor(tertiary)) return;
+	registerColorProperty("--color-primary", seed);
+	registerColorProperty("--base-color", seed);
+	registerColorProperty("--color-secondary", secondary);
+	registerColorProperty("--color-tertiary", tertiary);
+	registerColorProperty("--secondary", secondary);
+	registerColorProperty("--tertiary", tertiary);
 	for (const host of seedHosts()) {
 		for (const prop of SEED_PROPS) host.style.setProperty(prop, seed);
 		host.style.setProperty("--color-secondary", secondary);
@@ -13525,6 +13547,13 @@ var applyBaseColorSeed = (hex, source, extras) => {
 		host.style.setProperty("--secondary", secondary);
 		host.style.setProperty("--tertiary", tertiary);
 	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--color-secondary", secondary);
+	globalQuery.style.setProperty("--color-tertiary", tertiary);
+	globalQuery.style.setProperty("--secondary", secondary);
+	globalQuery.style.setProperty("--tertiary", tertiary);
 };
 /** CSS `AccentColor` when the engine maps it to a real system accent (not generic link blue). */
 var readCssAccentColor = () => {
@@ -13571,7 +13600,7 @@ var cachedWallpaperPrimary = () => {
 var extractFromImage = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.gt);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.dt);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		return normalizeHexColor((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -13596,7 +13625,7 @@ var colorFromAppWallpaper = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.gt);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.dt);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -13915,7 +13944,7 @@ var restampExplorerShellScheme = () => {
 		document.querySelectorAll(".view-explorer").forEach((el) => {
 			const scheme = el.dataset.explorerColorScheme;
 			if (scheme !== "light" && scheme !== "dark") return;
-			el.setAttribute("data-theme", scheme);
+			if (el.getAttribute("data-theme") !== scheme) el.setAttribute("data-theme", scheme);
 			el.style.setProperty("color-scheme", `${scheme} only`);
 		});
 	} catch {}
@@ -13949,21 +13978,16 @@ var resumeThemeAfterForeground = (force = false) => {
 	if (!sawBackground) return;
 	(async () => {
 		try {
-			const { rehydrateConstructableSheets } = await __vitePreload(async () => {
-				const { rehydrateConstructableSheets } = await import("/fest/dom.js");
-				return { rehydrateConstructableSheets };
-			}, [], import.meta.url);
-			rehydrateConstructableSheets();
-		} catch {}
-		try {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
-				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.wt);
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.yt);
 				return { rehydrateAdoptedStyleSheets };
 			}, __vite__mapDeps([1,2]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
 		} catch {}
-		resyncThemeAfterAdoptedViewSheet();
 		restampChromeScheme();
+		try {
+			document.dispatchEvent(new CustomEvent("cwsp:theme-resume"));
+		} catch {}
 	})();
 };
 /** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
@@ -16699,7 +16723,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([57,4,1,2,31,58,59]), import.meta.url);
+				}, __vite__mapDeps([56,4,1,2,31,57,58]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

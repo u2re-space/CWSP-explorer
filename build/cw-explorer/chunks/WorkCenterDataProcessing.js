@@ -1,6 +1,6 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
 import "../shells/boot-index.js";
-import { fn as writeText } from "../com/app.js";
+import { cn as writeText } from "../com/app.js";
 import { t as purify } from "../vendor/dompurify.js";
 import { t as f } from "../vendor/marked.js";
 import { n as extractJSONFromAIResponse } from "./AIResponseParser.js";

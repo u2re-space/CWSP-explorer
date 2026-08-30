@@ -4,7 +4,7 @@ import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { Ct as resolveOpenPolicy, Tt as sinkToDestination, ft as classifyOpenKindFromPayload, kt as surfaceForSku, pt as inferIngressChannels, vt as peekOpenPolicy, wt as sinkToAction } from "../shells/boot-index.js";
 
 //#region ../CWSP-document/src/shared/routing/channel/sku-ingress.ts
-var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.L), __vite__mapDeps([0,1]), import.meta.url);
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.M), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -202,7 +202,7 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.gt);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.dt);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
@@ -282,7 +282,7 @@ var openShellImageInViewer = async (file) => {
 var applyShellWallpaper = async (file) => {
 	if (!await isWallpaperCompatible(file)) return false;
 	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.gt);
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.dt);
 		return {
 			setAppWallpaperFromBlob,
 			getWallpaperStoragePointer,

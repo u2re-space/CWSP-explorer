@@ -1,10 +1,10 @@
-import { _n as makeTask, bn as defineElement, d as listWorkspacePages, f as switchWorkspacePage, ht as __decorate, l as WORKSPACE_PAGE_EVENT, mt as UIElement_default, s as installLauncherBackStack, u as getActiveWorkspaceId, vn as getBy, xn as H, yn as navigationEnable } from "../com/app.js";
+import { _n as H, a as getActiveWorkspaceId, gn as defineElement, hn as navigationEnable, i as WORKSPACE_PAGE_EVENT, lt as UIElement_default, mn as getBy, n as installLauncherBackStack, o as listWorkspacePages, pn as makeTask, s as switchWorkspacePage, ut as __decorate } from "../com/app.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
 import { a as formatChromeClock, i as buildShellDeviceTray } from "./environment-components-statusbar-capacitor-native-safe-area.js";
 import { t as openUnifiedContextMenu } from "./environment-components-explorer-ContextMenu.js";
 import { n as mountEnvironmentAppMenu, t as isAppMenuEnabled } from "./environment-components-app-menu-AppMenu.js";
-import { preloadStyle } from "/fest/dom.js";
+import { preloadStyle } from "/fest/style-lib.js";
 import { effect, observe } from "/fest/object.js";
 import "/fest/icon.js";
 //#endregion

@@ -1,10 +1,10 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../views/viewer.js","./rolldown-runtime.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","../vendor/dompurify.js","./MarkdownEditor.js","./QuillEditor.js","../vendor/quill.js","../vendor/lodash-es.js","../vendor/parchment.js","../vendor/fast-diff.js","../vendor/lodash.clonedeep.js","../vendor/lodash.isequal.js","../vendor/eventemitter3.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./utils.js","./CustomInstructions.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./storage.js","./src.js","./DocxExport.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../views/viewer.js","./rolldown-runtime.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","../vendor/dompurify.js","./MarkdownEditor.js","./QuillEditor.js","../vendor/quill.js","../vendor/lodash-es.js","../vendor/parchment.js","../vendor/fast-diff.js","../vendor/lodash.clonedeep.js","../vendor/lodash.isequal.js","../vendor/eventemitter3.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./utils.js","./CustomInstructions.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./src.js","./DocxExport.js"])))=>i.map(i=>d[i]);
 import { Cr as BROADCAST_CHANNELS, Tr as getBroadcastChannelForDestination, _r as registerComponent, br as unifiedMessaging, dr as createMessageWithOverrides, gr as processInitialContent, hr as initializeComponent, lr as settleIngressPaintForMinimalShell, mr as hasPendingMessages, pr as enqueuePendingMessage, rt as loadSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, r as validateIngressBeforeViewHandle, t as pickAuthoritativeTransferFiles } from "../com/service.js";
-import { Bt as createFileHandler, Tt as getCachedComponent, in as getSpeechPrompt, nn as createTemplateManager, xn as H } from "../com/app.js";
+import { $t as createTemplateManager, Ft as createFileHandler, _n as H, bt as getCachedComponent, tn as getSpeechPrompt } from "../com/app.js";
 import { r as fetchSwCachedEntries } from "./ShareTargetGateway.js";
-import { loadAsAdopted } from "/fest/dom.js";
+import { loadAsAdopted } from "/fest/style-lib.js";
 import { clearIconCache, clearIconCaches, debugIconSystem, ensureStyleSheet, reinitializeRegistry, testIconRacing } from "/fest/icon.js";
 //#region ../../modules/projects/subsystem/src/boot/views.scss?inline
 var views_default = "@layer layer.view.common, layer.view.viewer;@layer layer.view.common{:where([data-cw-view-host=true]){background-color:var(--view-bg,var(--color-container,canvas));block-size:100%;box-sizing:border-box;color:var(--view-fg,var(--color-on-surface,canvasText));color-scheme:light dark;display:block;inline-size:100%;isolation:isolate;min-block-size:0;min-inline-size:0;position:relative;z-index:0}@supports (color:contrast-color(red)){:where([data-cw-view-host=true]){color:contrast-color(var(--view-bg,var(--color-surface,canvas)))}}}@layer layer.view.viewer{.cw-view-viewer-shell{block-size:100%;display:flex;flex-direction:column;inline-size:100%;max-block-size:none;min-block-size:max(100%,100cqb);min-inline-size:0}@media print{.cw-view-viewer-shell,.view-viewer,.view-viewer__content,:where([data-cw-view-host=true]){block-size:auto!important;contain:none!important;container-type:normal!important;display:block!important;height:auto!important;inset:auto!important;max-block-size:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}}.view-viewer{background:var(--view-bg,var(--color-container,light-dark(#f4f6fa,#060d17)));block-size:100%;color:var(--view-fg,var(--color-on-surface,light-dark(#1a1a1a,#e5e7eb)));display:grid;flex:1 1 0%;grid-template-rows:[toolbar-row] max-content [content-row] minmax(0,1fr);inline-size:100%;min-block-size:0;min-inline-size:0}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.view-viewer{color:contrast-color(var(--view-bg,var(--color-surface,light-dark(#f4f6fa,#060d17))))}}.view-viewer__content{grid-row:content-row;min-block-size:0;min-inline-size:0;overflow:auto;padding:0;position:relative}}";
@@ -984,7 +984,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.sn), __vite__mapDeps([5,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
+			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.yt), __vite__mapDeps([5,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
 			if (state.history.length === 0) state.history = historyManager.getAllEntries();
 			const historyElement = historyManager.createHistoryView((entry) => {
 				if (state.view === "workcenter") getCachedComponent("workcenter", () => __vitePreload(() => import("./WorkCenter.js").then((m) => m.WorkCenterManager), __vite__mapDeps([17,2,3,1,4,5,6,18,19,20,21,22,23,24,25,26,27,28,29,30,31,7]), import.meta.url), { componentName: "WorkCenter" }).then(() => {
@@ -1275,7 +1275,7 @@ var mountShellApp = (mountElement, options = {}) => {
 			const renderer = {
 				"settings": async () => {
 					content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading Settings...</span></div>";
-					const settingsEl = (await loadComponent("settings", () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([32,2,3,1,4,5,6,33,34,0,7,35,24,23,36]), import.meta.url), { componentName: "Settings" })).component.createSettingsView({
+					const settingsEl = (await loadComponent("settings", () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([32,2,3,1,4,5,6,33,34,0,7,35,24,23]), import.meta.url), { componentName: "Settings" })).component.createSettingsView({
 						isExtension: isLikelyExtension(),
 						onTheme: (t) => applyTheme(root, t)
 					});
@@ -1293,7 +1293,7 @@ var mountShellApp = (mountElement, options = {}) => {
 				},
 				"file-explorer": async () => {
 					content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading File Explorer...</span></div>";
-					await loadComponent("file-explorer", () => __vitePreload(() => import("./src.js"), __vite__mapDeps([37,2,3,1,4,5,6,0,7,36]), import.meta.url), { componentName: "FileManager" });
+					await loadComponent("file-explorer", () => __vitePreload(() => import("./src.js"), __vite__mapDeps([36,2,3,1,4,5,6,0,7]), import.meta.url), { componentName: "FileManager" });
 					const explorerEl = document.createElement("ui-file-manager");
 					explorerEl.addEventListener("open-item", async (e) => {
 						const { item } = e.detail;
@@ -1550,7 +1550,7 @@ var mountShellApp = (mountElement, options = {}) => {
 					const { downloadMarkdownAsDocx } = await __vitePreload(async () => {
 						const { downloadMarkdownAsDocx } = await import("./DocxExport.js");
 						return { downloadMarkdownAsDocx };
-					}, __vite__mapDeps([38,1,18,19,20]), import.meta.url);
+					}, __vite__mapDeps([37,1,18,19,20]), import.meta.url);
 					await downloadMarkdownAsDocx(md, {
 						title: "CWSP-shell",
 						filename: `crossword-${Date.now()}.docx`

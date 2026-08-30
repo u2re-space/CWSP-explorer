@@ -11,7 +11,6 @@
 
 import type { ShellContext } from "shells/types";
 import { observe } from "@fest-lib/object";
-import { StorageKeys, getString, setString } from "core/storage";
 import { ensureDefaultFsBackends, resolveFsBackend, toExplorerStoragePath } from "fl-ui/explorer/path-router";
 import {
     addSpeedDialItem,
@@ -72,6 +71,23 @@ export type ExplorerWireOptions = {
     /** Route/query `params.path` or explicit override. */
     initialPath?: string | null;
     inject?: ExplorerInjectApi;
+};
+
+/** WHY: do not import StorageKeys from the lure barrel — com/app.js letters desync. */
+const EXPLORER_PATH_LS_KEYS = ["view-explorer-path", "rs-explorer-path"] as const;
+const lsGet = (key: string): string => {
+    try {
+        return String(globalThis?.localStorage?.getItem?.(key) || "").trim();
+    } catch {
+        return "";
+    }
+};
+const lsSet = (key: string, value: string): void => {
+    try {
+        globalThis?.localStorage?.setItem?.(key, value);
+    } catch {
+        /* ignore quota / private mode */
+    }
 };
 
 type WorkCenterAttachMode = "active" | "queued" | "headless";
@@ -273,12 +289,9 @@ const handoffFileToSku = async (
     return true;
 };
 
-/** lure uses `view-explorer-path`; runtime storage used `rs-explorer-path`. Read both. */
-const EXPLORER_PATH_KEYS = [StorageKeys.EXPLORER_PATH, "view-explorer-path", "rs-explorer-path"] as const;
-
 const readPersistedExplorerPath = (): string => {
-    for (const key of EXPLORER_PATH_KEYS) {
-        const value = String(getString(key, "") || "").trim();
+    for (const key of EXPLORER_PATH_LS_KEYS) {
+        const value = lsGet(key);
         if (value) return value;
     }
     return "";
@@ -286,8 +299,8 @@ const readPersistedExplorerPath = (): string => {
 
 const writePersistedExplorerPath = (path: string): void => {
     const value = path || "/user/";
-    for (const key of EXPLORER_PATH_KEYS) {
-        setString(key, value);
+    for (const key of EXPLORER_PATH_LS_KEYS) {
+        lsSet(key, value);
     }
 };
 

@@ -1,4 +1,4 @@
-import { xn as H } from "../com/app.js";
+import { _n as H } from "../com/app.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
 //#region ../../modules/shells/immersive-shell/src/base.scss?inline

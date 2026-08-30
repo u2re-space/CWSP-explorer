@@ -1,6 +1,6 @@
-import { $t as registerDirectoryRoot, mn as resolveOverlayHost, pn as registerTransientOverlay, tn as placeOverlay } from "../com/app.js";
-import "/fest/dom.js";
+import { Qt as placeOverlay, Xt as registerDirectoryRoot, ln as registerTransientOverlay, un as resolveOverlayHost } from "../com/app.js";
 import "/fest/core.js";
+import "/fest/dom.js";
 import "/fest/object.js";
 //#region ../CWSP-document/src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {

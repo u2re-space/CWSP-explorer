@@ -2,7 +2,7 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
 import { Qn as isEnabledView } from "../shells/boot-index.js";
-import { xn as H } from "../com/app.js";
+import { _n as H } from "../com/app.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
 import { affected } from "/fest/object.js";
@@ -222,9 +222,21 @@ var MinimalShell = class extends ShellBase {
 		element.hidden = false;
 		element.removeAttribute("slot");
 		if (!this.rootElement.contains(element)) this.rootElement.appendChild(element);
+		this.flushShownView(element);
 		const loading = this.contentContainer.querySelector(".app-shell__loading");
 		if (loading) loading.hidden = true;
 		this.currentViewElement = element;
+	}
+	/** WHY: hidden → shown (or re-slot) can leave adopted CSS empty and skip text paint. */
+	flushShownView(element) {
+		element.style.translate = "0";
+		element.offsetHeight;
+		requestAnimationFrame(() => {
+			element.style.removeProperty("translate");
+		});
+		__vitePreload(() => import("../com/app.js").then((n) => n.yt).then((m) => {
+			m.rehydrateAdoptedStyleSheets?.(element);
+		}), __vite__mapDeps([4,1]), import.meta.url).catch(() => {});
 	}
 	applyTheme(theme) {
 		const inner = this.rootElement?.shadowRoot?.querySelector(".app-shell");

@@ -13,7 +13,7 @@
 
 import type { ViewOptions, ViewLifecycle, BaseViewOptions } from "views/types";
 import { createViewConstructor, ViewBase } from "views/registry";
-import { loadAsAdopted, removeAdopted } from "@fest-lib/dom";
+import { loadAsAdopted, removeAdopted } from "@fest-lib/style-lib";
 import type { FileManager } from "fl-ui/explorer/FileManager";
 import type { ExplorerInjectApi } from "./inject";
 import type { LocalFileManager } from "./runtime";
@@ -21,8 +21,10 @@ import { wireExplorerSubtree } from "./runtime";
 import { ExplorerChannelAction } from "views/apis/channel-actions";
 import { applyExplorerColorScheme, subscribeExplorerSystemTheme, type ExplorerColorScheme } from "./theme";
 
-/** Re-export + ensure `ui-file-manager` is defined when this module loads. */
-export { FileManager, FileManagerContent } from "fl-ui/explorer/FileManager";
+// WHY: value re-export pulled FileManager through com/app.js letter bindings;
+// a stale barrel then fails the whole view import. Side-effect define is enough.
+import "fl-ui/explorer/FileManager";
+export type { FileManager, FileManagerContent } from "fl-ui/explorer/FileManager";
 
 export type { ExplorerInjectApi } from "./inject";
 export { registerExplorerInject, mergeExplorerInject, getRegisteredExplorerInject } from "./inject";
@@ -82,9 +84,14 @@ function buildExplorerShell(): HTMLElement {
     const content = document.createElement("div");
     content.className = "view-explorer__content";
     content.setAttribute("data-explorer-content", "");
-    const fm = document.createElement("ui-file-manager");
-    fm.setAttribute("view-mode", "list");
-    content.append(fm);
+    try {
+        const fm = document.createElement("ui-file-manager");
+        fm.setAttribute("view-mode", "list");
+        content.append(fm);
+    } catch (err) {
+        console.error("[Explorer] ui-file-manager construct failed:", err);
+        return buildFallbackShell();
+    }
     shell.append(content);
     return shell;
 }
@@ -224,7 +231,12 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
             }
 
             const hasFileManager = Boolean(customElements.get("ui-file-manager"));
-            this.explorerRoot = hasFileManager ? buildExplorerShell() : buildFallbackShell();
+            try {
+                this.explorerRoot = hasFileManager ? buildExplorerShell() : buildFallbackShell();
+            } catch (err) {
+                console.error("[Explorer] render shell failed:", err);
+                this.explorerRoot = buildFallbackShell();
+            }
 
             const scheme =
                 resolveExplorerOptionsColorScheme(options as ExplorerOptions | null) ??
@@ -448,13 +460,19 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
         private attachExplorerWire(): void {
             if (!this.explorerRoot) return;
             const shellOpts = this.options as unknown as BaseViewOptions;
-            const { cleanup, fileManager } = wireExplorerSubtree(this.explorerRoot, {
-                shellContext: shellOpts?.shellContext,
-                initialPath: this.initialPath,
-                inject: this.explorerInject
-            });
-            this.explorerCleanup = cleanup;
-            this.wiredFileManager = fileManager;
+            try {
+                const { cleanup, fileManager } = wireExplorerSubtree(this.explorerRoot, {
+                    shellContext: shellOpts?.shellContext,
+                    initialPath: this.initialPath,
+                    inject: this.explorerInject
+                });
+                this.explorerCleanup = cleanup;
+                this.wiredFileManager = fileManager;
+            } catch (err) {
+                console.error("[Explorer] wire failed:", err);
+                this.explorerCleanup = null;
+                this.wiredFileManager = null;
+            }
         }
 
         private detachExplorerWire(): void {

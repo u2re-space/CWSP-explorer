@@ -1,6 +1,6 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
 import { Q as canParseURL, ar as CORE_ENTITY_EXTRACTION_INSTRUCTION, rt as loadSettings } from "../shells/boot-index.js";
-import { An as JSOX } from "../com/app.js";
+import { En as JSOX } from "../com/app.js";
 import { n as extractJSONFromAIResponse, t as STRICT_JSON_INSTRUCTIONS } from "./AIResponseParser.js";
 import { t as encode } from "../vendor/@toon-format_toon.js";
 //#region ../CWSP-document/src/shared/service/model/GPT-Config.ts
