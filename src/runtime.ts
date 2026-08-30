@@ -12,7 +12,7 @@
 import type { ShellContext } from "shells/types";
 import { observe } from "@fest-lib/object";
 import { StorageKeys, getString, setString } from "core/storage";
-import { ensureDefaultFsBackends, resolveFsBackend } from "fl-ui/explorer/path-router";
+import { ensureDefaultFsBackends, resolveFsBackend, toExplorerStoragePath } from "fl-ui/explorer/path-router";
 import {
     addSpeedDialItem,
     createEmptySpeedDialItem,
@@ -61,6 +61,7 @@ import { isBookmarksPath } from "fl-ui/explorer/Operative";
 export type LocalFileManager = HTMLElement & {
     path: string;
     navigate: (path: string) => void | Promise<void>;
+    goUp?: () => void | Promise<void>;
     operative?: {
         runMenuAction?: (item: null, actionId: string) => void | Promise<void>;
     };
@@ -297,12 +298,12 @@ function loadLastPath(explorer: LocalFileManager, initialPath: string | null | u
         /* registry optional */
     }
     if (initialPath && initialPath.trim()) {
-        explorer.path = initialPath.trim();
+        explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();
         return;
     }
     const handed = takeSkuHandoff("explorer");
     if (handed?.src) {
-        explorer.path = handed.src;
+        explorer.path = toExplorerStoragePath(handed.src) || handed.src;
         return;
     }
     const persisted = readPersistedExplorerPath();
@@ -559,12 +560,22 @@ function setupExplorerEvents(
                 showMessage("No file selected");
                 return;
             }
+            const sendPath = getItemPath(item);
+            /* WHY: `/sdcard/` `/saf/` have no File blob — SEND via storage:open. */
+            if (isCwspNativeHost() && isNativeStorageVirtualPath(sendPath)) {
+                const ok = await openNativeStorageByPolicy(
+                    sendPath,
+                    "transfer",
+                    guessMimeFromName(item.name || sendPath)
+                );
+                showMessage(ok ? `Sent ${item.name || sendPath} to Transfer` : "Transfer is unavailable");
+                return;
+            }
             if (!item.file && item.kind === "file") {
-                const loadPath = getItemPath(item);
                 try {
-                    const backend = resolveFsBackend(loadPath);
+                    const backend = resolveFsBackend(sendPath);
                     if (typeof backend?.readFile === "function") {
-                        item.file = await backend.readFile(loadPath);
+                        item.file = await backend.readFile(sendPath);
                     }
                 } catch {
                     /* optional */
@@ -574,7 +585,7 @@ function setupExplorerEvents(
                 showMessage("Nothing to send");
                 return;
             }
-            const ok = await handoffFileToSku("transfer", item, getItemPath(item));
+            const ok = await handoffFileToSku("transfer", item, sendPath);
             showMessage(ok ? `Sent ${item.name || item.file.name} to Transfer` : "Transfer is unavailable");
         },
         "attach-workcenter": (item) => attachToWorkCenter(item, "active"),
@@ -899,6 +910,11 @@ export function wireExplorerSubtree(
     if (fm) {
         loadLastPath(fm, wireOpts.initialPath ?? null);
         setupExplorerEvents(fm, wireOpts, injectMerged, signal);
+        void import("fl-ui/navigation/overlay-back")
+            .then((m) => m.installExplorerBackStack())
+            .catch(() => {
+                /* web host without overlay-back */
+            });
         return {
             cleanup: () => {
                 writePersistedExplorerPath(fm.path || "/user/");
