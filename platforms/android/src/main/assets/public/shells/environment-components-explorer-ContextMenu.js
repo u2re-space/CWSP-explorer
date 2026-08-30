@@ -293,6 +293,22 @@ var readNativeStorageFile = async (virtualPath) => {
 	if (!data) return null;
 	return dataUrlToFile(data, String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
 };
+/** Delete a `/sdcard/` or `/saf/` file or folder through CwsBridge (`storage:delete`). */
+var removeNativeStorage = async (virtualPath) => {
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) throw new Error("not native storage");
+	const plugin = globalThis.Capacitor?.Plugins?.CwsBridge;
+	if (typeof plugin?.invoke !== "function") throw new Error("no native storage");
+	const r = await plugin.invoke({
+		channel: "storage:delete",
+		payload: {
+			root: parsed.root,
+			path: parsed.rel
+		}
+	});
+	const echo = r?.echo || {};
+	if (r?.ok === false || echo.deleted !== true) throw new Error(String(echo.error || "delete failed"));
+};
 //#endregion
 //#region ../CWSP-document/src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
 var toEntries = (path, rows) => {
@@ -309,13 +325,16 @@ var toEntries = (path, rows) => {
 };
 var createNativeFsBackend = (root) => ({
 	root,
-	writable: root === "/sdcard/",
+	writable: true,
 	async list(path) {
 		const rel = normalizeVirtualPath(path, true).slice(root.length - 1) || "/";
 		return toEntries(path, await listNativeStorage(root === "/saf/" ? "saf" : "sdcard", rel));
 	},
 	async readFile(path) {
 		return readNativeStorageFile(path);
+	},
+	async remove(path, _recursive) {
+		await removeNativeStorage(path);
 	}
 });
 //#endregion

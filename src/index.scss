@@ -118,8 +118,10 @@ ui-window.explorer-native-window[native-mode] {
             font-family: var(--font-family, var(--explorer-font-sans, system-ui, sans-serif));
             font-size: 0.875rem;
             line-height: 1.5;
-            color: var(--color-on-surface, var(--view-fg, light-dark(#1a1c1f, #e8eaed)));
-            background: var(--color-surface, var(--view-bg, light-dark(#f7f8fc, #1a1d24)));
+            color: light-dark(#1a1c1f, #e8eaed);
+            color: var(--color-on-surface);
+            background: light-dark(#f7f8fc, #1a1d24);
+            background: var(--color-surface);
         }
 
         cw-view-explorer {
@@ -142,8 +144,10 @@ ui-window.explorer-native-window[native-mode] {
             min-block-size: 0;
             min-inline-size: 0;
             font-family: var(--font-family, var(--explorer-font-sans, system-ui, sans-serif));
-            background: var(--color-surface, var(--view-bg, light-dark(#f7f8fc, #1a1d24)));
-            color: var(--color-on-surface, var(--view-fg, light-dark(#1a1c1f, #e8eaed)));
+            background: light-dark(#f7f8fc, #1a1d24);
+            background: var(--color-surface);
+            color: light-dark(#1a1c1f, #e8eaed);
+            color: var(--color-on-surface);
             border: none;
             border-radius: 0;
             overflow: hidden;

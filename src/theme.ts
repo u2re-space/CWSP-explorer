@@ -35,6 +35,26 @@ export function applyExplorerColorScheme(shellRoot: HTMLElement | null | undefin
     shellRoot.setAttribute("data-theme", resolved);
     // WHY: `only` stops OS `prefers-color-scheme` from flipping used `light-dark()` under the shell.
     shellRoot.style.setProperty("color-scheme", `${resolved} only`);
+    bindExplorerForegroundResync();
+}
+
+let explorerForegroundBound = false;
+
+/** WHY: pinned light/dark does not subscribe to `data-theme`; WebView still drops `color-scheme` on resume. */
+function bindExplorerForegroundResync(): void {
+    if (explorerForegroundBound || typeof document === "undefined") return;
+    explorerForegroundBound = true;
+    const restamp = (): void => {
+        if (document.visibilityState === "hidden") return;
+        document.querySelectorAll<HTMLElement>(".view-explorer").forEach((el) => {
+            const scheme = el.dataset.explorerColorScheme;
+            if (scheme === "light" || scheme === "dark") {
+                applyExplorerColorScheme(el, scheme);
+            }
+        });
+    };
+    document.addEventListener("visibilitychange", restamp);
+    globalThis.addEventListener?.("pageshow", restamp);
 }
 
 export type ExplorerThemeSync = {

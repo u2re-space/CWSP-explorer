@@ -12157,8 +12157,10 @@ var syncBrowserChromeTheme$1 = (resolved, preference) => {
 	syncShellHostVisualScheme$1(resolved);
 };
 var applyTheme$1 = (settings) => {
-	if (typeof document === "undefined" || !settings) return;
+	if (typeof document === "undefined") return;
 	bindQuickSettingsThemePersistence$1();
+	installThemeLifecycleResync$1();
+	if (!settings) return;
 	const root = document.documentElement;
 	const theme = settings.appearance?.theme || "auto";
 	const resolvedScheme = resolveColorScheme$1(theme);
@@ -12170,6 +12172,126 @@ var applyTheme$1 = (settings) => {
 		syncBrowserChromeTheme$1(resolvedScheme, theme);
 	});
 	if (settings.grid) applyGridSettings(settings);
+};
+/**
+* Re-apply persisted appearance after a view adopts a document-level constructed stylesheet (Settings, Work Center, …).
+* WHY: First paint after cold boot can leave mixed shell chrome vs Veela `light-dark()` token resolution until
+* something triggers a full style pass; microtask + rAF + idle re-run matches navigating away/back.
+* INVARIANT: Safe to call multiple times; each pass is idempotent `applyTheme(loadSettings())`.
+*/
+var resyncThemeAfterAdoptedViewSheet$1 = () => {
+	if (typeof document === "undefined") return;
+	const run = async () => {
+		try {
+			applyTheme$1(await loadSettings());
+		} catch {}
+		try {
+			document.documentElement.offsetHeight;
+		} catch {}
+	};
+	(async () => {
+		await run();
+		queueMicrotask(() => {
+			run();
+		});
+		requestAnimationFrame(() => {
+			run();
+			try {
+				document.documentElement.dispatchEvent(new CustomEvent("u2-theme-change", { bubbles: true }));
+			} catch {}
+			requestAnimationFrame(() => {
+				run();
+				const ric = globalThis.requestIdleCallback;
+				if (typeof ric === "function") ric(() => {
+					run();
+				}, { timeout: 200 });
+				else globalThis.setTimeout(() => {
+					run();
+				}, 50);
+			});
+		});
+	})();
+};
+var restampExplorerShellScheme$1 = () => {
+	if (typeof document === "undefined") return;
+	try {
+		document.querySelectorAll(".view-explorer").forEach((el) => {
+			const scheme = el.dataset.explorerColorScheme;
+			if (scheme !== "light" && scheme !== "dark") return;
+			el.setAttribute("data-theme", scheme);
+			el.style.setProperty("color-scheme", `${scheme} only`);
+		});
+	} catch {}
+};
+var themeResumeAt$1 = 0;
+var themeLifecycleBound$1 = false;
+var sawBackground$1 = false;
+var restampChromeScheme$1 = () => {
+	restampExplorerShellScheme$1();
+	try {
+		const root = document.documentElement;
+		const pinned = root.getAttribute("data-theme");
+		if (pinned === "light" || pinned === "dark") {
+			root.style.colorScheme = pinned;
+			if (document.body) document.body.style.colorScheme = pinned;
+		}
+		root.offsetHeight;
+	} catch {}
+};
+/**
+* Restore chrome after Android recents / Home.
+* INVARIANT: never rewrite constructable sheets on cold start — first onResume/focus wiped UI.
+*/
+var resumeThemeAfterForeground$1 = (force = false) => {
+	if (typeof document === "undefined") return;
+	if (!force && document.visibilityState === "hidden") return;
+	const now = Date.now();
+	if (now - themeResumeAt$1 < 240) return;
+	themeResumeAt$1 = now;
+	restampChromeScheme$1();
+	if (!sawBackground$1) return;
+	(async () => {
+		try {
+			const { rehydrateConstructableSheets } = await __vitePreload(async () => {
+				const { rehydrateConstructableSheets } = await import("/fest/dom.js");
+				return { rehydrateConstructableSheets };
+			}, [], import.meta.url);
+			rehydrateConstructableSheets();
+		} catch {}
+		try {
+			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.wt);
+				return { rehydrateAdoptedStyleSheets };
+			}, __vite__mapDeps([1,2]), import.meta.url);
+			rehydrateAdoptedStyleSheets();
+		} catch {}
+		resyncThemeAfterAdoptedViewSheet$1();
+		restampChromeScheme$1();
+	})();
+};
+/** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
+var installThemeLifecycleResync$1 = () => {
+	if (themeLifecycleBound$1 || typeof document === "undefined") return;
+	themeLifecycleBound$1 = true;
+	globalThis.__CWSP_THEME_RESUME__ = resumeThemeAfterForeground$1;
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "hidden") {
+			sawBackground$1 = true;
+			return;
+		}
+		resumeThemeAfterForeground$1();
+	});
+	document.addEventListener("resume", () => resumeThemeAfterForeground$1());
+	globalThis.addEventListener?.("pageshow", () => resumeThemeAfterForeground$1());
+	try {
+		globalThis.Capacitor?.Plugins?.App?.addListener?.("appStateChange", (state) => {
+			if (state?.isActive === false) {
+				sawBackground$1 = true;
+				return;
+			}
+			if (state?.isActive) resumeThemeAfterForeground$1();
+		});
+	} catch {}
 };
 //#endregion
 //#region ../../modules/projects/subsystem/src/boot/veela-variant-runtime.ts
@@ -13562,6 +13684,8 @@ var Theme_exports = /* @__PURE__ */ __exportAll({
 	bindQuickSettingsThemePersistence: () => bindQuickSettingsThemePersistence,
 	cssBackgroundToOpaqueHex: () => cssBackgroundToOpaqueHex,
 	initTheme: () => initTheme,
+	installThemeLifecycleResync: () => installThemeLifecycleResync,
+	resumeThemeAfterForeground: () => resumeThemeAfterForeground,
 	resyncThemeAfterAdoptedViewSheet: () => resyncThemeAfterAdoptedViewSheet,
 	samplePwaToolbarBackgroundColor: () => samplePwaToolbarBackgroundColor,
 	sampleSurfaceBackgroundColor: () => sampleSurfaceBackgroundColor,
@@ -13730,8 +13854,10 @@ var syncBrowserChromeTheme = (resolved, preference) => {
 	syncShellHostVisualScheme(resolved);
 };
 var applyTheme = (settings) => {
-	if (typeof document === "undefined" || !settings) return;
+	if (typeof document === "undefined") return;
 	bindQuickSettingsThemePersistence();
+	installThemeLifecycleResync();
+	if (!settings) return;
 	const root = document.documentElement;
 	const theme = settings.appearance?.theme || "auto";
 	const resolvedScheme = resolveColorScheme(theme);
@@ -13782,6 +13908,87 @@ var resyncThemeAfterAdoptedViewSheet = () => {
 			});
 		});
 	})();
+};
+var restampExplorerShellScheme = () => {
+	if (typeof document === "undefined") return;
+	try {
+		document.querySelectorAll(".view-explorer").forEach((el) => {
+			const scheme = el.dataset.explorerColorScheme;
+			if (scheme !== "light" && scheme !== "dark") return;
+			el.setAttribute("data-theme", scheme);
+			el.style.setProperty("color-scheme", `${scheme} only`);
+		});
+	} catch {}
+};
+var themeResumeAt = 0;
+var themeLifecycleBound = false;
+var sawBackground = false;
+var restampChromeScheme = () => {
+	restampExplorerShellScheme();
+	try {
+		const root = document.documentElement;
+		const pinned = root.getAttribute("data-theme");
+		if (pinned === "light" || pinned === "dark") {
+			root.style.colorScheme = pinned;
+			if (document.body) document.body.style.colorScheme = pinned;
+		}
+		root.offsetHeight;
+	} catch {}
+};
+/**
+* Restore chrome after Android recents / Home.
+* INVARIANT: never rewrite constructable sheets on cold start — first onResume/focus wiped UI.
+*/
+var resumeThemeAfterForeground = (force = false) => {
+	if (typeof document === "undefined") return;
+	if (!force && document.visibilityState === "hidden") return;
+	const now = Date.now();
+	if (now - themeResumeAt < 240) return;
+	themeResumeAt = now;
+	restampChromeScheme();
+	if (!sawBackground) return;
+	(async () => {
+		try {
+			const { rehydrateConstructableSheets } = await __vitePreload(async () => {
+				const { rehydrateConstructableSheets } = await import("/fest/dom.js");
+				return { rehydrateConstructableSheets };
+			}, [], import.meta.url);
+			rehydrateConstructableSheets();
+		} catch {}
+		try {
+			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.wt);
+				return { rehydrateAdoptedStyleSheets };
+			}, __vite__mapDeps([1,2]), import.meta.url);
+			rehydrateAdoptedStyleSheets();
+		} catch {}
+		resyncThemeAfterAdoptedViewSheet();
+		restampChromeScheme();
+	})();
+};
+/** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
+var installThemeLifecycleResync = () => {
+	if (themeLifecycleBound || typeof document === "undefined") return;
+	themeLifecycleBound = true;
+	globalThis.__CWSP_THEME_RESUME__ = resumeThemeAfterForeground;
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "hidden") {
+			sawBackground = true;
+			return;
+		}
+		resumeThemeAfterForeground();
+	});
+	document.addEventListener("resume", () => resumeThemeAfterForeground());
+	globalThis.addEventListener?.("pageshow", () => resumeThemeAfterForeground());
+	try {
+		globalThis.Capacitor?.Plugins?.App?.addListener?.("appStateChange", (state) => {
+			if (state?.isActive === false) {
+				sawBackground = true;
+				return;
+			}
+			if (state?.isActive) resumeThemeAfterForeground();
+		});
+	} catch {}
 };
 var initTheme = async () => {
 	try {
