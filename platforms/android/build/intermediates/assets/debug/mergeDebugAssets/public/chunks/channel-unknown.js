@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../views/viewer.js","./rolldown-runtime.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","../vendor/dompurify.js","./MarkdownEditor.js","./QuillEditor.js","../vendor/quill.js","../vendor/lodash-es.js","../vendor/parchment.js","../vendor/fast-diff.js","../vendor/lodash.clonedeep.js","../vendor/lodash.isequal.js","../vendor/eventemitter3.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./utils.js","./CustomInstructions.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./storage.js","./src.js","./DocxExport.js"])))=>i.map(i=>d[i]);
 import { Cr as BROADCAST_CHANNELS, Tr as getBroadcastChannelForDestination, _r as registerComponent, br as unifiedMessaging, dr as createMessageWithOverrides, gr as processInitialContent, hr as initializeComponent, lr as settleIngressPaintForMinimalShell, mr as hasPendingMessages, pr as enqueuePendingMessage, rt as loadSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, r as validateIngressBeforeViewHandle, t as pickAuthoritativeTransferFiles } from "../com/service.js";
-import { Ct as getCachedComponent, On as __vitePreload, Rt as createFileHandler, en as createTemplateManager, nn as getSpeechPrompt, yn as H } from "../com/app.js";
+import { An as __vitePreload, Bt as createFileHandler, Tt as getCachedComponent, in as getSpeechPrompt, nn as createTemplateManager, xn as H } from "../com/app.js";
 import { r as fetchSwCachedEntries } from "./ShareTargetGateway.js";
 import { loadAsAdopted } from "/fest/dom.js";
 import { clearIconCache, clearIconCaches, debugIconSystem, ensureStyleSheet, reinitializeRegistry, testIconRacing } from "/fest/icon.js";
@@ -983,7 +983,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.an), __vite__mapDeps([5,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
+			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.sn), __vite__mapDeps([5,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
 			if (state.history.length === 0) state.history = historyManager.getAllEntries();
 			const historyElement = historyManager.createHistoryView((entry) => {
 				if (state.view === "workcenter") getCachedComponent("workcenter", () => __vitePreload(() => import("./WorkCenter.js").then((m) => m.WorkCenterManager), __vite__mapDeps([17,2,3,1,4,5,6,18,19,20,21,22,23,24,25,26,27,28,29,30,31,7]), import.meta.url), { componentName: "WorkCenter" }).then(() => {

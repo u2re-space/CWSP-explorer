@@ -1,7 +1,8 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","../views/viewer.js","../vendor/dompurify.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./storage.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
 import { Qn as isEnabledView } from "../shells/boot-index.js";
-import { On as __vitePreload, Sn as hasActiveCloseable, _t as initializeAppCanvasLayer, vt as refreshAppWallpaperPaint, xn as closeHighestPriority, xt as restoreWallpaperThemeCache } from "../com/app.js";
+import { Cn as closeHighestPriority, Ct as restoreWallpaperThemeCache, bt as refreshAppWallpaperPaint, wn as hasActiveCloseable, yt as initializeAppCanvasLayer } from "../com/app.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT, n as createEnvironmentShellContainer, r as defineEnvironmentShellContainer } from "../shells/environment-environment-overlay.js";
 import { i as mountViewModule, n as seedEnvironmentWallpaperIfUnset, r as createWorkspaceWindowLayer, t as mountEnvironmentChrome } from "../shells/environment-index.js";

@@ -1,7 +1,8 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { Cr as BROADCAST_CHANNELS, Or as resolveProcessApiUrl, br as unifiedMessaging, cr as storeShareTargetPayloadToCache, nr as unifiedMessaging$1, or as buildShareDataFromCachedPayload, rt as loadSettings, sr as consumeCachedShareTargetPayload } from "../shells/boot-index.js";
-import { On as __vitePreload, Ut as parseDataUrl, Vt as isBase64Like, cn as copy, ln as initClipboardReceiver, wt as bindDirectoryForLaunchedFiles } from "../com/app.js";
+import { Et as bindDirectoryForLaunchedFiles, Gt as parseDataUrl, Ut as isBase64Like, dn as initClipboardReceiver, un as copy } from "../com/app.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 import { applyLauncherIngress, installShellImageOpenListener, refineLauncherImageIngress, skuIngressHint } from "./sku-ingress.js";
 import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "./ViewTransferRouting.js";

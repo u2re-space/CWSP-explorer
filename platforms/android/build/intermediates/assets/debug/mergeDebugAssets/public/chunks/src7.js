@@ -1,5 +1,5 @@
 import { Bn as resolveFleetWanGatewayHost, Fn as buildEndpointOriginCandidates, In as collectEndpointProbeCandidates, Ln as parseConnectHostInput, Rn as probeEndpointOriginReport, U as writeClipboardTextToDevice, Vn as splitConnectHostList, a as initWebSocket, cn as CwsBridge, dn as invokeCwsNative, en as isMaintainHubSocketConnectionEnabled, fn as invokeCwsPlatformIPC, i as disconnectWS, lt as resolveEcosystemToken, nn as isPreferNativeWebsocketEnabled, o as isWSConnected, pn as isCapacitorCwsNativeShell, r as connectWS, rt as loadSettings, s as onWSConnectionChange, tn as isNeutralinoNodeClipboardHubOwned } from "../shells/boot-index.js";
-import { yn as H } from "../com/app.js";
+import { xn as H } from "../com/app.js";
 import { n as getFrontendDebugApi, r as initFrontendDebugCapture } from "./frontend-debug-capture.js";
 import { loadAsAdopted } from "/fest/dom.js";
 //#region ../../modules/views/network-view/src/network-probe-origin.ts

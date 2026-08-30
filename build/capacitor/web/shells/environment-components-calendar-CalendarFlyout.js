@@ -1,4 +1,4 @@
-import { dn as registerTransientOverlay, dt as UIElement, mn as bindOutsideDismiss, pt as __decorate, vn as defineElement, yn as H } from "../com/app.js";
+import { bn as defineElement, gn as bindOutsideDismiss, ht as __decorate, pn as registerTransientOverlay, pt as UIElement, xn as H } from "../com/app.js";
 import { addEvent, preloadStyle } from "/fest/dom.js";
 import "/fest/icon.js";
 /** Same as environment-overlay ENV_OVERLAY_Z — above `$z-shell-chrome`. */

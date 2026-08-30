@@ -1,5 +1,6 @@
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { $ as subscribeFsBackendRegister, Dn as JSOX, On as __vitePreload, Q as resolveFsBackend, in as saveUIState, on as decodeDesktopState, rn as makeUIState, sn as loadDesktopRaw, tt as resolveEntryIcon } from "../com/app.js";
+import { $ as resolveFsBackend, an as makeUIState, cn as decodeDesktopState, et as subscribeFsBackendRegister, kn as JSOX, ln as loadDesktopRaw, nt as resolveEntryIcon, on as saveUIState } from "../com/app.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];

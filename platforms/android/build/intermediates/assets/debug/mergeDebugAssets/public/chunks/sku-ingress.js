@@ -3,7 +3,7 @@ import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { Ct as resolveOpenPolicy, Tt as sinkToDestination, ft as classifyOpenKindFromPayload, kt as surfaceForSku, pt as inferIngressChannels, vt as peekOpenPolicy, wt as sinkToAction } from "../shells/boot-index.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region ../CWSP-document/src/shared/routing/channel/sku-ingress.ts
-var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.I), __vite__mapDeps([0,1]), import.meta.url);
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.L), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -106,14 +106,23 @@ var skuIngressHint = (payload, opts) => {
 	const channels = inferIngressChannels(ingressSource || void 0, isNativeCapacitor());
 	const sink = resolveOpenPolicy(opts?.openPolicy || peekOpenPolicy(), surface, kind, channels);
 	const skuDest = skuDefaultDestination(sku);
-	if (surface && sink !== "ask") return {
-		destination: sinkToDestination(sink, skuDest || "workcenter"),
-		action: sinkToAction(sink, sku === "process" ? "process" : "open"),
-		filename,
-		source: path || payload.hint?.source,
-		contentType: kind,
-		sink
-	};
+	if (surface && sink !== "ask") {
+		if (sku === "explorer" && looksLikeDirectoryPath(path) && !file) return {
+			destination: "explorer",
+			action: "open",
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind
+		};
+		return {
+			destination: sinkToDestination(sink, skuDest || "workcenter"),
+			action: sinkToAction(sink, sku === "process" ? "process" : "open"),
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind,
+			sink
+		};
+	}
 	if (!sku || sku === "crx" || sku === "transfer") return void 0;
 	if (sku === "process") {
 		const hinted = payload.hint?.action;
@@ -192,7 +201,7 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.mt);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.gt);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
@@ -272,7 +281,7 @@ var openShellImageInViewer = async (file) => {
 var applyShellWallpaper = async (file) => {
 	if (!await isWallpaperCompatible(file)) return false;
 	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.mt);
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.gt);
 		return {
 			setAppWallpaperFromBlob,
 			getWallpaperStoragePointer,

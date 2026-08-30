@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./environment-window-views-browser-view.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { D as tryLaunchSiblingView, On as __vitePreload } from "../com/app.js";
+import { An as __vitePreload, O as tryLaunchSiblingView } from "../com/app.js";
 import { a as SHELL_SLOT, i as isEnvironmentShellContainerHost, o as resolveOverlayMountPoint, s as resolveShellOverlaysMount, t as getOrCreateEnvironmentOverlayMount } from "./environment-environment-overlay.js";
 import { a as setChromeFlyoutShellHost } from "./environment-components-calendar-CalendarFlyout.js";
 import { t as restoreQuickFilters } from "./environment-components-settings-QuickSettings.js";
@@ -802,7 +802,9 @@ function createWorkspaceWindowLayer(workspace, options = {}) {
 		}
 		emitTasking();
 	};
-	const shellContext = {};
+	const shellContext = { showMessage: (msg) => {
+		console.log(`[environment] ${typeof msg === "string" ? msg : String(msg ?? "")}`);
+	} };
 	const envOverlayMount = options.overlayMountHost ? getOrCreateEnvironmentOverlayMount(options.overlayMountHost) : null;
 	shellContext.resolveOverlayMountPoint = (anchor) => {
 		if (envOverlayMount) return envOverlayMount;

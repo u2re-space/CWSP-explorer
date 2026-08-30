@@ -3,8 +3,8 @@
   Filename: AndroidManifest.xml
   FullPath: apps/CWSP-explorer/platforms/android/AndroidManifest.xml
   FIND:sku
-  Change date and time: 01.20.00_30.08.2026
-  Reason for changes: Package + SEND queries so /sdcard/ Open-with lists Document.
+  Change date and time: 08.35.00_30.08.2026
+  Reason for changes: Directory VIEW so Transfer Open in Folder can list Explorer.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -77,6 +77,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="space.u2re.explorer" />
+            </intent-filter>
+            <!-- WHY: Transfer "Open in Folder" + system chooser use directory MIME, not our scheme. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.document/directory" />
+                <data android:mimeType="resource/folder" />
+                <data android:mimeType="inode/directory" />
             </intent-filter>
         </activity>
 
