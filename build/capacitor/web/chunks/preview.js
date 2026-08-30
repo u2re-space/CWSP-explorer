@@ -222,9 +222,21 @@ var MinimalShell = class extends ShellBase {
 		element.hidden = false;
 		element.removeAttribute("slot");
 		if (!this.rootElement.contains(element)) this.rootElement.appendChild(element);
+		this.flushShownView(element);
 		const loading = this.contentContainer.querySelector(".app-shell__loading");
 		if (loading) loading.hidden = true;
 		this.currentViewElement = element;
+	}
+	/** WHY: hidden → shown (or re-slot) can leave adopted CSS empty and skip text paint. */
+	flushShownView(element) {
+		element.style.translate = "0";
+		element.offsetHeight;
+		requestAnimationFrame(() => {
+			element.style.removeProperty("translate");
+		});
+		__vitePreload(() => import("../com/app.js").then((n) => n.wt).then((m) => {
+			m.rehydrateAdoptedStyleSheets?.(element);
+		}), __vite__mapDeps([4,1]), import.meta.url).catch(() => {});
 	}
 	applyTheme(theme) {
 		const inner = this.rootElement?.shadowRoot?.querySelector(".app-shell");

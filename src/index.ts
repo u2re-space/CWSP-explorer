@@ -132,7 +132,11 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
         lifecycle: ViewLifecycle = {
             onMount: () => {
                 // WHY: standalone demo / PWA boot may never call onShow; layout shell CSS must load on mount.
-                this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
+                try {
+                    this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
+                } catch {
+                    this._sheet = null;
+                }
                 this.syncExplorerThemeSubscription();
                 this.attachExplorerWire();
             },
@@ -144,7 +148,11 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
                 this._sheet = null;
             },
             onShow: () => {
-                this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
+                try {
+                    this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
+                } catch {
+                    this._sheet = null;
+                }
                 this.syncExplorerThemeSubscription();
                 if (!this.explorerCleanup && this.explorerRoot) {
                     this.attachExplorerWire();

@@ -32,7 +32,9 @@ export function applyExplorerColorScheme(shellRoot: HTMLElement | null | undefin
     if (!shellRoot) return;
     const resolved = resolveExplorerColorSchemePreference(mode ?? undefined);
     shellRoot.dataset.explorerColorScheme = resolved;
-    shellRoot.setAttribute("data-theme", resolved);
+    if (shellRoot.getAttribute("data-theme") !== resolved) {
+        shellRoot.setAttribute("data-theme", resolved);
+    }
     // WHY: `only` stops OS `prefers-color-scheme` from flipping used `light-dark()` under the shell.
     shellRoot.style.setProperty("color-scheme", `${resolved} only`);
     bindExplorerForegroundResync();

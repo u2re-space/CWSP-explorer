@@ -3,7 +3,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","..
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
-import { Vt as writeFileSmart, an as makeUIState, bn as defineElement, ht as __decorate, kn as JSOX, on as saveUIState, pt as UIElement, yt as initializeAppCanvasLayer } from "../com/app.js";
+import { An as JSOX, Vt as writeFileSmart, an as makeUIState, bn as defineElement, ht as __decorate, kn as Q, on as saveUIState, pt as UIElement, yt as initializeAppCanvasLayer } from "../com/app.js";
 import { n as core_default, t as scss_default } from "../fest/veela.js";
 import { fixOrientToScreen, loadAsAdopted } from "/fest/dom.js";
 import { createProtocolEnvelope, createProtocolEnvelope as createProtocolEnvelope$2, createServiceChannelManager, getUnifiedMessaging, isProtocolEnvelope, normalizeProtocolEnvelope } from "/fest/uniform.js";
@@ -11809,6 +11809,18 @@ var rgbToHex$1 = (css) => {
 		m[3]
 	].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, "0")).join("")}`;
 };
+var registerColorProperty$1 = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
 var seedHosts$1 = () => {
 	const nodes = /* @__PURE__ */ new Set();
 	if (typeof document === "undefined") return [];
@@ -11825,6 +11837,14 @@ var SEED_PROPS$1 = [
 	"--primary",
 	"--current"
 ];
+var isValidColor$1 = (color) => {
+	try {
+		rgbToHex$1(color);
+		return true;
+	} catch {
+		return false;
+	}
+};
 var applyBaseColorSeed$1 = (hex, source, extras) => {
 	if (typeof document === "undefined") return;
 	const seed = normalizeHexColor$1(hex) || "#5a9ec8";
@@ -11833,6 +11853,15 @@ var applyBaseColorSeed$1 = (hex, source, extras) => {
 	const concrete = source === "user" ? "custom" : source === "system" ? "material-you" : source;
 	document.documentElement.dataset.baseSource = String(concrete);
 	document.documentElement.dataset.colorSource = String(concrete);
+	if (!isValidColor$1(seed)) return;
+	if (!isValidColor$1(secondary)) return;
+	if (!isValidColor$1(tertiary)) return;
+	registerColorProperty$1("--color-primary", seed);
+	registerColorProperty$1("--base-color", seed);
+	registerColorProperty$1("--color-secondary", secondary);
+	registerColorProperty$1("--color-tertiary", tertiary);
+	registerColorProperty$1("--secondary", secondary);
+	registerColorProperty$1("--tertiary", tertiary);
 	for (const host of seedHosts$1()) {
 		for (const prop of SEED_PROPS$1) host.style.setProperty(prop, seed);
 		host.style.setProperty("--color-secondary", secondary);
@@ -11840,6 +11869,13 @@ var applyBaseColorSeed$1 = (hex, source, extras) => {
 		host.style.setProperty("--secondary", secondary);
 		host.style.setProperty("--tertiary", tertiary);
 	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--color-secondary", secondary);
+	globalQuery.style.setProperty("--color-tertiary", tertiary);
+	globalQuery.style.setProperty("--secondary", secondary);
+	globalQuery.style.setProperty("--tertiary", tertiary);
 };
 /** CSS `AccentColor` when the engine maps it to a real system accent (not generic link blue). */
 var readCssAccentColor$1 = () => {
@@ -12173,52 +12209,13 @@ var applyTheme$1 = (settings) => {
 	});
 	if (settings.grid) applyGridSettings(settings);
 };
-/**
-* Re-apply persisted appearance after a view adopts a document-level constructed stylesheet (Settings, Work Center, …).
-* WHY: First paint after cold boot can leave mixed shell chrome vs Veela `light-dark()` token resolution until
-* something triggers a full style pass; microtask + rAF + idle re-run matches navigating away/back.
-* INVARIANT: Safe to call multiple times; each pass is idempotent `applyTheme(loadSettings())`.
-*/
-var resyncThemeAfterAdoptedViewSheet$1 = () => {
-	if (typeof document === "undefined") return;
-	const run = async () => {
-		try {
-			applyTheme$1(await loadSettings());
-		} catch {}
-		try {
-			document.documentElement.offsetHeight;
-		} catch {}
-	};
-	(async () => {
-		await run();
-		queueMicrotask(() => {
-			run();
-		});
-		requestAnimationFrame(() => {
-			run();
-			try {
-				document.documentElement.dispatchEvent(new CustomEvent("u2-theme-change", { bubbles: true }));
-			} catch {}
-			requestAnimationFrame(() => {
-				run();
-				const ric = globalThis.requestIdleCallback;
-				if (typeof ric === "function") ric(() => {
-					run();
-				}, { timeout: 200 });
-				else globalThis.setTimeout(() => {
-					run();
-				}, 50);
-			});
-		});
-	})();
-};
 var restampExplorerShellScheme$1 = () => {
 	if (typeof document === "undefined") return;
 	try {
 		document.querySelectorAll(".view-explorer").forEach((el) => {
 			const scheme = el.dataset.explorerColorScheme;
 			if (scheme !== "light" && scheme !== "dark") return;
-			el.setAttribute("data-theme", scheme);
+			if (el.getAttribute("data-theme") !== scheme) el.setAttribute("data-theme", scheme);
 			el.style.setProperty("color-scheme", `${scheme} only`);
 		});
 	} catch {}
@@ -12252,21 +12249,16 @@ var resumeThemeAfterForeground$1 = (force = false) => {
 	if (!sawBackground$1) return;
 	(async () => {
 		try {
-			const { rehydrateConstructableSheets } = await __vitePreload(async () => {
-				const { rehydrateConstructableSheets } = await import("/fest/dom.js");
-				return { rehydrateConstructableSheets };
-			}, [], import.meta.url);
-			rehydrateConstructableSheets();
-		} catch {}
-		try {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
 				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.wt);
 				return { rehydrateAdoptedStyleSheets };
 			}, __vite__mapDeps([1,2]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
 		} catch {}
-		resyncThemeAfterAdoptedViewSheet$1();
 		restampChromeScheme$1();
+		try {
+			document.dispatchEvent(new CustomEvent("cwsp:theme-resume"));
+		} catch {}
 	})();
 };
 /** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
@@ -13494,6 +13486,18 @@ var rgbToHex = (css) => {
 		m[3]
 	].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, "0")).join("")}`;
 };
+var registerColorProperty = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
 var seedHosts = () => {
 	const nodes = /* @__PURE__ */ new Set();
 	if (typeof document === "undefined") return [];
@@ -13510,6 +13514,14 @@ var SEED_PROPS = [
 	"--primary",
 	"--current"
 ];
+var isValidColor = (color) => {
+	try {
+		rgbToHex(color);
+		return true;
+	} catch {
+		return false;
+	}
+};
 var applyBaseColorSeed = (hex, source, extras) => {
 	if (typeof document === "undefined") return;
 	const seed = normalizeHexColor(hex) || "#5a9ec8";
@@ -13518,6 +13530,15 @@ var applyBaseColorSeed = (hex, source, extras) => {
 	const concrete = source === "user" ? "custom" : source === "system" ? "material-you" : source;
 	document.documentElement.dataset.baseSource = String(concrete);
 	document.documentElement.dataset.colorSource = String(concrete);
+	if (!isValidColor(seed)) return;
+	if (!isValidColor(secondary)) return;
+	if (!isValidColor(tertiary)) return;
+	registerColorProperty("--color-primary", seed);
+	registerColorProperty("--base-color", seed);
+	registerColorProperty("--color-secondary", secondary);
+	registerColorProperty("--color-tertiary", tertiary);
+	registerColorProperty("--secondary", secondary);
+	registerColorProperty("--tertiary", tertiary);
 	for (const host of seedHosts()) {
 		for (const prop of SEED_PROPS) host.style.setProperty(prop, seed);
 		host.style.setProperty("--color-secondary", secondary);
@@ -13525,6 +13546,13 @@ var applyBaseColorSeed = (hex, source, extras) => {
 		host.style.setProperty("--secondary", secondary);
 		host.style.setProperty("--tertiary", tertiary);
 	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--color-secondary", secondary);
+	globalQuery.style.setProperty("--color-tertiary", tertiary);
+	globalQuery.style.setProperty("--secondary", secondary);
+	globalQuery.style.setProperty("--tertiary", tertiary);
 };
 /** CSS `AccentColor` when the engine maps it to a real system accent (not generic link blue). */
 var readCssAccentColor = () => {
@@ -13915,7 +13943,7 @@ var restampExplorerShellScheme = () => {
 		document.querySelectorAll(".view-explorer").forEach((el) => {
 			const scheme = el.dataset.explorerColorScheme;
 			if (scheme !== "light" && scheme !== "dark") return;
-			el.setAttribute("data-theme", scheme);
+			if (el.getAttribute("data-theme") !== scheme) el.setAttribute("data-theme", scheme);
 			el.style.setProperty("color-scheme", `${scheme} only`);
 		});
 	} catch {}
@@ -13949,21 +13977,16 @@ var resumeThemeAfterForeground = (force = false) => {
 	if (!sawBackground) return;
 	(async () => {
 		try {
-			const { rehydrateConstructableSheets } = await __vitePreload(async () => {
-				const { rehydrateConstructableSheets } = await import("/fest/dom.js");
-				return { rehydrateConstructableSheets };
-			}, [], import.meta.url);
-			rehydrateConstructableSheets();
-		} catch {}
-		try {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
 				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.wt);
 				return { rehydrateAdoptedStyleSheets };
 			}, __vite__mapDeps([1,2]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
 		} catch {}
-		resyncThemeAfterAdoptedViewSheet();
 		restampChromeScheme();
+		try {
+			document.dispatchEvent(new CustomEvent("cwsp:theme-resume"));
+		} catch {}
 	})();
 };
 /** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */

@@ -7060,7 +7060,7 @@ var getDef = (source) => {
 	return null;
 };
 if (defaultStyle) defaultStyle.innerHTML = `@layer ux-preload {
-        :host { display: none; }
+        :host { box-sizing: border-box; }
     }`;
 function withProperties(ctr) {
 	const proto = ctr.prototype ?? Object.getPrototypeOf(ctr) ?? ctr;
@@ -7155,15 +7155,53 @@ function property(options = {}) {
 	};
 }
 var adoptedStyleSheetsCache = /* @__PURE__ */ new WeakMap();
+var HOST_CSS_FALLBACK = "data-glit-host-css";
+/** COMPAT: stale `/fest/dom.js` has no cssTextForAdoptedSheet / ensureAdoptedSheetContent. */
+var ensureAdoptedSheetContent = (sheet) => {
+	if (!sheet) return false;
+	try {
+		return sheet.cssRules.length > 0;
+	} catch {
+		return false;
+	}
+};
+var cssTextForAdoptedSheet = (_sheet) => null;
+var syncAdoptedSheetsToShadow = (bTo) => {
+	const root = bTo?.shadowRoot;
+	if (!root) return;
+	const adoptedSheets = adoptedStyleSheetsCache.get(bTo) || [];
+	for (const sheet of adoptedSheets) ensureAdoptedSheetContent(sheet);
+	try {
+		const live = root.adoptedStyleSheets || [];
+		root.adoptedStyleSheets = [...adoptedSheets.filter((s) => !live.includes(s)), .../* @__PURE__ */ new Set([...live])];
+	} catch {}
+};
 var addAdoptedSheetToElement = (bTo, sheet) => {
 	let adoptedSheets = adoptedStyleSheetsCache.get(bTo);
 	if (!adoptedSheets) adoptedStyleSheetsCache.set(bTo, adoptedSheets = []);
 	if (sheet && adoptedSheets.indexOf(sheet) < 0) adoptedSheets.push(sheet);
-	if (bTo.shadowRoot) bTo.shadowRoot.adoptedStyleSheets = [...bTo.shadowRoot.adoptedStyleSheets || [], ...adoptedSheets.filter((s) => !bTo.shadowRoot.adoptedStyleSheets?.includes(s))];
+	ensureAdoptedSheetContent(sheet);
+	syncAdoptedSheetsToShadow(bTo);
 };
-/** WHY: Capacitor WebView drops `shadowRoot.adoptedStyleSheets` after background; cache still holds them. */
+var ensureShadowCssFallback = (bTo, cssText) => {
+	const root = bTo?.shadowRoot;
+	if (!root || !cssText) return null;
+	let style = root.querySelector?.(`style[${HOST_CSS_FALLBACK}]`);
+	if (!style) {
+		style = loadInlineStyle(cssText, root, "");
+		if (style) style.setAttribute(HOST_CSS_FALLBACK, "");
+	} else if (style.textContent !== cssText) style.textContent = cssText;
+	return style;
+};
+/** WHY: Capacitor WebView drops `shadowRoot.adoptedStyleSheets` or empties cssRules; cache + source text restore them. */
 var rehydrateAdoptedStyleSheets = (root = typeof document !== "undefined" ? document : null) => {
 	if (!root) return;
+	const restore = (host) => {
+		if (!host?.shadowRoot) return;
+		ensureShadowCssFallback(host, hostCssText(host));
+		syncAdoptedSheetsToShadow(host);
+	};
+	if (root.nodeType === 1) restore(root);
 	const visit = (node) => {
 		let children = [];
 		try {
@@ -7173,17 +7211,55 @@ var rehydrateAdoptedStyleSheets = (root = typeof document !== "undefined" ? docu
 		}
 		for (let i = 0; i < children.length; i++) {
 			const host = children[i];
-			const sr = host.shadowRoot;
-			if (!sr) continue;
-			const cached = adoptedStyleSheetsCache.get(host);
-			if (cached?.length) try {
-				sr.adoptedStyleSheets = [...cached.filter((s) => !sr.adoptedStyleSheets?.includes(s)), .../* @__PURE__ */ new Set([...sr.adoptedStyleSheets || []])];
-			} catch {}
-			visit(sr);
+			if (host.shadowRoot) {
+				restore(host);
+				visit(host.shadowRoot);
+			}
 		}
 	};
 	visit(root);
 };
+var hostCssText = (bTo) => {
+	const src = bTo?.styles;
+	if (typeof src === "string") return src;
+	if (typeof src === "function") try {
+		const out = src.call(bTo);
+		if (typeof out === "string") return out;
+		return cssTextForAdoptedSheet(out);
+	} catch {
+		return null;
+	}
+	return cssTextForAdoptedSheet(src);
+};
+var ensureHostStyles = (bTo) => {
+	if (!bTo) return;
+	if (bTo.styles != null) loadCachedStyles(bTo, bTo.styles);
+	syncAdoptedSheetsToShadow(bTo);
+	ensureShadowCssFallback(bTo, hostCssText(bTo));
+};
+var styleFlushPending = /* @__PURE__ */ new WeakSet();
+var styleFlushBatch = [];
+var styleFlushScheduled = false;
+/** WHY: connect / childList / theme attrs often land in the same turn — one apply before paint. */
+var scheduleEnsureHostStyles = (bTo) => {
+	if (!bTo || !(bTo instanceof Element) || styleFlushPending.has(bTo)) return;
+	styleFlushPending.add(bTo);
+	styleFlushBatch.push(bTo);
+	if (styleFlushScheduled) return;
+	styleFlushScheduled = true;
+	queueMicrotask(() => {
+		styleFlushScheduled = false;
+		const batch = styleFlushBatch;
+		styleFlushBatch = [];
+		for (const host of batch) {
+			styleFlushPending.delete(host);
+			if (host.isConnected) ensureHostStyles(host);
+		}
+	});
+};
+__vitePreload(() => import("/fest/dom.js").then((dom) => {
+	dom.registerStyleTreeHook?.((el) => scheduleEnsureHostStyles(el));
+}), [], import.meta.url).catch(() => {});
 var loadCachedStyles = (bTo, src) => {
 	if (!src) return null;
 	let resolvedSrc = src;
@@ -7196,7 +7272,7 @@ var loadCachedStyles = (bTo, src) => {
 	}
 	if (resolvedSrc && typeof CSSStyleSheet != "undefined" && resolvedSrc instanceof CSSStyleSheet) {
 		addAdoptedSheetToElement(bTo, resolvedSrc);
-		return null;
+		return ensureShadowCssFallback(bTo, cssTextForAdoptedSheet(resolvedSrc));
 	}
 	if (resolvedSrc instanceof Promise) {
 		resolvedSrc.then((result) => {
@@ -7210,20 +7286,20 @@ var loadCachedStyles = (bTo, src) => {
 	if (typeof resolvedSrc == "string" || resolvedSrc instanceof Blob || resolvedSrc instanceof File) {
 		const adopted = loadAsAdopted(resolvedSrc, "");
 		if (adopted) {
-			let adoptedSheets = adoptedStyleSheetsCache.get(bTo);
-			if (!adoptedSheets) adoptedStyleSheetsCache.set(bTo, adoptedSheets = []);
 			const addAdoptedSheet = (sheet) => {
-				if (sheet && adoptedSheets.indexOf(sheet) < 0) adoptedSheets.push(sheet);
-				if (bTo.shadowRoot) bTo.shadowRoot.adoptedStyleSheets = [...bTo.shadowRoot.adoptedStyleSheets || [], ...adoptedSheets.filter((s) => !bTo.shadowRoot.adoptedStyleSheets?.includes(s))];
+				addAdoptedSheetToElement(bTo, sheet);
 			};
 			if (adopted instanceof Promise) {
-				adopted.then(addAdoptedSheet).catch((e) => {
+				adopted.then((sheet) => {
+					addAdoptedSheet(sheet);
+					ensureShadowCssFallback(bTo, typeof resolvedSrc == "string" ? resolvedSrc : cssTextForAdoptedSheet(sheet));
+				}).catch((e) => {
 					console.warn("Error loading adopted stylesheet:", e);
 				});
 				return null;
 			} else {
 				addAdoptedSheet(adopted);
-				return null;
+				return ensureShadowCssFallback(bTo, typeof resolvedSrc == "string" ? resolvedSrc : cssTextForAdoptedSheet(adopted));
 			}
 		}
 	}
@@ -7360,21 +7436,11 @@ function GLitElement(derivate) {
 				this.styleLibs?.push?.(module);
 				if (this.#styleElement?.isConnected) this.#styleElement?.before?.(module);
 				else this.shadowRoot?.prepend?.(module);
-			} else if (module instanceof CSSStyleSheet) {
-				let adoptedSheets = adoptedStyleSheetsCache.get(this);
-				if (!adoptedSheets) adoptedStyleSheetsCache.set(this, adoptedSheets = []);
-				if (adoptedSheets.indexOf(module) < 0) adoptedSheets.push(module);
-				if (root) root.adoptedStyleSheets = [...root.adoptedStyleSheets || [], ...adoptedSheets.filter((s) => !root.adoptedStyleSheets?.includes(s))];
-			} else {
+			} else if (module instanceof CSSStyleSheet) addAdoptedSheetToElement(this, module);
+			else {
 				const adopted = loadAsAdopted(module, "ux-layer");
-				let adoptedSheets = adoptedStyleSheetsCache.get(this);
-				if (!adoptedSheets) adoptedStyleSheetsCache.set(this, adoptedSheets = []);
-				const addAdoptedSheet = (sheet) => {
-					if (sheet && adoptedSheets.indexOf(sheet) < 0) adoptedSheets.push(sheet);
-					if (root) root.adoptedStyleSheets = [...root.adoptedStyleSheets || [], ...adoptedSheets.filter((s) => !root.adoptedStyleSheets?.includes(s))];
-				};
-				if (adopted instanceof Promise) adopted.then(addAdoptedSheet).catch(() => {});
-				else if (adopted) addAdoptedSheet(adopted);
+				if (adopted instanceof Promise) adopted.then((sheet) => addAdoptedSheetToElement(this, sheet)).catch(() => {});
+				else if (adopted) addAdoptedSheetToElement(this, adopted);
 			}
 			return this;
 		}
@@ -7399,7 +7465,12 @@ function GLitElement(derivate) {
 				this[inRenderKey] = true;
 				if (isNotExtended(this) && shadowRoot) {
 					const rendered = this.render?.call?.(this, weak) ?? document.createElement("slot");
-					const styleElement = loadCachedStyles(this, this.styles);
+					let styleElement = null;
+					try {
+						styleElement = loadCachedStyles(this, this.styles);
+					} catch (error) {
+						console.warn("Error applying host styles:", error);
+					}
 					if (styleElement instanceof HTMLStyleElement) this.#styleElement = styleElement;
 					const elements = [
 						H`<style data-type="ux-layer" prop:innerHTML=${this.$makeLayers()}></style>`,
@@ -7416,6 +7487,7 @@ function GLitElement(derivate) {
 				delete this[inRenderKey];
 				if (shadowRoot) addRoot(shadowRoot);
 			}
+			scheduleEnsureHostStyles(this);
 		}
 		/**
 		* Вызывается когда элемент удалён из DOM
@@ -7428,12 +7500,14 @@ function GLitElement(derivate) {
 		*/
 		adoptedCallback() {
 			if (super.adoptedCallback) super.adoptedCallback();
+			scheduleEnsureHostStyles(this);
 		}
 		/**
 		* Вызывается когда наблюдаемый атрибут изменился
 		*/
 		attributeChangedCallback(name, oldValue, newValue) {
 			if (super.attributeChangedCallback) super.attributeChangedCallback(name, oldValue, newValue);
+			if (name === "theme" || name === "data-theme" || name === "color-scheme" || name.endsWith("color-scheme")) scheduleEnsureHostStyles(this);
 		}
 	}
 	const result = withProperties(GLitElementImpl);
@@ -10389,2196 +10463,6 @@ var maybeStartThemeEngine = () => {
 	dynamicTheme?.();
 };
 maybeStartThemeEngine();
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.uniform.worker.ts?worker
-function WorkerWrapper(options) {
-	return new Worker("" + new URL("../workers/opfs/OPFS.uniform.worker.js", import.meta.url).href, {
-		type: "module",
-		name: options?.name
-	});
-}
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.ts
-var workerChannel = null;
-var isServiceWorker = typeof ServiceWorkerGlobalScope !== "undefined" && self instanceof ServiceWorkerGlobalScope;
-var SW_BRIDGE_CHANNEL_NAME = "opfs-sw-bridge-v1";
-var observers = /* @__PURE__ */ new Map();
-var workerInitPromise = null;
-var swBridgeChannel = null;
-var swBridgeRequestCounter = 0;
-var ensureSwBridgeChannel = () => {
-	if (!isServiceWorker) return null;
-	if (swBridgeChannel) return swBridgeChannel;
-	try {
-		if (typeof BroadcastChannel === "undefined") return null;
-		swBridgeChannel = new BroadcastChannel(SW_BRIDGE_CHANNEL_NAME);
-		return swBridgeChannel;
-	} catch {
-		return null;
-	}
-};
-var postViaSwBridge = (type, payload = {}, timeoutMs = 2500) => {
-	const channel = ensureSwBridgeChannel();
-	if (!channel) return Promise.reject(/* @__PURE__ */ new Error("SW OPFS bridge is unavailable"));
-	const requestId = `sw-opfs-${Date.now()}-${++swBridgeRequestCounter}`;
-	return new Promise((resolve, reject) => {
-		let timeoutId = null;
-		const onMessage = (event) => {
-			const data = event?.data || {};
-			if (!data || typeof data !== "object") return;
-			if (data?.type !== "opfs-sw-response") return;
-			if (String(data?.requestId || "") !== requestId) return;
-			channel.removeEventListener("message", onMessage);
-			if (timeoutId) clearTimeout(timeoutId);
-			if (data?.ok) resolve(data?.result);
-			else reject(new Error(String(data?.error || "Unknown bridge error")));
-		};
-		channel.addEventListener("message", onMessage);
-		timeoutId = setTimeout(() => {
-			channel.removeEventListener("message", onMessage);
-			reject(/* @__PURE__ */ new Error("SW OPFS bridge timeout"));
-		}, timeoutMs);
-		channel.postMessage({
-			type: "opfs-sw-request",
-			requestId,
-			action: type,
-			payload
-		});
-	});
-};
-var ensureWorker = () => {
-	if (workerInitPromise) return workerInitPromise;
-	workerInitPromise = new Promise(async (resolve) => {
-		if (typeof Worker !== "undefined" && !isServiceWorker) try {
-			const baseChannel = await createWorkerChannel({
-				name: "opfs-worker",
-				script: WorkerWrapper
-			});
-			workerChannel = new QueuedWorkerChannel("opfs-worker", async () => baseChannel, {
-				timeout: 3e4,
-				retries: 3,
-				batching: true,
-				compression: false
-			});
-			resolve(workerChannel);
-		} catch (e) {
-			console.warn("OPFSUniformWorker instantiation failed, falling back to main thread...", e);
-			workerChannel = null;
-			resolve(null);
-		}
-		else {
-			workerChannel = null;
-			resolve(null);
-		}
-	});
-	return workerInitPromise;
-};
-var directHandlers = {
-	readDirectory: async ({ rootId, path, create }) => {
-		try {
-			const root = await navigator.storage.getDirectory();
-			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
-			let current = root;
-			for (const part of parts) current = await current.getDirectoryHandle(part, { create });
-			const entries = [];
-			for await (const [name, entry] of current.entries()) entries.push([name, entry]);
-			return entries;
-		} catch (e) {
-			console.warn("Direct readDirectory error:", e);
-			return [];
-		}
-	},
-	readFile: async ({ rootId, path, type }) => {
-		try {
-			const root = await navigator.storage.getDirectory();
-			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
-			const filename = parts.pop();
-			let dir = root;
-			for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: false });
-			const file = await (await dir.getFileHandle(filename, { create: false })).getFile();
-			if (type === "text") return await file.text();
-			if (type === "arrayBuffer") return await file.arrayBuffer();
-			return file;
-		} catch (e) {
-			console.warn("Direct readFile error:", e);
-			return null;
-		}
-	},
-	writeFile: async ({ rootId, path, data }) => {
-		try {
-			const root = await navigator.storage.getDirectory();
-			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
-			const filename = parts.pop();
-			let dir = root;
-			for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: true });
-			const writable = await (await dir.getFileHandle(filename, { create: true })).createWritable();
-			await writable.write(data);
-			await writable.close();
-			return true;
-		} catch (e) {
-			console.warn("Direct writeFile error:", e);
-			return false;
-		}
-	},
-	remove: async ({ rootId, path, recursive }) => {
-		try {
-			const root = await navigator.storage.getDirectory();
-			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
-			const name = parts.pop();
-			let dir = root;
-			for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: false });
-			await dir.removeEntry(name, { recursive });
-			return true;
-		} catch {
-			return false;
-		}
-	},
-	copy: async ({ from, to }) => {
-		try {
-			const copyRecursive = async (source, dest) => {
-				if (source.kind === "directory") for await (const [name, entry] of source.entries()) if (entry.kind === "directory") {
-					const newDest = await dest.getDirectoryHandle(name, { create: true });
-					await copyRecursive(entry, newDest);
-				} else {
-					const file = await entry.getFile();
-					const writable = await (await dest.getFileHandle(name, { create: true })).createWritable();
-					await writable.write(file);
-					await writable.close();
-				}
-				else {
-					const file = await source.getFile();
-					const writable = await dest.createWritable();
-					await writable.write(file);
-					await writable.close();
-				}
-			};
-			await copyRecursive(from, to);
-			return true;
-		} catch (e) {
-			console.warn("Direct copy error:", e);
-			return false;
-		}
-	},
-	observe: async () => false,
-	unobserve: async () => true,
-	mount: async () => true,
-	unmount: async () => true
-};
-var post = (type, payload = {}, transfer = []) => {
-	if (isServiceWorker && directHandlers[type]) return postViaSwBridge(type, payload).catch(() => directHandlers[type](payload));
-	return new Promise(async (resolve, reject) => {
-		try {
-			const channel = await ensureWorker();
-			if (!channel) {
-				if (directHandlers[type]) return resolve(directHandlers[type](payload));
-				return reject(/* @__PURE__ */ new Error("No worker channel available"));
-			}
-			let result;
-			try {
-				result = await channel.request(type, payload);
-			} catch (requestError) {
-				if (directHandlers[type]) return resolve(directHandlers[type](payload));
-				throw requestError;
-			}
-			if (result === false && (type === "writeFile" || type === "remove" || type === "copy")) {
-				if (directHandlers[type]) return resolve(directHandlers[type](payload));
-			}
-			resolve(result);
-		} catch (err) {
-			if (directHandlers[type]) try {
-				return resolve(directHandlers[type](payload));
-			} catch (fallbackError) {
-				return reject(fallbackError);
-			}
-			reject(err);
-		}
-	});
-};
-var getDir = (dest) => {
-	if (typeof dest != "string") return dest;
-	dest = dest?.trim?.() || dest;
-	if (!dest?.endsWith?.("/")) dest = dest?.trim?.()?.split?.("/")?.slice(0, -1)?.join?.("/")?.trim?.() || dest;
-	const p1 = !dest?.trim()?.endsWith("/") ? dest + "/" : dest;
-	return !p1?.startsWith("/") ? "/" + p1 : p1;
-};
-var generalFileImportDesc = {
-	startIn: "documents",
-	multiple: false,
-	types: [{
-		description: "files",
-		accept: { "application/*": [
-			".txt",
-			".md",
-			".html",
-			".htm",
-			".css",
-			".js",
-			".json",
-			".csv",
-			".xml",
-			".jpg",
-			".jpeg",
-			".png",
-			".gif",
-			".webp",
-			".svg",
-			".ico",
-			".mp3",
-			".wav",
-			".mp4",
-			".webm",
-			".pdf",
-			".zip",
-			".rar",
-			".7z"
-		] }
-	}]
-};
-var mappedRoots = /* @__PURE__ */ new Map([
-	["/", async () => await navigator?.storage?.getDirectory?.()],
-	["/user/", async () => await navigator?.storage?.getDirectory?.()],
-	["/assets/", async () => {
-		console.warn("Backend related API not implemented!");
-		return null;
-	}]
-]);
-var currentHandleMap = /* @__PURE__ */ new Map();
-/** Virtual Explorer / OPFS roots that `provide()` can read without HTTP. */
-var isVirtualFsPath = (path) => {
-	const raw = String(path || "").trim();
-	if (!raw) return false;
-	if (/^(?:https?:|blob:|data:|file:|mailto:)/i.test(raw)) return false;
-	if (!raw.startsWith("/")) return false;
-	let p = raw;
-	try {
-		if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw)) p = new URL(raw).pathname;
-	} catch {}
-	if (!p.startsWith("/")) p = `/${p}`;
-	if (p === "/user" || p.startsWith("/user/") || p === "/mounts" || p.startsWith("/mounts/") || p === "/sdcard" || p.startsWith("/sdcard/") || p === "/saf" || p.startsWith("/saf/")) return true;
-	for (const root of mappedRoots.keys()) {
-		if (root === "/" || root === "/user/" || root === "/assets/") continue;
-		if (p === root || p.startsWith(root) || `${p}/` === root) return true;
-	}
-	return false;
-};
-var matchMappedRoot = (path) => {
-	let p = String(path || "").trim() || "/";
-	try {
-		if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(p)) p = new URL(p).pathname || p;
-	} catch {}
-	if (!p.startsWith("/")) p = `/${p}`;
-	let best = null;
-	let bestLen = -1;
-	for (const [root, resolver] of mappedRoots.entries()) if (p === root || p.startsWith(root) || `${p}/` === root) {
-		if (root.length > bestLen) {
-			best = {
-				root,
-				resolver
-			};
-			bestLen = root.length;
-		}
-	}
-	return best;
-};
-/**
-* WHY: `getFileHandle` hyphen-rewrites OPFS `/user/` names. Local
-* `showDirectoryPicker` trees must keep exact filenames (`My Image.png`).
-*/
-var walkExactFile = async (root, rel) => {
-	const parts = String(rel || "").split("/").filter(Boolean);
-	if (!parts.length) return null;
-	let dir = root;
-	for (const seg of parts.slice(0, -1)) try {
-		dir = await dir.getDirectoryHandle(seg, { create: false });
-	} catch {
-		return null;
-	}
-	try {
-		return await dir.getFileHandle(parts[parts.length - 1], { create: false });
-	} catch {
-		return null;
-	}
-};
-/** Register a directory handle as a virtual root (`/mounts/<id>/`, etc.). */
-var registerDirectoryRoot = (root, handle) => {
-	if (!handle) return;
-	const key = String(root || "").endsWith("/") ? String(root) : `${root}/`;
-	if (!key.startsWith("/")) return;
-	mappedRoots.set(key, async () => handle);
-	const segs = key.split("/").filter(Boolean);
-	if (segs[0] === "mounts" && segs[1]) currentHandleMap.set(segs[1], handle);
-	currentHandleMap.set(key, handle);
-};
-var unregisterDirectoryRoot = (root) => {
-	const key = String(root || "").endsWith("/") ? String(root) : `${root}/`;
-	mappedRoots.delete(key);
-	currentHandleMap.delete(key);
-	const segs = key.split("/").filter(Boolean);
-	if (segs[0] === "mounts" && segs[1]) currentHandleMap.delete(segs[1]);
-};
-async function resolveRootHandle(rootHandle, relPath = "") {
-	if (rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) rootHandle = "/user/";
-	const cleanId = typeof rootHandle == "string" ? rootHandle?.trim?.()?.replace?.(/^\//, "")?.trim?.()?.split?.("/")?.filter?.((p) => !!p?.trim?.())?.at?.(0) : null;
-	if (cleanId) {
-		if (typeof localStorage != "undefined" && JSON.parse(localStorage?.getItem?.("opfs.mounted") || "[]").includes(cleanId)) rootHandle = currentHandleMap?.get(cleanId);
-		if (!rootHandle) rootHandle = await mappedRoots?.get?.(`/${cleanId}/`)?.() ?? await navigator.storage.getDirectory();
-	}
-	if (rootHandle instanceof FileSystemDirectoryHandle) return rootHandle;
-	const normalizedPath = relPath?.trim?.() || "/";
-	const pathForMatch = normalizedPath.startsWith("/") ? normalizedPath : "/" + normalizedPath;
-	let bestMatch = null;
-	let bestMatchLength = 0;
-	for (const [rootPath, rootResolver] of mappedRoots.entries()) if (pathForMatch.startsWith(rootPath) && rootPath.length > bestMatchLength) {
-		bestMatch = rootResolver;
-		bestMatchLength = rootPath.length;
-	}
-	try {
-		return (bestMatch ? await bestMatch() : null) || await navigator?.storage?.getDirectory?.();
-	} catch (error) {
-		console.warn("Failed to resolve root handle, falling back to OPFS root:", error);
-		return await navigator?.storage?.getDirectory?.();
-	}
-}
-function normalizePath(basePath = "", relPath) {
-	if (!relPath?.trim()) return basePath;
-	const cleanRelPath = relPath.trim();
-	if (cleanRelPath.startsWith("/")) return cleanRelPath;
-	const baseParts = basePath.split("/").filter((p) => p?.trim());
-	const relParts = cleanRelPath.split("/").filter((p) => p?.trim());
-	for (const part of relParts) if (part === ".") continue;
-	else if (part === "..") {
-		if (baseParts.length > 0) baseParts.pop();
-	} else baseParts.push(part);
-	return "/" + baseParts.join("/");
-}
-async function resolvePath(rootHandle, relPath, basePath = "") {
-	const normalizedRelPath = normalizePath(basePath, relPath);
-	return {
-		rootHandle: await resolveRootHandle(rootHandle, normalizedRelPath),
-		resolvedPath: normalizedRelPath
-	};
-}
-function handleError(logger, status, message) {
-	logger?.(status, message);
-	return null;
-}
-function defaultLogger(status, message) {
-	console.trace(`[${status}] ${message}`);
-}
-function detectTypeByRelPath(relPath) {
-	if (relPath?.trim()?.endsWith?.("/")) return "directory";
-	return "file";
-}
-function getMimeTypeByFilename(filename) {
-	return {
-		"txt": "text/plain",
-		"md": "text/markdown",
-		"html": "text/html",
-		"htm": "text/html",
-		"css": "text/css",
-		"js": "application/javascript",
-		"json": "application/json",
-		"csv": "text/csv",
-		"xml": "application/xml",
-		"jpg": "image/jpeg",
-		"jpeg": "image/jpeg",
-		"png": "image/png",
-		"gif": "image/gif",
-		"webp": "image/webp",
-		"svg": "image/svg+xml",
-		"ico": "image/x-icon",
-		"mp3": "audio/mpeg",
-		"wav": "audio/wav",
-		"mp4": "video/mp4",
-		"webm": "video/webm",
-		"pdf": "application/pdf",
-		"zip": "application/zip",
-		"rar": "application/vnd.rar",
-		"7z": "application/x-7z-compressed"
-	}[filename?.split?.(".")?.pop?.()?.toLowerCase?.()] || "application/octet-stream";
-}
-var hasFileExtension = (path) => {
-	return path?.trim?.()?.split?.(".")?.[1]?.trim?.()?.length > 0;
-};
-async function getDirectoryHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
-	try {
-		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
-		const parts = stripUserScopePrefix(resolvedPath).split("/").filter((p) => !!p?.trim?.());
-		if (parts.length > 0 && hasFileExtension(parts[parts.length - 1]?.trim?.())) parts?.pop?.();
-		let dir = resolvedRoot;
-		if (parts?.length > 0) for (const part of parts) {
-			dir = await dir?.getDirectoryHandle?.(part, { create });
-			if (!dir) break;
-		}
-		return dir;
-	} catch (e) {
-		return handleError(logger, "error", `getDirectoryHandle: ${e.message}`);
-	}
-}
-async function getFileHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
-	try {
-		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
-		const cleanPath = stripUserScopePrefix(resolvedPath);
-		const parts = cleanPath.split("/").filter((d) => !!d?.trim?.());
-		if (parts?.length == 0) return null;
-		const filePath = parts.length > 0 ? parts[parts.length - 1]?.trim?.()?.replace?.(/\s+/g, "-") : "";
-		const dirName = parts.length > 1 ? parts?.slice(0, -1)?.join?.("/")?.trim?.()?.replace?.(/\s+/g, "-") : "";
-		if (cleanPath?.trim?.()?.endsWith?.("/")) return null;
-		return (await getDirectoryHandle(resolvedRoot, dirName, {
-			create,
-			basePath
-		}, logger))?.getFileHandle?.(filePath, { create });
-	} catch (e) {
-		return handleError(logger, "error", `getFileHandle: ${e.message}`);
-	}
-}
-async function getHandler(rootHandle, relPath, options = {}, logger = defaultLogger) {
-	try {
-		const { rootHandle: resolvedRootHandle, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-		if (detectTypeByRelPath(resolvedPath) == "directory") {
-			const dir = await getDirectoryHandle(resolvedRootHandle, resolvedPath?.trim?.()?.replace?.(/\/$/, ""), options, logger);
-			if (dir) return {
-				type: "directory",
-				handle: dir
-			};
-		} else {
-			const file = await getFileHandle(resolvedRootHandle, resolvedPath, options, logger);
-			if (file) return {
-				type: "file",
-				handle: file
-			};
-		}
-		return null;
-	} catch (e) {
-		return handleError(logger, "error", `getHandler: ${e.message}`);
-	}
-}
-var directoryCacheMap = /* @__PURE__ */ new Map();
-function openDirectory(rootHandle, relPath, options = { create: false }, logger = defaultLogger) {
-	let cacheKey = "";
-	let localMapCache = observe(/* @__PURE__ */ new Map());
-	const statePromise = (async () => {
-		try {
-			const { rootHandle: resolvedRootHandle, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-			cacheKey = `${resolvedRootHandle?.name || "root"}:${resolvedPath}`;
-			return {
-				rootHandle: resolvedRootHandle,
-				resolvedPath
-			};
-		} catch {
-			return {
-				rootHandle: null,
-				resolvedPath: ""
-			};
-		}
-	})().then(async ({ rootHandle, resolvedPath }) => {
-		if (!resolvedPath) return null;
-		const existing = directoryCacheMap.get(cacheKey);
-		if (existing) {
-			existing.refCount++;
-			localMapCache = existing.mapCache;
-			return existing;
-		}
-		const mapCache = observe(/* @__PURE__ */ new Map());
-		localMapCache = mapCache;
-		const observationId = UUIDv4();
-		const dirHandlePromise = getDirectoryHandle(rootHandle, resolvedPath, options, logger);
-		const updateCache = async () => {
-			const entries = await post("readDirectory", {
-				rootId: "",
-				path: stripUserScopePrefix(resolvedPath),
-				create: options.create
-			}, rootHandle ? [rootHandle] : []);
-			if (!entries) return mapCache;
-			const entryMap = new Map(entries);
-			for (const key of mapCache.keys()) if (!entryMap.has(key)) mapCache.delete(key);
-			for (const [key, handle] of entryMap) if (!mapCache.has(key)) mapCache.set(key, handle);
-			return mapCache;
-		};
-		const cleanup = () => {
-			post("unobserve", { id: observationId });
-			observers.delete(observationId);
-			directoryCacheMap.delete(cacheKey);
-		};
-		observers.set(observationId, (changes) => {
-			for (const change of changes) {
-				if (!change?.name) continue;
-				if (change.type === "modified" || change.type === "created" || change.type === "appeared") mapCache.set(change.name, change.handle);
-				else if (change.type === "deleted" || change.type === "disappeared") mapCache.delete(change.name);
-			}
-		});
-		post("observe", {
-			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
-			id: observationId
-		}, rootHandle ? [rootHandle] : []);
-		updateCache();
-		const newState = {
-			mapCache,
-			dirHandle: dirHandlePromise,
-			resolvePath: resolvedPath,
-			observationId,
-			refCount: 1,
-			cleanup,
-			updateCache
-		};
-		directoryCacheMap.set(cacheKey, newState);
-		const entries = await Promise.all(await Array.fromAsync((await dirHandlePromise)?.entries?.() ?? []));
-		for (const [name, handle] of entries) if (!mapCache.has(name)) mapCache.set(name, handle);
-		return {
-			...newState,
-			mapCache
-		};
-	});
-	let disposed = false;
-	const dispose = () => {
-		if (disposed) return;
-		disposed = true;
-		statePromise.then((s) => {
-			if (!s) return;
-			s.refCount--;
-			if (s.refCount <= 0) s.cleanup();
-		}).catch(console.warn);
-	};
-	const handler = {
-		get(_target, prop) {
-			if (prop === Symbol.toStringTag || prop === Symbol.iterator || prop === "toString" || prop === "valueOf" || prop === "inspect" || prop === "constructor" || prop === "__proto__" || prop === "prototype") return;
-			if (prop === "dispose") return dispose;
-			if (prop === "getMap") return () => localMapCache;
-			if (prop === "entries") return () => localMapCache.entries();
-			if (prop === "keys") return () => localMapCache.keys();
-			if (prop === "values") return () => localMapCache.values();
-			if (prop === Symbol.iterator) return () => localMapCache[Symbol.iterator]();
-			if (prop === "size") return localMapCache.size;
-			if (prop === "has") return (k) => localMapCache.has(k);
-			if (prop === "get") return (k) => localMapCache.get(k);
-			if (prop === "entries") return () => localMapCache.entries();
-			if (prop === "keys") return () => localMapCache.keys();
-			if (prop === "values") return () => localMapCache.values();
-			if (prop === "refresh") return () => statePromise.then((s) => s?.updateCache?.()).then(() => pxy);
-			if (prop === "then" || prop === "catch" || prop === "finally") {
-				const p = statePromise.then(() => true);
-				return p[prop].bind(p);
-			}
-			return (...args) => statePromise.then(async (s) => {
-				if (!s) return void 0;
-				const dh = await s.dirHandle;
-				const v = dh?.[prop];
-				if (typeof v === "function") return v.apply(dh, args);
-				return v;
-			});
-		},
-		ownKeys() {
-			return Array.from(localMapCache.keys());
-		},
-		getOwnPropertyDescriptor() {
-			return {
-				enumerable: true,
-				configurable: true
-			};
-		}
-	};
-	const fx = function() {};
-	const pxy = new Proxy(fx, handler);
-	return pxy;
-}
-async function readFile(rootHandle, relPath, options = {}, logger = defaultLogger) {
-	try {
-		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-		return await post("readFile", {
-			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
-			type: "blob"
-		}, resolvedRoot ? [resolvedRoot] : []);
-	} catch (e) {
-		return handleError(logger, "error", `readFile: ${e.message}`);
-	}
-}
-async function writeFile(rootHandle, relPath, data, logger = defaultLogger) {
-	if (data instanceof FileSystemFileHandle) data = await data.getFile();
-	if (data instanceof FileSystemDirectoryHandle) {
-		const dstHandle = await getDirectoryHandle(await resolveRootHandle(rootHandle), relPath + (relPath?.trim?.()?.endsWith?.("/") ? "" : "/") + (data?.name || "")?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
-		return await copyFromOneHandlerToAnother(data, dstHandle, {})?.catch?.(console.warn.bind(console));
-	} else try {
-		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, "");
-		return await post("writeFile", {
-			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
-			data
-		}, resolvedRoot ? [resolvedRoot] : []) !== false;
-	} catch (e) {
-		return handleError(logger, "error", `writeFile: ${e.message}`);
-	}
-}
-async function removeFile(rootHandle, relPath, options = { recursive: true }, logger = defaultLogger) {
-	try {
-		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-		const candidates = userPathCandidates(resolvedPath);
-		let lastResult = false;
-		for (const candidate of candidates) {
-			lastResult = await post("remove", {
-				rootId: "",
-				path: candidate,
-				recursive: options.recursive
-			}, resolvedRoot ? [resolvedRoot] : []);
-			if (lastResult !== false) return true;
-		}
-		return lastResult !== false;
-	} catch (e) {
-		return handleError(logger, "error", `removeFile: ${e.message}`);
-	}
-}
-async function remove(rootHandle, relPath, options = {}, logger = defaultLogger) {
-	try {
-		return removeFile(rootHandle, relPath, {
-			recursive: true,
-			...options
-		}, logger);
-	} catch (e) {
-		return handleError(logger, "error", `remove: ${e.message}`);
-	}
-}
-var downloadFile = async (file, filename) => {
-	if (file instanceof FileSystemFileHandle) file = await file.getFile();
-	if (typeof file == "string") file = await provide(file);
-	filename = filename ?? file?.name;
-	if (!filename) return;
-	if ("msSaveOrOpenBlob" in self.navigator) self.navigator.msSaveOrOpenBlob(file, filename);
-	if (file instanceof FileSystemDirectoryHandle) {
-		let dstHandle = await showDirectoryPicker?.({ mode: "readwrite" })?.catch?.(console.warn.bind(console));
-		if (file && dstHandle) {
-			dstHandle = await getDirectoryHandle(dstHandle, file?.name || "", { create: true })?.catch?.(console.warn.bind(console)) || dstHandle;
-			return await copyFromOneHandlerToAnother(file, dstHandle, {})?.catch?.(console.warn.bind(console));
-		}
-		return;
-	}
-	const fx = await (self?.showOpenFilePicker ? new Promise((r) => r({
-		showOpenFilePicker: self?.showOpenFilePicker?.bind?.(window),
-		showSaveFilePicker: self?.showSaveFilePicker?.bind?.(window)
-	})) : __vitePreload(() => Promise.resolve().then(() => showOpenFilePicker_exports), void 0, import.meta.url));
-	if (window?.showSaveFilePicker) {
-		const writableFileStream = await (await fx?.showSaveFilePicker?.({ suggestedName: filename })?.catch?.(console.warn.bind(console)))?.createWritable?.({ keepExistingData: true })?.catch?.(console.warn.bind(console));
-		await writableFileStream?.write?.(file)?.catch?.(console.warn.bind(console));
-		await writableFileStream?.close?.()?.catch?.(console.warn.bind(console));
-	} else {
-		const a = document.createElement("a");
-		try {
-			a.href = URL.createObjectURL(file);
-		} catch (e) {
-			console.warn(e);
-		}
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		setTimeout(function() {
-			document.body.removeChild(a);
-			globalThis.URL.revokeObjectURL(a.href);
-		}, 0);
-	}
-};
-var provide = async (req = "", rw = false) => {
-	const requestUrl = (typeof req === "string" ? req : req?.url || "").trim();
-	if (!requestUrl) return null;
-	let pathname = requestUrl;
-	try {
-		pathname = new URL(requestUrl, location?.origin || self?.location?.origin || "http://localhost").pathname || requestUrl;
-	} catch {}
-	const cleanPath = pathname?.trim?.() || "/";
-	if (cleanPath?.startsWith?.("/user")) {
-		const path = stripUserScopePrefix(cleanPath);
-		const root = await navigator?.storage?.getDirectory?.();
-		if (!root) return null;
-		const handle = await getFileHandle(root, path, { create: !!rw }).catch(() => null);
-		if (!handle) return null;
-		if (rw) return handle?.createWritable?.();
-		return handle?.getFile?.();
-	}
-	const mapped = matchMappedRoot(cleanPath);
-	if (mapped && mapped.root !== "/user/" && mapped.root !== "/" && mapped.root !== "/assets/") {
-		const dir = await mapped.resolver().catch(() => null);
-		if (dir instanceof FileSystemDirectoryHandle) {
-			const fileHandle = await walkExactFile(dir, cleanPath.startsWith(mapped.root) ? cleanPath.slice(mapped.root.length) : cleanPath.replace(/^\/+/, ""));
-			if (!fileHandle) return null;
-			if (rw) return fileHandle.createWritable?.();
-			return fileHandle.getFile?.();
-		}
-		return null;
-	}
-	if (rw) return null;
-	if (isVirtualFsPath(cleanPath)) return null;
-	try {
-		const baseOrigin = String(location?.origin || self?.location?.origin || "").trim();
-		const fetchTarget = cleanPath.startsWith("/") ? new URL(cleanPath, baseOrigin || "http://localhost").toString() : requestUrl;
-		const r = await fetch(fetchTarget);
-		const blob = await r?.blob()?.catch?.(console.warn.bind(console));
-		const lastModifiedHeader = r?.headers?.get?.("Last-Modified");
-		const lastModified = lastModifiedHeader ? Date.parse(lastModifiedHeader) : 0;
-		if (blob) {
-			const fallbackName = cleanPath?.substring?.(cleanPath?.lastIndexOf?.("/") + 1) || "resource";
-			return new File([blob], fallbackName, {
-				type: blob?.type,
-				lastModified: isNaN(lastModified) ? 0 : lastModified
-			});
-		}
-	} catch (e) {
-		return handleError(defaultLogger, "error", `provide: ${e.message}`);
-	}
-	return null;
-};
-var dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
-	const fs = await resolveRootHandle(null);
-	const user = getDir(stripUserScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
-	file = file instanceof File ? file : new File([file], UUIDv4() + "." + (file?.type?.split?.("/")?.[1] || "tmp"));
-	const fp = user + (file?.name || "wallpaper")?.trim?.()?.replace?.(/\s+/g, "-");
-	await writeFile(fs, fp, file);
-	current?.set?.("/user" + fp?.trim?.()?.replace?.(/\s+/g, "-"), file);
-	return "/user" + fp?.trim?.();
-};
-var uploadFile = async (dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
-	const $e = "showOpenFilePicker";
-	dest = stripUserScopePrefix(dest);
-	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => Promise.resolve().then(() => showOpenFilePicker_exports), void 0, import.meta.url))?.[$e])({
-		...generalFileImportDesc,
-		multiple: true
-	})?.then?.(async (handles = []) => {
-		for (const handle of handles) await dropFile(handle instanceof File ? handle : await handle?.getFile?.(), dest, current);
-	});
-};
-var ghostImage = typeof Image != "undefined" ? new Image() : null;
-if (ghostImage) {
-	ghostImage.decoding = "async";
-	ghostImage.width = 24;
-	ghostImage.height = 24;
-	try {
-		ghostImage.src = URL.createObjectURL(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 384 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128z"/></svg>`], { type: "image/svg+xml" }));
-	} catch (e) {}
-}
-var copyFromOneHandlerToAnother = async (fromHandle, toHandle, options = {}, logger = defaultLogger) => {
-	return post("copy", {
-		from: fromHandle,
-		to: toHandle
-	}, [fromHandle, toHandle]);
-};
-var handleIncomingEntries = (data, destPath = "/user/", rootHandle = null, onItemHandled) => {
-	const tasks = [];
-	const items = Array.from(data?.items ?? []);
-	const files = Array.from(data?.files ?? []);
-	const dataArray = Array.isArray(data) ? data : [...data?.[Symbol.iterator] ? data : [data]];
-	return Promise.try(async () => {
-		const resolvedRoot = await resolveRootHandle(rootHandle);
-		const processItem = async (item) => {
-			let handle;
-			if (item.kind === "file" || item.kind === "directory") try {
-				handle = await item.getAsFileSystemHandle?.();
-			} catch {}
-			if (handle) {
-				if (handle.kind === "directory") {
-					const nwd = await getDirectoryHandle(resolvedRoot, destPath + (handle.name || "").trim().replace(/\s+/g, "-"), { create: true });
-					if (nwd) tasks.push(copyFromOneHandlerToAnother(handle, nwd, { create: true }));
-				} else {
-					const file = await handle.getFile();
-					const path = destPath + (file.name || handle.name).trim().replace(/\s+/g, "-");
-					tasks.push(writeFile(resolvedRoot, path, file).then(() => onItemHandled?.(file, path)));
-				}
-				return;
-			}
-			if (item.kind === "file" || item instanceof File) {
-				const file = item instanceof File ? item : item.getAsFile();
-				if (file) {
-					const path = destPath + file.name.trim().replace(/\s+/g, "-");
-					tasks.push(writeFile(resolvedRoot, path, file).then(() => onItemHandled?.(file, path)));
-				}
-				return;
-			}
-		};
-		if (items?.length > 0) for (const item of items) await processItem(item);
-		if (files?.length > 0) for (const file of files) await processItem(file);
-		if (dataArray?.length > 0) for (const item of dataArray) await processItem(item);
-		const uriList = data?.getData?.("text/uri-list") || data?.getData?.("text/plain");
-		if (uriList && typeof uriList === "string") {
-			const urls = uriList.split(/\r?\n/).filter(Boolean);
-			for (const url of urls) {
-				if (url.startsWith("file://")) continue;
-				if (url.startsWith("/user/")) {
-					const src = url.trim();
-					tasks.push(Promise.try(async () => {
-						const srcHandle = await getHandler(resolvedRoot, src);
-						if (srcHandle?.handle) {
-							const name = src.split("/").filter(Boolean).pop();
-							if (srcHandle.type === "directory") {
-								const nwd = await getDirectoryHandle(resolvedRoot, destPath + name, { create: true });
-								await copyFromOneHandlerToAnother(srcHandle.handle, nwd, { create: true });
-							} else {
-								const file = await srcHandle.handle.getFile();
-								const path = destPath + name;
-								await writeFile(resolvedRoot, path, file);
-								onItemHandled?.(file, path);
-							}
-						}
-					}));
-				} else tasks.push(Promise.try(async () => {
-					const file = await provide(url);
-					if (file) {
-						const path = destPath + file.name;
-						await writeFile(resolvedRoot, path, file);
-						onItemHandled?.(file, path);
-					}
-				}));
-			}
-		}
-		if (dataArray?.[0] instanceof ClipboardItem) {
-			for (const item of dataArray) for (const type of item.types) if (type.startsWith("image/") || type.startsWith("text/")) {
-				const blob = await item.getType(type);
-				const ext = type.split("/")[1].split("+")[0] || "txt";
-				const file = new File([blob], `clipboard-${Date.now()}.${ext}`, { type });
-				const path = destPath + file.name;
-				tasks.push(writeFile(resolvedRoot, path, file).then(() => onItemHandled?.(file, path)));
-			}
-		}
-		await Promise.allSettled(tasks).catch(console.warn.bind(console));
-	});
-};
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/Base64Data.ts
-var DEFAULT_MIME = "application/octet-stream";
-var DATA_URL_RE = /^data:(?<mime>[^;,]+)?(?<params>(?:;[^,]*)*?),(?<data>[\s\S]*)$/i;
-function canUseFromBase64() {
-	return typeof Uint8Array.fromBase64 === "function";
-}
-function tryDecodeURIComponent(s) {
-	try {
-		return decodeURIComponent(s);
-	} catch {
-		return s;
-	}
-}
-function likelyUriComponent(s) {
-	return /%[0-9A-Fa-f]{2}/.test(s) || s.includes("+");
-}
-function bytesToArrayBuffer(bytes) {
-	const buf = bytes.buffer;
-	if (buf instanceof ArrayBuffer) return buf.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-	const ab = new ArrayBuffer(bytes.byteLength);
-	new Uint8Array(ab).set(bytes);
-	return ab;
-}
-function parseDataUrl(input) {
-	const s = (input || "").trim();
-	if (!s.toLowerCase().startsWith("data:")) return null;
-	const m = s.match(DATA_URL_RE);
-	if (!m?.groups) return null;
-	return {
-		mimeType: (m.groups.mime || DEFAULT_MIME).trim() || DEFAULT_MIME,
-		isBase64: (m.groups.params || "").toLowerCase().includes(";base64"),
-		data: m.groups.data ?? ""
-	};
-}
-function decodeBase64ToBytes(base64, options = {}) {
-	const alphabet = options.alphabet || "base64";
-	const lastChunkHandling = options.lastChunkHandling || "loose";
-	const s = (base64 || "").trim();
-	if (canUseFromBase64()) return Uint8Array.fromBase64(s, {
-		alphabet,
-		lastChunkHandling
-	});
-	const normalized = alphabet === "base64url" ? s.replace(/-/g, "+").replace(/_/g, "/") : s;
-	const padLen = (4 - normalized.length % 4) % 4;
-	const padded = normalized + "=".repeat(padLen);
-	const binary = typeof atob === "function" ? atob(padded) : "";
-	const out = new Uint8Array(binary.length);
-	for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
-	return out;
-}
-async function blobToBytes(blob) {
-	const ab = await blob.arrayBuffer();
-	return new Uint8Array(ab);
-}
-function looksLikeBase64(s) {
-	const t = (s || "").trim();
-	if (!t) return {
-		isBase64: false,
-		alphabet: "base64"
-	};
-	const alphabet = /[-_]/.test(t) && !/[+/]/.test(t) ? "base64url" : "base64";
-	const cleaned = (alphabet === "base64url" ? t.replace(/-/g, "+").replace(/_/g, "/") : t).replace(/[\r\n\s]/g, "");
-	if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleaned)) return {
-		isBase64: false,
-		alphabet
-	};
-	if (cleaned.length < 8) return {
-		isBase64: false,
-		alphabet
-	};
-	return {
-		isBase64: true,
-		alphabet
-	};
-}
-function canParseUrl(value) {
-	try {
-		if (typeof URL === "undefined") return false;
-		if (typeof URL.canParse === "function") return URL.canParse(value);
-		new URL(value);
-		return true;
-	} catch {
-		return false;
-	}
-}
-function extensionByMimeType(mimeType) {
-	const t = (mimeType || "").toLowerCase().split(";")[0].trim();
-	if (!t) return "bin";
-	const mapped = {
-		"text/plain": "txt",
-		"text/markdown": "md",
-		"text/html": "html",
-		"application/json": "json",
-		"application/xml": "xml",
-		"image/jpeg": "jpg",
-		"image/png": "png",
-		"image/webp": "webp",
-		"image/gif": "gif",
-		"image/svg+xml": "svg",
-		"application/pdf": "pdf"
-	};
-	if (mapped[t]) return mapped[t];
-	const slashIdx = t.indexOf("/");
-	if (slashIdx <= 0 || slashIdx >= t.length - 1) return "bin";
-	let subtype = t.slice(slashIdx + 1);
-	if (subtype.includes("+")) subtype = subtype.split("+")[0];
-	if (subtype.includes(".")) subtype = subtype.split(".").pop() || subtype;
-	return subtype || "bin";
-}
-function fallbackHashHex(bytes) {
-	let h = 2166136261;
-	for (let i = 0; i < bytes.length; i++) {
-		h ^= bytes[i];
-		h = Math.imul(h, 16777619);
-	}
-	return (h >>> 0).toString(16).padStart(8, "0").repeat(8);
-}
-async function sha256Hex(bytes) {
-	try {
-		const subtle = globalThis.crypto?.subtle;
-		if (!subtle) return fallbackHashHex(bytes);
-		const digest = await subtle.digest("SHA-256", bytes);
-		const out = new Uint8Array(digest);
-		return Array.from(out, (b) => b.toString(16).padStart(2, "0")).join("");
-	} catch {
-		return fallbackHashHex(bytes);
-	}
-}
-function isBase64Like(input) {
-	return looksLikeBase64(input).isBase64;
-}
-async function normalizeDataAsset(input, options = {}) {
-	const maxBytes = options.maxBytes ?? 52428800;
-	const namePrefix = (options.namePrefix || "asset").trim() || "asset";
-	const preserveFileName = options.preserveFileName ?? false;
-	let source = "text";
-	let blob;
-	let incomingFile = null;
-	if (input instanceof File) {
-		source = "file";
-		incomingFile = input;
-		blob = options.mimeType && options.mimeType !== input.type ? new Blob([await input.arrayBuffer()], { type: options.mimeType }) : input;
-	} else if (input instanceof Blob) {
-		source = "blob";
-		blob = options.mimeType && options.mimeType !== input.type ? new Blob([await input.arrayBuffer()], { type: options.mimeType }) : input;
-	} else {
-		const raw = (input instanceof URL ? input.toString() : String(input ?? "")).trim();
-		const parsed = parseDataUrl(raw);
-		const decodedUri = options.uriComponent ? tryDecodeURIComponent(raw) : likelyUriComponent(raw) ? tryDecodeURIComponent(raw) : raw;
-		if (parsed) source = "data-url";
-		else if (canParseUrl(raw)) source = "url";
-		else if (isBase64Like(raw)) source = "base64";
-		else if (decodedUri !== raw && (parseDataUrl(decodedUri) || isBase64Like(decodedUri) || canParseUrl(decodedUri))) source = "uri";
-		else source = "text";
-		blob = await stringToBlob(source === "uri" ? decodedUri : raw, {
-			mimeType: options.mimeType,
-			uriComponent: options.uriComponent,
-			isBase64: source === "base64" ? true : void 0,
-			maxBytes
-		});
-	}
-	const bytes = await blobToBytes(blob);
-	if (bytes.byteLength > maxBytes) throw new Error(`Data too large: ${bytes.byteLength} bytes`);
-	const hash = await sha256Hex(bytes);
-	const mimeType = (options.mimeType || blob.type || DEFAULT_MIME).trim() || DEFAULT_MIME;
-	const extension = extensionByMimeType(mimeType);
-	const hashedName = options.filename || `${namePrefix}-${hash.slice(0, 16)}.${extension}`;
-	const finalName = preserveFileName && incomingFile?.name ? incomingFile.name : hashedName;
-	const file = incomingFile && preserveFileName && !options.mimeType ? incomingFile : new File([blob], finalName, { type: mimeType });
-	return {
-		hash,
-		name: file.name,
-		type: file.type || mimeType,
-		size: file.size,
-		source,
-		file
-	};
-}
-async function stringToBlobOrFile(input, options = {}) {
-	const maxBytes = options.maxBytes ?? 52428800;
-	const raw = (input ?? "").trim();
-	const parsedDataUrl = parseDataUrl(raw);
-	if (parsedDataUrl) {
-		const mimeType = options.mimeType || parsedDataUrl.mimeType || DEFAULT_MIME;
-		const payload = options.uriComponent ? tryDecodeURIComponent(parsedDataUrl.data) : likelyUriComponent(parsedDataUrl.data) ? tryDecodeURIComponent(parsedDataUrl.data) : parsedDataUrl.data;
-		if (options.isBase64 ?? parsedDataUrl.isBase64) {
-			const bytes = decodeBase64ToBytes(payload, {
-				alphabet: options.base64?.alphabet || "base64",
-				lastChunkHandling: options.base64?.lastChunkHandling || "loose"
-			});
-			if (bytes.byteLength > maxBytes) throw new Error(`Decoded data too large: ${bytes.byteLength} bytes`);
-			const blob = new Blob([bytesToArrayBuffer(bytes)], { type: mimeType });
-			if (!options.asFile) return blob;
-			return new File([blob], options.filename || "file", { type: mimeType });
-		}
-		const blob = new Blob([payload], { type: mimeType });
-		if (!options.asFile) return blob;
-		return new File([blob], options.filename || "file", { type: mimeType });
-	}
-	try {
-		if (typeof URL !== "undefined" && URL.canParse?.(raw)) {
-			const blob = await (await fetch(raw)).blob();
-			const mimeType = options.mimeType || blob.type || DEFAULT_MIME;
-			const typed = blob.type === mimeType ? blob : new Blob([await blob.arrayBuffer()], { type: mimeType });
-			if (!options.asFile) return typed;
-			return new File([typed], options.filename || "file", { type: mimeType });
-		}
-	} catch {}
-	const maybeDecoded = options.uriComponent ? tryDecodeURIComponent(raw) : likelyUriComponent(raw) ? tryDecodeURIComponent(raw) : raw;
-	const base64Hint = looksLikeBase64(maybeDecoded);
-	const isBase64 = options.isBase64 ?? base64Hint.isBase64;
-	const mimeType = options.mimeType || (isBase64 ? DEFAULT_MIME : "text/plain;charset=utf-8");
-	if (isBase64) {
-		const bytes = decodeBase64ToBytes(maybeDecoded, {
-			alphabet: options.base64?.alphabet || base64Hint.alphabet,
-			lastChunkHandling: options.base64?.lastChunkHandling || "loose"
-		});
-		if (bytes.byteLength > maxBytes) throw new Error(`Decoded data too large: ${bytes.byteLength} bytes`);
-		const blob = new Blob([bytesToArrayBuffer(bytes)], { type: mimeType });
-		if (!options.asFile) return blob;
-		return new File([blob], options.filename || "file", { type: mimeType });
-	}
-	const blob = new Blob([maybeDecoded], { type: mimeType });
-	if (!options.asFile) return blob;
-	return new File([blob], options.filename || "file", { type: mimeType });
-}
-async function stringToBlob(input, options = {}) {
-	return await stringToBlobOrFile(input, {
-		...options,
-		asFile: false
-	});
-}
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/WriteFileSmart-v2.ts
-var lureFsPromise = null;
-var getLureFs = () => {
-	if (!lureFsPromise) lureFsPromise = __vitePreload(() => Promise.resolve().then(() => src_exports$1).then((m) => ({
-		readFile: m.readFile,
-		writeFile: m.writeFile
-	})), void 0, import.meta.url);
-	return lureFsPromise;
-};
-var toSlug = (input, toLower = true) => {
-	let s = String(input || "").trim();
-	if (toLower) s = s.toLowerCase();
-	s = s.replace(/\s+/g, "-");
-	s = s.replace(/[^a-z0-9_.\-+#&]/g, "-");
-	s = s.replace(/-+/g, "-");
-	return s;
-};
-var inferExtFromMime = (mime = "") => {
-	if (!mime) return "";
-	if (mime.includes("json")) return "json";
-	if (mime.includes("markdown")) return "md";
-	if (mime.includes("plain")) return "txt";
-	if (mime === "image/jpeg" || mime === "image/jpg") return "jpg";
-	if (mime === "image/png") return "png";
-	if (mime.startsWith("image/")) return mime.split("/").pop() || "";
-	if (mime.includes("html")) return "html";
-	return "";
-};
-var splitPath = (path) => String(path || "").split("/").filter(Boolean);
-var ensureDir = (p) => p.endsWith("/") ? p : p + "/";
-var joinPath = (parts, absolute = true) => (absolute ? "/" : "") + parts.filter(Boolean).join("/");
-var sanitizePathSegments = (path) => {
-	return joinPath(splitPath(path).map((p) => toSlug(p)));
-};
-var DEFAULT_ARRAY_KEYS = [
-	"id",
-	"_id",
-	"key",
-	"slug",
-	"name"
-];
-var isPlainObject = (v) => Object.prototype.toString.call(v) === "[object Object]";
-function dedupeArray(items, opts) {
-	const keys = Array.isArray(opts.arrayKey) ? opts.arrayKey : opts.arrayKey ? [opts.arrayKey] : DEFAULT_ARRAY_KEYS;
-	const result = [];
-	const primitiveSet = /* @__PURE__ */ new Set();
-	const objMap = /* @__PURE__ */ new Map();
-	const stringifiedSet = /* @__PURE__ */ new Set();
-	for (const it of items) {
-		if (it == null) continue;
-		if (isPlainObject(it)) {
-			let dedupeKey;
-			for (const k of keys) if (k in it && it[k] != null) {
-				dedupeKey = String(it[k]);
-				break;
-			}
-			if (dedupeKey != null) {
-				if (!objMap.has(dedupeKey)) {
-					objMap.set(dedupeKey, it);
-					result.push(it);
-				}
-			} else {
-				const sig = safeStableStringify(it);
-				if (!stringifiedSet.has(sig)) {
-					stringifiedSet.add(sig);
-					result.push(it);
-				}
-			}
-		} else if (Array.isArray(it)) {
-			const sig = safeStableStringify(it);
-			if (!stringifiedSet.has(sig)) {
-				stringifiedSet.add(sig);
-				result.push(it);
-			}
-		} else if (!primitiveSet.has(it)) {
-			primitiveSet.add(it);
-			result.push(it);
-		}
-	}
-	return result;
-}
-function mergeDeepUnique(a, b, opts) {
-	if (Array.isArray(a) && Array.isArray(b)) switch (opts.arrayStrategy) {
-		case "replace": return b.slice();
-		case "concat": return a.concat(b);
-		default: return dedupeArray(a.concat(b), { arrayKey: opts.arrayKey });
-	}
-	if (isPlainObject(a) && isPlainObject(b)) {
-		const out = { ...a };
-		for (const k of Object.keys(b)) if (k in a) out[k] = mergeDeepUnique(a[k], b[k], opts);
-		else out[k] = b[k];
-		return out;
-	}
-	return b;
-}
-function safeStableStringify(obj) {
-	if (!isPlainObject(obj)) return JSON.stringify(obj);
-	const keys = Object.keys(obj).sort();
-	const o = {};
-	for (const k of keys) o[k] = obj[k];
-	return JSON.stringify(o);
-}
-async function blobToText(blob) {
-	return await blob.text();
-}
-async function readFileAsJson(root, fullPath) {
-	try {
-		const { readFile } = await getLureFs();
-		const existing = await readFile(root, fullPath)?.catch?.(console.warn.bind(console));
-		if (!existing) return null;
-		const text = await blobToText(existing);
-		if (!text?.trim()) return null;
-		return JSOX.parse(text);
-	} catch {
-		return null;
-	}
-}
-var writeFileSmart = async (root, dirOrPath, file, options = {}) => {
-	const { writeFile } = await getLureFs();
-	const { forceExt, ensureJson, toLower = true, sanitize = true, mergeJson, arrayStrategy = "union", arrayKey, jsonSpace = 2 } = options;
-	let raw = String(dirOrPath || "").trim();
-	const isDirHint = raw.endsWith("/");
-	const hasFileToken = !isDirHint && splitPath(raw).length > 0 && raw.includes(".");
-	let dirPath = isDirHint ? raw : hasFileToken ? raw.split("/").slice(0, -1).join("/") : raw;
-	let desiredName = hasFileToken ? raw.split("/").pop() || "" : file?.name || "";
-	dirPath = dirPath || "/";
-	desiredName = desiredName || Date.now() + "";
-	const lastDot = desiredName.lastIndexOf(".");
-	let base = lastDot > 0 ? desiredName.slice(0, lastDot) : desiredName;
-	let ext = forceExt || (ensureJson ? "json" : lastDot > 0 ? desiredName.slice(lastDot + 1) : inferExtFromMime(file?.type || "")) || "";
-	if (sanitize) {
-		dirPath = sanitizePathSegments(dirPath);
-		base = toSlug(base, toLower);
-	}
-	const finalName = ext ? `${base}.${ext}` : base;
-	const fullPath = ensureDir(dirPath) + finalName;
-	if (mergeJson !== false && (ensureJson || ext.toLowerCase() === "json" || file?.type === "application/json")) try {
-		let incomingJson;
-		if (file instanceof File || file instanceof Blob) {
-			const txt = await blobToText(file);
-			incomingJson = txt?.trim() ? JSOX.parse(txt) : {};
-		} else incomingJson = file;
-		const existingJson = await readFileAsJson(root, fullPath)?.catch?.(console.warn.bind(console));
-		let merged = existingJson != null ? mergeDeepUnique(existingJson, incomingJson, {
-			arrayStrategy,
-			arrayKey
-		}) : incomingJson;
-		const jsonString = JSON.stringify(merged, void 0, jsonSpace);
-		const rs = await writeFile(root, fullPath, new File([jsonString], finalName, { type: "application/json" }))?.catch?.(console.warn.bind(console));
-		if (typeof document !== "undefined") document?.dispatchEvent?.(new CustomEvent("rs-fs-changed", {
-			detail: rs,
-			bubbles: true,
-			composed: true,
-			cancelable: true
-		}));
-		return rs;
-	} catch (err) {
-		console.warn("writeFileSmart JSON merge failed, falling back to raw write:", err);
-	}
-	let toWrite;
-	if (file instanceof File) {
-		if (file.name === finalName) toWrite = file;
-		else {
-			const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
-			const buf = await file.arrayBuffer();
-			toWrite = new File([buf], finalName, { type });
-		}
-	} else {
-		const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
-		toWrite = new File([await file.arrayBuffer()], finalName, { type });
-	}
-	const rs = await writeFile(root, fullPath, toWrite)?.catch?.(console.warn.bind(console));
-	if (typeof document !== "undefined") document?.dispatchEvent?.(new CustomEvent("rs-fs-changed", {
-		detail: rs,
-		bubbles: true,
-		composed: true,
-		cancelable: true
-	}));
-	return rs;
-};
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/FsWatch.ts
-var matchPath = (path = "", dir = "") => {
-	const normalizedDir = dir.endsWith("/") ? dir : `${dir}/`;
-	return path.startsWith(normalizedDir);
-};
-var channel = new BroadcastChannel("rs-fs");
-var watchers = /* @__PURE__ */ new Map();
-channel.addEventListener("close", () => watchers.clear());
-channel.addEventListener("message", (event) => {
-	const payload = event?.data;
-	if (!payload || payload.type !== "commit-result" && payload.type !== "commit-to-clipboard") return;
-	const results = payload?.results ?? [];
-	if (!Array.isArray(results) || !results.length) return;
-	for (const [dir, listeners] of watchers.entries()) {
-		if (!listeners.size) continue;
-		if (!results.some((item) => matchPath(item?.path, dir))) continue;
-		for (const listener of listeners) try {
-			listener();
-		} catch (e) {
-			console.warn(e);
-		}
-	}
-});
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/FileHandling.ts
-var FileHandler = class {
-	options;
-	dragOverElements = /* @__PURE__ */ new Set();
-	constructor(options) {
-		this.options = { ...options };
-	}
-	/**
-	* Programmatically add files into the same pipeline as UI selection / DnD / paste.
-	* Used by PWA share-target and launchQueue ingestion.
-	*/
-	addFiles(files) {
-		if (!Array.isArray(files) || files.length === 0) return;
-		return this.options.onFilesAdded(files);
-	}
-	/**
-	* Set up file input element with file selection
-	*/
-	setupFileInput(container, accept = "*") {
-		const fileInput = document.createElement("input");
-		fileInput.type = "file";
-		fileInput.multiple = true;
-		fileInput.accept = accept;
-		fileInput.style.display = "none";
-		fileInput.addEventListener("change", (e) => {
-			const files = Array.from(e.target.files || []);
-			if (files.length > 0) this.options.onFilesAdded(files);
-			fileInput.value = "";
-		});
-		container.append(fileInput);
-		return fileInput;
-	}
-	/**
-	* Set up drag and drop handling for an element
-	*/
-	setupDragAndDrop(element) {
-		element.addEventListener("dragover", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			this.addDragOver(element);
-		});
-		element.addEventListener("dragleave", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			this.removeDragOver(element);
-		});
-		element.addEventListener("drop", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			this.removeDragOver(element);
-			const files = Array.from(e.dataTransfer?.files || []);
-			if (files.length > 0) this.options.onFilesAdded(files);
-		});
-	}
-	/**
-	* Set up paste handling for an element
-	*/
-	setupPasteHandling(element) {
-		element.addEventListener("paste", (e) => {
-			const files = Array.from(e.clipboardData?.files || []);
-			if (files.length > 0) {
-				e.preventDefault();
-				this.options.onFilesAdded(files);
-			}
-		});
-	}
-	/**
-	* Set up all file handling for a container (file input button, drag & drop, paste)
-	*/
-	setupCompleteFileHandling(container, fileSelectButton, dropZone, accept = "*") {
-		const fileInput = this.setupFileInput(container, accept);
-		fileSelectButton.addEventListener("click", () => {
-			fileInput.click();
-		});
-		if (dropZone) this.setupDragAndDrop(dropZone);
-		this.setupPasteHandling(container);
-	}
-	/**
-	* Validate file types and sizes
-	*/
-	validateFiles(files, options = {}) {
-		const { maxSize, allowedTypes, maxFiles } = options;
-		const valid = [];
-		const invalid = [];
-		if (maxFiles && files.length > maxFiles) {
-			invalid.push(...files.slice(maxFiles).map((file) => ({
-				file,
-				reason: `Too many files. Maximum ${maxFiles} files allowed.`
-			})));
-			files = files.slice(0, maxFiles);
-		}
-		for (const file of files) {
-			let isValid = true;
-			let reason = "";
-			if (maxSize && file.size > maxSize) {
-				isValid = false;
-				reason = `File too large. Maximum size is ${this.formatFileSize(maxSize)}.`;
-			}
-			if (allowedTypes && allowedTypes.length > 0) {
-				if (!allowedTypes.some((type) => {
-					if (type.includes("*")) return file.type.startsWith(type.replace("/*", "/"));
-					return file.type === type;
-				})) {
-					isValid = false;
-					reason = reason || `File type not allowed. Allowed types: ${allowedTypes.join(", ")}.`;
-				}
-			}
-			if (isValid) valid.push(file);
-			else invalid.push({
-				file,
-				reason
-			});
-		}
-		return {
-			valid,
-			invalid
-		};
-	}
-	/**
-	* Read file content as text
-	*/
-	async readFileAsText(file, onProgress) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
-			reader.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to read file: ${file.name}`));
-			if (onProgress) reader.onprogress = (e) => {
-				if (e.lengthComputable) onProgress(e.loaded, e.total);
-			};
-			reader.readAsText(file);
-		});
-	}
-	/**
-	* Read file content as ArrayBuffer
-	*/
-	async readFileAsArrayBuffer(file) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
-			reader.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to read file: ${file.name}`));
-			reader.readAsArrayBuffer(file);
-		});
-	}
-	/**
-	* Read file content as Data URL
-	*/
-	async readFileAsDataURL(file) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
-			reader.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to read file: ${file.name}`));
-			reader.readAsDataURL(file);
-		});
-	}
-	/**
-	* Read multiple files as text
-	*/
-	async readFilesAsText(files, onProgress) {
-		const results = [];
-		for (const file of files) try {
-			const content = await this.readFileAsText(file, (loaded, total) => {
-				onProgress?.(file, loaded, total);
-			});
-			results.push({
-				file,
-				content
-			});
-		} catch (error) {
-			console.warn(`Failed to read file ${file.name}:`, error);
-		}
-		return results;
-	}
-	/**
-	* Get file icon based on MIME type
-	*/
-	getFileIcon(mimeType) {
-		if (mimeType.startsWith("image/")) return "🖼️";
-		if (mimeType === "application/pdf") return "📄";
-		if (mimeType.includes("json")) return "📋";
-		if (mimeType.includes("text") || mimeType.includes("markdown")) return "📝";
-		if (mimeType.includes("javascript") || mimeType.includes("typescript")) return "📜";
-		if (mimeType.includes("css")) return "🎨";
-		if (mimeType.includes("html")) return "🌐";
-		if (mimeType.startsWith("video/")) return "🎥";
-		if (mimeType.startsWith("audio/")) return "🎵";
-		if (mimeType.includes("zip") || mimeType.includes("rar")) return "📦";
-		return "📄";
-	}
-	/**
-	* Format file size for display
-	*/
-	formatFileSize(bytes) {
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-		if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
-		return `${(bytes / 1073741824).toFixed(1)} GB`;
-	}
-	/**
-	* Check if a file is likely a markdown file
-	*/
-	isMarkdownFile(file) {
-		const name = file.name.toLowerCase();
-		const type = file.type.toLowerCase();
-		return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".mdown") || name.endsWith(".mkd") || name.endsWith(".mkdn") || name.endsWith(".mdtxt") || name.endsWith(".mdtext") || type.includes("markdown") || type.includes("text");
-	}
-	/**
-	* Check if a file is an image
-	*/
-	isImageFile(file) {
-		return file.type.startsWith("image/");
-	}
-	/**
-	* Check if a file is a text file
-	*/
-	isTextFile(file) {
-		return file.type.startsWith("text/") || this.isMarkdownFile(file) || file.type.includes("javascript") || file.type.includes("typescript") || file.type.includes("css") || file.type.includes("html") || file.type.includes("json") || file.type.includes("xml");
-	}
-	/**
-	* Check if a file is a binary file
-	*/
-	isBinaryFile(file) {
-		return !this.isTextFile(file) && !this.isImageFile(file);
-	}
-	/**
-	* Get file metadata
-	*/
-	getFileMetadata(file) {
-		const extension = file.name.split(".").pop()?.toLowerCase() || "";
-		const isText = this.isTextFile(file);
-		const isImage = this.isImageFile(file);
-		const isBinary = this.isBinaryFile(file);
-		return {
-			name: file.name,
-			extension,
-			size: file.size,
-			type: file.type,
-			lastModified: file.lastModified,
-			isText,
-			isImage,
-			isBinary,
-			formattedSize: this.formatFileSize(file.size),
-			icon: this.getFileIcon(file.type)
-		};
-	}
-	/**
-	* Get files metadata for multiple files
-	*/
-	getFilesMetadata(files) {
-		return files.map((file) => this.getFileMetadata(file));
-	}
-	addDragOver(element) {
-		if (!this.dragOverElements.has(element)) {
-			this.dragOverElements.add(element);
-			element.classList.add("drag-over");
-		}
-	}
-	removeDragOver(element) {
-		if (this.dragOverElements.has(element)) {
-			this.dragOverElements.delete(element);
-			element.classList.remove("drag-over");
-		}
-	}
-	/**
-	* Manually trigger file processing with the provided files
-	*/
-	processFiles(files) {
-		this.options.onFilesAdded(files);
-	}
-	/**
-	* Create a downloadable file from content
-	*/
-	createDownloadableFile(content, filename, mimeType) {
-		let blob;
-		if (content instanceof Blob) blob = content;
-		else if (content instanceof ArrayBuffer) blob = new Blob([content], { type: mimeType || "application/octet-stream" });
-		else blob = new Blob([content], { type: mimeType || "text/plain;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		a.style.display = "none";
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		setTimeout(() => URL.revokeObjectURL(url), 100);
-	}
-	/**
-	* Create a shareable file URL
-	*/
-	createFileURL(file) {
-		return URL.createObjectURL(file);
-	}
-	/**
-	* Revoke a file URL to free memory
-	*/
-	revokeFileURL(url) {
-		URL.revokeObjectURL(url);
-	}
-	/**
-	* Clean up event listeners and references
-	*/
-	destroy() {
-		this.dragOverElements.clear();
-	}
-};
-/**
-* Utility function to create a file handler with default options
-*/
-function createFileHandler(options) {
-	return new FileHandler(options);
-}
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/markdown-assets.ts
-/** True for `./assets/x`, `docs/a.md` — not http(s)/blob/data/#. */
-var isMarkdownRelativeRef = (value) => {
-	const raw = String(value || "").trim();
-	return Boolean(raw) && !/^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/|#|data:|blob:)/.test(raw);
-};
-/** Keep the markdown-relative token (`./assets/x.png`) even after the browser resolved it to the PWA origin. */
-var originalRelFromRef = (value) => {
-	const raw = String(value || "").trim();
-	if (!raw || raw.startsWith("#") || raw.startsWith("blob:") || raw.startsWith("data:")) return "";
-	if (isMarkdownRelativeRef(raw)) return raw;
-	try {
-		const url = new URL(raw, globalThis.location?.href || "http://localhost/");
-		if (globalThis.location?.origin && url.origin === globalThis.location.origin) return url.pathname.replace(/^\/+/, "");
-	} catch {}
-	return "";
-};
-/**
-* Main-thread `provide()` of a bound relative path (`/mounts/md-xxx/` + `./assets/logo.png`).
-* WHY: skips OPFS worker + HTTP fetch (JXL hooks those). Mapped `/mounts/` uses `walkExactFile`.
-*/
-var provideBoundRelative = async (mountRoot, originalRel, sourceUrl) => {
-	const rel = originalRelFromRef(originalRel) || String(originalRel || "").trim();
-	if (!rel) return null;
-	const bases = [];
-	if (sourceUrl && isVirtualFsPath(sourceUrl)) bases.push(getDir(sourceUrl));
-	if (mountRoot) bases.push(mountRoot);
-	const seen = /* @__PURE__ */ new Set();
-	for (const base of bases) for (const candidate of relPathCandidates(rel)) {
-		const path = normalizePath(base, candidate);
-		if (!path || seen.has(path)) continue;
-		seen.add(path);
-		const file = await provide(path).catch(() => null);
-		if (file) return file;
-	}
-	return null;
-};
-/** `assets/logo/x.png` → also `logo/x.png`, `x.png` (picker was `assets/` or `logo/`). */
-var relPathCandidates = (rel) => {
-	const clean = String(rel || "").trim().replace(/^\.\//, "").replace(/^\/+/, "");
-	if (!clean || /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/)/.test(clean)) return [];
-	const parts = clean.split(/[\\/]/).filter(Boolean);
-	return parts.map((_, i) => parts.slice(i).join("/"));
-};
-var findFileByBasename = async (dir, basename, depth = 5) => {
-	try {
-		return await (await dir.getFileHandle(basename, { create: false })).getFile();
-	} catch {}
-	if (depth <= 0) return null;
-	for await (const [, handle] of dir.entries()) {
-		if (handle.kind !== "directory") continue;
-		const found = await findFileByBasename(handle, basename, depth - 1);
-		if (found) return found;
-	}
-	return null;
-};
-/** Walk a picked folder so the viewer can resolve `./assets/…` by relative path or basename. */
-var indexDirectoryFiles = async (dir, prefix = "", depth = 8, acc = []) => {
-	if (depth < 0) return acc;
-	for await (const [name, handle] of dir.entries()) {
-		const rel = prefix ? `${prefix}/${name}` : name;
-		if (handle.kind === "file") try {
-			acc.push({
-				rel,
-				file: await handle.getFile()
-			});
-		} catch {}
-		else if (handle.kind === "directory") await indexDirectoryFiles(handle, rel, depth - 1, acc);
-	}
-	return acc;
-};
-/** Read a markdown-relative file from a picked directory (any ancestor of the file). */
-var resolveFileUnderDirectory = async (dir, rel) => {
-	if (!dir) return null;
-	const candidates = relPathCandidates(rel);
-	for (const candidate of candidates) {
-		const handle = await walkExactFile(dir, candidate);
-		if (!handle) continue;
-		try {
-			return await handle.getFile();
-		} catch {}
-	}
-	const base = candidates.at(-1);
-	if (!base || base.includes("/")) return null;
-	return findFileByBasename(dir, base);
-};
-/** Chromium File System Access — pick the folder that holds images / includes. */
-var pickAssetDirectory = async (options = {}) => {
-	const pick = globalThis.showDirectoryPicker;
-	if (typeof pick !== "function") return null;
-	try {
-		return await pick({
-			mode: options.mode || "read",
-			id: options.id || "markdown-assets",
-			startIn: options.startIn
-		});
-	} catch (error) {
-		if (error?.name === "AbortError") return null;
-		console.warn("[markdown-assets] showDirectoryPicker failed", error);
-		return null;
-	}
-};
-/** Watch a handle with experimental FileSystemObserver. */
-var observeFileSystemHandle = (handle, onRecords) => {
-	const Ctor = globalThis.FileSystemObserver;
-	if (typeof Ctor !== "function" || !handle) return null;
-	try {
-		const observer = new Ctor((records) => onRecords(records));
-		const obs = observer;
-		Promise.resolve(obs.observe(handle, { recursive: true })).catch(() => Promise.resolve(obs.observe(handle))).catch(() => {});
-		return { disconnect: () => observer.disconnect?.() };
-	} catch {
-		return null;
-	}
-};
-/** Map a picked directory to `/mounts/<id>/` for `provide()` + relative markdown URLs. */
-var mountPickedDirectory = (dir, prefix = "md") => {
-	const root = `/mounts/${prefix}-${Date.now().toString(36)}/`;
-	registerDirectoryRoot(root, dir);
-	return root;
-};
-/** Walk a directory tree for the relative path of a file handle. */
-var findEntryRelPath = async (dir, target) => {
-	for await (const [name, handle] of dir.entries()) if (handle.kind === "file") try {
-		if (await handle.isSameEntry(target)) return name;
-	} catch {}
-	else if (handle.kind === "directory") {
-		const inner = await findEntryRelPath(handle, target);
-		if (inner) return `${name}/${inner}`;
-	}
-	return null;
-};
-var ABSOLUTE_OR_EMBEDDED = /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/|#|data:|blob:)/;
-/** Relative `![](…)` / `src` / `href` refs that need a sibling folder or sidecar files. */
-var collectRelativeMarkdownAssetRefs = (markdown) => {
-	const refs = /* @__PURE__ */ new Set();
-	const md = String(markdown || "");
-	for (const re of [/!\[[^\]]*\]\(\s*<?([^)\s>]+)>?/g, /\b(?:src|href)=["']([^"']+)["']/gi]) {
-		re.lastIndex = 0;
-		let match = re.exec(md);
-		while (match) {
-			const raw = String(match[1] || "").trim();
-			if (raw && !ABSOLUTE_OR_EMBEDDED.test(raw)) refs.add(raw.replace(/^\.\//, ""));
-			match = re.exec(md);
-		}
-	}
-	return [...refs];
-};
-var basenameOf = (value) => String(value || "").split(/[\\/]/).pop() || String(value || "");
-/** True when the markdown points at local assets that are not already in the transfer. */
-var markdownNeedsBoundDirectory = (markdown, sidecarNames = []) => {
-	const refs = collectRelativeMarkdownAssetRefs(markdown);
-	if (!refs.length) return false;
-	const names = new Set(sidecarNames.map((name) => basenameOf(name).toLowerCase()).filter(Boolean));
-	return refs.some((ref) => !names.has(basenameOf(ref).toLowerCase()));
-};
-/**
-* Offer `showDirectoryPicker` (same user-activation as Launch Queue when possible).
-* Cancel / missing API → null; caller continues with the File body alone.
-*/
-var bindDirectoryForLaunchedFiles = async (options) => {
-	const files = Array.isArray(options.files) ? options.files : [];
-	const mdName = String(options.filename || "").trim();
-	const mdFile = mdName && files.find((file) => file.name === mdName) || files.find((file) => /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/i.test(file.name)) || files[0];
-	let text = String(options.markdownText || "");
-	if (!text && mdFile) try {
-		text = await mdFile.text();
-	} catch {
-		text = "";
-	}
-	const sidecars = files.filter((file) => file !== mdFile).map((file) => file.name);
-	if (!markdownNeedsBoundDirectory(text, sidecars)) return null;
-	const dir = await pickAssetDirectory({
-		startIn: options.startIn,
-		id: "markdown-assets",
-		mode: "read"
-	});
-	if (!dir) return null;
-	const root = mountPickedDirectory(dir, "md");
-	let rel = mdFile?.name || mdName || "document.md";
-	const start = options.startIn;
-	if (start && start.kind === "file") {
-		const found = await findEntryRelPath(dir, start);
-		if (found) rel = found;
-	}
-	return {
-		root,
-		virtualPath: `${root}${rel}`
-	};
-};
-var MARKDOWN_INPUT_ACCEPT = ".md,.markdown,.mdown,.mkd,.mkdn,.mdtxt,.mdtext,.txt,text/markdown,text/plain";
-var pickFilesViaInput = (options) => new Promise((resolve) => {
-	const input = document.createElement("input");
-	input.type = "file";
-	if (options.accept) input.accept = options.accept;
-	if (options.multiple) input.multiple = true;
-	if (options.directory) {
-		input.setAttribute("webkitdirectory", "");
-		input.setAttribute("directory", "");
-		input.multiple = true;
-	}
-	const finish = (files) => resolve(files);
-	input.addEventListener("change", () => finish(Array.from(input.files || [])), { once: true });
-	input.addEventListener("cancel", () => finish([]), { once: true });
-	input.click();
-});
-/** FSA when present; Capacitor / CRX / Firefox fall back to `<input type=file>`. */
-var pickMarkdownFile = async () => {
-	const pickFile = globalThis.showOpenFilePicker;
-	if (typeof pickFile === "function") try {
-		const [handle] = await pickFile({
-			multiple: false,
-			types: [{
-				description: "Markdown",
-				accept: {
-					"text/markdown": [
-						".md",
-						".markdown",
-						".mdown",
-						".mkd"
-					],
-					"text/plain": [".txt"]
-				}
-			}]
-		});
-		if (!handle) return null;
-		return {
-			file: await handle.getFile(),
-			sidecars: []
-		};
-	} catch (error) {
-		if (error?.name === "AbortError") return null;
-	}
-	const files = await pickFilesViaInput({ accept: MARKDOWN_INPUT_ACCEPT });
-	return files[0] ? {
-		file: files[0],
-		sidecars: []
-	} : null;
-};
-/**
-* Folder of images / includes. Chromium FSA first; otherwise `webkitdirectory`
-* (Capacitor WebView + CRX) so relative `![](./assets/…)` can resolve from sidecars.
-*/
-var pickSidecarDirectoryFiles = async () => {
-	const dir = await pickAssetDirectory({
-		id: "markdown-assets",
-		mode: "read"
-	});
-	if (dir) return {
-		files: (await indexDirectoryFiles(dir)).map((row) => {
-			try {
-				Object.defineProperty(row.file, "webkitRelativePath", { value: row.rel });
-			} catch {}
-			return row.file;
-		}),
-		directory: dir,
-		root: mountPickedDirectory(dir, "md")
-	};
-	return {
-		files: await pickFilesViaInput({ directory: true }),
-		directory: null,
-		root: null
-	};
-};
-/** PWA FSA → CRX `chrome.downloads` → Web Share (Capacitor) → `<a download>`. */
-var saveMarkdownBlob = async (content, filename) => {
-	const name = String(filename || "document.md").trim() || "document.md";
-	const savePicker = globalThis.showSaveFilePicker;
-	if (typeof savePicker === "function") try {
-		const writable = await (await savePicker({
-			suggestedName: name,
-			types: [{
-				description: "Markdown files",
-				accept: { "text/markdown": [".md", ".markdown"] }
-			}]
-		})).createWritable();
-		await writable.write(content);
-		await writable.close();
-		return "saved";
-	} catch (error) {
-		if (error?.name === "AbortError") return "cancelled";
-	}
-	const chromeDl = globalThis.chrome?.downloads?.download;
-	const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-	if (typeof chromeDl === "function") {
-		const url = URL.createObjectURL(blob);
-		try {
-			await chromeDl({
-				url,
-				filename: name,
-				saveAs: true
-			});
-			return "downloaded";
-		} catch {
-			URL.revokeObjectURL(url);
-		}
-	}
-	const file = new File([blob], name, { type: "text/markdown" });
-	const nav = navigator;
-	if (typeof nav.share === "function" && (!nav.canShare || nav.canShare({ files: [file] }))) try {
-		await nav.share({
-			files: [file],
-			title: name
-		});
-		return "shared";
-	} catch (error) {
-		if (error?.name === "AbortError") return "cancelled";
-	}
-	try {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = name;
-		a.click();
-		setTimeout(() => URL.revokeObjectURL(url), 250);
-		return "downloaded";
-	} catch {
-		return "failed";
-	}
-};
-//#endregion
-//#region ../../modules/projects/lur.e/src/interactive/modules/LazyLoader.ts
-/**
-* Lazy load a component and its CSS
-*/
-async function lazyLoadComponent(importFn, options) {
-	const { cssPath, componentName } = options;
-	console.log(`[LazyLoader] Loading component: ${componentName}`);
-	if (cssPath) try {
-		await loadCSS(cssPath);
-	} catch (error) {
-		console.warn(`[LazyLoader] Failed to load CSS for ${componentName}:`, error);
-	}
-	try {
-		const component = await importFn();
-		console.log(`[LazyLoader] Successfully loaded component: ${componentName}`);
-		return { component };
-	} catch (error) {
-		console.error(`[LazyLoader] Failed to load component ${componentName}:`, error);
-		throw error;
-	}
-}
-/**
-* Load CSS dynamically
-*/
-async function loadCSS(href) {
-	return new Promise((resolve, reject) => {
-		if (document.querySelectorAll(`link[href="${href}"]`).length > 0) {
-			resolve();
-			return;
-		}
-		const link = document.createElement("link");
-		link.rel = "stylesheet";
-		link.href = href;
-		link.onload = () => resolve();
-		link.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to load CSS: ${href}`));
-		document.head.appendChild(link);
-	});
-}
-/**
-* Cache for loaded components to avoid re-loading
-*/
-var componentCache = /* @__PURE__ */ new Map();
-/**
-* Get or load a cached component
-*/
-async function getCachedComponent(cacheKey, importFn, options) {
-	if (componentCache.has(cacheKey)) return componentCache.get(cacheKey);
-	const lazyComponent = await lazyLoadComponent(importFn, options);
-	componentCache.set(cacheKey, lazyComponent);
-	return lazyComponent;
-}
-//#endregion
-//#region ../../modules/projects/lur.e/src/index.ts
-var src_exports$1 = /* @__PURE__ */ __exportAll({
-	$behavior: () => $behavior,
-	$createElement: () => $createElement,
-	$mapped: () => $mapped,
-	$observeAttribute: () => $observeAttribute,
-	$observeInput: () => $observeInput,
-	$virtual: () => $virtual,
-	ANIMATABLE_BRAND: () => ANIMATABLE_BRAND,
-	C: () => C,
-	CSM: () => CSM,
-	CSSCalc: () => CSSCalc,
-	ClosePriority: () => ClosePriority,
-	DESKTOP_DRAFT_KEY: () => DESKTOP_DRAFT_KEY,
-	DESKTOP_MAIN_KEY: () => DESKTOP_MAIN_KEY,
-	E: () => E,
-	EventHandler: () => EventHandler,
-	FileHandler: () => FileHandler,
-	Fragment: () => Fragment,
-	GLitElement: () => GLitElement,
-	H: () => H,
-	HistoryManager: () => HistoryManager,
-	I: () => I,
-	ITEM_COMPACT_KIND: () => ITEM_COMPACT_KIND,
-	JUNCTION_DRAG_EVENTS: () => JUNCTION_DRAG_EVENTS,
-	JUNCTION_RESIZE_EVENTS: () => JUNCTION_RESIZE_EVENTS,
-	JUNCTION_SELECT_EVENTS: () => JUNCTION_SELECT_EVENTS,
-	JunctionDragMixin: () => JunctionDragMixin,
-	JunctionResizeMixin: () => JunctionResizeMixin,
-	JunctionSelectMixin: () => JunctionSelectMixin,
-	M: () => M$1,
-	Q: () => Q,
-	Qp: () => Qp,
-	ReactiveViewport: () => ReactiveViewport,
-	S: () => S,
-	SwM: () => SwM,
-	Task: () => Task,
-	TemplateManager: () => TemplateManager,
-	VoiceInputManager: () => VoiceInputManager,
-	addProxiedEvent: () => addProxiedEvent,
-	addToBank: () => addToBank,
-	alives: () => alives,
-	applyNormalizedInlineStyle: () => applyNormalizedInlineStyle,
-	attrLink: () => attrLink,
-	attrRef: () => attrRef,
-	bindCtrl: () => bindCtrl,
-	bindDirectoryForLaunchedFiles: () => bindDirectoryForLaunchedFiles,
-	bindHandler: () => bindHandler,
-	bindOutsideDismiss: () => bindOutsideDismiss,
-	bindStyle: () => bindStyle,
-	bindTriggerHandlers: () => bindTriggerHandlers,
-	bindWith: () => bindWith,
-	blobToBytes: () => blobToBytes,
-	checkedLink: () => checkedLink,
-	checkedRef: () => checkedRef,
-	closeHighestPriority: () => closeHighestPriority,
-	collectRelativeMarkdownAssetRefs: () => collectRelativeMarkdownAssetRefs,
-	colorScheme: () => colorScheme,
-	compileInlineStyleAttribute: () => compileInlineStyleAttribute,
-	copy: () => copy,
-	copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
-	createElement: () => createElement,
-	createFileHandler: () => createFileHandler,
-	createHistoryManager: () => createHistoryManager,
-	createTemplateManager: () => createTemplateManager,
-	currentHandleMap: () => currentHandleMap,
-	decodeBase64ToBytes: () => decodeBase64ToBytes,
-	decodeDesktopState: () => decodeDesktopState,
-	defaultLogger: () => defaultLogger,
-	defineElement: () => defineElement,
-	detectTypeByRelPath: () => detectTypeByRelPath,
-	directHandlers: () => directHandlers,
-	directoryCacheMap: () => directoryCacheMap,
-	downloadFile: () => downloadFile,
-	dropFile: () => dropFile,
-	dynamicBgColors: () => dynamicBgColors,
-	dynamicNativeFrame: () => dynamicNativeFrame,
-	dynamicTheme: () => dynamicTheme,
-	elMap: () => elMap$1,
-	electronAPI: () => electronAPI,
-	elementPointerMap: () => elementPointerMap,
-	ensureWorker: () => ensureWorker,
-	eventTrigger: () => eventTrigger,
-	findEntryRelPath: () => findEntryRelPath,
-	generalFileImportDesc: () => generalFileImportDesc,
-	getActiveCloseable: () => getActiveCloseable,
-	getActiveCloseables: () => getActiveCloseables,
-	getBy: () => getBy,
-	getCachedComponent: () => getCachedComponent,
-	getDir: () => getDir,
-	getDirectoryHandle: () => getDirectoryHandle,
-	getFileHandle: () => getFileHandle,
-	getFocused: () => getFocused,
-	getHandler: () => getHandler,
-	getIgnoreNextPopState: () => getIgnoreNextPopState,
-	getMimeTypeByFilename: () => getMimeTypeByFilename,
-	getSpeechPrompt: () => getSpeechPrompt,
-	ghostImage: () => ghostImage,
-	handleByPointer: () => handleByPointer,
-	handleError: () => handleError,
-	handleIncomingEntries: () => handleIncomingEntries,
-	hasActiveCloseable: () => hasActiveCloseable,
-	hasFileExtension: () => hasFileExtension,
-	historyState: () => historyState,
-	html: () => html,
-	htmlBuilder: () => htmlBuilder,
-	ignoreNextPopState: () => ignoreNextPopState,
-	indexDirectoryFiles: () => indexDirectoryFiles,
-	initBackNavigation: () => initBackNavigation,
-	initClipboardReceiver: () => initClipboardReceiver,
-	initGlobalClipboard: () => initGlobalClipboard,
-	initHistory: () => initHistory,
-	isAnimatableValue: () => isAnimatableValue,
-	isBase64Like: () => isBase64Like,
-	isEffectivelyEmptyStyleText: () => isEffectivelyEmptyStyleText,
-	isMarkdownRelativeRef: () => isMarkdownRelativeRef,
-	isNativeCSSStyleValue: () => isNativeCSSStyleValue,
-	isNotExtended: () => isNotExtended,
-	isReactiveStyleValue: () => isReactiveStyleValue,
-	isStyleBinding: () => isStyleBinding,
-	isVirtualFsPath: () => isVirtualFsPath,
-	junctionToBox: () => junctionToBox,
-	lazyAddEventListener: () => lazyAddEventListener,
-	lazyLoadComponent: () => lazyLoadComponent,
-	listenForClipboardRequests: () => listenForClipboardRequests,
-	listenerOptionsFor: () => listenerOptionsFor,
-	loadCachedStyles: () => loadCachedStyles,
-	loadDesktopRaw: () => loadDesktopRaw,
-	localStorageLink: () => localStorageLink,
-	localStorageLinkMap: () => localStorageLinkMap,
-	localStorageRef: () => localStorageRef,
-	makeLinker: () => makeLinker,
-	makeRef: () => makeRef,
-	makeTask: () => makeTask,
-	makeUIState: () => makeUIState,
-	mappedRoots: () => mappedRoots,
-	markdownNeedsBoundDirectory: () => markdownNeedsBoundDirectory,
-	matchMappedRoot: () => matchMappedRoot,
-	matchMediaLink: () => matchMediaLink,
-	matchMediaRef: () => matchMediaRef,
-	maybeStartThemeEngine: () => maybeStartThemeEngine,
-	mergeByKey: () => mergeByKey,
-	mixinDisposers: () => mixinDisposers,
-	mountPickedDirectory: () => mountPickedDirectory,
-	mutationTrigger: () => mutationTrigger,
-	navigate: () => navigate,
-	navigationEnable: () => navigationEnable,
-	normalizeDataAsset: () => normalizeDataAsset,
-	normalizePath: () => normalizePath,
-	numberRef: () => numberRef$1,
-	observeFileSystemHandle: () => observeFileSystemHandle,
-	openDirectory: () => openDirectory,
-	originalForward: () => originalForward,
-	originalGo: () => originalGo,
-	originalPush: () => originalPush,
-	originalRelFromRef: () => originalRelFromRef,
-	originalReplace: () => originalReplace,
-	parseDataUrl: () => parseDataUrl,
-	pickAssetDirectory: () => pickAssetDirectory,
-	pickBgColor: () => pickBgColor,
-	pickFromCenter: () => pickFromCenter,
-	pickMarkdownFile: () => pickMarkdownFile,
-	pickSidecarDirectoryFiles: () => pickSidecarDirectoryFiles,
-	placeOverlay: () => placeOverlay,
-	pointerAnchorRef: () => pointerAnchorRef,
-	post: () => post,
-	propStore: () => propStore,
-	property: () => property,
-	provide: () => provide,
-	provideBoundRelative: () => provideBoundRelative,
-	pruneEmptyStyleAttribute: () => pruneEmptyStyleAttribute,
-	readFile: () => readFile,
-	reflectControllers: () => reflectControllers,
-	registerCloseable: () => registerCloseable,
-	registerDirectoryRoot: () => registerDirectoryRoot,
-	registerModal: () => registerModal,
-	registerTask: () => registerTask,
-	registerTransientOverlay: () => registerTransientOverlay,
-	rehydrateAdoptedStyleSheets: () => rehydrateAdoptedStyleSheets,
-	relPathCandidates: () => relPathCandidates,
-	reloadInto: () => reloadInto,
-	remove: () => remove,
-	removeFile: () => removeFile,
-	removeFromBank: () => removeFromBank,
-	resolveFileUnderDirectory: () => resolveFileUnderDirectory,
-	resolveOverlayHost: () => resolveOverlayHost,
-	resolvePath: () => resolvePath,
-	resolvePlacement: () => resolvePlacement,
-	resolveRootHandle: () => resolveRootHandle,
-	saveMarkdownBlob: () => saveMarkdownBlob,
-	saveUIState: () => saveUIState,
-	scrollLink: () => scrollLink,
-	scrollRef: () => scrollRef,
-	setIgnoreNextPopState: () => setIgnoreNextPopState,
-	sizeLink: () => sizeLink,
-	sizeRef: () => sizeRef,
-	stringToBlob: () => stringToBlob,
-	stringToBlobOrFile: () => stringToBlobOrFile,
-	styleCache: () => styleCache,
-	styleElementCache: () => styleElementCache,
-	toText: () => toText,
-	unregisterCloseable: () => unregisterCloseable,
-	unregisterDirectoryRoot: () => unregisterDirectoryRoot,
-	uploadFile: () => uploadFile,
-	valueAsNumberLink: () => valueAsNumberLink,
-	valueAsNumberRef: () => valueAsNumberRef,
-	valueLink: () => valueLink,
-	valueRef: () => valueRef,
-	walkExactFile: () => walkExactFile,
-	withProperties: () => withProperties,
-	withTriggerModifiers: () => withTriggerModifiers,
-	writeFile: () => writeFile,
-	writeFileSmart: () => writeFileSmart,
-	writeHTML: () => writeHTML,
-	writeImage: () => writeImage$1,
-	writeText: () => writeText$1
-});
 //#endregion
 //#region ../../node_modules/culori/src/rgb/parseNumber.js
 var parseNumber = (color, len) => {
@@ -15669,6 +13553,2198 @@ useMode(definition$2);
 useMode(definition$1);
 useMode(definition);
 //#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.uniform.worker.ts?worker
+function WorkerWrapper(options) {
+	return new Worker("" + new URL("../workers/opfs/OPFS.uniform.worker.js", import.meta.url).href, {
+		type: "module",
+		name: options?.name
+	});
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.ts
+var workerChannel = null;
+var isServiceWorker = typeof ServiceWorkerGlobalScope !== "undefined" && self instanceof ServiceWorkerGlobalScope;
+var SW_BRIDGE_CHANNEL_NAME = "opfs-sw-bridge-v1";
+var observers = /* @__PURE__ */ new Map();
+var workerInitPromise = null;
+var swBridgeChannel = null;
+var swBridgeRequestCounter = 0;
+var ensureSwBridgeChannel = () => {
+	if (!isServiceWorker) return null;
+	if (swBridgeChannel) return swBridgeChannel;
+	try {
+		if (typeof BroadcastChannel === "undefined") return null;
+		swBridgeChannel = new BroadcastChannel(SW_BRIDGE_CHANNEL_NAME);
+		return swBridgeChannel;
+	} catch {
+		return null;
+	}
+};
+var postViaSwBridge = (type, payload = {}, timeoutMs = 2500) => {
+	const channel = ensureSwBridgeChannel();
+	if (!channel) return Promise.reject(/* @__PURE__ */ new Error("SW OPFS bridge is unavailable"));
+	const requestId = `sw-opfs-${Date.now()}-${++swBridgeRequestCounter}`;
+	return new Promise((resolve, reject) => {
+		let timeoutId = null;
+		const onMessage = (event) => {
+			const data = event?.data || {};
+			if (!data || typeof data !== "object") return;
+			if (data?.type !== "opfs-sw-response") return;
+			if (String(data?.requestId || "") !== requestId) return;
+			channel.removeEventListener("message", onMessage);
+			if (timeoutId) clearTimeout(timeoutId);
+			if (data?.ok) resolve(data?.result);
+			else reject(new Error(String(data?.error || "Unknown bridge error")));
+		};
+		channel.addEventListener("message", onMessage);
+		timeoutId = setTimeout(() => {
+			channel.removeEventListener("message", onMessage);
+			reject(/* @__PURE__ */ new Error("SW OPFS bridge timeout"));
+		}, timeoutMs);
+		channel.postMessage({
+			type: "opfs-sw-request",
+			requestId,
+			action: type,
+			payload
+		});
+	});
+};
+var ensureWorker = () => {
+	if (workerInitPromise) return workerInitPromise;
+	workerInitPromise = new Promise(async (resolve) => {
+		if (typeof Worker !== "undefined" && !isServiceWorker) try {
+			const baseChannel = await createWorkerChannel({
+				name: "opfs-worker",
+				script: WorkerWrapper
+			});
+			workerChannel = new QueuedWorkerChannel("opfs-worker", async () => baseChannel, {
+				timeout: 3e4,
+				retries: 3,
+				batching: true,
+				compression: false
+			});
+			resolve(workerChannel);
+		} catch (e) {
+			console.warn("OPFSUniformWorker instantiation failed, falling back to main thread...", e);
+			workerChannel = null;
+			resolve(null);
+		}
+		else {
+			workerChannel = null;
+			resolve(null);
+		}
+	});
+	return workerInitPromise;
+};
+var directHandlers = {
+	readDirectory: async ({ rootId, path, create }) => {
+		try {
+			const root = await navigator.storage.getDirectory();
+			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
+			let current = root;
+			for (const part of parts) current = await current.getDirectoryHandle(part, { create });
+			const entries = [];
+			for await (const [name, entry] of current.entries()) entries.push([name, entry]);
+			return entries;
+		} catch (e) {
+			console.warn("Direct readDirectory error:", e);
+			return [];
+		}
+	},
+	readFile: async ({ rootId, path, type }) => {
+		try {
+			const root = await navigator.storage.getDirectory();
+			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
+			const filename = parts.pop();
+			let dir = root;
+			for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: false });
+			const file = await (await dir.getFileHandle(filename, { create: false })).getFile();
+			if (type === "text") return await file.text();
+			if (type === "arrayBuffer") return await file.arrayBuffer();
+			return file;
+		} catch (e) {
+			console.warn("Direct readFile error:", e);
+			return null;
+		}
+	},
+	writeFile: async ({ rootId, path, data }) => {
+		try {
+			const root = await navigator.storage.getDirectory();
+			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
+			const filename = parts.pop();
+			let dir = root;
+			for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: true });
+			const writable = await (await dir.getFileHandle(filename, { create: true })).createWritable();
+			await writable.write(data);
+			await writable.close();
+			return true;
+		} catch (e) {
+			console.warn("Direct writeFile error:", e);
+			return false;
+		}
+	},
+	remove: async ({ rootId, path, recursive }) => {
+		try {
+			const root = await navigator.storage.getDirectory();
+			const parts = (path || "").trim().replace(/\/+/g, "/").split("/").filter((p) => p);
+			const name = parts.pop();
+			let dir = root;
+			for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: false });
+			await dir.removeEntry(name, { recursive });
+			return true;
+		} catch {
+			return false;
+		}
+	},
+	copy: async ({ from, to }) => {
+		try {
+			const copyRecursive = async (source, dest) => {
+				if (source.kind === "directory") for await (const [name, entry] of source.entries()) if (entry.kind === "directory") {
+					const newDest = await dest.getDirectoryHandle(name, { create: true });
+					await copyRecursive(entry, newDest);
+				} else {
+					const file = await entry.getFile();
+					const writable = await (await dest.getFileHandle(name, { create: true })).createWritable();
+					await writable.write(file);
+					await writable.close();
+				}
+				else {
+					const file = await source.getFile();
+					const writable = await dest.createWritable();
+					await writable.write(file);
+					await writable.close();
+				}
+			};
+			await copyRecursive(from, to);
+			return true;
+		} catch (e) {
+			console.warn("Direct copy error:", e);
+			return false;
+		}
+	},
+	observe: async () => false,
+	unobserve: async () => true,
+	mount: async () => true,
+	unmount: async () => true
+};
+var post = (type, payload = {}, transfer = []) => {
+	if (isServiceWorker && directHandlers[type]) return postViaSwBridge(type, payload).catch(() => directHandlers[type](payload));
+	return new Promise(async (resolve, reject) => {
+		try {
+			const channel = await ensureWorker();
+			if (!channel) {
+				if (directHandlers[type]) return resolve(directHandlers[type](payload));
+				return reject(/* @__PURE__ */ new Error("No worker channel available"));
+			}
+			let result;
+			try {
+				result = await channel.request(type, payload);
+			} catch (requestError) {
+				if (directHandlers[type]) return resolve(directHandlers[type](payload));
+				throw requestError;
+			}
+			if (result === false && (type === "writeFile" || type === "remove" || type === "copy")) {
+				if (directHandlers[type]) return resolve(directHandlers[type](payload));
+			}
+			resolve(result);
+		} catch (err) {
+			if (directHandlers[type]) try {
+				return resolve(directHandlers[type](payload));
+			} catch (fallbackError) {
+				return reject(fallbackError);
+			}
+			reject(err);
+		}
+	});
+};
+var getDir = (dest) => {
+	if (typeof dest != "string") return dest;
+	dest = dest?.trim?.() || dest;
+	if (!dest?.endsWith?.("/")) dest = dest?.trim?.()?.split?.("/")?.slice(0, -1)?.join?.("/")?.trim?.() || dest;
+	const p1 = !dest?.trim()?.endsWith("/") ? dest + "/" : dest;
+	return !p1?.startsWith("/") ? "/" + p1 : p1;
+};
+var generalFileImportDesc = {
+	startIn: "documents",
+	multiple: false,
+	types: [{
+		description: "files",
+		accept: { "application/*": [
+			".txt",
+			".md",
+			".html",
+			".htm",
+			".css",
+			".js",
+			".json",
+			".csv",
+			".xml",
+			".jpg",
+			".jpeg",
+			".png",
+			".gif",
+			".webp",
+			".svg",
+			".ico",
+			".mp3",
+			".wav",
+			".mp4",
+			".webm",
+			".pdf",
+			".zip",
+			".rar",
+			".7z"
+		] }
+	}]
+};
+var mappedRoots = /* @__PURE__ */ new Map([
+	["/", async () => await navigator?.storage?.getDirectory?.()],
+	["/user/", async () => await navigator?.storage?.getDirectory?.()],
+	["/assets/", async () => {
+		console.warn("Backend related API not implemented!");
+		return null;
+	}]
+]);
+var currentHandleMap = /* @__PURE__ */ new Map();
+/** Virtual Explorer / OPFS roots that `provide()` can read without HTTP. */
+var isVirtualFsPath = (path) => {
+	const raw = String(path || "").trim();
+	if (!raw) return false;
+	if (/^(?:https?:|blob:|data:|file:|mailto:)/i.test(raw)) return false;
+	if (!raw.startsWith("/")) return false;
+	let p = raw;
+	try {
+		if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw)) p = new URL(raw).pathname;
+	} catch {}
+	if (!p.startsWith("/")) p = `/${p}`;
+	if (p === "/user" || p.startsWith("/user/") || p === "/mounts" || p.startsWith("/mounts/") || p === "/sdcard" || p.startsWith("/sdcard/") || p === "/saf" || p.startsWith("/saf/")) return true;
+	for (const root of mappedRoots.keys()) {
+		if (root === "/" || root === "/user/" || root === "/assets/") continue;
+		if (p === root || p.startsWith(root) || `${p}/` === root) return true;
+	}
+	return false;
+};
+var matchMappedRoot = (path) => {
+	let p = String(path || "").trim() || "/";
+	try {
+		if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(p)) p = new URL(p).pathname || p;
+	} catch {}
+	if (!p.startsWith("/")) p = `/${p}`;
+	let best = null;
+	let bestLen = -1;
+	for (const [root, resolver] of mappedRoots.entries()) if (p === root || p.startsWith(root) || `${p}/` === root) {
+		if (root.length > bestLen) {
+			best = {
+				root,
+				resolver
+			};
+			bestLen = root.length;
+		}
+	}
+	return best;
+};
+/**
+* WHY: `getFileHandle` hyphen-rewrites OPFS `/user/` names. Local
+* `showDirectoryPicker` trees must keep exact filenames (`My Image.png`).
+*/
+var walkExactFile = async (root, rel) => {
+	const parts = String(rel || "").split("/").filter(Boolean);
+	if (!parts.length) return null;
+	let dir = root;
+	for (const seg of parts.slice(0, -1)) try {
+		dir = await dir.getDirectoryHandle(seg, { create: false });
+	} catch {
+		return null;
+	}
+	try {
+		return await dir.getFileHandle(parts[parts.length - 1], { create: false });
+	} catch {
+		return null;
+	}
+};
+/** Register a directory handle as a virtual root (`/mounts/<id>/`, etc.). */
+var registerDirectoryRoot = (root, handle) => {
+	if (!handle) return;
+	const key = String(root || "").endsWith("/") ? String(root) : `${root}/`;
+	if (!key.startsWith("/")) return;
+	mappedRoots.set(key, async () => handle);
+	const segs = key.split("/").filter(Boolean);
+	if (segs[0] === "mounts" && segs[1]) currentHandleMap.set(segs[1], handle);
+	currentHandleMap.set(key, handle);
+};
+var unregisterDirectoryRoot = (root) => {
+	const key = String(root || "").endsWith("/") ? String(root) : `${root}/`;
+	mappedRoots.delete(key);
+	currentHandleMap.delete(key);
+	const segs = key.split("/").filter(Boolean);
+	if (segs[0] === "mounts" && segs[1]) currentHandleMap.delete(segs[1]);
+};
+async function resolveRootHandle(rootHandle, relPath = "") {
+	if (rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) rootHandle = "/user/";
+	const cleanId = typeof rootHandle == "string" ? rootHandle?.trim?.()?.replace?.(/^\//, "")?.trim?.()?.split?.("/")?.filter?.((p) => !!p?.trim?.())?.at?.(0) : null;
+	if (cleanId) {
+		if (typeof localStorage != "undefined" && JSON.parse(localStorage?.getItem?.("opfs.mounted") || "[]").includes(cleanId)) rootHandle = currentHandleMap?.get(cleanId);
+		if (!rootHandle) rootHandle = await mappedRoots?.get?.(`/${cleanId}/`)?.() ?? await navigator.storage.getDirectory();
+	}
+	if (rootHandle instanceof FileSystemDirectoryHandle) return rootHandle;
+	const normalizedPath = relPath?.trim?.() || "/";
+	const pathForMatch = normalizedPath.startsWith("/") ? normalizedPath : "/" + normalizedPath;
+	let bestMatch = null;
+	let bestMatchLength = 0;
+	for (const [rootPath, rootResolver] of mappedRoots.entries()) if (pathForMatch.startsWith(rootPath) && rootPath.length > bestMatchLength) {
+		bestMatch = rootResolver;
+		bestMatchLength = rootPath.length;
+	}
+	try {
+		return (bestMatch ? await bestMatch() : null) || await navigator?.storage?.getDirectory?.();
+	} catch (error) {
+		console.warn("Failed to resolve root handle, falling back to OPFS root:", error);
+		return await navigator?.storage?.getDirectory?.();
+	}
+}
+function normalizePath(basePath = "", relPath) {
+	if (!relPath?.trim()) return basePath;
+	const cleanRelPath = relPath.trim();
+	if (cleanRelPath.startsWith("/")) return cleanRelPath;
+	const baseParts = basePath.split("/").filter((p) => p?.trim());
+	const relParts = cleanRelPath.split("/").filter((p) => p?.trim());
+	for (const part of relParts) if (part === ".") continue;
+	else if (part === "..") {
+		if (baseParts.length > 0) baseParts.pop();
+	} else baseParts.push(part);
+	return "/" + baseParts.join("/");
+}
+async function resolvePath(rootHandle, relPath, basePath = "") {
+	const normalizedRelPath = normalizePath(basePath, relPath);
+	return {
+		rootHandle: await resolveRootHandle(rootHandle, normalizedRelPath),
+		resolvedPath: normalizedRelPath
+	};
+}
+function handleError(logger, status, message) {
+	logger?.(status, message);
+	return null;
+}
+function defaultLogger(status, message) {
+	console.trace(`[${status}] ${message}`);
+}
+function detectTypeByRelPath(relPath) {
+	if (relPath?.trim()?.endsWith?.("/")) return "directory";
+	return "file";
+}
+function getMimeTypeByFilename(filename) {
+	return {
+		"txt": "text/plain",
+		"md": "text/markdown",
+		"html": "text/html",
+		"htm": "text/html",
+		"css": "text/css",
+		"js": "application/javascript",
+		"json": "application/json",
+		"csv": "text/csv",
+		"xml": "application/xml",
+		"jpg": "image/jpeg",
+		"jpeg": "image/jpeg",
+		"png": "image/png",
+		"gif": "image/gif",
+		"webp": "image/webp",
+		"svg": "image/svg+xml",
+		"ico": "image/x-icon",
+		"mp3": "audio/mpeg",
+		"wav": "audio/wav",
+		"mp4": "video/mp4",
+		"webm": "video/webm",
+		"pdf": "application/pdf",
+		"zip": "application/zip",
+		"rar": "application/vnd.rar",
+		"7z": "application/x-7z-compressed"
+	}[filename?.split?.(".")?.pop?.()?.toLowerCase?.()] || "application/octet-stream";
+}
+var hasFileExtension = (path) => {
+	return path?.trim?.()?.split?.(".")?.[1]?.trim?.()?.length > 0;
+};
+async function getDirectoryHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
+		const parts = stripUserScopePrefix(resolvedPath).split("/").filter((p) => !!p?.trim?.());
+		if (parts.length > 0 && hasFileExtension(parts[parts.length - 1]?.trim?.())) parts?.pop?.();
+		let dir = resolvedRoot;
+		if (parts?.length > 0) for (const part of parts) {
+			dir = await dir?.getDirectoryHandle?.(part, { create });
+			if (!dir) break;
+		}
+		return dir;
+	} catch (e) {
+		return handleError(logger, "error", `getDirectoryHandle: ${e.message}`);
+	}
+}
+async function getFileHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
+		const cleanPath = stripUserScopePrefix(resolvedPath);
+		const parts = cleanPath.split("/").filter((d) => !!d?.trim?.());
+		if (parts?.length == 0) return null;
+		const filePath = parts.length > 0 ? parts[parts.length - 1]?.trim?.()?.replace?.(/\s+/g, "-") : "";
+		const dirName = parts.length > 1 ? parts?.slice(0, -1)?.join?.("/")?.trim?.()?.replace?.(/\s+/g, "-") : "";
+		if (cleanPath?.trim?.()?.endsWith?.("/")) return null;
+		return (await getDirectoryHandle(resolvedRoot, dirName, {
+			create,
+			basePath
+		}, logger))?.getFileHandle?.(filePath, { create });
+	} catch (e) {
+		return handleError(logger, "error", `getFileHandle: ${e.message}`);
+	}
+}
+async function getHandler(rootHandle, relPath, options = {}, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRootHandle, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		if (detectTypeByRelPath(resolvedPath) == "directory") {
+			const dir = await getDirectoryHandle(resolvedRootHandle, resolvedPath?.trim?.()?.replace?.(/\/$/, ""), options, logger);
+			if (dir) return {
+				type: "directory",
+				handle: dir
+			};
+		} else {
+			const file = await getFileHandle(resolvedRootHandle, resolvedPath, options, logger);
+			if (file) return {
+				type: "file",
+				handle: file
+			};
+		}
+		return null;
+	} catch (e) {
+		return handleError(logger, "error", `getHandler: ${e.message}`);
+	}
+}
+var directoryCacheMap = /* @__PURE__ */ new Map();
+function openDirectory(rootHandle, relPath, options = { create: false }, logger = defaultLogger) {
+	let cacheKey = "";
+	let localMapCache = observe(/* @__PURE__ */ new Map());
+	const statePromise = (async () => {
+		try {
+			const { rootHandle: resolvedRootHandle, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+			cacheKey = `${resolvedRootHandle?.name || "root"}:${resolvedPath}`;
+			return {
+				rootHandle: resolvedRootHandle,
+				resolvedPath
+			};
+		} catch {
+			return {
+				rootHandle: null,
+				resolvedPath: ""
+			};
+		}
+	})().then(async ({ rootHandle, resolvedPath }) => {
+		if (!resolvedPath) return null;
+		const existing = directoryCacheMap.get(cacheKey);
+		if (existing) {
+			existing.refCount++;
+			localMapCache = existing.mapCache;
+			return existing;
+		}
+		const mapCache = observe(/* @__PURE__ */ new Map());
+		localMapCache = mapCache;
+		const observationId = UUIDv4();
+		const dirHandlePromise = getDirectoryHandle(rootHandle, resolvedPath, options, logger);
+		const updateCache = async () => {
+			const entries = await post("readDirectory", {
+				rootId: "",
+				path: stripUserScopePrefix(resolvedPath),
+				create: options.create
+			}, rootHandle ? [rootHandle] : []);
+			if (!entries) return mapCache;
+			const entryMap = new Map(entries);
+			for (const key of mapCache.keys()) if (!entryMap.has(key)) mapCache.delete(key);
+			for (const [key, handle] of entryMap) if (!mapCache.has(key)) mapCache.set(key, handle);
+			return mapCache;
+		};
+		const cleanup = () => {
+			post("unobserve", { id: observationId });
+			observers.delete(observationId);
+			directoryCacheMap.delete(cacheKey);
+		};
+		observers.set(observationId, (changes) => {
+			for (const change of changes) {
+				if (!change?.name) continue;
+				if (change.type === "modified" || change.type === "created" || change.type === "appeared") mapCache.set(change.name, change.handle);
+				else if (change.type === "deleted" || change.type === "disappeared") mapCache.delete(change.name);
+			}
+		});
+		post("observe", {
+			rootId: "",
+			path: stripUserScopePrefix(resolvedPath),
+			id: observationId
+		}, rootHandle ? [rootHandle] : []);
+		updateCache();
+		const newState = {
+			mapCache,
+			dirHandle: dirHandlePromise,
+			resolvePath: resolvedPath,
+			observationId,
+			refCount: 1,
+			cleanup,
+			updateCache
+		};
+		directoryCacheMap.set(cacheKey, newState);
+		const entries = await Promise.all(await Array.fromAsync((await dirHandlePromise)?.entries?.() ?? []));
+		for (const [name, handle] of entries) if (!mapCache.has(name)) mapCache.set(name, handle);
+		return {
+			...newState,
+			mapCache
+		};
+	});
+	let disposed = false;
+	const dispose = () => {
+		if (disposed) return;
+		disposed = true;
+		statePromise.then((s) => {
+			if (!s) return;
+			s.refCount--;
+			if (s.refCount <= 0) s.cleanup();
+		}).catch(console.warn);
+	};
+	const handler = {
+		get(_target, prop) {
+			if (prop === Symbol.toStringTag || prop === Symbol.iterator || prop === "toString" || prop === "valueOf" || prop === "inspect" || prop === "constructor" || prop === "__proto__" || prop === "prototype") return;
+			if (prop === "dispose") return dispose;
+			if (prop === "getMap") return () => localMapCache;
+			if (prop === "entries") return () => localMapCache.entries();
+			if (prop === "keys") return () => localMapCache.keys();
+			if (prop === "values") return () => localMapCache.values();
+			if (prop === Symbol.iterator) return () => localMapCache[Symbol.iterator]();
+			if (prop === "size") return localMapCache.size;
+			if (prop === "has") return (k) => localMapCache.has(k);
+			if (prop === "get") return (k) => localMapCache.get(k);
+			if (prop === "entries") return () => localMapCache.entries();
+			if (prop === "keys") return () => localMapCache.keys();
+			if (prop === "values") return () => localMapCache.values();
+			if (prop === "refresh") return () => statePromise.then((s) => s?.updateCache?.()).then(() => pxy);
+			if (prop === "then" || prop === "catch" || prop === "finally") {
+				const p = statePromise.then(() => true);
+				return p[prop].bind(p);
+			}
+			return (...args) => statePromise.then(async (s) => {
+				if (!s) return void 0;
+				const dh = await s.dirHandle;
+				const v = dh?.[prop];
+				if (typeof v === "function") return v.apply(dh, args);
+				return v;
+			});
+		},
+		ownKeys() {
+			return Array.from(localMapCache.keys());
+		},
+		getOwnPropertyDescriptor() {
+			return {
+				enumerable: true,
+				configurable: true
+			};
+		}
+	};
+	const fx = function() {};
+	const pxy = new Proxy(fx, handler);
+	return pxy;
+}
+async function readFile(rootHandle, relPath, options = {}, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		return await post("readFile", {
+			rootId: "",
+			path: stripUserScopePrefix(resolvedPath),
+			type: "blob"
+		}, resolvedRoot ? [resolvedRoot] : []);
+	} catch (e) {
+		return handleError(logger, "error", `readFile: ${e.message}`);
+	}
+}
+async function writeFile(rootHandle, relPath, data, logger = defaultLogger) {
+	if (data instanceof FileSystemFileHandle) data = await data.getFile();
+	if (data instanceof FileSystemDirectoryHandle) {
+		const dstHandle = await getDirectoryHandle(await resolveRootHandle(rootHandle), relPath + (relPath?.trim?.()?.endsWith?.("/") ? "" : "/") + (data?.name || "")?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
+		return await copyFromOneHandlerToAnother(data, dstHandle, {})?.catch?.(console.warn.bind(console));
+	} else try {
+		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, "");
+		return await post("writeFile", {
+			rootId: "",
+			path: stripUserScopePrefix(resolvedPath),
+			data
+		}, resolvedRoot ? [resolvedRoot] : []) !== false;
+	} catch (e) {
+		return handleError(logger, "error", `writeFile: ${e.message}`);
+	}
+}
+async function removeFile(rootHandle, relPath, options = { recursive: true }, logger = defaultLogger) {
+	try {
+		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		const candidates = userPathCandidates(resolvedPath);
+		let lastResult = false;
+		for (const candidate of candidates) {
+			lastResult = await post("remove", {
+				rootId: "",
+				path: candidate,
+				recursive: options.recursive
+			}, resolvedRoot ? [resolvedRoot] : []);
+			if (lastResult !== false) return true;
+		}
+		return lastResult !== false;
+	} catch (e) {
+		return handleError(logger, "error", `removeFile: ${e.message}`);
+	}
+}
+async function remove(rootHandle, relPath, options = {}, logger = defaultLogger) {
+	try {
+		return removeFile(rootHandle, relPath, {
+			recursive: true,
+			...options
+		}, logger);
+	} catch (e) {
+		return handleError(logger, "error", `remove: ${e.message}`);
+	}
+}
+var downloadFile = async (file, filename) => {
+	if (file instanceof FileSystemFileHandle) file = await file.getFile();
+	if (typeof file == "string") file = await provide(file);
+	filename = filename ?? file?.name;
+	if (!filename) return;
+	if ("msSaveOrOpenBlob" in self.navigator) self.navigator.msSaveOrOpenBlob(file, filename);
+	if (file instanceof FileSystemDirectoryHandle) {
+		let dstHandle = await showDirectoryPicker?.({ mode: "readwrite" })?.catch?.(console.warn.bind(console));
+		if (file && dstHandle) {
+			dstHandle = await getDirectoryHandle(dstHandle, file?.name || "", { create: true })?.catch?.(console.warn.bind(console)) || dstHandle;
+			return await copyFromOneHandlerToAnother(file, dstHandle, {})?.catch?.(console.warn.bind(console));
+		}
+		return;
+	}
+	const fx = await (self?.showOpenFilePicker ? new Promise((r) => r({
+		showOpenFilePicker: self?.showOpenFilePicker?.bind?.(window),
+		showSaveFilePicker: self?.showSaveFilePicker?.bind?.(window)
+	})) : __vitePreload(() => Promise.resolve().then(() => showOpenFilePicker_exports), void 0, import.meta.url));
+	if (window?.showSaveFilePicker) {
+		const writableFileStream = await (await fx?.showSaveFilePicker?.({ suggestedName: filename })?.catch?.(console.warn.bind(console)))?.createWritable?.({ keepExistingData: true })?.catch?.(console.warn.bind(console));
+		await writableFileStream?.write?.(file)?.catch?.(console.warn.bind(console));
+		await writableFileStream?.close?.()?.catch?.(console.warn.bind(console));
+	} else {
+		const a = document.createElement("a");
+		try {
+			a.href = URL.createObjectURL(file);
+		} catch (e) {
+			console.warn(e);
+		}
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function() {
+			document.body.removeChild(a);
+			globalThis.URL.revokeObjectURL(a.href);
+		}, 0);
+	}
+};
+var provide = async (req = "", rw = false) => {
+	const requestUrl = (typeof req === "string" ? req : req?.url || "").trim();
+	if (!requestUrl) return null;
+	let pathname = requestUrl;
+	try {
+		pathname = new URL(requestUrl, location?.origin || self?.location?.origin || "http://localhost").pathname || requestUrl;
+	} catch {}
+	const cleanPath = pathname?.trim?.() || "/";
+	if (cleanPath?.startsWith?.("/user")) {
+		const path = stripUserScopePrefix(cleanPath);
+		const root = await navigator?.storage?.getDirectory?.();
+		if (!root) return null;
+		const handle = await getFileHandle(root, path, { create: !!rw }).catch(() => null);
+		if (!handle) return null;
+		if (rw) return handle?.createWritable?.();
+		return handle?.getFile?.();
+	}
+	const mapped = matchMappedRoot(cleanPath);
+	if (mapped && mapped.root !== "/user/" && mapped.root !== "/" && mapped.root !== "/assets/") {
+		const dir = await mapped.resolver().catch(() => null);
+		if (dir instanceof FileSystemDirectoryHandle) {
+			const fileHandle = await walkExactFile(dir, cleanPath.startsWith(mapped.root) ? cleanPath.slice(mapped.root.length) : cleanPath.replace(/^\/+/, ""));
+			if (!fileHandle) return null;
+			if (rw) return fileHandle.createWritable?.();
+			return fileHandle.getFile?.();
+		}
+		return null;
+	}
+	if (rw) return null;
+	if (isVirtualFsPath(cleanPath)) return null;
+	try {
+		const baseOrigin = String(location?.origin || self?.location?.origin || "").trim();
+		const fetchTarget = cleanPath.startsWith("/") ? new URL(cleanPath, baseOrigin || "http://localhost").toString() : requestUrl;
+		const r = await fetch(fetchTarget);
+		const blob = await r?.blob()?.catch?.(console.warn.bind(console));
+		const lastModifiedHeader = r?.headers?.get?.("Last-Modified");
+		const lastModified = lastModifiedHeader ? Date.parse(lastModifiedHeader) : 0;
+		if (blob) {
+			const fallbackName = cleanPath?.substring?.(cleanPath?.lastIndexOf?.("/") + 1) || "resource";
+			return new File([blob], fallbackName, {
+				type: blob?.type,
+				lastModified: isNaN(lastModified) ? 0 : lastModified
+			});
+		}
+	} catch (e) {
+		return handleError(defaultLogger, "error", `provide: ${e.message}`);
+	}
+	return null;
+};
+var dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
+	const fs = await resolveRootHandle(null);
+	const user = getDir(stripUserScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
+	file = file instanceof File ? file : new File([file], UUIDv4() + "." + (file?.type?.split?.("/")?.[1] || "tmp"));
+	const fp = user + (file?.name || "wallpaper")?.trim?.()?.replace?.(/\s+/g, "-");
+	await writeFile(fs, fp, file);
+	current?.set?.("/user" + fp?.trim?.()?.replace?.(/\s+/g, "-"), file);
+	return "/user" + fp?.trim?.();
+};
+var uploadFile = async (dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
+	const $e = "showOpenFilePicker";
+	dest = stripUserScopePrefix(dest);
+	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => Promise.resolve().then(() => showOpenFilePicker_exports), void 0, import.meta.url))?.[$e])({
+		...generalFileImportDesc,
+		multiple: true
+	})?.then?.(async (handles = []) => {
+		for (const handle of handles) await dropFile(handle instanceof File ? handle : await handle?.getFile?.(), dest, current);
+	});
+};
+var ghostImage = typeof Image != "undefined" ? new Image() : null;
+if (ghostImage) {
+	ghostImage.decoding = "async";
+	ghostImage.width = 24;
+	ghostImage.height = 24;
+	try {
+		ghostImage.src = URL.createObjectURL(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 384 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128z"/></svg>`], { type: "image/svg+xml" }));
+	} catch (e) {}
+}
+var copyFromOneHandlerToAnother = async (fromHandle, toHandle, options = {}, logger = defaultLogger) => {
+	return post("copy", {
+		from: fromHandle,
+		to: toHandle
+	}, [fromHandle, toHandle]);
+};
+var handleIncomingEntries = (data, destPath = "/user/", rootHandle = null, onItemHandled) => {
+	const tasks = [];
+	const items = Array.from(data?.items ?? []);
+	const files = Array.from(data?.files ?? []);
+	const dataArray = Array.isArray(data) ? data : [...data?.[Symbol.iterator] ? data : [data]];
+	return Promise.try(async () => {
+		const resolvedRoot = await resolveRootHandle(rootHandle);
+		const processItem = async (item) => {
+			let handle;
+			if (item.kind === "file" || item.kind === "directory") try {
+				handle = await item.getAsFileSystemHandle?.();
+			} catch {}
+			if (handle) {
+				if (handle.kind === "directory") {
+					const nwd = await getDirectoryHandle(resolvedRoot, destPath + (handle.name || "").trim().replace(/\s+/g, "-"), { create: true });
+					if (nwd) tasks.push(copyFromOneHandlerToAnother(handle, nwd, { create: true }));
+				} else {
+					const file = await handle.getFile();
+					const path = destPath + (file.name || handle.name).trim().replace(/\s+/g, "-");
+					tasks.push(writeFile(resolvedRoot, path, file).then(() => onItemHandled?.(file, path)));
+				}
+				return;
+			}
+			if (item.kind === "file" || item instanceof File) {
+				const file = item instanceof File ? item : item.getAsFile();
+				if (file) {
+					const path = destPath + file.name.trim().replace(/\s+/g, "-");
+					tasks.push(writeFile(resolvedRoot, path, file).then(() => onItemHandled?.(file, path)));
+				}
+				return;
+			}
+		};
+		if (items?.length > 0) for (const item of items) await processItem(item);
+		if (files?.length > 0) for (const file of files) await processItem(file);
+		if (dataArray?.length > 0) for (const item of dataArray) await processItem(item);
+		const uriList = data?.getData?.("text/uri-list") || data?.getData?.("text/plain");
+		if (uriList && typeof uriList === "string") {
+			const urls = uriList.split(/\r?\n/).filter(Boolean);
+			for (const url of urls) {
+				if (url.startsWith("file://")) continue;
+				if (url.startsWith("/user/")) {
+					const src = url.trim();
+					tasks.push(Promise.try(async () => {
+						const srcHandle = await getHandler(resolvedRoot, src);
+						if (srcHandle?.handle) {
+							const name = src.split("/").filter(Boolean).pop();
+							if (srcHandle.type === "directory") {
+								const nwd = await getDirectoryHandle(resolvedRoot, destPath + name, { create: true });
+								await copyFromOneHandlerToAnother(srcHandle.handle, nwd, { create: true });
+							} else {
+								const file = await srcHandle.handle.getFile();
+								const path = destPath + name;
+								await writeFile(resolvedRoot, path, file);
+								onItemHandled?.(file, path);
+							}
+						}
+					}));
+				} else tasks.push(Promise.try(async () => {
+					const file = await provide(url);
+					if (file) {
+						const path = destPath + file.name;
+						await writeFile(resolvedRoot, path, file);
+						onItemHandled?.(file, path);
+					}
+				}));
+			}
+		}
+		if (dataArray?.[0] instanceof ClipboardItem) {
+			for (const item of dataArray) for (const type of item.types) if (type.startsWith("image/") || type.startsWith("text/")) {
+				const blob = await item.getType(type);
+				const ext = type.split("/")[1].split("+")[0] || "txt";
+				const file = new File([blob], `clipboard-${Date.now()}.${ext}`, { type });
+				const path = destPath + file.name;
+				tasks.push(writeFile(resolvedRoot, path, file).then(() => onItemHandled?.(file, path)));
+			}
+		}
+		await Promise.allSettled(tasks).catch(console.warn.bind(console));
+	});
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/Base64Data.ts
+var DEFAULT_MIME = "application/octet-stream";
+var DATA_URL_RE = /^data:(?<mime>[^;,]+)?(?<params>(?:;[^,]*)*?),(?<data>[\s\S]*)$/i;
+function canUseFromBase64() {
+	return typeof Uint8Array.fromBase64 === "function";
+}
+function tryDecodeURIComponent(s) {
+	try {
+		return decodeURIComponent(s);
+	} catch {
+		return s;
+	}
+}
+function likelyUriComponent(s) {
+	return /%[0-9A-Fa-f]{2}/.test(s) || s.includes("+");
+}
+function bytesToArrayBuffer(bytes) {
+	const buf = bytes.buffer;
+	if (buf instanceof ArrayBuffer) return buf.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+	const ab = new ArrayBuffer(bytes.byteLength);
+	new Uint8Array(ab).set(bytes);
+	return ab;
+}
+function parseDataUrl(input) {
+	const s = (input || "").trim();
+	if (!s.toLowerCase().startsWith("data:")) return null;
+	const m = s.match(DATA_URL_RE);
+	if (!m?.groups) return null;
+	return {
+		mimeType: (m.groups.mime || DEFAULT_MIME).trim() || DEFAULT_MIME,
+		isBase64: (m.groups.params || "").toLowerCase().includes(";base64"),
+		data: m.groups.data ?? ""
+	};
+}
+function decodeBase64ToBytes(base64, options = {}) {
+	const alphabet = options.alphabet || "base64";
+	const lastChunkHandling = options.lastChunkHandling || "loose";
+	const s = (base64 || "").trim();
+	if (canUseFromBase64()) return Uint8Array.fromBase64(s, {
+		alphabet,
+		lastChunkHandling
+	});
+	const normalized = alphabet === "base64url" ? s.replace(/-/g, "+").replace(/_/g, "/") : s;
+	const padLen = (4 - normalized.length % 4) % 4;
+	const padded = normalized + "=".repeat(padLen);
+	const binary = typeof atob === "function" ? atob(padded) : "";
+	const out = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+	return out;
+}
+async function blobToBytes(blob) {
+	const ab = await blob.arrayBuffer();
+	return new Uint8Array(ab);
+}
+function looksLikeBase64(s) {
+	const t = (s || "").trim();
+	if (!t) return {
+		isBase64: false,
+		alphabet: "base64"
+	};
+	const alphabet = /[-_]/.test(t) && !/[+/]/.test(t) ? "base64url" : "base64";
+	const cleaned = (alphabet === "base64url" ? t.replace(/-/g, "+").replace(/_/g, "/") : t).replace(/[\r\n\s]/g, "");
+	if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleaned)) return {
+		isBase64: false,
+		alphabet
+	};
+	if (cleaned.length < 8) return {
+		isBase64: false,
+		alphabet
+	};
+	return {
+		isBase64: true,
+		alphabet
+	};
+}
+function canParseUrl(value) {
+	try {
+		if (typeof URL === "undefined") return false;
+		if (typeof URL.canParse === "function") return URL.canParse(value);
+		new URL(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+function extensionByMimeType(mimeType) {
+	const t = (mimeType || "").toLowerCase().split(";")[0].trim();
+	if (!t) return "bin";
+	const mapped = {
+		"text/plain": "txt",
+		"text/markdown": "md",
+		"text/html": "html",
+		"application/json": "json",
+		"application/xml": "xml",
+		"image/jpeg": "jpg",
+		"image/png": "png",
+		"image/webp": "webp",
+		"image/gif": "gif",
+		"image/svg+xml": "svg",
+		"application/pdf": "pdf"
+	};
+	if (mapped[t]) return mapped[t];
+	const slashIdx = t.indexOf("/");
+	if (slashIdx <= 0 || slashIdx >= t.length - 1) return "bin";
+	let subtype = t.slice(slashIdx + 1);
+	if (subtype.includes("+")) subtype = subtype.split("+")[0];
+	if (subtype.includes(".")) subtype = subtype.split(".").pop() || subtype;
+	return subtype || "bin";
+}
+function fallbackHashHex(bytes) {
+	let h = 2166136261;
+	for (let i = 0; i < bytes.length; i++) {
+		h ^= bytes[i];
+		h = Math.imul(h, 16777619);
+	}
+	return (h >>> 0).toString(16).padStart(8, "0").repeat(8);
+}
+async function sha256Hex(bytes) {
+	try {
+		const subtle = globalThis.crypto?.subtle;
+		if (!subtle) return fallbackHashHex(bytes);
+		const digest = await subtle.digest("SHA-256", bytes);
+		const out = new Uint8Array(digest);
+		return Array.from(out, (b) => b.toString(16).padStart(2, "0")).join("");
+	} catch {
+		return fallbackHashHex(bytes);
+	}
+}
+function isBase64Like(input) {
+	return looksLikeBase64(input).isBase64;
+}
+async function normalizeDataAsset(input, options = {}) {
+	const maxBytes = options.maxBytes ?? 52428800;
+	const namePrefix = (options.namePrefix || "asset").trim() || "asset";
+	const preserveFileName = options.preserveFileName ?? false;
+	let source = "text";
+	let blob;
+	let incomingFile = null;
+	if (input instanceof File) {
+		source = "file";
+		incomingFile = input;
+		blob = options.mimeType && options.mimeType !== input.type ? new Blob([await input.arrayBuffer()], { type: options.mimeType }) : input;
+	} else if (input instanceof Blob) {
+		source = "blob";
+		blob = options.mimeType && options.mimeType !== input.type ? new Blob([await input.arrayBuffer()], { type: options.mimeType }) : input;
+	} else {
+		const raw = (input instanceof URL ? input.toString() : String(input ?? "")).trim();
+		const parsed = parseDataUrl(raw);
+		const decodedUri = options.uriComponent ? tryDecodeURIComponent(raw) : likelyUriComponent(raw) ? tryDecodeURIComponent(raw) : raw;
+		if (parsed) source = "data-url";
+		else if (canParseUrl(raw)) source = "url";
+		else if (isBase64Like(raw)) source = "base64";
+		else if (decodedUri !== raw && (parseDataUrl(decodedUri) || isBase64Like(decodedUri) || canParseUrl(decodedUri))) source = "uri";
+		else source = "text";
+		blob = await stringToBlob(source === "uri" ? decodedUri : raw, {
+			mimeType: options.mimeType,
+			uriComponent: options.uriComponent,
+			isBase64: source === "base64" ? true : void 0,
+			maxBytes
+		});
+	}
+	const bytes = await blobToBytes(blob);
+	if (bytes.byteLength > maxBytes) throw new Error(`Data too large: ${bytes.byteLength} bytes`);
+	const hash = await sha256Hex(bytes);
+	const mimeType = (options.mimeType || blob.type || DEFAULT_MIME).trim() || DEFAULT_MIME;
+	const extension = extensionByMimeType(mimeType);
+	const hashedName = options.filename || `${namePrefix}-${hash.slice(0, 16)}.${extension}`;
+	const finalName = preserveFileName && incomingFile?.name ? incomingFile.name : hashedName;
+	const file = incomingFile && preserveFileName && !options.mimeType ? incomingFile : new File([blob], finalName, { type: mimeType });
+	return {
+		hash,
+		name: file.name,
+		type: file.type || mimeType,
+		size: file.size,
+		source,
+		file
+	};
+}
+async function stringToBlobOrFile(input, options = {}) {
+	const maxBytes = options.maxBytes ?? 52428800;
+	const raw = (input ?? "").trim();
+	const parsedDataUrl = parseDataUrl(raw);
+	if (parsedDataUrl) {
+		const mimeType = options.mimeType || parsedDataUrl.mimeType || DEFAULT_MIME;
+		const payload = options.uriComponent ? tryDecodeURIComponent(parsedDataUrl.data) : likelyUriComponent(parsedDataUrl.data) ? tryDecodeURIComponent(parsedDataUrl.data) : parsedDataUrl.data;
+		if (options.isBase64 ?? parsedDataUrl.isBase64) {
+			const bytes = decodeBase64ToBytes(payload, {
+				alphabet: options.base64?.alphabet || "base64",
+				lastChunkHandling: options.base64?.lastChunkHandling || "loose"
+			});
+			if (bytes.byteLength > maxBytes) throw new Error(`Decoded data too large: ${bytes.byteLength} bytes`);
+			const blob = new Blob([bytesToArrayBuffer(bytes)], { type: mimeType });
+			if (!options.asFile) return blob;
+			return new File([blob], options.filename || "file", { type: mimeType });
+		}
+		const blob = new Blob([payload], { type: mimeType });
+		if (!options.asFile) return blob;
+		return new File([blob], options.filename || "file", { type: mimeType });
+	}
+	try {
+		if (typeof URL !== "undefined" && URL.canParse?.(raw)) {
+			const blob = await (await fetch(raw)).blob();
+			const mimeType = options.mimeType || blob.type || DEFAULT_MIME;
+			const typed = blob.type === mimeType ? blob : new Blob([await blob.arrayBuffer()], { type: mimeType });
+			if (!options.asFile) return typed;
+			return new File([typed], options.filename || "file", { type: mimeType });
+		}
+	} catch {}
+	const maybeDecoded = options.uriComponent ? tryDecodeURIComponent(raw) : likelyUriComponent(raw) ? tryDecodeURIComponent(raw) : raw;
+	const base64Hint = looksLikeBase64(maybeDecoded);
+	const isBase64 = options.isBase64 ?? base64Hint.isBase64;
+	const mimeType = options.mimeType || (isBase64 ? DEFAULT_MIME : "text/plain;charset=utf-8");
+	if (isBase64) {
+		const bytes = decodeBase64ToBytes(maybeDecoded, {
+			alphabet: options.base64?.alphabet || base64Hint.alphabet,
+			lastChunkHandling: options.base64?.lastChunkHandling || "loose"
+		});
+		if (bytes.byteLength > maxBytes) throw new Error(`Decoded data too large: ${bytes.byteLength} bytes`);
+		const blob = new Blob([bytesToArrayBuffer(bytes)], { type: mimeType });
+		if (!options.asFile) return blob;
+		return new File([blob], options.filename || "file", { type: mimeType });
+	}
+	const blob = new Blob([maybeDecoded], { type: mimeType });
+	if (!options.asFile) return blob;
+	return new File([blob], options.filename || "file", { type: mimeType });
+}
+async function stringToBlob(input, options = {}) {
+	return await stringToBlobOrFile(input, {
+		...options,
+		asFile: false
+	});
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/WriteFileSmart-v2.ts
+var lureFsPromise = null;
+var getLureFs = () => {
+	if (!lureFsPromise) lureFsPromise = __vitePreload(() => Promise.resolve().then(() => src_exports$1).then((m) => ({
+		readFile: m.readFile,
+		writeFile: m.writeFile
+	})), void 0, import.meta.url);
+	return lureFsPromise;
+};
+var toSlug = (input, toLower = true) => {
+	let s = String(input || "").trim();
+	if (toLower) s = s.toLowerCase();
+	s = s.replace(/\s+/g, "-");
+	s = s.replace(/[^a-z0-9_.\-+#&]/g, "-");
+	s = s.replace(/-+/g, "-");
+	return s;
+};
+var inferExtFromMime = (mime = "") => {
+	if (!mime) return "";
+	if (mime.includes("json")) return "json";
+	if (mime.includes("markdown")) return "md";
+	if (mime.includes("plain")) return "txt";
+	if (mime === "image/jpeg" || mime === "image/jpg") return "jpg";
+	if (mime === "image/png") return "png";
+	if (mime.startsWith("image/")) return mime.split("/").pop() || "";
+	if (mime.includes("html")) return "html";
+	return "";
+};
+var splitPath = (path) => String(path || "").split("/").filter(Boolean);
+var ensureDir = (p) => p.endsWith("/") ? p : p + "/";
+var joinPath = (parts, absolute = true) => (absolute ? "/" : "") + parts.filter(Boolean).join("/");
+var sanitizePathSegments = (path) => {
+	return joinPath(splitPath(path).map((p) => toSlug(p)));
+};
+var DEFAULT_ARRAY_KEYS = [
+	"id",
+	"_id",
+	"key",
+	"slug",
+	"name"
+];
+var isPlainObject = (v) => Object.prototype.toString.call(v) === "[object Object]";
+function dedupeArray(items, opts) {
+	const keys = Array.isArray(opts.arrayKey) ? opts.arrayKey : opts.arrayKey ? [opts.arrayKey] : DEFAULT_ARRAY_KEYS;
+	const result = [];
+	const primitiveSet = /* @__PURE__ */ new Set();
+	const objMap = /* @__PURE__ */ new Map();
+	const stringifiedSet = /* @__PURE__ */ new Set();
+	for (const it of items) {
+		if (it == null) continue;
+		if (isPlainObject(it)) {
+			let dedupeKey;
+			for (const k of keys) if (k in it && it[k] != null) {
+				dedupeKey = String(it[k]);
+				break;
+			}
+			if (dedupeKey != null) {
+				if (!objMap.has(dedupeKey)) {
+					objMap.set(dedupeKey, it);
+					result.push(it);
+				}
+			} else {
+				const sig = safeStableStringify(it);
+				if (!stringifiedSet.has(sig)) {
+					stringifiedSet.add(sig);
+					result.push(it);
+				}
+			}
+		} else if (Array.isArray(it)) {
+			const sig = safeStableStringify(it);
+			if (!stringifiedSet.has(sig)) {
+				stringifiedSet.add(sig);
+				result.push(it);
+			}
+		} else if (!primitiveSet.has(it)) {
+			primitiveSet.add(it);
+			result.push(it);
+		}
+	}
+	return result;
+}
+function mergeDeepUnique(a, b, opts) {
+	if (Array.isArray(a) && Array.isArray(b)) switch (opts.arrayStrategy) {
+		case "replace": return b.slice();
+		case "concat": return a.concat(b);
+		default: return dedupeArray(a.concat(b), { arrayKey: opts.arrayKey });
+	}
+	if (isPlainObject(a) && isPlainObject(b)) {
+		const out = { ...a };
+		for (const k of Object.keys(b)) if (k in a) out[k] = mergeDeepUnique(a[k], b[k], opts);
+		else out[k] = b[k];
+		return out;
+	}
+	return b;
+}
+function safeStableStringify(obj) {
+	if (!isPlainObject(obj)) return JSON.stringify(obj);
+	const keys = Object.keys(obj).sort();
+	const o = {};
+	for (const k of keys) o[k] = obj[k];
+	return JSON.stringify(o);
+}
+async function blobToText(blob) {
+	return await blob.text();
+}
+async function readFileAsJson(root, fullPath) {
+	try {
+		const { readFile } = await getLureFs();
+		const existing = await readFile(root, fullPath)?.catch?.(console.warn.bind(console));
+		if (!existing) return null;
+		const text = await blobToText(existing);
+		if (!text?.trim()) return null;
+		return JSOX.parse(text);
+	} catch {
+		return null;
+	}
+}
+var writeFileSmart = async (root, dirOrPath, file, options = {}) => {
+	const { writeFile } = await getLureFs();
+	const { forceExt, ensureJson, toLower = true, sanitize = true, mergeJson, arrayStrategy = "union", arrayKey, jsonSpace = 2 } = options;
+	let raw = String(dirOrPath || "").trim();
+	const isDirHint = raw.endsWith("/");
+	const hasFileToken = !isDirHint && splitPath(raw).length > 0 && raw.includes(".");
+	let dirPath = isDirHint ? raw : hasFileToken ? raw.split("/").slice(0, -1).join("/") : raw;
+	let desiredName = hasFileToken ? raw.split("/").pop() || "" : file?.name || "";
+	dirPath = dirPath || "/";
+	desiredName = desiredName || Date.now() + "";
+	const lastDot = desiredName.lastIndexOf(".");
+	let base = lastDot > 0 ? desiredName.slice(0, lastDot) : desiredName;
+	let ext = forceExt || (ensureJson ? "json" : lastDot > 0 ? desiredName.slice(lastDot + 1) : inferExtFromMime(file?.type || "")) || "";
+	if (sanitize) {
+		dirPath = sanitizePathSegments(dirPath);
+		base = toSlug(base, toLower);
+	}
+	const finalName = ext ? `${base}.${ext}` : base;
+	const fullPath = ensureDir(dirPath) + finalName;
+	if (mergeJson !== false && (ensureJson || ext.toLowerCase() === "json" || file?.type === "application/json")) try {
+		let incomingJson;
+		if (file instanceof File || file instanceof Blob) {
+			const txt = await blobToText(file);
+			incomingJson = txt?.trim() ? JSOX.parse(txt) : {};
+		} else incomingJson = file;
+		const existingJson = await readFileAsJson(root, fullPath)?.catch?.(console.warn.bind(console));
+		let merged = existingJson != null ? mergeDeepUnique(existingJson, incomingJson, {
+			arrayStrategy,
+			arrayKey
+		}) : incomingJson;
+		const jsonString = JSON.stringify(merged, void 0, jsonSpace);
+		const rs = await writeFile(root, fullPath, new File([jsonString], finalName, { type: "application/json" }))?.catch?.(console.warn.bind(console));
+		if (typeof document !== "undefined") document?.dispatchEvent?.(new CustomEvent("rs-fs-changed", {
+			detail: rs,
+			bubbles: true,
+			composed: true,
+			cancelable: true
+		}));
+		return rs;
+	} catch (err) {
+		console.warn("writeFileSmart JSON merge failed, falling back to raw write:", err);
+	}
+	let toWrite;
+	if (file instanceof File) {
+		if (file.name === finalName) toWrite = file;
+		else {
+			const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
+			const buf = await file.arrayBuffer();
+			toWrite = new File([buf], finalName, { type });
+		}
+	} else {
+		const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
+		toWrite = new File([await file.arrayBuffer()], finalName, { type });
+	}
+	const rs = await writeFile(root, fullPath, toWrite)?.catch?.(console.warn.bind(console));
+	if (typeof document !== "undefined") document?.dispatchEvent?.(new CustomEvent("rs-fs-changed", {
+		detail: rs,
+		bubbles: true,
+		composed: true,
+		cancelable: true
+	}));
+	return rs;
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/FsWatch.ts
+var matchPath = (path = "", dir = "") => {
+	const normalizedDir = dir.endsWith("/") ? dir : `${dir}/`;
+	return path.startsWith(normalizedDir);
+};
+var channel = new BroadcastChannel("rs-fs");
+var watchers = /* @__PURE__ */ new Map();
+channel.addEventListener("close", () => watchers.clear());
+channel.addEventListener("message", (event) => {
+	const payload = event?.data;
+	if (!payload || payload.type !== "commit-result" && payload.type !== "commit-to-clipboard") return;
+	const results = payload?.results ?? [];
+	if (!Array.isArray(results) || !results.length) return;
+	for (const [dir, listeners] of watchers.entries()) {
+		if (!listeners.size) continue;
+		if (!results.some((item) => matchPath(item?.path, dir))) continue;
+		for (const listener of listeners) try {
+			listener();
+		} catch (e) {
+			console.warn(e);
+		}
+	}
+});
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/FileHandling.ts
+var FileHandler = class {
+	options;
+	dragOverElements = /* @__PURE__ */ new Set();
+	constructor(options) {
+		this.options = { ...options };
+	}
+	/**
+	* Programmatically add files into the same pipeline as UI selection / DnD / paste.
+	* Used by PWA share-target and launchQueue ingestion.
+	*/
+	addFiles(files) {
+		if (!Array.isArray(files) || files.length === 0) return;
+		return this.options.onFilesAdded(files);
+	}
+	/**
+	* Set up file input element with file selection
+	*/
+	setupFileInput(container, accept = "*") {
+		const fileInput = document.createElement("input");
+		fileInput.type = "file";
+		fileInput.multiple = true;
+		fileInput.accept = accept;
+		fileInput.style.display = "none";
+		fileInput.addEventListener("change", (e) => {
+			const files = Array.from(e.target.files || []);
+			if (files.length > 0) this.options.onFilesAdded(files);
+			fileInput.value = "";
+		});
+		container.append(fileInput);
+		return fileInput;
+	}
+	/**
+	* Set up drag and drop handling for an element
+	*/
+	setupDragAndDrop(element) {
+		element.addEventListener("dragover", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.addDragOver(element);
+		});
+		element.addEventListener("dragleave", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.removeDragOver(element);
+		});
+		element.addEventListener("drop", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.removeDragOver(element);
+			const files = Array.from(e.dataTransfer?.files || []);
+			if (files.length > 0) this.options.onFilesAdded(files);
+		});
+	}
+	/**
+	* Set up paste handling for an element
+	*/
+	setupPasteHandling(element) {
+		element.addEventListener("paste", (e) => {
+			const files = Array.from(e.clipboardData?.files || []);
+			if (files.length > 0) {
+				e.preventDefault();
+				this.options.onFilesAdded(files);
+			}
+		});
+	}
+	/**
+	* Set up all file handling for a container (file input button, drag & drop, paste)
+	*/
+	setupCompleteFileHandling(container, fileSelectButton, dropZone, accept = "*") {
+		const fileInput = this.setupFileInput(container, accept);
+		fileSelectButton.addEventListener("click", () => {
+			fileInput.click();
+		});
+		if (dropZone) this.setupDragAndDrop(dropZone);
+		this.setupPasteHandling(container);
+	}
+	/**
+	* Validate file types and sizes
+	*/
+	validateFiles(files, options = {}) {
+		const { maxSize, allowedTypes, maxFiles } = options;
+		const valid = [];
+		const invalid = [];
+		if (maxFiles && files.length > maxFiles) {
+			invalid.push(...files.slice(maxFiles).map((file) => ({
+				file,
+				reason: `Too many files. Maximum ${maxFiles} files allowed.`
+			})));
+			files = files.slice(0, maxFiles);
+		}
+		for (const file of files) {
+			let isValid = true;
+			let reason = "";
+			if (maxSize && file.size > maxSize) {
+				isValid = false;
+				reason = `File too large. Maximum size is ${this.formatFileSize(maxSize)}.`;
+			}
+			if (allowedTypes && allowedTypes.length > 0) {
+				if (!allowedTypes.some((type) => {
+					if (type.includes("*")) return file.type.startsWith(type.replace("/*", "/"));
+					return file.type === type;
+				})) {
+					isValid = false;
+					reason = reason || `File type not allowed. Allowed types: ${allowedTypes.join(", ")}.`;
+				}
+			}
+			if (isValid) valid.push(file);
+			else invalid.push({
+				file,
+				reason
+			});
+		}
+		return {
+			valid,
+			invalid
+		};
+	}
+	/**
+	* Read file content as text
+	*/
+	async readFileAsText(file, onProgress) {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to read file: ${file.name}`));
+			if (onProgress) reader.onprogress = (e) => {
+				if (e.lengthComputable) onProgress(e.loaded, e.total);
+			};
+			reader.readAsText(file);
+		});
+	}
+	/**
+	* Read file content as ArrayBuffer
+	*/
+	async readFileAsArrayBuffer(file) {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to read file: ${file.name}`));
+			reader.readAsArrayBuffer(file);
+		});
+	}
+	/**
+	* Read file content as Data URL
+	*/
+	async readFileAsDataURL(file) {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to read file: ${file.name}`));
+			reader.readAsDataURL(file);
+		});
+	}
+	/**
+	* Read multiple files as text
+	*/
+	async readFilesAsText(files, onProgress) {
+		const results = [];
+		for (const file of files) try {
+			const content = await this.readFileAsText(file, (loaded, total) => {
+				onProgress?.(file, loaded, total);
+			});
+			results.push({
+				file,
+				content
+			});
+		} catch (error) {
+			console.warn(`Failed to read file ${file.name}:`, error);
+		}
+		return results;
+	}
+	/**
+	* Get file icon based on MIME type
+	*/
+	getFileIcon(mimeType) {
+		if (mimeType.startsWith("image/")) return "🖼️";
+		if (mimeType === "application/pdf") return "📄";
+		if (mimeType.includes("json")) return "📋";
+		if (mimeType.includes("text") || mimeType.includes("markdown")) return "📝";
+		if (mimeType.includes("javascript") || mimeType.includes("typescript")) return "📜";
+		if (mimeType.includes("css")) return "🎨";
+		if (mimeType.includes("html")) return "🌐";
+		if (mimeType.startsWith("video/")) return "🎥";
+		if (mimeType.startsWith("audio/")) return "🎵";
+		if (mimeType.includes("zip") || mimeType.includes("rar")) return "📦";
+		return "📄";
+	}
+	/**
+	* Format file size for display
+	*/
+	formatFileSize(bytes) {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
+		return `${(bytes / 1073741824).toFixed(1)} GB`;
+	}
+	/**
+	* Check if a file is likely a markdown file
+	*/
+	isMarkdownFile(file) {
+		const name = file.name.toLowerCase();
+		const type = file.type.toLowerCase();
+		return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".mdown") || name.endsWith(".mkd") || name.endsWith(".mkdn") || name.endsWith(".mdtxt") || name.endsWith(".mdtext") || type.includes("markdown") || type.includes("text");
+	}
+	/**
+	* Check if a file is an image
+	*/
+	isImageFile(file) {
+		return file.type.startsWith("image/");
+	}
+	/**
+	* Check if a file is a text file
+	*/
+	isTextFile(file) {
+		return file.type.startsWith("text/") || this.isMarkdownFile(file) || file.type.includes("javascript") || file.type.includes("typescript") || file.type.includes("css") || file.type.includes("html") || file.type.includes("json") || file.type.includes("xml");
+	}
+	/**
+	* Check if a file is a binary file
+	*/
+	isBinaryFile(file) {
+		return !this.isTextFile(file) && !this.isImageFile(file);
+	}
+	/**
+	* Get file metadata
+	*/
+	getFileMetadata(file) {
+		const extension = file.name.split(".").pop()?.toLowerCase() || "";
+		const isText = this.isTextFile(file);
+		const isImage = this.isImageFile(file);
+		const isBinary = this.isBinaryFile(file);
+		return {
+			name: file.name,
+			extension,
+			size: file.size,
+			type: file.type,
+			lastModified: file.lastModified,
+			isText,
+			isImage,
+			isBinary,
+			formattedSize: this.formatFileSize(file.size),
+			icon: this.getFileIcon(file.type)
+		};
+	}
+	/**
+	* Get files metadata for multiple files
+	*/
+	getFilesMetadata(files) {
+		return files.map((file) => this.getFileMetadata(file));
+	}
+	addDragOver(element) {
+		if (!this.dragOverElements.has(element)) {
+			this.dragOverElements.add(element);
+			element.classList.add("drag-over");
+		}
+	}
+	removeDragOver(element) {
+		if (this.dragOverElements.has(element)) {
+			this.dragOverElements.delete(element);
+			element.classList.remove("drag-over");
+		}
+	}
+	/**
+	* Manually trigger file processing with the provided files
+	*/
+	processFiles(files) {
+		this.options.onFilesAdded(files);
+	}
+	/**
+	* Create a downloadable file from content
+	*/
+	createDownloadableFile(content, filename, mimeType) {
+		let blob;
+		if (content instanceof Blob) blob = content;
+		else if (content instanceof ArrayBuffer) blob = new Blob([content], { type: mimeType || "application/octet-stream" });
+		else blob = new Blob([content], { type: mimeType || "text/plain;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		a.style.display = "none";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		setTimeout(() => URL.revokeObjectURL(url), 100);
+	}
+	/**
+	* Create a shareable file URL
+	*/
+	createFileURL(file) {
+		return URL.createObjectURL(file);
+	}
+	/**
+	* Revoke a file URL to free memory
+	*/
+	revokeFileURL(url) {
+		URL.revokeObjectURL(url);
+	}
+	/**
+	* Clean up event listeners and references
+	*/
+	destroy() {
+		this.dragOverElements.clear();
+	}
+};
+/**
+* Utility function to create a file handler with default options
+*/
+function createFileHandler(options) {
+	return new FileHandler(options);
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/markdown-assets.ts
+/** True for `./assets/x`, `docs/a.md` — not http(s)/blob/data/#. */
+var isMarkdownRelativeRef = (value) => {
+	const raw = String(value || "").trim();
+	return Boolean(raw) && !/^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/|#|data:|blob:)/.test(raw);
+};
+/** Keep the markdown-relative token (`./assets/x.png`) even after the browser resolved it to the PWA origin. */
+var originalRelFromRef = (value) => {
+	const raw = String(value || "").trim();
+	if (!raw || raw.startsWith("#") || raw.startsWith("blob:") || raw.startsWith("data:")) return "";
+	if (isMarkdownRelativeRef(raw)) return raw;
+	try {
+		const url = new URL(raw, globalThis.location?.href || "http://localhost/");
+		if (globalThis.location?.origin && url.origin === globalThis.location.origin) return url.pathname.replace(/^\/+/, "");
+	} catch {}
+	return "";
+};
+/**
+* Main-thread `provide()` of a bound relative path (`/mounts/md-xxx/` + `./assets/logo.png`).
+* WHY: skips OPFS worker + HTTP fetch (JXL hooks those). Mapped `/mounts/` uses `walkExactFile`.
+*/
+var provideBoundRelative = async (mountRoot, originalRel, sourceUrl) => {
+	const rel = originalRelFromRef(originalRel) || String(originalRel || "").trim();
+	if (!rel) return null;
+	const bases = [];
+	if (sourceUrl && isVirtualFsPath(sourceUrl)) bases.push(getDir(sourceUrl));
+	if (mountRoot) bases.push(mountRoot);
+	const seen = /* @__PURE__ */ new Set();
+	for (const base of bases) for (const candidate of relPathCandidates(rel)) {
+		const path = normalizePath(base, candidate);
+		if (!path || seen.has(path)) continue;
+		seen.add(path);
+		const file = await provide(path).catch(() => null);
+		if (file) return file;
+	}
+	return null;
+};
+/** `assets/logo/x.png` → also `logo/x.png`, `x.png` (picker was `assets/` or `logo/`). */
+var relPathCandidates = (rel) => {
+	const clean = String(rel || "").trim().replace(/^\.\//, "").replace(/^\/+/, "");
+	if (!clean || /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/)/.test(clean)) return [];
+	const parts = clean.split(/[\\/]/).filter(Boolean);
+	return parts.map((_, i) => parts.slice(i).join("/"));
+};
+var findFileByBasename = async (dir, basename, depth = 5) => {
+	try {
+		return await (await dir.getFileHandle(basename, { create: false })).getFile();
+	} catch {}
+	if (depth <= 0) return null;
+	for await (const [, handle] of dir.entries()) {
+		if (handle.kind !== "directory") continue;
+		const found = await findFileByBasename(handle, basename, depth - 1);
+		if (found) return found;
+	}
+	return null;
+};
+/** Walk a picked folder so the viewer can resolve `./assets/…` by relative path or basename. */
+var indexDirectoryFiles = async (dir, prefix = "", depth = 8, acc = []) => {
+	if (depth < 0) return acc;
+	for await (const [name, handle] of dir.entries()) {
+		const rel = prefix ? `${prefix}/${name}` : name;
+		if (handle.kind === "file") try {
+			acc.push({
+				rel,
+				file: await handle.getFile()
+			});
+		} catch {}
+		else if (handle.kind === "directory") await indexDirectoryFiles(handle, rel, depth - 1, acc);
+	}
+	return acc;
+};
+/** Read a markdown-relative file from a picked directory (any ancestor of the file). */
+var resolveFileUnderDirectory = async (dir, rel) => {
+	if (!dir) return null;
+	const candidates = relPathCandidates(rel);
+	for (const candidate of candidates) {
+		const handle = await walkExactFile(dir, candidate);
+		if (!handle) continue;
+		try {
+			return await handle.getFile();
+		} catch {}
+	}
+	const base = candidates.at(-1);
+	if (!base || base.includes("/")) return null;
+	return findFileByBasename(dir, base);
+};
+/** Chromium File System Access — pick the folder that holds images / includes. */
+var pickAssetDirectory = async (options = {}) => {
+	const pick = globalThis.showDirectoryPicker;
+	if (typeof pick !== "function") return null;
+	try {
+		return await pick({
+			mode: options.mode || "read",
+			id: options.id || "markdown-assets",
+			startIn: options.startIn
+		});
+	} catch (error) {
+		if (error?.name === "AbortError") return null;
+		console.warn("[markdown-assets] showDirectoryPicker failed", error);
+		return null;
+	}
+};
+/** Watch a handle with experimental FileSystemObserver. */
+var observeFileSystemHandle = (handle, onRecords) => {
+	const Ctor = globalThis.FileSystemObserver;
+	if (typeof Ctor !== "function" || !handle) return null;
+	try {
+		const observer = new Ctor((records) => onRecords(records));
+		const obs = observer;
+		Promise.resolve(obs.observe(handle, { recursive: true })).catch(() => Promise.resolve(obs.observe(handle))).catch(() => {});
+		return { disconnect: () => observer.disconnect?.() };
+	} catch {
+		return null;
+	}
+};
+/** Map a picked directory to `/mounts/<id>/` for `provide()` + relative markdown URLs. */
+var mountPickedDirectory = (dir, prefix = "md") => {
+	const root = `/mounts/${prefix}-${Date.now().toString(36)}/`;
+	registerDirectoryRoot(root, dir);
+	return root;
+};
+/** Walk a directory tree for the relative path of a file handle. */
+var findEntryRelPath = async (dir, target) => {
+	for await (const [name, handle] of dir.entries()) if (handle.kind === "file") try {
+		if (await handle.isSameEntry(target)) return name;
+	} catch {}
+	else if (handle.kind === "directory") {
+		const inner = await findEntryRelPath(handle, target);
+		if (inner) return `${name}/${inner}`;
+	}
+	return null;
+};
+var ABSOLUTE_OR_EMBEDDED = /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/|#|data:|blob:)/;
+/** Relative `![](…)` / `src` / `href` refs that need a sibling folder or sidecar files. */
+var collectRelativeMarkdownAssetRefs = (markdown) => {
+	const refs = /* @__PURE__ */ new Set();
+	const md = String(markdown || "");
+	for (const re of [/!\[[^\]]*\]\(\s*<?([^)\s>]+)>?/g, /\b(?:src|href)=["']([^"']+)["']/gi]) {
+		re.lastIndex = 0;
+		let match = re.exec(md);
+		while (match) {
+			const raw = String(match[1] || "").trim();
+			if (raw && !ABSOLUTE_OR_EMBEDDED.test(raw)) refs.add(raw.replace(/^\.\//, ""));
+			match = re.exec(md);
+		}
+	}
+	return [...refs];
+};
+var basenameOf = (value) => String(value || "").split(/[\\/]/).pop() || String(value || "");
+/** True when the markdown points at local assets that are not already in the transfer. */
+var markdownNeedsBoundDirectory = (markdown, sidecarNames = []) => {
+	const refs = collectRelativeMarkdownAssetRefs(markdown);
+	if (!refs.length) return false;
+	const names = new Set(sidecarNames.map((name) => basenameOf(name).toLowerCase()).filter(Boolean));
+	return refs.some((ref) => !names.has(basenameOf(ref).toLowerCase()));
+};
+/**
+* Offer `showDirectoryPicker` (same user-activation as Launch Queue when possible).
+* Cancel / missing API → null; caller continues with the File body alone.
+*/
+var bindDirectoryForLaunchedFiles = async (options) => {
+	const files = Array.isArray(options.files) ? options.files : [];
+	const mdName = String(options.filename || "").trim();
+	const mdFile = mdName && files.find((file) => file.name === mdName) || files.find((file) => /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/i.test(file.name)) || files[0];
+	let text = String(options.markdownText || "");
+	if (!text && mdFile) try {
+		text = await mdFile.text();
+	} catch {
+		text = "";
+	}
+	const sidecars = files.filter((file) => file !== mdFile).map((file) => file.name);
+	if (!markdownNeedsBoundDirectory(text, sidecars)) return null;
+	const dir = await pickAssetDirectory({
+		startIn: options.startIn,
+		id: "markdown-assets",
+		mode: "read"
+	});
+	if (!dir) return null;
+	const root = mountPickedDirectory(dir, "md");
+	let rel = mdFile?.name || mdName || "document.md";
+	const start = options.startIn;
+	if (start && start.kind === "file") {
+		const found = await findEntryRelPath(dir, start);
+		if (found) rel = found;
+	}
+	return {
+		root,
+		virtualPath: `${root}${rel}`
+	};
+};
+var MARKDOWN_INPUT_ACCEPT = ".md,.markdown,.mdown,.mkd,.mkdn,.mdtxt,.mdtext,.txt,text/markdown,text/plain";
+var pickFilesViaInput = (options) => new Promise((resolve) => {
+	const input = document.createElement("input");
+	input.type = "file";
+	if (options.accept) input.accept = options.accept;
+	if (options.multiple) input.multiple = true;
+	if (options.directory) {
+		input.setAttribute("webkitdirectory", "");
+		input.setAttribute("directory", "");
+		input.multiple = true;
+	}
+	const finish = (files) => resolve(files);
+	input.addEventListener("change", () => finish(Array.from(input.files || [])), { once: true });
+	input.addEventListener("cancel", () => finish([]), { once: true });
+	input.click();
+});
+/** FSA when present; Capacitor / CRX / Firefox fall back to `<input type=file>`. */
+var pickMarkdownFile = async () => {
+	const pickFile = globalThis.showOpenFilePicker;
+	if (typeof pickFile === "function") try {
+		const [handle] = await pickFile({
+			multiple: false,
+			types: [{
+				description: "Markdown",
+				accept: {
+					"text/markdown": [
+						".md",
+						".markdown",
+						".mdown",
+						".mkd"
+					],
+					"text/plain": [".txt"]
+				}
+			}]
+		});
+		if (!handle) return null;
+		return {
+			file: await handle.getFile(),
+			sidecars: []
+		};
+	} catch (error) {
+		if (error?.name === "AbortError") return null;
+	}
+	const files = await pickFilesViaInput({ accept: MARKDOWN_INPUT_ACCEPT });
+	return files[0] ? {
+		file: files[0],
+		sidecars: []
+	} : null;
+};
+/**
+* Folder of images / includes. Chromium FSA first; otherwise `webkitdirectory`
+* (Capacitor WebView + CRX) so relative `![](./assets/…)` can resolve from sidecars.
+*/
+var pickSidecarDirectoryFiles = async () => {
+	const dir = await pickAssetDirectory({
+		id: "markdown-assets",
+		mode: "read"
+	});
+	if (dir) return {
+		files: (await indexDirectoryFiles(dir)).map((row) => {
+			try {
+				Object.defineProperty(row.file, "webkitRelativePath", { value: row.rel });
+			} catch {}
+			return row.file;
+		}),
+		directory: dir,
+		root: mountPickedDirectory(dir, "md")
+	};
+	return {
+		files: await pickFilesViaInput({ directory: true }),
+		directory: null,
+		root: null
+	};
+};
+/** PWA FSA → CRX `chrome.downloads` → Web Share (Capacitor) → `<a download>`. */
+var saveMarkdownBlob = async (content, filename) => {
+	const name = String(filename || "document.md").trim() || "document.md";
+	const savePicker = globalThis.showSaveFilePicker;
+	if (typeof savePicker === "function") try {
+		const writable = await (await savePicker({
+			suggestedName: name,
+			types: [{
+				description: "Markdown files",
+				accept: { "text/markdown": [".md", ".markdown"] }
+			}]
+		})).createWritable();
+		await writable.write(content);
+		await writable.close();
+		return "saved";
+	} catch (error) {
+		if (error?.name === "AbortError") return "cancelled";
+	}
+	const chromeDl = globalThis.chrome?.downloads?.download;
+	const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+	if (typeof chromeDl === "function") {
+		const url = URL.createObjectURL(blob);
+		try {
+			await chromeDl({
+				url,
+				filename: name,
+				saveAs: true
+			});
+			return "downloaded";
+		} catch {
+			URL.revokeObjectURL(url);
+		}
+	}
+	const file = new File([blob], name, { type: "text/markdown" });
+	const nav = navigator;
+	if (typeof nav.share === "function" && (!nav.canShare || nav.canShare({ files: [file] }))) try {
+		await nav.share({
+			files: [file],
+			title: name
+		});
+		return "shared";
+	} catch (error) {
+		if (error?.name === "AbortError") return "cancelled";
+	}
+	try {
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = name;
+		a.click();
+		setTimeout(() => URL.revokeObjectURL(url), 250);
+		return "downloaded";
+	} catch {
+		return "failed";
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/interactive/modules/LazyLoader.ts
+/**
+* Lazy load a component and its CSS
+*/
+async function lazyLoadComponent(importFn, options) {
+	const { cssPath, componentName } = options;
+	console.log(`[LazyLoader] Loading component: ${componentName}`);
+	if (cssPath) try {
+		await loadCSS(cssPath);
+	} catch (error) {
+		console.warn(`[LazyLoader] Failed to load CSS for ${componentName}:`, error);
+	}
+	try {
+		const component = await importFn();
+		console.log(`[LazyLoader] Successfully loaded component: ${componentName}`);
+		return { component };
+	} catch (error) {
+		console.error(`[LazyLoader] Failed to load component ${componentName}:`, error);
+		throw error;
+	}
+}
+/**
+* Load CSS dynamically
+*/
+async function loadCSS(href) {
+	return new Promise((resolve, reject) => {
+		if (document.querySelectorAll(`link[href="${href}"]`).length > 0) {
+			resolve();
+			return;
+		}
+		const link = document.createElement("link");
+		link.rel = "stylesheet";
+		link.href = href;
+		link.onload = () => resolve();
+		link.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to load CSS: ${href}`));
+		document.head.appendChild(link);
+	});
+}
+/**
+* Cache for loaded components to avoid re-loading
+*/
+var componentCache = /* @__PURE__ */ new Map();
+/**
+* Get or load a cached component
+*/
+async function getCachedComponent(cacheKey, importFn, options) {
+	if (componentCache.has(cacheKey)) return componentCache.get(cacheKey);
+	const lazyComponent = await lazyLoadComponent(importFn, options);
+	componentCache.set(cacheKey, lazyComponent);
+	return lazyComponent;
+}
+//#endregion
+//#region ../../modules/projects/lur.e/src/index.ts
+var src_exports$1 = /* @__PURE__ */ __exportAll({
+	$behavior: () => $behavior,
+	$createElement: () => $createElement,
+	$mapped: () => $mapped,
+	$observeAttribute: () => $observeAttribute,
+	$observeInput: () => $observeInput,
+	$virtual: () => $virtual,
+	ANIMATABLE_BRAND: () => ANIMATABLE_BRAND,
+	C: () => C,
+	CSM: () => CSM,
+	CSSCalc: () => CSSCalc,
+	ClosePriority: () => ClosePriority,
+	DESKTOP_DRAFT_KEY: () => DESKTOP_DRAFT_KEY,
+	DESKTOP_MAIN_KEY: () => DESKTOP_MAIN_KEY,
+	E: () => E,
+	EventHandler: () => EventHandler,
+	FileHandler: () => FileHandler,
+	Fragment: () => Fragment,
+	GLitElement: () => GLitElement,
+	H: () => H,
+	HistoryManager: () => HistoryManager,
+	I: () => I,
+	ITEM_COMPACT_KIND: () => ITEM_COMPACT_KIND,
+	JUNCTION_DRAG_EVENTS: () => JUNCTION_DRAG_EVENTS,
+	JUNCTION_RESIZE_EVENTS: () => JUNCTION_RESIZE_EVENTS,
+	JUNCTION_SELECT_EVENTS: () => JUNCTION_SELECT_EVENTS,
+	JunctionDragMixin: () => JunctionDragMixin,
+	JunctionResizeMixin: () => JunctionResizeMixin,
+	JunctionSelectMixin: () => JunctionSelectMixin,
+	M: () => M$1,
+	Q: () => Q,
+	Qp: () => Qp,
+	ReactiveViewport: () => ReactiveViewport,
+	S: () => S,
+	SwM: () => SwM,
+	Task: () => Task,
+	TemplateManager: () => TemplateManager,
+	VoiceInputManager: () => VoiceInputManager,
+	addProxiedEvent: () => addProxiedEvent,
+	addToBank: () => addToBank,
+	alives: () => alives,
+	applyNormalizedInlineStyle: () => applyNormalizedInlineStyle,
+	attrLink: () => attrLink,
+	attrRef: () => attrRef,
+	bindCtrl: () => bindCtrl,
+	bindDirectoryForLaunchedFiles: () => bindDirectoryForLaunchedFiles,
+	bindHandler: () => bindHandler,
+	bindOutsideDismiss: () => bindOutsideDismiss,
+	bindStyle: () => bindStyle,
+	bindTriggerHandlers: () => bindTriggerHandlers,
+	bindWith: () => bindWith,
+	blobToBytes: () => blobToBytes,
+	checkedLink: () => checkedLink,
+	checkedRef: () => checkedRef,
+	closeHighestPriority: () => closeHighestPriority,
+	collectRelativeMarkdownAssetRefs: () => collectRelativeMarkdownAssetRefs,
+	colorScheme: () => colorScheme,
+	compileInlineStyleAttribute: () => compileInlineStyleAttribute,
+	copy: () => copy,
+	copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
+	createElement: () => createElement,
+	createFileHandler: () => createFileHandler,
+	createHistoryManager: () => createHistoryManager,
+	createTemplateManager: () => createTemplateManager,
+	currentHandleMap: () => currentHandleMap,
+	decodeBase64ToBytes: () => decodeBase64ToBytes,
+	decodeDesktopState: () => decodeDesktopState,
+	defaultLogger: () => defaultLogger,
+	defineElement: () => defineElement,
+	detectTypeByRelPath: () => detectTypeByRelPath,
+	directHandlers: () => directHandlers,
+	directoryCacheMap: () => directoryCacheMap,
+	downloadFile: () => downloadFile,
+	dropFile: () => dropFile,
+	dynamicBgColors: () => dynamicBgColors,
+	dynamicNativeFrame: () => dynamicNativeFrame,
+	dynamicTheme: () => dynamicTheme,
+	elMap: () => elMap$1,
+	electronAPI: () => electronAPI,
+	elementPointerMap: () => elementPointerMap,
+	ensureHostStyles: () => ensureHostStyles,
+	ensureWorker: () => ensureWorker,
+	eventTrigger: () => eventTrigger,
+	findEntryRelPath: () => findEntryRelPath,
+	generalFileImportDesc: () => generalFileImportDesc,
+	getActiveCloseable: () => getActiveCloseable,
+	getActiveCloseables: () => getActiveCloseables,
+	getBy: () => getBy,
+	getCachedComponent: () => getCachedComponent,
+	getDir: () => getDir,
+	getDirectoryHandle: () => getDirectoryHandle,
+	getFileHandle: () => getFileHandle,
+	getFocused: () => getFocused,
+	getHandler: () => getHandler,
+	getIgnoreNextPopState: () => getIgnoreNextPopState,
+	getMimeTypeByFilename: () => getMimeTypeByFilename,
+	getSpeechPrompt: () => getSpeechPrompt,
+	ghostImage: () => ghostImage,
+	handleByPointer: () => handleByPointer,
+	handleError: () => handleError,
+	handleIncomingEntries: () => handleIncomingEntries,
+	hasActiveCloseable: () => hasActiveCloseable,
+	hasFileExtension: () => hasFileExtension,
+	historyState: () => historyState,
+	html: () => html,
+	htmlBuilder: () => htmlBuilder,
+	ignoreNextPopState: () => ignoreNextPopState,
+	indexDirectoryFiles: () => indexDirectoryFiles,
+	initBackNavigation: () => initBackNavigation,
+	initClipboardReceiver: () => initClipboardReceiver,
+	initGlobalClipboard: () => initGlobalClipboard,
+	initHistory: () => initHistory,
+	isAnimatableValue: () => isAnimatableValue,
+	isBase64Like: () => isBase64Like,
+	isEffectivelyEmptyStyleText: () => isEffectivelyEmptyStyleText,
+	isMarkdownRelativeRef: () => isMarkdownRelativeRef,
+	isNativeCSSStyleValue: () => isNativeCSSStyleValue,
+	isNotExtended: () => isNotExtended,
+	isReactiveStyleValue: () => isReactiveStyleValue,
+	isStyleBinding: () => isStyleBinding,
+	isVirtualFsPath: () => isVirtualFsPath,
+	junctionToBox: () => junctionToBox,
+	lazyAddEventListener: () => lazyAddEventListener,
+	lazyLoadComponent: () => lazyLoadComponent,
+	listenForClipboardRequests: () => listenForClipboardRequests,
+	listenerOptionsFor: () => listenerOptionsFor,
+	loadCachedStyles: () => loadCachedStyles,
+	loadDesktopRaw: () => loadDesktopRaw,
+	localStorageLink: () => localStorageLink,
+	localStorageLinkMap: () => localStorageLinkMap,
+	localStorageRef: () => localStorageRef,
+	makeLinker: () => makeLinker,
+	makeRef: () => makeRef,
+	makeTask: () => makeTask,
+	makeUIState: () => makeUIState,
+	mappedRoots: () => mappedRoots,
+	markdownNeedsBoundDirectory: () => markdownNeedsBoundDirectory,
+	matchMappedRoot: () => matchMappedRoot,
+	matchMediaLink: () => matchMediaLink,
+	matchMediaRef: () => matchMediaRef,
+	maybeStartThemeEngine: () => maybeStartThemeEngine,
+	mergeByKey: () => mergeByKey,
+	mixinDisposers: () => mixinDisposers,
+	mountPickedDirectory: () => mountPickedDirectory,
+	mutationTrigger: () => mutationTrigger,
+	navigate: () => navigate,
+	navigationEnable: () => navigationEnable,
+	normalizeDataAsset: () => normalizeDataAsset,
+	normalizePath: () => normalizePath,
+	numberRef: () => numberRef$1,
+	observeFileSystemHandle: () => observeFileSystemHandle,
+	openDirectory: () => openDirectory,
+	originalForward: () => originalForward,
+	originalGo: () => originalGo,
+	originalPush: () => originalPush,
+	originalRelFromRef: () => originalRelFromRef,
+	originalReplace: () => originalReplace,
+	parseDataUrl: () => parseDataUrl,
+	pickAssetDirectory: () => pickAssetDirectory,
+	pickBgColor: () => pickBgColor,
+	pickFromCenter: () => pickFromCenter,
+	pickMarkdownFile: () => pickMarkdownFile,
+	pickSidecarDirectoryFiles: () => pickSidecarDirectoryFiles,
+	placeOverlay: () => placeOverlay,
+	pointerAnchorRef: () => pointerAnchorRef,
+	post: () => post,
+	propStore: () => propStore,
+	property: () => property,
+	provide: () => provide,
+	provideBoundRelative: () => provideBoundRelative,
+	pruneEmptyStyleAttribute: () => pruneEmptyStyleAttribute,
+	readFile: () => readFile,
+	reflectControllers: () => reflectControllers,
+	registerCloseable: () => registerCloseable,
+	registerDirectoryRoot: () => registerDirectoryRoot,
+	registerModal: () => registerModal,
+	registerTask: () => registerTask,
+	registerTransientOverlay: () => registerTransientOverlay,
+	rehydrateAdoptedStyleSheets: () => rehydrateAdoptedStyleSheets,
+	relPathCandidates: () => relPathCandidates,
+	reloadInto: () => reloadInto,
+	remove: () => remove,
+	removeFile: () => removeFile,
+	removeFromBank: () => removeFromBank,
+	resolveFileUnderDirectory: () => resolveFileUnderDirectory,
+	resolveOverlayHost: () => resolveOverlayHost,
+	resolvePath: () => resolvePath,
+	resolvePlacement: () => resolvePlacement,
+	resolveRootHandle: () => resolveRootHandle,
+	saveMarkdownBlob: () => saveMarkdownBlob,
+	saveUIState: () => saveUIState,
+	scheduleEnsureHostStyles: () => scheduleEnsureHostStyles,
+	scrollLink: () => scrollLink,
+	scrollRef: () => scrollRef,
+	setIgnoreNextPopState: () => setIgnoreNextPopState,
+	sizeLink: () => sizeLink,
+	sizeRef: () => sizeRef,
+	stringToBlob: () => stringToBlob,
+	stringToBlobOrFile: () => stringToBlobOrFile,
+	styleCache: () => styleCache,
+	styleElementCache: () => styleElementCache,
+	toText: () => toText,
+	unregisterCloseable: () => unregisterCloseable,
+	unregisterDirectoryRoot: () => unregisterDirectoryRoot,
+	uploadFile: () => uploadFile,
+	valueAsNumberLink: () => valueAsNumberLink,
+	valueAsNumberRef: () => valueAsNumberRef,
+	valueLink: () => valueLink,
+	valueRef: () => valueRef,
+	walkExactFile: () => walkExactFile,
+	withProperties: () => withProperties,
+	withTriggerModifiers: () => withTriggerModifiers,
+	writeFile: () => writeFile,
+	writeFileSmart: () => writeFileSmart,
+	writeHTML: () => writeHTML,
+	writeImage: () => writeImage$1,
+	writeText: () => writeText$1
+});
+//#endregion
 //#region ../../modules/projects/image.ts/src/engine/KMean.ts
 var sortColors = (list, criteria = "l") => list.sort((a, b) => Math.sign(oklch({
 	mode: "rgb",
@@ -15985,6 +16061,7 @@ var wallpaperSeedsMayPaint = () => {
 	if (!src) return true;
 	return src === "wallpaper" || src === "speed-dial" || src === "system-wallpaper";
 };
+var isValidColor = (color) => Boolean(parse(color));
 /**
 * INVARIANT: paper/ink follow the photo even when colorSource is Material You
 * (`--base-color` stays gated; labels/rail still sit on the wallpaper).
@@ -15994,12 +16071,39 @@ var applyWallpaperPaperTokens = (paper, extraHosts = []) => {
 	const { shadow, glow } = haloForPaper(paperLFromHex(paper.underlying) < PAPER_L_SPLIT);
 	const hosts = new Set(themeHosts());
 	for (const el of extraHosts) hosts.add(el);
+	if (!isValidColor(paper.underlying)) return;
+	if (!isValidColor(paper.contrast)) return;
+	if (!isValidColor(shadow)) return;
+	if (!isValidColor(glow)) return;
+	registerColorProperty("--wallpaper-underlying-color", paper.underlying);
+	registerColorProperty("--wallpaper-contrast-color", paper.contrast);
+	registerColorProperty("--env-launcher-fg", paper.contrast);
+	registerColorProperty("--env-launcher-fg-shadow", shadow);
+	registerColorProperty("--env-launcher-fg-glow", glow);
 	for (const host of hosts) {
 		host.style.setProperty("--wallpaper-underlying-color", paper.underlying);
 		host.style.setProperty("--wallpaper-contrast-color", paper.contrast);
 		host.style.setProperty("--env-launcher-fg", paper.contrast);
 		host.style.setProperty("--env-launcher-fg-shadow", shadow);
 		host.style.setProperty("--env-launcher-fg-glow", glow);
+	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--wallpaper-underlying-color", paper.underlying);
+	globalQuery.style.setProperty("--wallpaper-contrast-color", paper.contrast);
+	globalQuery.style.setProperty("--env-launcher-fg", paper.contrast);
+	globalQuery.style.setProperty("--env-launcher-fg-shadow", shadow);
+	globalQuery.style.setProperty("--env-launcher-fg-glow", glow);
+};
+var registerColorProperty = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
 	}
 };
 var persistLivePaper = (paper) => {
@@ -16040,12 +16144,20 @@ var applyWallpaperThemeSeeds = (seeds) => {
 	if (hasWallpaperPaper(next)) applyWallpaperPaperTokens(next);
 	if (!wallpaperSeedsMayPaint()) return;
 	for (const host of themeHosts()) for (const [prop, key] of SEED_PROPS) host.style.setProperty(prop, next[key]);
-	document.querySelectorAll(".view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host").forEach((el) => {
+	if (!isValidColor(next.primary)) return;
+	if (!isValidColor(next.secondary)) return;
+	if (!isValidColor(next.tertiary)) return;
+	document.querySelectorAll("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host").forEach((el) => {
 		el.style.setProperty("--color-primary", next.primary);
 		el.style.setProperty("--base-color", next.primary);
 		el.style.setProperty("--color-secondary", next.secondary);
 		el.style.setProperty("--color-tertiary", next.tertiary);
 	});
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", next.primary);
+	globalQuery.style.setProperty("--base-color", next.primary);
+	globalQuery.style.setProperty("--color-secondary", next.secondary);
+	globalQuery.style.setProperty("--color-tertiary", next.tertiary);
 	document.dispatchEvent(new CustomEvent("u2-theme-change", { detail: {
 		source: "wallpaper",
 		seeds: next
@@ -16683,6 +16795,7 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	loadCachedWallpaperTheme: () => loadCachedWallpaperTheme,
 	rankWallpaperSeeds: () => rankWallpaperSeeds,
 	refreshAppWallpaperPaint: () => refreshAppWallpaperPaint,
+	registerColorProperty: () => registerColorProperty,
 	resolveAppWallpaperUrl: () => resolveAppWallpaperUrl,
 	restoreWallpaperThemeCache: () => restoreWallpaperThemeCache,
 	setAppWallpaper: () => setAppWallpaper,
@@ -16713,7 +16826,9 @@ var UIElement = class UIElement extends GLitElement() {
 		return super.onRender();
 	}
 	connectedCallback() {
-		return super.connectedCallback?.() ?? this;
+		const self = super.connectedCallback?.() ?? this;
+		self.loadStyleLibrary(ensureStyleSheet());
+		return self;
 	}
 	onInitialize() {
 		const self = super.onInitialize() ?? this;
@@ -16893,7 +17008,7 @@ var closeChromeFlyout = (kind) => {
 };
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/calendar/CalendarFlyout.ts
-var styled$9 = preloadStyle("@layer calendar{:host{--cal-base-color:var(--color-primary);--cal-surface:var(--color-surface);--cal-on-surface:var(--color-on-surface);--cal-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);--cal-hover:color-mix(in oklab,var(--color-on-surface) 8%,transparent);box-sizing:border-box;color:var(--cal-on-surface);color-scheme:inherit;display:block;max-inline-size:min(360px,96vw);min-inline-size:280px;pointer-events:auto}:host([hidden]){display:none!important}.ui-cal-flyout__panel{background:var(--cal-surface);border:1px solid var(--cal-outline);border-radius:14px;box-shadow:0 18px 44px -18px color-mix(in oklab,#000 55%,transparent),0 2px 6px -2px color-mix(in oklab,#000 35%,transparent);box-sizing:border-box;color:contrast-color(var(--cal-surface));display:flex;flex-direction:column;gap:.6rem;inline-size:100%;padding:.9rem .9rem .75rem}.ui-cal-flyout__header{align-items:baseline;display:flex;justify-content:space-between;padding-inline:.15rem}.ui-cal-flyout__today{color:var(--cal-on-surface);font-size:.95rem;font-weight:650;line-height:1.25;margin:0}.ui-cal-flyout__nav{align-items:center;display:grid;gap:.35rem;grid-template-columns:auto 1fr auto}.ui-cal-flyout__nav-btn{align-items:center;appearance:none;background:transparent;block-size:2rem;border:none;border-radius:8px;color:var(--cal-on-surface);cursor:pointer;display:inline-flex;inline-size:2rem;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}.ui-cal-flyout__nav-btn ui-icon{--icon-size:1.25rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:currentColor;inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size);pointer-events:none}.ui-cal-flyout__nav-btn:hover{background:var(--cal-hover);color:contrast-color(var(--cal-hover))}.ui-cal-flyout__nav-btn:active{background:color-mix(in oklab,var(--cal-hover) 160%,transparent);color:contrast-color(color-mix(in oklab,var(--cal-hover) 160%,transparent))}.ui-cal-flyout__nav-btn:focus-visible{outline:2px solid var(--cal-base-color);outline-offset:1px}.ui-cal-flyout__month-label{color:var(--cal-on-surface);font-size:.86rem;font-weight:600;letter-spacing:.01em;text-align:center;user-select:none}.ui-cal-flyout__weekdays{display:grid;gap:2px;grid-template-columns:repeat(7,minmax(0,1fr));padding-inline:.1rem}.ui-cal-flyout__weekday{align-items:center;color:color-mix(in oklab,var(--cal-on-surface) 62%,transparent);display:flex;font-size:.7rem;font-weight:600;justify-content:center;letter-spacing:.02em;padding-block:.2rem;text-transform:uppercase;user-select:none}.ui-cal-flyout__grid{display:grid;gap:2px;grid-template-columns:repeat(7,minmax(0,1fr));padding-inline:.1rem}.ui-cal-flyout__day{align-items:center;appearance:none;aspect-ratio:1/1;background:transparent;border:none;border-radius:999px;color:var(--cal-on-surface);cursor:pointer;display:inline-flex;font-size:.82rem;font-variant-numeric:tabular-nums;inline-size:100%;justify-content:center;position:relative;-webkit-tap-highlight-color:transparent;transition:background-color .12s ease,color .12s ease}.ui-cal-flyout__day[data-other-month]{color:color-mix(in oklab,var(--cal-on-surface) 42%,transparent)}.ui-cal-flyout__day:hover{background:var(--cal-hover);color:contrast-color(var(--cal-hover))}.ui-cal-flyout__day:focus-visible{outline:2px solid var(--cal-base-color);outline-offset:1px}.ui-cal-flyout__day[data-today]{background:color-mix(in oklab,var(--cal-base-color) 88%,transparent);color:light-dark(#ffffff,#ffffff);font-weight:700}.ui-cal-flyout__day[data-selected]{box-shadow:0 0 0 2px var(--cal-base-color) inset}.ui-cal-flyout__day[data-today][data-selected]{box-shadow:0 0 0 2px color-mix(in oklab,var(--cal-base-color) 70%,#fff 20%) inset}}");
+var styled$6 = preloadStyle("@layer calendar{:host{--cal-base-color:var(--color-primary);--cal-surface:var(--color-surface);--cal-on-surface:var(--color-on-surface);--cal-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);--cal-hover:color-mix(in oklab,var(--color-on-surface) 8%,transparent);box-sizing:border-box;color:var(--cal-on-surface);color-scheme:inherit;display:block;max-inline-size:min(360px,96vw);min-inline-size:280px;pointer-events:auto}:host([hidden]){display:none!important}.ui-cal-flyout__panel{background:var(--cal-surface);border:1px solid var(--cal-outline);border-radius:14px;box-shadow:0 18px 44px -18px color-mix(in oklab,#000 55%,transparent),0 2px 6px -2px color-mix(in oklab,#000 35%,transparent);box-sizing:border-box;color:contrast-color(var(--cal-surface));display:flex;flex-direction:column;gap:.6rem;inline-size:100%;padding:.9rem .9rem .75rem}.ui-cal-flyout__header{align-items:baseline;display:flex;justify-content:space-between;padding-inline:.15rem}.ui-cal-flyout__today{color:var(--cal-on-surface);font-size:.95rem;font-weight:650;line-height:1.25;margin:0}.ui-cal-flyout__nav{align-items:center;display:grid;gap:.35rem;grid-template-columns:auto 1fr auto}.ui-cal-flyout__nav-btn{align-items:center;appearance:none;background:transparent;block-size:2rem;border:none;border-radius:8px;color:var(--cal-on-surface);cursor:pointer;display:inline-flex;inline-size:2rem;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}.ui-cal-flyout__nav-btn ui-icon{--icon-size:1.25rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:currentColor;inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size);pointer-events:none}.ui-cal-flyout__nav-btn:hover{background:var(--cal-hover);color:contrast-color(var(--cal-hover))}.ui-cal-flyout__nav-btn:active{background:color-mix(in oklab,var(--cal-hover) 160%,transparent);color:contrast-color(color-mix(in oklab,var(--cal-hover) 160%,transparent))}.ui-cal-flyout__nav-btn:focus-visible{outline:2px solid var(--cal-base-color);outline-offset:1px}.ui-cal-flyout__month-label{color:var(--cal-on-surface);font-size:.86rem;font-weight:600;letter-spacing:.01em;text-align:center;user-select:none}.ui-cal-flyout__weekdays{display:grid;gap:2px;grid-template-columns:repeat(7,minmax(0,1fr));padding-inline:.1rem}.ui-cal-flyout__weekday{align-items:center;color:color-mix(in oklab,var(--cal-on-surface) 62%,transparent);display:flex;font-size:.7rem;font-weight:600;justify-content:center;letter-spacing:.02em;padding-block:.2rem;text-transform:uppercase;user-select:none}.ui-cal-flyout__grid{display:grid;gap:2px;grid-template-columns:repeat(7,minmax(0,1fr));padding-inline:.1rem}.ui-cal-flyout__day{align-items:center;appearance:none;aspect-ratio:1/1;background:transparent;border:none;border-radius:999px;color:var(--cal-on-surface);cursor:pointer;display:inline-flex;font-size:.82rem;font-variant-numeric:tabular-nums;inline-size:100%;justify-content:center;position:relative;-webkit-tap-highlight-color:transparent;transition:background-color .12s ease,color .12s ease}.ui-cal-flyout__day[data-other-month]{color:color-mix(in oklab,var(--cal-on-surface) 42%,transparent)}.ui-cal-flyout__day:hover{background:var(--cal-hover);color:contrast-color(var(--cal-hover))}.ui-cal-flyout__day:focus-visible{outline:2px solid var(--cal-base-color);outline-offset:1px}.ui-cal-flyout__day[data-today]{background:color-mix(in oklab,var(--cal-base-color) 88%,transparent);color:light-dark(#ffffff,#ffffff);font-weight:700}.ui-cal-flyout__day[data-selected]{box-shadow:0 0 0 2px var(--cal-base-color) inset}.ui-cal-flyout__day[data-today][data-selected]{box-shadow:0 0 0 2px color-mix(in oklab,var(--cal-base-color) 70%,#fff 20%) inset}}");
 /** 1 Jan 2023 (UTC) is a Sunday — stable anchor for deriving weekday short-labels per locale. */
 var REFERENCE_SUNDAY_UTC = Date.UTC(2023, 0, 1);
 var DAY_MS = 864e5;
@@ -16951,7 +17066,7 @@ var CalendarFlyout = class CalendarFlyout extends UIElement {
 	#selected = null;
 	#unbind = null;
 	styles = function() {
-		return styled$9;
+		return styled$6;
 	};
 	render = function() {
 		return H`<div class="ui-cal-flyout__panel" part="panel">
@@ -17112,7 +17227,7 @@ CalendarFlyout = __decorate([defineElement("ui-calendar-flyout")], CalendarFlyou
 * this component stays usable standalone inside `fl.ui`. Apps that ship a real Theme
 * subsystem can still react via the `u2-theme-change` event this module dispatches.
 */
-var styled$8 = preloadStyle(":host{box-sizing:border-box;color-scheme:inherit;contain:layout style;display:block;pointer-events:auto}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([open]){animation:a .14s cubic-bezier(.22,.8,.3,1)}:host([hidden]){display:none!important}@keyframes a{0%{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}@layer ui-quick-settings{.qs-panel{--qs-primary:var(--color-primary);--qs-surface:var(--color-surface);--qs-on-surface:var(--color-on-surface);--qs-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);background:var(--qs-surface);border:1px solid var(--qs-outline);border-radius:14px;box-shadow:0 20px 48px -20px rgba(0,0,0,.4),0 2px 8px -2px rgba(0,0,0,.25);box-sizing:border-box;color:var(--qs-on-surface);display:grid;font:500 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;gap:.85rem;inline-size:min(360px,100vw - 1.5rem);max-inline-size:360px;min-inline-size:320px;padding:.9rem;pointer-events:auto}@supports (color:contrast-color(red)){.qs-panel{color:contrast-color(var(--qs-surface))}}.qs-tiles{display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}.qs-tile-icon{--icon-size:1.5rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile-icon{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)))}}.qs-tile{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:10px;color:inherit;cursor:pointer;display:flex;gap:.6rem;min-inline-size:0;padding:.55rem .65rem;text-align:start;transition:background-color .14s ease,color .14s ease}.qs-tile,.qs-tile:hover{color:contrast-color(inherit(background-color))}.qs-tile:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-tile:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);color:contrast-color(inherit(background-color))}.qs-tile:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-tile[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,var(--qs-primary)) 26%,transparent);color:var(--color-primary,var(--qs-primary))}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true]{color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:var(--color-primary,var(--qs-primary));--icon-color:currentColor}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile-text{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)));display:flex;flex-direction:column;gap:.05rem;min-inline-size:0;overflow:hidden}.qs-tile-label{font-size:.78rem;font-weight:600}.qs-tile-label,.qs-tile-sub{color:contrast-color(var(--qs-surface));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qs-tile-sub{font-size:.68rem;font-weight:500;opacity:.7}.qs-sliders{border-block-start:1px solid var(--qs-outline);color:contrast-color(var(--qs-surface));display:grid;gap:.6rem;padding-block-start:.7rem}.qs-slider-row{align-items:center;cursor:default;display:flex;gap:.65rem}.qs-slider-icon{--icon-size:1.35rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-slider-col{display:flex;flex:1 1 auto;flex-direction:column;gap:.25rem;min-inline-size:0}.qs-slider-label{font-size:.68rem;font-weight:500;opacity:.75}.qs-slider{appearance:none;-webkit-appearance:none;background:transparent;block-size:1.1rem;color:contrast-color(inherit(background-color));cursor:pointer;inline-size:100%;margin:0}.qs-slider::-webkit-slider-runnable-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-moz-range-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem;margin-block-start:-6px}.qs-slider::-moz-range-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem}.qs-slider:focus-visible::-webkit-slider-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer{align-items:center;border-block-start:1px solid var(--qs-outline);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.4rem;justify-content:flex-end;padding-block-start:.65rem}.qs-footer-btn{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:8px;color:contrast-color(var(--qs-surface));cursor:pointer;display:inline-flex;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;gap:.35rem;min-inline-size:0;padding:.28rem .55rem;transition:background-color .14s ease}.qs-footer-btn:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-footer-btn:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-footer-btn:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}}");
+var styled$5 = preloadStyle(":host{box-sizing:border-box;color-scheme:inherit;contain:layout style;display:block;pointer-events:auto}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([open]){animation:a .14s cubic-bezier(.22,.8,.3,1)}:host([hidden]){display:none!important}@keyframes a{0%{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}@layer ui-quick-settings{.qs-panel{--qs-primary:var(--color-primary);--qs-surface:var(--color-surface);--qs-on-surface:var(--color-on-surface);--qs-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);background:var(--qs-surface);border:1px solid var(--qs-outline);border-radius:14px;box-shadow:0 20px 48px -20px rgba(0,0,0,.4),0 2px 8px -2px rgba(0,0,0,.25);box-sizing:border-box;color:var(--qs-on-surface);display:grid;font:500 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;gap:.85rem;inline-size:min(360px,100vw - 1.5rem);max-inline-size:360px;min-inline-size:320px;padding:.9rem;pointer-events:auto}@supports (color:contrast-color(red)){.qs-panel{color:contrast-color(var(--qs-surface))}}.qs-tiles{display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}.qs-tile-icon{--icon-size:1.5rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile-icon{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)))}}.qs-tile{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:10px;color:inherit;cursor:pointer;display:flex;gap:.6rem;min-inline-size:0;padding:.55rem .65rem;text-align:start;transition:background-color .14s ease,color .14s ease}.qs-tile,.qs-tile:hover{color:contrast-color(inherit(background-color))}.qs-tile:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-tile:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);color:contrast-color(inherit(background-color))}.qs-tile:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-tile[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,var(--qs-primary)) 26%,transparent);color:var(--color-primary,var(--qs-primary))}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true]{color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:var(--color-primary,var(--qs-primary));--icon-color:currentColor}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile-text{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)));display:flex;flex-direction:column;gap:.05rem;min-inline-size:0;overflow:hidden}.qs-tile-label{font-size:.78rem;font-weight:600}.qs-tile-label,.qs-tile-sub{color:contrast-color(var(--qs-surface));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qs-tile-sub{font-size:.68rem;font-weight:500;opacity:.7}.qs-sliders{border-block-start:1px solid var(--qs-outline);color:contrast-color(var(--qs-surface));display:grid;gap:.6rem;padding-block-start:.7rem}.qs-slider-row{align-items:center;cursor:default;display:flex;gap:.65rem}.qs-slider-icon{--icon-size:1.35rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-slider-col{display:flex;flex:1 1 auto;flex-direction:column;gap:.25rem;min-inline-size:0}.qs-slider-label{font-size:.68rem;font-weight:500;opacity:.75}.qs-slider{appearance:none;-webkit-appearance:none;background:transparent;block-size:1.1rem;color:contrast-color(inherit(background-color));cursor:pointer;inline-size:100%;margin:0}.qs-slider::-webkit-slider-runnable-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-moz-range-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem;margin-block-start:-6px}.qs-slider::-moz-range-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem}.qs-slider:focus-visible::-webkit-slider-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer{align-items:center;border-block-start:1px solid var(--qs-outline);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.4rem;justify-content:flex-end;padding-block-start:.65rem}.qs-footer-btn{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:8px;color:contrast-color(var(--qs-surface));cursor:pointer;display:inline-flex;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;gap:.35rem;min-inline-size:0;padding:.28rem .55rem;transition:background-color .14s ease}.qs-footer-btn:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-footer-btn:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-footer-btn:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}}");
 /** Shared exclusivity/positioning kind — see `ChromeFlyout.ts`. Mirrors `CalendarFlyout.ts`. */
 var FLYOUT_KIND = "quick-settings";
 var THEME_ATTR = "data-theme";
@@ -17414,7 +17529,7 @@ var QuickSettings = class QuickSettings extends UIElement {
 	constructor() {
 		super();
 	}
-	styles = () => styled$8;
+	styles = () => styled$5;
 	render = () => H`
 <div class="qs-panel" part="panel" role="menu" aria-label="Quick settings">
     <div class="qs-tiles" part="tiles" role="group" aria-label="Quick toggles">
@@ -17535,12 +17650,12 @@ try {
 * Reactive network/battery chips are shared via {@link attachShellDeviceStatus} for the desktop taskbar.
 * Overlay mode (mobile browser / fullscreen, not standalone): transparent top band, time L / icons R.
 */
-var styled$7 = preloadStyle(":host(ui-statusbar){align-items:center;background:transparent;box-sizing:border-box;color:var(--env-status-fg,var(--wallpaper-contrast-color,CanvasText));display:flex;flex-direction:row;gap:.35rem;inline-size:100%;justify-content:space-between}:host(ui-statusbar) :is(.center,.left,.right){align-items:center;background:transparent;display:flex;min-inline-size:0;padding-block-start:.5rem}:host(ui-statusbar) .left{flex:0 1 auto;justify-content:flex-start;padding-inline-start:max(1rem,env(safe-area-inset-left,0))}:host(ui-statusbar) .center{flex:1 1 auto;justify-content:center}:host(ui-statusbar) .right{flex:0 1 auto;justify-content:flex-end;margin-inline-start:auto;padding-inline-end:max(1rem,env(safe-area-inset-right,0))}@media screen and (pointer:fine) and ((min-width:768px) or (hover:hover)){:host(ui-statusbar),ui-statusbar{display:none!important}}@layer ui-statusbar{.env-ui-statusbar{backdrop-filter:blur(10px);background:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);border-block-start:1px solid var(--wf-md-outline-variant,var(--color-outline-variant));color:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a9ec8),100));order:1;padding:.35rem .65rem calc(.35rem + env(safe-area-inset-bottom, 0))}.env-ui-statusbar__intro p{margin:.1rem 0;opacity:.92}.env-ui-statusbar__right{align-items:center;display:flex;justify-content:flex-end}.env-ui-statusbar__clock{border-radius:.35rem;color:inherit;cursor:pointer;font:600 .8125rem/1 ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.01em;padding:.15rem .25rem;pointer-events:auto;user-select:none}.env-ui-statusbar__clock:focus-visible,.env-ui-statusbar__clock:hover{background:color-mix(in oklch,currentColor 12%,transparent);color:contrast-color(inherit(background-color));outline:none}.env-device-tray--footer{border-radius:.35rem;cursor:pointer;pointer-events:auto}.env-device-tray--footer:focus-visible,.env-device-tray--footer:hover{background:color-mix(in oklch,currentColor 12%,transparent);color:contrast-color(inherit(background-color));outline:none}.env-status-bar__tray{align-items:center;display:flex;flex-wrap:nowrap;gap:.35rem}.env-status-bar__chip{align-items:center;background:color-mix(in oklch,var(--env-status-fg,var(--wf-md-on-surface,white)) 10%,transparent);border:1px solid color-mix(in oklch,var(--env-status-fg,var(--wf-md-on-surface,white)) 18%,transparent);border-radius:999px;color:inherit;color:contrast-color(inherit(background-color));display:inline-flex;gap:.25rem;line-height:1;padding:.12rem .35rem}.env-status-bar__chip,.env-status-bar__chip span{font-variant-numeric:tabular-nums}.env-status-bar__chip ui-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color,currentColor));block-size:var(--icon-size);color:var(--icon-color);display:block;font-size:var(--icon-size);inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.env-status-bar__pct{font-variant-numeric:tabular-nums;opacity:.95}.env-status-bar__meta{font-size:11px;margin:0;opacity:.88}.env-shell-chrome[data-status-overlay] .env-ui-statusbar,.env-shell-root[data-status-overlay]>.env-shell-chrome .env-ui-statusbar{align-items:center;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));border:0!important;box-sizing:border-box;display:flex;inset-block-end:auto;inset-block-start:0;inset-inline:0;min-block-size:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));order:unset;padding:0 .75rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color));color:var(--env-status-fg,var(--wallpaper-contrast-color));pointer-events:none}.env-shell-chrome[data-status-overlay] :is(.env-status-bar__meta,.env-ui-statusbar__intro){display:none!important}.env-shell-chrome[data-status-overlay] .env-ui-statusbar__clock{color:var(--env-status-fg,var(--wallpaper-contrast-color));display:block;font-size:.875rem}.env-shell-chrome[data-status-overlay] :is(.env-device-tray--footer,.env-status-bar__chip){color:var(--env-status-fg,var(--wallpaper-contrast-color))}.env-shell-chrome[data-status-overlay] .env-status-bar__chip ui-icon{--icon-size:1.25rem;--icon-padding:0;--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color));block-size:var(--icon-size);color:var(--icon-color);font-size:var(--icon-size);inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.env-shell-chrome[data-status-overlay] .env-status-bar__pct{font-size:.8125rem}.env-shell-chrome[data-status-overlay] .env-device-tray--footer{display:flex!important}.env-shell-chrome[data-status-overlay] .env-status-bar__chip{background:transparent;border-color:transparent;padding-inline:.15rem}.env-shell-chrome[data-desktop]:not([data-status-overlay]) .env-ui-statusbar__clock,.env-shell-chrome[data-standalone] .env-ui-statusbar,.env-shell-root[data-standalone] .env-shell-chrome:not([data-desktop]) .env-ui-statusbar{display:none!important}.env-shell-root[data-env-native-task] .env-shell-chrome[data-desktop],env-shell-container[data-env-native-task] .env-shell-chrome[data-desktop]{opacity:0;pointer-events:none;visibility:hidden}}");
+var styled$4 = preloadStyle(":host(ui-statusbar){align-items:center;background:transparent;box-sizing:border-box;color:var(--env-status-fg,var(--wallpaper-contrast-color,CanvasText));display:flex;flex-direction:row;gap:.35rem;inline-size:100%;justify-content:space-between}:host(ui-statusbar) :is(.center,.left,.right){align-items:center;background:transparent;display:flex;min-inline-size:0;padding-block-start:.5rem}:host(ui-statusbar) .left{flex:0 1 auto;justify-content:flex-start;padding-inline-start:max(1rem,env(safe-area-inset-left,0))}:host(ui-statusbar) .center{flex:1 1 auto;justify-content:center}:host(ui-statusbar) .right{flex:0 1 auto;justify-content:flex-end;margin-inline-start:auto;padding-inline-end:max(1rem,env(safe-area-inset-right,0))}@media screen and (pointer:fine) and ((min-width:768px) or (hover:hover)){:host(ui-statusbar),ui-statusbar{display:none!important}}@layer ui-statusbar{.env-ui-statusbar{backdrop-filter:blur(10px);background:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);border-block-start:1px solid var(--wf-md-outline-variant,var(--color-outline-variant));color:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a9ec8),100));order:1;padding:.35rem .65rem calc(.35rem + env(safe-area-inset-bottom, 0))}.env-ui-statusbar__intro p{margin:.1rem 0;opacity:.92}.env-ui-statusbar__right{align-items:center;display:flex;justify-content:flex-end}.env-ui-statusbar__clock{border-radius:.35rem;color:inherit;cursor:pointer;font:600 .8125rem/1 ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.01em;padding:.15rem .25rem;pointer-events:auto;user-select:none}.env-ui-statusbar__clock:focus-visible,.env-ui-statusbar__clock:hover{background:color-mix(in oklch,currentColor 12%,transparent);color:contrast-color(inherit(background-color));outline:none}.env-device-tray--footer{border-radius:.35rem;cursor:pointer;pointer-events:auto}.env-device-tray--footer:focus-visible,.env-device-tray--footer:hover{background:color-mix(in oklch,currentColor 12%,transparent);color:contrast-color(inherit(background-color));outline:none}.env-status-bar__tray{align-items:center;display:flex;flex-wrap:nowrap;gap:.35rem}.env-status-bar__chip{align-items:center;background:color-mix(in oklch,var(--env-status-fg,var(--wf-md-on-surface,white)) 10%,transparent);border:1px solid color-mix(in oklch,var(--env-status-fg,var(--wf-md-on-surface,white)) 18%,transparent);border-radius:999px;color:inherit;color:contrast-color(inherit(background-color));display:inline-flex;gap:.25rem;line-height:1;padding:.12rem .35rem}.env-status-bar__chip,.env-status-bar__chip span{font-variant-numeric:tabular-nums}.env-status-bar__chip ui-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color,currentColor));block-size:var(--icon-size);color:var(--icon-color);display:block;font-size:var(--icon-size);inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.env-status-bar__pct{font-variant-numeric:tabular-nums;opacity:.95}.env-status-bar__meta{font-size:11px;margin:0;opacity:.88}.env-shell-chrome[data-status-overlay] .env-ui-statusbar,.env-shell-root[data-status-overlay]>.env-shell-chrome .env-ui-statusbar{align-items:center;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));border:0!important;box-sizing:border-box;display:flex;inset-block-end:auto;inset-block-start:0;inset-inline:0;min-block-size:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));order:unset;padding:0 .75rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color));color:var(--env-status-fg,var(--wallpaper-contrast-color));pointer-events:none}.env-shell-chrome[data-status-overlay] :is(.env-status-bar__meta,.env-ui-statusbar__intro){display:none!important}.env-shell-chrome[data-status-overlay] .env-ui-statusbar__clock{color:var(--env-status-fg,var(--wallpaper-contrast-color));display:block;font-size:.875rem}.env-shell-chrome[data-status-overlay] :is(.env-device-tray--footer,.env-status-bar__chip){color:var(--env-status-fg,var(--wallpaper-contrast-color))}.env-shell-chrome[data-status-overlay] .env-status-bar__chip ui-icon{--icon-size:1.25rem;--icon-padding:0;--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color));block-size:var(--icon-size);color:var(--icon-color);font-size:var(--icon-size);inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.env-shell-chrome[data-status-overlay] .env-status-bar__pct{font-size:.8125rem}.env-shell-chrome[data-status-overlay] .env-device-tray--footer{display:flex!important}.env-shell-chrome[data-status-overlay] .env-status-bar__chip{background:transparent;border-color:transparent;padding-inline:.15rem}.env-shell-chrome[data-desktop]:not([data-status-overlay]) .env-ui-statusbar__clock,.env-shell-chrome[data-standalone] .env-ui-statusbar,.env-shell-root[data-standalone] .env-shell-chrome:not([data-desktop]) .env-ui-statusbar{display:none!important}.env-shell-root[data-env-native-task] .env-shell-chrome[data-desktop],env-shell-container[data-env-native-task] .env-shell-chrome[data-desktop]{opacity:0;pointer-events:none;visibility:hidden}}");
 var StatusBar = class StatusBar extends UIElement_default {
 	constructor() {
 		super();
 	}
-	styles = () => styled$7;
+	styles = () => styled$4;
 	render = () => {
 		return H`
 <div style="background-color: transparent;" part="left"   class="left"  ><slot name="left"  ></slot></div>
@@ -27190,8 +27305,13 @@ var sortExplorerEntries = (entries, prefs) => {
 	});
 };
 //#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/ExplorerSettings.scss?inline
+var ExplorerSettings_default = ":host{background:var(--color-surface,light-dark(#f4f6f8,#141218));box-sizing:border-box;color:var(--color-on-surface,light-dark(#1c1b1f,#e6e1e5));color-scheme:inherit;display:block;grid-column:1/-1;grid-row:2;min-block-size:0;min-inline-size:0;overflow:auto;z-index:1}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([hidden]){display:none!important}.explorer-settings{--es-bg:var(--color-surface,light-dark(#f4f6f8,#141218));--es-fg:var(--color-on-surface,light-dark(#1c1b1f,#e6e1e5));--es-muted:var(--color-on-surface-variant,light-dark(#5c6570,#a8b0bc));--es-outline:var(--color-outline-variant,light-dark(#c5cdd8,#3d4755));--es-surface-1:var(--color-surface-container-low,light-dark(#ffffff,#1c232d));--es-surface-2:var(--color-surface-container,light-dark(#f4f6f8,#171c24));--es-primary:var(--color-primary,#5a9ec8);--es-on-primary:var(--color-on-primary,#fff);color:var(--es-fg);display:flex;flex-direction:column;font:500 .875rem/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:.85rem;min-block-size:100%;padding:.75rem .85rem 1.25rem}.explorer-settings,.explorer-settings *,.explorer-settings :after,.explorer-settings :before{box-sizing:border-box}.explorer-settings__head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;margin:0}.explorer-settings__card p,.explorer-settings__hint{color:var(--es-muted);font-size:.8125rem;line-height:1.45;margin:0}.explorer-settings__card{background:var(--es-surface-2);border-radius:var(--card-radius,var(--radius-xl,1rem));display:flex;flex-direction:column;gap:.75rem;padding:1rem}.explorer-settings__card[hidden]{display:none!important}.explorer-settings__title{align-items:center;display:flex;font-size:.95rem;font-weight:600;gap:.5rem;margin:0}.explorer-settings__title ui-icon{--ui-icon-size:1.25rem;--ui-icon-padding:0px;color:var(--es-primary);flex-shrink:0}.explorer-settings__field{display:grid;gap:.35rem;margin:0}.explorer-settings__field>span{color:var(--es-muted);font-size:.75rem;font-weight:500}.explorer-settings__field select{appearance:none;background-color:var(--es-surface-1);background-image:linear-gradient(45deg,transparent 50%,var(--es-muted) 50%),linear-gradient(135deg,var(--es-muted) 50%,transparent 50%);background-position:calc(100% - 1.1rem) 50%,calc(100% - .75rem) 50%;background-repeat:no-repeat;background-size:.35rem .35rem,.35rem .35rem;border:none;border-radius:var(--input-radius,var(--radius-md,.5rem));color:var(--es-fg);display:block;font:inherit;inline-size:100%;min-block-size:2.5rem;padding:.5rem 2rem .5rem .75rem}.explorer-settings__field select:focus-visible{outline:2px solid color-mix(in oklab,var(--es-primary) 55%,transparent);outline-offset:1px}.explorer-settings__check{align-items:center;display:grid;font-size:.875rem;gap:.625rem;grid-template-columns:auto 1fr;min-block-size:var(--touch-min,2.75rem)}.explorer-settings__check input[type=checkbox]{accent-color:var(--es-primary);block-size:1.15rem;inline-size:1.15rem}.explorer-settings__status{background:var(--es-surface-1);border-radius:var(--input-radius,var(--radius-md,.5rem));color:var(--es-muted);font:inherit;font-size:.8125rem;line-height:1.45;margin:0;padding:.65rem .75rem;white-space:pre-wrap}.explorer-settings__actions{display:flex;flex-wrap:wrap;gap:.5rem}.explorer-settings .btn{align-items:center;background:var(--es-surface-1);border:none;border-radius:var(--radius-full,999px);color:var(--es-fg);cursor:pointer;display:inline-flex;font:500 .8125rem/1.2 inherit;gap:.35rem;justify-content:center;min-block-size:var(--touch-min,2.5rem);padding:.5rem 1.125rem}.explorer-settings .btn:hover:not(:disabled){background:color-mix(in oklab,var(--es-fg) 8%,var(--es-surface-1))}.explorer-settings .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--es-primary) 55%,transparent);outline-offset:1px}.explorer-settings .btn:disabled{cursor:not-allowed;opacity:.45}.explorer-settings .btn--primary{background:var(--es-primary);color:var(--es-on-primary)}.explorer-settings__mounts{display:grid;gap:.45rem}.explorer-settings__mounts:empty:before,.explorer-settings__mounts[data-empty=\"1\"]{color:var(--es-muted);font-size:.8125rem}.explorer-settings__mount{align-items:center;background:var(--es-surface-1);border-radius:var(--radius-lg,.75rem);display:flex;flex-wrap:wrap;gap:.45rem .7rem;padding:.55rem .7rem}.explorer-settings__mount code{font-size:.78rem;opacity:.7}";
+//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/ExplorerSettings.ts
-var styled$5 = preloadStyle(":host{background:var(--color-surface,light-dark(#f4f6f8,#141218));box-sizing:border-box;color:var(--color-on-surface,light-dark(#1c1b1f,#e6e1e5));color-scheme:inherit;display:block;grid-column:1/-1;grid-row:2;min-block-size:0;min-inline-size:0;overflow:auto;z-index:1}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([hidden]){display:none!important}.explorer-settings{--es-bg:var(--color-surface,light-dark(#f4f6f8,#141218));--es-fg:var(--color-on-surface,light-dark(#1c1b1f,#e6e1e5));--es-muted:var(--color-on-surface-variant,light-dark(#5c6570,#a8b0bc));--es-outline:var(--color-outline-variant,light-dark(#c5cdd8,#3d4755));--es-surface-1:var(--color-surface-container-low,light-dark(#ffffff,#1c232d));--es-surface-2:var(--color-surface-container,light-dark(#f4f6f8,#171c24));--es-primary:var(--color-primary,#5a9ec8);--es-on-primary:var(--color-on-primary,#fff);color:var(--es-fg);display:flex;flex-direction:column;font:500 .875rem/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:.85rem;min-block-size:100%;padding:.75rem .85rem 1.25rem}.explorer-settings,.explorer-settings *,.explorer-settings :after,.explorer-settings :before{box-sizing:border-box}.explorer-settings__head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;margin:0}.explorer-settings__card p,.explorer-settings__hint{color:var(--es-muted);font-size:.8125rem;line-height:1.45;margin:0}.explorer-settings__card{background:var(--es-surface-2);border-radius:var(--card-radius,var(--radius-xl,1rem));display:flex;flex-direction:column;gap:.75rem;padding:1rem}.explorer-settings__card[hidden]{display:none!important}.explorer-settings__title{align-items:center;display:flex;font-size:.95rem;font-weight:600;gap:.5rem;margin:0}.explorer-settings__title ui-icon{--ui-icon-size:1.25rem;--ui-icon-padding:0px;color:var(--es-primary);flex-shrink:0}.explorer-settings__field{display:grid;gap:.35rem;margin:0}.explorer-settings__field>span{color:var(--es-muted);font-size:.75rem;font-weight:500}.explorer-settings__field select{appearance:none;background-color:var(--es-surface-1);background-image:linear-gradient(45deg,transparent 50%,var(--es-muted) 50%),linear-gradient(135deg,var(--es-muted) 50%,transparent 50%);background-position:calc(100% - 1.1rem) 50%,calc(100% - .75rem) 50%;background-repeat:no-repeat;background-size:.35rem .35rem,.35rem .35rem;border:none;border-radius:var(--input-radius,var(--radius-md,.5rem));color:var(--es-fg);display:block;font:inherit;inline-size:100%;min-block-size:2.5rem;padding:.5rem 2rem .5rem .75rem}.explorer-settings__field select:focus-visible{outline:2px solid color-mix(in oklab,var(--es-primary) 55%,transparent);outline-offset:1px}.explorer-settings__check{align-items:center;display:grid;font-size:.875rem;gap:.625rem;grid-template-columns:auto 1fr;min-block-size:var(--touch-min,2.75rem)}.explorer-settings__check input[type=checkbox]{accent-color:var(--es-primary);block-size:1.15rem;inline-size:1.15rem}.explorer-settings__status{background:var(--es-surface-1);border-radius:var(--input-radius,var(--radius-md,.5rem));color:var(--es-muted);font:inherit;font-size:.8125rem;line-height:1.45;margin:0;padding:.65rem .75rem;white-space:pre-wrap}.explorer-settings__actions{display:flex;flex-wrap:wrap;gap:.5rem}.explorer-settings .btn{align-items:center;background:var(--es-surface-1);border:none;border-radius:var(--radius-full,999px);color:var(--es-fg);cursor:pointer;display:inline-flex;font:500 .8125rem/1.2 inherit;gap:.35rem;justify-content:center;min-block-size:var(--touch-min,2.5rem);padding:.5rem 1.125rem}.explorer-settings .btn:hover:not(:disabled){background:color-mix(in oklab,var(--es-fg) 8%,var(--es-surface-1))}.explorer-settings .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--es-primary) 55%,transparent);outline-offset:1px}.explorer-settings .btn:disabled{cursor:not-allowed;opacity:.45}.explorer-settings .btn--primary{background:var(--es-primary);color:var(--es-on-primary)}.explorer-settings__mounts{display:grid;gap:.45rem}.explorer-settings__mounts:empty:before,.explorer-settings__mounts[data-empty=\"1\"]{color:var(--es-muted);font-size:.8125rem}.explorer-settings__mount{align-items:center;background:var(--es-surface-1);border-radius:var(--radius-lg,.75rem);display:flex;flex-wrap:wrap;gap:.45rem .7rem;padding:.55rem .7rem}.explorer-settings__mount code{font-size:.78rem;opacity:.7}");
+try {
+	preloadStyle(ExplorerSettings_default);
+} catch {}
 var paintMounts = (host) => {
 	const list = host.querySelector("[data-explorer-mounts]");
 	if (!list) return;
@@ -27239,7 +27359,8 @@ var paintStatus = (host, status, note = "") => {
 	].filter(Boolean).join("\n");
 };
 var ExplorerSettings = class ExplorerSettings extends UIElement {
-	styles = () => styled$5;
+	/** WHY: pass CSS text so Glit can refill / shadow-fallback if the constructable sheet emptied. */
+	styles = () => ExplorerSettings_default;
 	onInitialize() {
 		const result = super.onInitialize();
 		queueMicrotask(() => {
@@ -27494,18 +27615,18 @@ var installExplorerBackStack = () => {
 };
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/taskbar/element/TaskBar.ts
-var styled$4 = preloadStyle("@layer ui-taskbar{ui-taskbar{gap:0 0!important;padding:0!important}ui-taskbar::part(taskbar){display:grid!important;gap:0 0!important;grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);padding:0!important}ui-taskbar ui-task{margin:0!important}.env-shell-chrome{color:var(--color-on-surface,var(--wf-md-on-surface-variant,#1c1c1e));display:flex;flex-direction:column;font:12px ui-sans-serif,system-ui,sans-serif;gap:0!important;inset-block-end:0;inset-inline:0;isolation:isolate;padding:0!important;pointer-events:none;position:fixed;z-index:var(--env-z-shell-chrome,2147483000)}.env-shell-chrome[data-desktop]{box-shadow:0 -8px 28px rgba(0,0,0,.28)}.env-shell-chrome>*{pointer-events:auto}.env-shell-taskbar{--env-taskbar-surface:color-mix(in oklab,var(--color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)) 88%,transparent);--env-taskbar-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-taskbar-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));align-items:stretch;backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);background:var(--env-taskbar-surface);block-size:2.5rem;border-block-start:1px solid light-dark(color-mix(in oklab,#000 10%,transparent),color-mix(in oklab,#fff 14%,transparent));box-shadow:none;color-scheme:inherit;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;min-block-size:2.5rem;order:0;padding:0 .25rem;padding-block-end:env(safe-area-inset-bottom,0);position:relative}.env-shell-taskbar,.env-shell-taskbar ui-icon{--icon-color:var(--env-taskbar-ink);color:var(--env-taskbar-ink)}.env-shell-taskbar::part(taskbar){align-items:stretch;display:flex;flex:1;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:100%;min-inline-size:0}.env-shell-taskbar__pins,.env-shell-taskbar__windows{align-items:stretch;display:flex;flex-direction:row;flex-wrap:nowrap;gap:0 0;margin:0;min-inline-size:0}.env-shell-taskbar__workspaces{align-items:center;display:none;flex-direction:row;gap:.25rem;margin-inline-start:.35rem}.env-shell-taskbar__workspace{background:color-mix(in oklab,CanvasText 10%,transparent);border:none;border-radius:.35rem;color:inherit;cursor:pointer;font:inherit;font-size:.7rem;min-block-size:1.35rem;min-inline-size:1.35rem;padding:0 .35rem}.env-shell-taskbar__workspace[data-active]{background:color-mix(in oklab,CanvasText 22%,transparent);font-weight:650}.env-shell-chrome[data-desktop] .env-shell-taskbar__workspaces{display:flex}.env-shell-taskbar__pins{content-visibility:visible;flex:0 0 auto;gap:0 0;inline-size:stretch;margin:0}.env-shell-taskbar__pins [data-env-home]{color:inherit;content-visibility:visible;--icon-color:currentColor;background:color-mix(in oklab,var(--env-taskbar-surface) 60%,transparent)!important;background-color:color-mix(in oklab,var(--env-taskbar-surface) 60%,transparent)!important}.env-shell-taskbar__pins ui-task{backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);box-shadow:inset 0 -2px 0 var(--env-taskbar-accent)}.env-shell-taskbar__pins ui-task::part(glyph),.env-shell-taskbar__pins ui-task::part(icon){color:var(--env-taskbar-ink);--icon-color:var(--env-taskbar-ink)}.env-shell-taskbar__windows{flex:1 1 auto;inline-size:stretch;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin}.env-shell-taskbar ui-task{align-self:stretch;background:transparent;border:0;border-radius:0;box-shadow:inset 0 -2px 0 transparent;color:inherit;cursor:pointer;inline-size:fit-content;min-block-size:100%;min-inline-size:2.75rem;opacity:1;outline:none;padding-inline:.55rem}.env-shell-taskbar ui-task:hover{background:color-mix(in oklab,var(--env-taskbar-ink) 10%,transparent);color:var(--env-taskbar-ink);opacity:1}.env-shell-taskbar :is(ui-task[data-active],ui-task[data-env-active=true],ui-task[data-focus]){background:color-mix(in oklab,var(--env-taskbar-surface) 12%,transparent);box-shadow:inset 0 -2px 0 var(--env-taskbar-accent);color:var(--env-taskbar-ink);opacity:1;outline:none}.env-shell-taskbar ui-task[data-minimized]{opacity:.65}.env-shell-taskbar__tray-host{align-items:center;border-inline-start:1px solid light-dark(color-mix(in oklab,#000 10%,transparent),color-mix(in oklab,#fff 12%,transparent));display:flex;flex:0 0 auto;gap:.35rem;margin-inline-start:auto;padding-inline:.35rem}.env-shell-taskbar__clock{align-items:flex-end;border-radius:.35rem;cursor:pointer;display:flex;flex-direction:column;gap:.05rem;inline-size:fit-content;justify-content:center;line-height:1.05;min-inline-size:4rem;padding-inline:.35rem .15rem;pointer-events:auto;user-select:none}.env-shell-taskbar__clock,.env-shell-taskbar__clock .env-shell-taskbar__clock-date,.env-shell-taskbar__clock .env-shell-taskbar__clock-time{font-variant-numeric:tabular-nums}.env-shell-taskbar__clock:focus-visible,.env-shell-taskbar__clock:hover{background:color-mix(in oklab,var(--env-taskbar-ink) 10%,transparent);color:var(--env-taskbar-ink);outline:none}.env-device-tray--taskbar{border-radius:.35rem;cursor:pointer;pointer-events:auto}.env-device-tray--taskbar:focus-visible,.env-device-tray--taskbar:hover{background:color-mix(in oklab,var(--env-taskbar-ink) 10%,transparent);color:var(--env-taskbar-ink);outline:none}.env-shell-taskbar__clock-time{color:inherit;font-size:.78rem;font-variant-numeric:tabular-nums;font-weight:600}.env-shell-taskbar__clock-date{color:color-mix(in oklab,currentColor 72%,transparent);font-size:.62rem;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(title){display:none!important}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task{min-inline-size:2.5rem;padding-inline:.45rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(icon){block-size:1.35rem;inline-size:1.35rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(glyph){block-size:1.35rem;inline-size:1.35rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home]::part(icon){block-size:1.75rem;inline-size:1.75rem;min-block-size:1.75rem;min-inline-size:1.75rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home]::part(glyph){block-size:100%;inline-size:100%;--icon-size:100%;--icon-padding:0.05rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(letter){font-size:.8rem}.env-shell-chrome[data-desktop] .env-shell-taskbar__pins{background:transparent;background-color:initial;border:0 transparent;margin:0;outline:0 none transparent;padding:0}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home],.env-shell-chrome[data-desktop] .env-shell-taskbar__pins{backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:0;box-shadow:0 0 0 none transparent;margin-inline-end:.2rem;min-inline-size:2.75rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home]{border:0 transparent;display:inline-flex!important;outline:none;outline:0 none transparent;transform:none}.env-shell-chrome[data-desktop] .env-shell-taskbar :is(ui-task[data-env-home]:focus-visible,ui-task[data-env-home]:hover){background:color-mix(in oklab,var(--env-taskbar-accent) 32%,transparent)}.env-shell-chrome[data-desktop] .env-shell-taskbar :is(ui-task[data-env-home][data-active],ui-task[data-env-home][data-env-active=true],ui-task[data-env-home][data-focus]){background:color-mix(in oklab,var(--env-taskbar-accent) 28%,transparent)}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar{backdrop-filter:none;-webkit-backdrop-filter:none;background:transparent;block-size:3rem;border-block-start:none;box-shadow:none;color:var(--env-status-fg,var(--env-taskbar-ink));display:block;gap:0;inline-size:100%;min-block-size:3rem;padding:.15rem .75rem;padding-block-end:.15rem;place-self:stretch;position:relative;--icon-color:currentColor;pointer-events:none}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar::part(taskbar){block-size:100%;display:block!important;grid-template-columns:none!important;inline-size:100%;position:relative}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__pins{display:contents}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__pins ui-task:not([data-env-home]),.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__tray-host,.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__windows{display:none!important}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]{background:color-mix(in oklab,var(--color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)) 88%,transparent);border-radius:999px;bottom:.22rem;box-shadow:0 6px 20px -8px color-mix(in oklab,#000 45%,transparent);left:auto;margin:0;min-block-size:2.5rem;min-inline-size:2.5rem;padding:0;pointer-events:auto;position:absolute;right:calc(.7rem + env(safe-area-inset-right, 0px));top:auto;touch-action:manipulation;user-select:none;z-index:1}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(title){display:none!important}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(icon){block-size:1.7rem;inline-size:1.7rem;min-block-size:1.7rem;min-inline-size:1.7rem}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(glyph){block-size:100%;inline-size:100%;--icon-padding:0.1rem;--icon-size:100%;opacity:1}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(letter){opacity:0}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar :is(ui-task[data-env-home]:active,ui-task[data-env-home]:hover){background:color-mix(in oklch,#fff 10%,transparent);color:contrast-color(inherit(background-color))}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar :is(ui-task[data-env-home][data-active],ui-task[data-env-home][data-env-active=true],ui-task[data-env-home][data-focus]){background:color-mix(in oklch,#fff 8%,transparent);color:contrast-color(inherit(background-color))}.env-shell-chrome:not([data-desktop]):not([data-status-overlay]) .env-ui-statusbar{display:none!important}}");
+var styled$2 = preloadStyle("@layer ui-taskbar{ui-taskbar{gap:0 0!important;padding:0!important}ui-taskbar::part(taskbar){display:grid!important;gap:0 0!important;grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);padding:0!important}ui-taskbar ui-task{margin:0!important}.env-shell-chrome{color:var(--color-on-surface,var(--wf-md-on-surface-variant,#1c1c1e));display:flex;flex-direction:column;font:12px ui-sans-serif,system-ui,sans-serif;gap:0!important;inset-block-end:0;inset-inline:0;isolation:isolate;padding:0!important;pointer-events:none;position:fixed;z-index:var(--env-z-shell-chrome,2147483000)}.env-shell-chrome[data-desktop]{box-shadow:0 -8px 28px rgba(0,0,0,.28)}.env-shell-chrome>*{pointer-events:auto}.env-shell-taskbar{--env-taskbar-surface:color-mix(in oklab,var(--color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)) 88%,transparent);--env-taskbar-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-taskbar-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));align-items:stretch;backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);background:var(--env-taskbar-surface);block-size:2.5rem;border-block-start:1px solid light-dark(color-mix(in oklab,#000 10%,transparent),color-mix(in oklab,#fff 14%,transparent));box-shadow:none;color-scheme:inherit;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;min-block-size:2.5rem;order:0;padding:0 .25rem;padding-block-end:env(safe-area-inset-bottom,0);position:relative}.env-shell-taskbar,.env-shell-taskbar ui-icon{--icon-color:var(--env-taskbar-ink);color:var(--env-taskbar-ink)}.env-shell-taskbar::part(taskbar){align-items:stretch;display:flex;flex:1;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:100%;min-inline-size:0}.env-shell-taskbar__pins,.env-shell-taskbar__windows{align-items:stretch;display:flex;flex-direction:row;flex-wrap:nowrap;gap:0 0;margin:0;min-inline-size:0}.env-shell-taskbar__workspaces{align-items:center;display:none;flex-direction:row;gap:.25rem;margin-inline-start:.35rem}.env-shell-taskbar__workspace{background:color-mix(in oklab,CanvasText 10%,transparent);border:none;border-radius:.35rem;color:inherit;cursor:pointer;font:inherit;font-size:.7rem;min-block-size:1.35rem;min-inline-size:1.35rem;padding:0 .35rem}.env-shell-taskbar__workspace[data-active]{background:color-mix(in oklab,CanvasText 22%,transparent);font-weight:650}.env-shell-chrome[data-desktop] .env-shell-taskbar__workspaces{display:flex}.env-shell-taskbar__pins{content-visibility:visible;flex:0 0 auto;gap:0 0;inline-size:stretch;margin:0}.env-shell-taskbar__pins [data-env-home]{color:inherit;content-visibility:visible;--icon-color:currentColor;background:color-mix(in oklab,var(--env-taskbar-surface) 60%,transparent)!important;background-color:color-mix(in oklab,var(--env-taskbar-surface) 60%,transparent)!important}.env-shell-taskbar__pins ui-task{backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);box-shadow:inset 0 -2px 0 var(--env-taskbar-accent)}.env-shell-taskbar__pins ui-task::part(glyph),.env-shell-taskbar__pins ui-task::part(icon){color:var(--env-taskbar-ink);--icon-color:var(--env-taskbar-ink)}.env-shell-taskbar__windows{flex:1 1 auto;inline-size:stretch;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin}.env-shell-taskbar ui-task{align-self:stretch;background:transparent;border:0;border-radius:0;box-shadow:inset 0 -2px 0 transparent;color:inherit;cursor:pointer;inline-size:fit-content;min-block-size:100%;min-inline-size:2.75rem;opacity:1;outline:none;padding-inline:.55rem}.env-shell-taskbar ui-task:hover{background:color-mix(in oklab,var(--env-taskbar-ink) 10%,transparent);color:var(--env-taskbar-ink);opacity:1}.env-shell-taskbar :is(ui-task[data-active],ui-task[data-env-active=true],ui-task[data-focus]){background:color-mix(in oklab,var(--env-taskbar-surface) 12%,transparent);box-shadow:inset 0 -2px 0 var(--env-taskbar-accent);color:var(--env-taskbar-ink);opacity:1;outline:none}.env-shell-taskbar ui-task[data-minimized]{opacity:.65}.env-shell-taskbar__tray-host{align-items:center;border-inline-start:1px solid light-dark(color-mix(in oklab,#000 10%,transparent),color-mix(in oklab,#fff 12%,transparent));display:flex;flex:0 0 auto;gap:.35rem;margin-inline-start:auto;padding-inline:.35rem}.env-shell-taskbar__clock{align-items:flex-end;border-radius:.35rem;cursor:pointer;display:flex;flex-direction:column;gap:.05rem;inline-size:fit-content;justify-content:center;line-height:1.05;min-inline-size:4rem;padding-inline:.35rem .15rem;pointer-events:auto;user-select:none}.env-shell-taskbar__clock,.env-shell-taskbar__clock .env-shell-taskbar__clock-date,.env-shell-taskbar__clock .env-shell-taskbar__clock-time{font-variant-numeric:tabular-nums}.env-shell-taskbar__clock:focus-visible,.env-shell-taskbar__clock:hover{background:color-mix(in oklab,var(--env-taskbar-ink) 10%,transparent);color:var(--env-taskbar-ink);outline:none}.env-device-tray--taskbar{border-radius:.35rem;cursor:pointer;pointer-events:auto}.env-device-tray--taskbar:focus-visible,.env-device-tray--taskbar:hover{background:color-mix(in oklab,var(--env-taskbar-ink) 10%,transparent);color:var(--env-taskbar-ink);outline:none}.env-shell-taskbar__clock-time{color:inherit;font-size:.78rem;font-variant-numeric:tabular-nums;font-weight:600}.env-shell-taskbar__clock-date{color:color-mix(in oklab,currentColor 72%,transparent);font-size:.62rem;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(title){display:none!important}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task{min-inline-size:2.5rem;padding-inline:.45rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(icon){block-size:1.35rem;inline-size:1.35rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(glyph){block-size:1.35rem;inline-size:1.35rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home]::part(icon){block-size:1.75rem;inline-size:1.75rem;min-block-size:1.75rem;min-inline-size:1.75rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home]::part(glyph){block-size:100%;inline-size:100%;--icon-size:100%;--icon-padding:0.05rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task::part(letter){font-size:.8rem}.env-shell-chrome[data-desktop] .env-shell-taskbar__pins{background:transparent;background-color:initial;border:0 transparent;margin:0;outline:0 none transparent;padding:0}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home],.env-shell-chrome[data-desktop] .env-shell-taskbar__pins{backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:0;box-shadow:0 0 0 none transparent;margin-inline-end:.2rem;min-inline-size:2.75rem}.env-shell-chrome[data-desktop] .env-shell-taskbar ui-task[data-env-home]{border:0 transparent;display:inline-flex!important;outline:none;outline:0 none transparent;transform:none}.env-shell-chrome[data-desktop] .env-shell-taskbar :is(ui-task[data-env-home]:focus-visible,ui-task[data-env-home]:hover){background:color-mix(in oklab,var(--env-taskbar-accent) 32%,transparent)}.env-shell-chrome[data-desktop] .env-shell-taskbar :is(ui-task[data-env-home][data-active],ui-task[data-env-home][data-env-active=true],ui-task[data-env-home][data-focus]){background:color-mix(in oklab,var(--env-taskbar-accent) 28%,transparent)}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar{backdrop-filter:none;-webkit-backdrop-filter:none;background:transparent;block-size:3rem;border-block-start:none;box-shadow:none;color:var(--env-status-fg,var(--env-taskbar-ink));display:block;gap:0;inline-size:100%;min-block-size:3rem;padding:.15rem .75rem;padding-block-end:.15rem;place-self:stretch;position:relative;--icon-color:currentColor;pointer-events:none}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar::part(taskbar){block-size:100%;display:block!important;grid-template-columns:none!important;inline-size:100%;position:relative}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__pins{display:contents}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__pins ui-task:not([data-env-home]),.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__tray-host,.env-shell-chrome:not([data-desktop]) .env-shell-taskbar__windows{display:none!important}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]{background:color-mix(in oklab,var(--color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)) 88%,transparent);border-radius:999px;bottom:.22rem;box-shadow:0 6px 20px -8px color-mix(in oklab,#000 45%,transparent);left:auto;margin:0;min-block-size:2.5rem;min-inline-size:2.5rem;padding:0;pointer-events:auto;position:absolute;right:calc(.7rem + env(safe-area-inset-right, 0px));top:auto;touch-action:manipulation;user-select:none;z-index:1}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(title){display:none!important}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(icon){block-size:1.7rem;inline-size:1.7rem;min-block-size:1.7rem;min-inline-size:1.7rem}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(glyph){block-size:100%;inline-size:100%;--icon-padding:0.1rem;--icon-size:100%;opacity:1}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar ui-task[data-env-home]::part(letter){opacity:0}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar :is(ui-task[data-env-home]:active,ui-task[data-env-home]:hover){background:color-mix(in oklch,#fff 10%,transparent);color:contrast-color(inherit(background-color))}.env-shell-chrome:not([data-desktop]) .env-shell-taskbar :is(ui-task[data-env-home][data-active],ui-task[data-env-home][data-env-active=true],ui-task[data-env-home][data-focus]){background:color-mix(in oklch,#fff 8%,transparent);color:contrast-color(inherit(background-color))}.env-shell-chrome:not([data-desktop]):not([data-status-overlay]) .env-ui-statusbar{display:none!important}}");
 var UITaskBar = class UITaskBar extends UIElement_default {
 	constructor() {
 		super();
 	}
-	styles = () => styled$4;
+	styles = () => styled$2;
 	render = () => H`<div part="taskbar" class="taskbar"><slot></slot></div>`;
 };
 UITaskBar = __decorate([defineElement("ui-taskbar")], UITaskBar);
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/taskbar/element/Task.ts
-var styled$3 = preloadStyle(":host(ui-task),:host(ui-task) *{box-sizing:border-box;touch-action:manipulation;user-select:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;border:0 transparent;gap:0;margin:0;padding:0}:host(ui-task){align-items:center;border-radius:.5rem;box-shadow:none;cursor:pointer;display:inline-flex;filter:none;flex-direction:row;gap:.35rem;justify-content:center;min-block-size:2.25rem;min-inline-size:2.25rem;padding-block:.25rem;padding-inline:.45rem;pointer-events:auto;user-select:none}:host(ui-task)>*{pointer-events:none}:host(ui-task) .task-icon{block-size:1.25rem;display:inline-flex;inline-size:1.25rem;line-height:0;min-block-size:1.25rem;min-inline-size:1.25rem;place-content:center;place-items:center;position:relative}:host(ui-task) .task-letter{color:currentColor;display:grid;font-size:.72rem;font-weight:700;inset:0;letter-spacing:0;line-height:1;opacity:.92;place-content:center;place-items:center;pointer-events:none;position:absolute;user-select:none;z-index:0}:host(ui-task) .task-icon-glyph{block-size:100%;color:currentColor;inline-size:100%;min-block-size:1rem;min-inline-size:1rem;position:relative;z-index:1}:host(ui-task) .task-icon:has(ui-icon[icon]:not([icon=\"\"])) .task-letter{opacity:.35}:host(ui-task) .task-icon:has(ui-icon[icon]:not([icon=\"\"]):not([icon=app-window])) .task-letter{opacity:0}:host(ui-task) .task-title{font-size:.75rem;font-weight:500;line-height:1.2;max-inline-size:8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}:host(ui-task:hover){--background-tone-shift:0.1;background-color:--c2-surface(var(--background-tone-shift,0),var(--current));color:contrast-color(var(--background-tone-shift,0),var(--current))}:host(ui-task[data-focus]){border-block-end-color:--c2-on-surface(0,var(--current))!important}:host(ui-task:not([data-active])){opacity:.6}");
+var styled$1 = preloadStyle(":host(ui-task),:host(ui-task) *{box-sizing:border-box;touch-action:manipulation;user-select:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;border:0 transparent;gap:0;margin:0;padding:0}:host(ui-task){align-items:center;border-radius:.5rem;box-shadow:none;cursor:pointer;display:inline-flex;filter:none;flex-direction:row;gap:.35rem;justify-content:center;min-block-size:2.25rem;min-inline-size:2.25rem;padding-block:.25rem;padding-inline:.45rem;pointer-events:auto;user-select:none}:host(ui-task)>*{pointer-events:none}:host(ui-task) .task-icon{block-size:1.25rem;display:inline-flex;inline-size:1.25rem;line-height:0;min-block-size:1.25rem;min-inline-size:1.25rem;place-content:center;place-items:center;position:relative}:host(ui-task) .task-letter{color:currentColor;display:grid;font-size:.72rem;font-weight:700;inset:0;letter-spacing:0;line-height:1;opacity:.92;place-content:center;place-items:center;pointer-events:none;position:absolute;user-select:none;z-index:0}:host(ui-task) .task-icon-glyph{block-size:100%;color:currentColor;inline-size:100%;min-block-size:1rem;min-inline-size:1rem;position:relative;z-index:1}:host(ui-task) .task-icon:has(ui-icon[icon]:not([icon=\"\"])) .task-letter{opacity:.35}:host(ui-task) .task-icon:has(ui-icon[icon]:not([icon=\"\"]):not([icon=app-window])) .task-letter{opacity:0}:host(ui-task) .task-title{font-size:.75rem;font-weight:500;line-height:1.2;max-inline-size:8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}:host(ui-task:hover){--background-tone-shift:0.1;background-color:--c2-surface(var(--background-tone-shift,0),var(--current));color:contrast-color(var(--background-tone-shift,0),var(--current))}:host(ui-task[data-focus]){border-block-end-color:--c2-on-surface(0,var(--current))!important}:host(ui-task:not([data-active])){opacity:.6}");
 /** First letter for blank-glyph fallback — never String(undefined)→"U". */
 var titleLetter = (title) => {
 	let s = "";
@@ -27529,7 +27650,7 @@ var UITask = class UITask extends UIElement_default {
 	constructor() {
 		super();
 	}
-	styles = () => styled$3;
+	styles = () => styled$1;
 	render = function() {
 		const titleText = attrString(this, "title", "Task");
 		const iconName = attrString(this, "icon", "app-window");
@@ -27995,7 +28116,7 @@ if (typeof document !== "undefined") queueMicrotask(() => {
 });
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/containers/window/Windows2.ts
-var styled$2 = preloadStyle("@function --u2-color-mod(--base-color <color>, --index <number> : 550) returns <color>{--i:clamp(0,var(--index),1000);--pivot:550;--white-distance:clamp(0,calc((var(--pivot) - var(--i)) / var(--pivot)),1);--black-distance:clamp(0,calc((var(--i) - var(--pivot)) / (1000 - var(--pivot))),1);--to-white:pow(var(--white-distance),1.15);--to-black:pow(var(--black-distance),1.08);--center-left:clamp(0,calc(var(--i) / var(--pivot)),1);--center-right:clamp(0,calc((1000 - var(--i)) / (1000 - var(--pivot))),1);--chroma-shape:sqrt(min(var(--center-left),var(--center-right)));--chroma-scale:calc(0.08 + 0.92 * var(--chroma-shape));result:oklch(from var(--base-color) calc(l + (.985 - l) * var(--to-white) + (.16 - l) * var(--to-black)) calc(c * var(--chroma-scale)) h)}:host(ui-window){--ui-win-radius:var(--radius-lg,0.75rem);--ui-win-titlebar-height:2.5rem;--ui-win-footer-min:2.25rem;--ui-win-control-size:1.75rem;--ui-win-icon-size:var(--ui-window-icon-size,0.95rem);--ui-win-gap:0.5rem;--ui-win-pad-inline:0.75rem;--ui-win-pad-block:0.65rem;--ui-win-seed:var(--base-color,var(--color-primary,#5a9ec8));--ui-win-bg:var(--color-surface,light-dark(--u2-color-mod(var(--ui-win-seed),70),--u2-color-mod(var(--ui-win-seed),930)));--ui-win-fg:var(--color-on-surface,light-dark(--u2-color-mod(var(--ui-win-seed),900),--u2-color-mod(var(--ui-win-seed),100)));--ui-win-muted:var(--color-on-surface-variant,light-dark(--u2-color-mod(var(--ui-win-seed),700),--u2-color-mod(var(--ui-win-seed),280)));--ui-win-border:color-mix(in oklab,var(--ui-win-fg) 12%,transparent);--ui-win-titlebar-bg:var(--color-surface-container,light-dark(--u2-color-mod(var(--ui-win-seed),40),--u2-color-mod(var(--ui-win-seed),960)));--ui-win-content-bg:var(--color-surface-container-lowest,light-dark(--u2-color-mod(var(--ui-win-seed),40),--u2-color-mod(var(--ui-win-seed),950)));--ui-win-footer-bg:var(--color-surface-container-low,light-dark(--u2-color-mod(var(--ui-win-seed),120),--u2-color-mod(var(--ui-win-seed),900)));--ui-win-shadow:light-dark(0 18px 40px -18px rgb(15 23 42/0.28),0 22px 48px -16px rgb(0 0 0/0.55));--ui-win-control-bg:transparent;--ui-win-control-bg-hover:color-mix(in oklab,var(--ui-win-fg) 14%,transparent);--ui-win-control-fg:var(--ui-win-fg);--ui-win-close-bg:transparent;--ui-win-close-bg-hover:light-dark(--u2-color-mod(#ef4444,550),--u2-color-mod(#ef4444,480));--ui-win-close-fg:var(--ui-win-fg);--ui-win-close-fg-hover:--u2-color-mod(var(--ui-win-seed),40);--icon-color:var(--ui-win-fg);block-size:var(--ui-win-height,min(22rem,70vh));border-radius:var(--ui-win-radius);box-shadow:var(--ui-win-shadow);box-sizing:border-box;color:var(--ui-win-fg);color-scheme:inherit;contain:layout paint style;display:block;font-family:InterVariable,Inter,Segoe UI,ui-sans-serif,system-ui,sans-serif;font-size:.875rem;inline-size:var(--ui-win-width,min(32rem,92vw));isolation:isolate;line-height:1.35;min-block-size:10rem;min-inline-size:16rem;overflow:hidden;position:relative}:host(ui-window),:host(ui-window) *,:host(ui-window) :after,:host(ui-window) :before{box-sizing:border-box}:host(ui-window) :is(.footer-handler[data-empty],.footer-handler[hidden]){display:none!important}:host(ui-window.theme-light),:host(ui-window[data-theme=light]){color-scheme:light}:host(ui-window.theme-dark),:host(ui-window[data-theme=dark]){color-scheme:dark}:host(ui-window[managed]){position:absolute;transform:none!important}:host(ui-window[managed][data-focused]){box-shadow:var(--ui-win-shadow),0 0 0 1px color-mix(in oklab,var(--ui-win-fg) 22%,transparent)}:host(ui-window[data-native-active]) .content-handler,:host(ui-window[managed]) .content-handler,:host(ui-window[native-mode]) .content-handler{display:flex;flex-direction:column;overflow:hidden;padding:0}:host(ui-window[data-native-active]) .content-handler ::slotted(*),:host(ui-window[managed]) .content-handler ::slotted(*),:host(ui-window[native-mode]) .content-handler ::slotted(*){block-size:100%;flex:1 1 auto;inline-size:100%;max-inline-size:none;min-block-size:0;min-inline-size:0}:host(ui-window[maximized]){--ui-win-radius:0;block-size:100%!important;border-radius:0;inline-size:100%!important;inset:0!important;transform:none!important}:host(ui-window[data-mobile-max]){--ui-win-radius:0;--ui-win-titlebar-height:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));block-size:100%!important;border-radius:0;inline-size:100%!important;inset:0!important;transform:none!important}@media screen and (pointer:coarse) and (hover:none){:host(ui-window[data-mobile-max]){block-size:stretch!important}}:host(ui-window[data-mobile-max]) :is(.title-close,.title-exit-native,.title-maximize,.title-minimize){display:none!important}:host(ui-window[data-mobile-max]) .title-handler{background:var(--ui-win-titlebar-bg,var(--color-surface,--u2-color-mod(var(--ui-win-seed),940)));border-block-end:0;cursor:default;min-block-size:var(--ui-win-titlebar-height);padding-block:0;pointer-events:none}:host(ui-window[data-mobile-max]) :is(.title-handler-actions,.title-handler-buttons,.title-handler-main){display:none!important}:host(ui-window[data-no-titlebar]){--ui-win-titlebar-height:0px}:host(ui-window[data-no-titlebar]) .title-handler{display:none!important}:host(ui-window[data-status-gap]:not([data-no-titlebar])){--ui-win-titlebar-height:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)))}:host(ui-window[data-status-gap]:not([data-no-titlebar])) .title-handler{background:var(--ui-win-titlebar-bg,var(--color-surface,--u2-color-mod(var(--ui-win-seed),940)));border-block-end:0;cursor:default;min-block-size:var(--ui-win-titlebar-height);padding-block:0;pointer-events:none}:host(ui-window[data-status-gap]:not([data-no-titlebar])) :is(.title-handler-actions,.title-handler-buttons,.title-handler-main){display:none!important}:host(ui-window[data-desk-max]){--ui-win-radius:0;block-size:auto!important;border-radius:0;box-shadow:none!important;inline-size:auto!important;inset:0 0 var(--env-shell-chrome-stack-reserve,2.5rem) 0!important;transform:none!important}@media screen and (pointer:coarse) and (hover:none){:host(ui-window[data-desk-max]){block-size:stretch!important}}:host(ui-window[managed][data-focused][data-desk-max]){box-shadow:none!important}:host(ui-window[minimized]){block-size:var(--ui-win-titlebar-height)!important;min-block-size:var(--ui-win-titlebar-height)}:host(ui-window[minimized]) :is(.content-handler,.footer-handler,.window-resizer){display:none}:host(ui-window[hidden-window]){pointer-events:none!important;visibility:hidden!important}:host(ui-window[data-desk-max]) .window-resizer,:host(ui-window[data-mobile-max]) .window-resizer,:host(ui-window[data-native-active]) .window-resizer,:host(ui-window[maximized]) .window-resizer{display:none}:host(ui-window[data-native-active]),:host(ui-window[native-mode]){--ui-win-radius:0;block-size:100%!important;border-radius:0;box-shadow:none;inline-size:100%!important;inset:0!important;max-block-size:none;max-inline-size:none;position:fixed!important;transform:none!important;z-index:4}:host(ui-window[data-native-standalone]) .title-handler,:host(ui-window[data-native-wco]) .title-handler{window-drag:move;app-region:drag;-webkit-app-region:drag;cursor:default;min-block-size:max(var(--ui-win-titlebar-height),env(titlebar-area-height,var(--ui-win-titlebar-area-height,0px)),env(safe-area-inset-top,0px) + 1.75rem);padding-block-start:max(env(safe-area-inset-top,0px),env(titlebar-area-y,0px));padding-inline-end:max(env(safe-area-inset-right,0px),max(0px,100vi - env(titlebar-area-x,0px) - env(titlebar-area-width,100vi)),var(--ui-win-pad-inline));padding-inline-start:max(env(safe-area-inset-left,0px),env(titlebar-area-x,var(--ui-win-titlebar-area-x,0px)),var(--ui-win-pad-inline))}:host(ui-window[data-native-standalone]) .title-handler-actions,:host(ui-window[data-native-standalone]) .title-handler-buttons,:host(ui-window[data-native-standalone]) .title-handler-buttons button,:host(ui-window[data-native-wco]) .title-handler-actions,:host(ui-window[data-native-wco]) .title-handler-buttons,:host(ui-window[data-native-wco]) .title-handler-buttons button{window-drag:none;app-region:no-drag;-webkit-app-region:no-drag}:host(ui-window[data-native-wco]) :is(.title-close,.title-exit-native,.title-maximize,.title-minimize){display:none!important}:host(ui-window[data-native-standalone]) :is(.title-close,.title-maximize,.title-minimize){display:none!important}:host(ui-window[data-mobile-max]) .footer-handler,:host(ui-window[data-native-active]) .footer-handler[data-empty],:host(ui-window[data-native-active]) .footer-handler[hidden]{display:none!important}.title-exit-native,.title-exit-native[hidden]{display:none!important}:host(ui-window[data-native-standalone]) .title-exit-native:not([hidden]){display:inline-flex!important}.window-container{background:var(--ui-win-bg);block-size:100%;border:1px solid var(--ui-win-border);border-radius:inherit;color:var(--ui-win-fg);display:grid;grid-template-areas:\"title\" \"content\" \"footer\";grid-template-rows:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);inline-size:100%;isolation:isolate;overflow:hidden}.title-handler{align-items:center;background:var(--ui-win-titlebar-bg);border:0 transparent;border-block-end:0 none transparent;cursor:grab;display:grid;gap:var(--ui-win-gap);grid-area:title;grid-template-columns:minmax(0,1fr) auto auto;min-block-size:var(--ui-win-titlebar-height);padding-block:.35rem;padding-inline:var(--ui-win-pad-inline);pointer-events:auto;position:relative;touch-action:none;user-select:none;z-index:2}.title-handler:active{cursor:grabbing}.title-handler-main{align-items:center;display:flex;gap:.5rem;min-inline-size:0;overflow:hidden;pointer-events:none}.title-handler-main .title-text,.title-handler-main ::slotted(*){font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.title-handler-actions{align-items:center;display:flex;gap:.25rem;min-inline-size:0}.title-handler-buttons{align-items:center;background:transparent;display:flex;flex-shrink:0;gap:.25rem;pointer-events:auto;position:relative;touch-action:manipulation;z-index:3}:is(.title-handler-actions,.title-handler-buttons) button{align-items:center;appearance:none;background:var(--ui-win-control-bg);block-size:var(--ui-win-control-size);border:0;border-radius:999px;color:var(--ui-win-control-fg);display:inline-flex;inline-size:var(--ui-win-control-size);justify-content:center;margin:0;padding:0;--icon-color:currentColor;cursor:pointer;pointer-events:auto;transition:background-color .15s ease,color .15s ease,transform .12s ease}:is(.title-handler-actions,.title-handler-buttons) button:hover{background:var(--ui-win-control-bg-hover)}:is(.title-handler-actions,.title-handler-buttons) button:active{transform:scale(.94)}:is(.title-handler-actions,.title-handler-buttons) button:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 70%,transparent);outline-offset:2px}:is(.title-handler-actions,.title-handler-buttons) button ui-icon{block-size:var(--ui-win-icon-size);flex-shrink:0;inline-size:var(--ui-win-icon-size);min-block-size:var(--ui-win-icon-size);min-inline-size:var(--ui-win-icon-size);--ui-icon-size:var(--ui-win-icon-size);--ui-icon-padding:0;pointer-events:none}.title-handler-buttons .title-close{background:var(--ui-win-close-bg);color:var(--ui-win-close-fg);--icon-color:currentColor}.title-handler-buttons .title-close:hover{background:var(--ui-win-close-bg-hover);color:var(--ui-win-close-fg-hover)}.content-handler{background:var(--ui-win-content-bg);color:var(--ui-win-fg);contain:paint;grid-area:content;isolation:isolate;min-block-size:0;min-inline-size:0;overflow:auto;padding:0;pointer-events:auto;position:relative;transform:translateZ(0);z-index:0}.content-handler ::slotted(*){max-block-size:100%;max-inline-size:100%;min-block-size:0;pointer-events:auto}.footer-handler{align-items:center;background:var(--ui-win-footer-bg);border-block-start:1px solid var(--ui-win-border);color:var(--ui-win-muted);display:flex;gap:.5rem;grid-area:footer;justify-content:flex-end;min-block-size:var(--ui-win-footer-min);padding:.45rem var(--ui-win-pad-inline)}.footer-handler[data-empty],.footer-handler[hidden]{display:none}.window-resizer{background:linear-gradient(135deg,transparent 48%,color-mix(in oklab,var(--ui-win-muted) 55%,transparent) 50%);block-size:12px;border-radius:2px;cursor:nwse-resize;inline-size:12px;inset-block-end:4px;inset-inline-end:4px;opacity:.55;pointer-events:auto;position:absolute;z-index:1}.window-resizer:hover{opacity:.9}");
+var styled = preloadStyle("@function --u2-color-mod(--base-color <color>, --index <number> : 550) returns <color>{--i:clamp(0,var(--index),1000);--pivot:550;--white-distance:clamp(0,calc((var(--pivot) - var(--i)) / var(--pivot)),1);--black-distance:clamp(0,calc((var(--i) - var(--pivot)) / (1000 - var(--pivot))),1);--to-white:pow(var(--white-distance),1.15);--to-black:pow(var(--black-distance),1.08);--center-left:clamp(0,calc(var(--i) / var(--pivot)),1);--center-right:clamp(0,calc((1000 - var(--i)) / (1000 - var(--pivot))),1);--chroma-shape:sqrt(min(var(--center-left),var(--center-right)));--chroma-scale:calc(0.08 + 0.92 * var(--chroma-shape));result:oklch(from var(--base-color) calc(l + (.985 - l) * var(--to-white) + (.16 - l) * var(--to-black)) calc(c * var(--chroma-scale)) h)}:host(ui-window){--ui-win-radius:var(--radius-lg,0.75rem);--ui-win-titlebar-height:2.5rem;--ui-win-footer-min:2.25rem;--ui-win-control-size:1.75rem;--ui-win-icon-size:var(--ui-window-icon-size,0.95rem);--ui-win-gap:0.5rem;--ui-win-pad-inline:0.75rem;--ui-win-pad-block:0.65rem;--ui-win-seed:var(--base-color,var(--color-primary,#5a9ec8));--ui-win-bg:var(--color-surface,light-dark(--u2-color-mod(var(--ui-win-seed),70),--u2-color-mod(var(--ui-win-seed),930)));--ui-win-fg:var(--color-on-surface,light-dark(--u2-color-mod(var(--ui-win-seed),900),--u2-color-mod(var(--ui-win-seed),100)));--ui-win-muted:var(--color-on-surface-variant,light-dark(--u2-color-mod(var(--ui-win-seed),700),--u2-color-mod(var(--ui-win-seed),280)));--ui-win-border:color-mix(in oklab,var(--ui-win-fg) 12%,transparent);--ui-win-titlebar-bg:var(--color-surface-container,light-dark(--u2-color-mod(var(--ui-win-seed),40),--u2-color-mod(var(--ui-win-seed),960)));--ui-win-content-bg:var(--color-surface-container-lowest,light-dark(--u2-color-mod(var(--ui-win-seed),40),--u2-color-mod(var(--ui-win-seed),950)));--ui-win-footer-bg:var(--color-surface-container-low,light-dark(--u2-color-mod(var(--ui-win-seed),120),--u2-color-mod(var(--ui-win-seed),900)));--ui-win-shadow:light-dark(0 18px 40px -18px rgb(15 23 42/0.28),0 22px 48px -16px rgb(0 0 0/0.55));--ui-win-control-bg:transparent;--ui-win-control-bg-hover:color-mix(in oklab,var(--ui-win-fg) 14%,transparent);--ui-win-control-fg:var(--ui-win-fg);--ui-win-close-bg:transparent;--ui-win-close-bg-hover:light-dark(--u2-color-mod(#ef4444,550),--u2-color-mod(#ef4444,480));--ui-win-close-fg:var(--ui-win-fg);--ui-win-close-fg-hover:--u2-color-mod(var(--ui-win-seed),40);--icon-color:var(--ui-win-fg);block-size:var(--ui-win-height,min(22rem,70vh));border-radius:var(--ui-win-radius);box-shadow:var(--ui-win-shadow);box-sizing:border-box;color:var(--ui-win-fg);color-scheme:inherit;contain:layout paint style;display:block;font-family:InterVariable,Inter,Segoe UI,ui-sans-serif,system-ui,sans-serif;font-size:.875rem;inline-size:var(--ui-win-width,min(32rem,92vw));isolation:isolate;line-height:1.35;min-block-size:10rem;min-inline-size:16rem;overflow:hidden;position:relative}:host(ui-window),:host(ui-window) *,:host(ui-window) :after,:host(ui-window) :before{box-sizing:border-box}:host(ui-window) :is(.footer-handler[data-empty],.footer-handler[hidden]){display:none!important}:host(ui-window.theme-light),:host(ui-window[data-theme=light]){color-scheme:light}:host(ui-window.theme-dark),:host(ui-window[data-theme=dark]){color-scheme:dark}:host(ui-window[managed]){position:absolute;transform:none!important}:host(ui-window[managed][data-focused]){box-shadow:var(--ui-win-shadow),0 0 0 1px color-mix(in oklab,var(--ui-win-fg) 22%,transparent)}:host(ui-window[data-native-active]) .content-handler,:host(ui-window[managed]) .content-handler,:host(ui-window[native-mode]) .content-handler{display:flex;flex-direction:column;overflow:hidden;padding:0}:host(ui-window[data-native-active]) .content-handler ::slotted(*),:host(ui-window[managed]) .content-handler ::slotted(*),:host(ui-window[native-mode]) .content-handler ::slotted(*){block-size:100%;flex:1 1 auto;inline-size:100%;max-inline-size:none;min-block-size:0;min-inline-size:0}:host(ui-window[maximized]){--ui-win-radius:0;block-size:100%!important;border-radius:0;inline-size:100%!important;inset:0!important;transform:none!important}:host(ui-window[data-mobile-max]){--ui-win-radius:0;--ui-win-titlebar-height:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));block-size:100%!important;border-radius:0;inline-size:100%!important;inset:0!important;transform:none!important}@media screen and (pointer:coarse) and (hover:none){:host(ui-window[data-mobile-max]){block-size:stretch!important}}:host(ui-window[data-mobile-max]) :is(.title-close,.title-exit-native,.title-maximize,.title-minimize){display:none!important}:host(ui-window[data-mobile-max]) .title-handler{background:var(--ui-win-titlebar-bg,var(--color-surface,--u2-color-mod(var(--ui-win-seed),940)));border-block-end:0;cursor:default;min-block-size:var(--ui-win-titlebar-height);padding-block:0;pointer-events:none}:host(ui-window[data-mobile-max]) :is(.title-handler-actions,.title-handler-buttons,.title-handler-main){display:none!important}:host(ui-window[data-no-titlebar]){--ui-win-titlebar-height:0px}:host(ui-window[data-no-titlebar]) .title-handler{display:none!important}:host(ui-window[data-status-gap]:not([data-no-titlebar])){--ui-win-titlebar-height:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)))}:host(ui-window[data-status-gap]:not([data-no-titlebar])) .title-handler{background:var(--ui-win-titlebar-bg,var(--color-surface,--u2-color-mod(var(--ui-win-seed),940)));border-block-end:0;cursor:default;min-block-size:var(--ui-win-titlebar-height);padding-block:0;pointer-events:none}:host(ui-window[data-status-gap]:not([data-no-titlebar])) :is(.title-handler-actions,.title-handler-buttons,.title-handler-main){display:none!important}:host(ui-window[data-desk-max]){--ui-win-radius:0;block-size:auto!important;border-radius:0;box-shadow:none!important;inline-size:auto!important;inset:0 0 var(--env-shell-chrome-stack-reserve,2.5rem) 0!important;transform:none!important}@media screen and (pointer:coarse) and (hover:none){:host(ui-window[data-desk-max]){block-size:stretch!important}}:host(ui-window[managed][data-focused][data-desk-max]){box-shadow:none!important}:host(ui-window[minimized]){block-size:var(--ui-win-titlebar-height)!important;min-block-size:var(--ui-win-titlebar-height)}:host(ui-window[minimized]) :is(.content-handler,.footer-handler,.window-resizer){display:none}:host(ui-window[hidden-window]){pointer-events:none!important;visibility:hidden!important}:host(ui-window[data-desk-max]) .window-resizer,:host(ui-window[data-mobile-max]) .window-resizer,:host(ui-window[data-native-active]) .window-resizer,:host(ui-window[maximized]) .window-resizer{display:none}:host(ui-window[data-native-active]),:host(ui-window[native-mode]){--ui-win-radius:0;block-size:100%!important;border-radius:0;box-shadow:none;inline-size:100%!important;inset:0!important;max-block-size:none;max-inline-size:none;position:fixed!important;transform:none!important;z-index:4}:host(ui-window[data-native-standalone]) .title-handler,:host(ui-window[data-native-wco]) .title-handler{window-drag:move;app-region:drag;-webkit-app-region:drag;cursor:default;min-block-size:max(var(--ui-win-titlebar-height),env(titlebar-area-height,var(--ui-win-titlebar-area-height,0px)),env(safe-area-inset-top,0px) + 1.75rem);padding-block-start:max(env(safe-area-inset-top,0px),env(titlebar-area-y,0px));padding-inline-end:max(env(safe-area-inset-right,0px),max(0px,100vi - env(titlebar-area-x,0px) - env(titlebar-area-width,100vi)),var(--ui-win-pad-inline));padding-inline-start:max(env(safe-area-inset-left,0px),env(titlebar-area-x,var(--ui-win-titlebar-area-x,0px)),var(--ui-win-pad-inline))}:host(ui-window[data-native-standalone]) .title-handler-actions,:host(ui-window[data-native-standalone]) .title-handler-buttons,:host(ui-window[data-native-standalone]) .title-handler-buttons button,:host(ui-window[data-native-wco]) .title-handler-actions,:host(ui-window[data-native-wco]) .title-handler-buttons,:host(ui-window[data-native-wco]) .title-handler-buttons button{window-drag:none;app-region:no-drag;-webkit-app-region:no-drag}:host(ui-window[data-native-wco]) :is(.title-close,.title-exit-native,.title-maximize,.title-minimize){display:none!important}:host(ui-window[data-native-standalone]) :is(.title-close,.title-maximize,.title-minimize){display:none!important}:host(ui-window[data-mobile-max]) .footer-handler,:host(ui-window[data-native-active]) .footer-handler[data-empty],:host(ui-window[data-native-active]) .footer-handler[hidden]{display:none!important}.title-exit-native,.title-exit-native[hidden]{display:none!important}:host(ui-window[data-native-standalone]) .title-exit-native:not([hidden]){display:inline-flex!important}.window-container{background:var(--ui-win-bg);block-size:100%;border:1px solid var(--ui-win-border);border-radius:inherit;color:var(--ui-win-fg);display:grid;grid-template-areas:\"title\" \"content\" \"footer\";grid-template-rows:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);inline-size:100%;isolation:isolate;overflow:hidden}.title-handler{align-items:center;background:var(--ui-win-titlebar-bg);border:0 transparent;border-block-end:0 none transparent;cursor:grab;display:grid;gap:var(--ui-win-gap);grid-area:title;grid-template-columns:minmax(0,1fr) auto auto;min-block-size:var(--ui-win-titlebar-height);padding-block:.35rem;padding-inline:var(--ui-win-pad-inline);pointer-events:auto;position:relative;touch-action:none;user-select:none;z-index:2}.title-handler:active{cursor:grabbing}.title-handler-main{align-items:center;display:flex;gap:.5rem;min-inline-size:0;overflow:hidden;pointer-events:none}.title-handler-main .title-text,.title-handler-main ::slotted(*){font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.title-handler-actions{align-items:center;display:flex;gap:.25rem;min-inline-size:0}.title-handler-buttons{align-items:center;background:transparent;display:flex;flex-shrink:0;gap:.25rem;pointer-events:auto;position:relative;touch-action:manipulation;z-index:3}:is(.title-handler-actions,.title-handler-buttons) button{align-items:center;appearance:none;background:var(--ui-win-control-bg);block-size:var(--ui-win-control-size);border:0;border-radius:999px;color:var(--ui-win-control-fg);display:inline-flex;inline-size:var(--ui-win-control-size);justify-content:center;margin:0;padding:0;--icon-color:currentColor;cursor:pointer;pointer-events:auto;transition:background-color .15s ease,color .15s ease,transform .12s ease}:is(.title-handler-actions,.title-handler-buttons) button:hover{background:var(--ui-win-control-bg-hover)}:is(.title-handler-actions,.title-handler-buttons) button:active{transform:scale(.94)}:is(.title-handler-actions,.title-handler-buttons) button:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 70%,transparent);outline-offset:2px}:is(.title-handler-actions,.title-handler-buttons) button ui-icon{block-size:var(--ui-win-icon-size);flex-shrink:0;inline-size:var(--ui-win-icon-size);min-block-size:var(--ui-win-icon-size);min-inline-size:var(--ui-win-icon-size);--ui-icon-size:var(--ui-win-icon-size);--ui-icon-padding:0;pointer-events:none}.title-handler-buttons .title-close{background:var(--ui-win-close-bg);color:var(--ui-win-close-fg);--icon-color:currentColor}.title-handler-buttons .title-close:hover{background:var(--ui-win-close-bg-hover);color:var(--ui-win-close-fg-hover)}.content-handler{background:var(--ui-win-content-bg);color:var(--ui-win-fg);contain:paint;grid-area:content;isolation:isolate;min-block-size:0;min-inline-size:0;overflow:auto;padding:0;pointer-events:auto;position:relative;transform:translateZ(0);z-index:0}.content-handler ::slotted(*){max-block-size:100%;max-inline-size:100%;min-block-size:0;pointer-events:auto}.footer-handler{align-items:center;background:var(--ui-win-footer-bg);border-block-start:1px solid var(--ui-win-border);color:var(--ui-win-muted);display:flex;gap:.5rem;grid-area:footer;justify-content:flex-end;min-block-size:var(--ui-win-footer-min);padding:.45rem var(--ui-win-pad-inline)}.footer-handler[data-empty],.footer-handler[hidden]{display:none}.window-resizer{background:linear-gradient(135deg,transparent 48%,color-mix(in oklab,var(--ui-win-muted) 55%,transparent) 50%);block-size:12px;border-radius:2px;cursor:nwse-resize;inline-size:12px;inset-block-end:4px;inset-inline-end:4px;opacity:.55;pointer-events:auto;position:absolute;z-index:1}.window-resizer:hover{opacity:.9}");
 /** Phosphor names (duotone registry): minimize / maximize / restore / close. */
 var ICON_MINIMIZE = "minus";
 var ICON_MAXIMIZE = "corners-out";
@@ -28027,7 +28148,7 @@ var Windows2 = class Windows2 extends UIElement {
 	#footerSlotUnbind = null;
 	#lastThemeCover = null;
 	styles = function() {
-		return styled$2;
+		return styled;
 	};
 	render = function() {
 		return H`<div class="window-container" part="window-container">
@@ -28865,11 +28986,13 @@ new IDBStorage("rs-history", "entries");
 new IDBStorage("rs-settings", "config");
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManagerContent.scss?inline
-var FileManagerContent_default$1 = "@function --u2-color-mod(--base-color <color>, --index <number> : 550) returns <color>{--i:clamp(0,var(--index),1000);--pivot:550;--white-distance:clamp(0,calc((var(--pivot) - var(--i)) / var(--pivot)),1);--black-distance:clamp(0,calc((var(--i) - var(--pivot)) / (1000 - var(--pivot))),1);--to-white:pow(var(--white-distance),1.15);--to-black:pow(var(--black-distance),1.08);--center-left:clamp(0,calc(var(--i) / var(--pivot)),1);--center-right:clamp(0,calc((1000 - var(--i)) / (1000 - var(--pivot))),1);--chroma-shape:sqrt(min(var(--center-left),var(--center-right)));--chroma-scale:calc(0.08 + 0.92 * var(--chroma-shape));result:oklch(from var(--base-color) calc(l + (.985 - l) * var(--to-white) + (.16 - l) * var(--to-black)) calc(c * var(--chroma-scale)) h)}@property --base-color{syntax:\"<color>\";inherits:false;initial-value:inherit}@layer ux-file-manager-content{:host(ui-file-manager-content){--base-color:var(--base-color,inherit)!important;background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border:0 transparent;border-radius:0;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;contain:none;container-type:size;display:flex;flex:1 1 auto;flex-direction:column;grid-column:1/-1;inline-size:100%;isolation:isolate;margin:0;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;perspective:1000;pointer-events:auto;position:relative;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid{align-content:start;block-size:100%;border:0 transparent;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:none;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-rows{align-content:start;block-size:100%;contain:none;contain-intrinsic-size:1px var(--ui-explorer-row-height,var(--touch-min,3rem));content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;gap:var(--gap-sm,.5rem);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;pointer-events:auto;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-gutter:stable;scrollbar-width:thin;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid-rows slot{display:contents!important}:host(ui-file-manager-content) :where(.row){background-color:color-mix(in oklab,var(--color-on-surface,#fff) 3%,transparent);block-size:auto;border:none;border-radius:var(--radius-lg,.75rem);box-sizing:border-box;color:var(--color-on-surface);cursor:pointer;display:grid;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;grid-template-rows:minmax(var(--ui-explorer-row-height,var(--touch-min,3rem)),auto);inline-size:100%;min-block-size:var(--ui-explorer-row-height,var(--touch-min,3rem));min-inline-size:0;order:var(--order,1)!important;place-content:center;place-items:center;justify-items:start;padding:.35rem .65rem;place-self:stretch;pointer-events:auto;touch-action:manipulation;user-drag:none;-webkit-user-drag:none;flex-wrap:nowrap;gap:.35rem;letter-spacing:normal;overflow:hidden;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}@media (hover:hover) and (pointer:fine){:host(ui-file-manager-content) :where(.row){user-drag:element;-webkit-user-drag:element}}:host(ui-file-manager-content) :where(.row) ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size);flex-shrink:0;inline-size:var(--ui-icon-size);min-block-size:var(--ui-icon-size);min-inline-size:var(--ui-icon-size);place-content:center;place-items:center}:host(ui-file-manager-content) :where(.row) :is(a,span){background-color:initial!important}:host(ui-file-manager-content) :where(.row)>*{background-color:initial!important;block-size:auto;min-block-size:0}:host(ui-file-manager-content) .row:hover{background-color:color-mix(in oklab,var(--color-on-surface) 8%,transparent)}:host(ui-file-manager-content) .row:active{background-color:color-mix(in oklab,var(--color-on-surface) 11%,transparent)}:host(ui-file-manager-content) .row:focus-visible{outline:2px solid var(--color-primary,#5a7fff);outline-offset:-2px}:host(ui-file-manager-content) .c:not(.icon){block-size:auto;color:inherit;display:flex;flex-direction:row;inline-size:auto;min-inline-size:0;overflow:hidden;place-content:center;justify-content:start;min-block-size:0;place-items:center;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}:host(ui-file-manager-content) .icon{aspect-ratio:1;block-size:1.5rem;display:flex;flex-shrink:0;grid-column:icon;inline-size:1.5rem;min-block-size:1.5rem;min-inline-size:1.5rem;overflow:visible;place-content:center;place-items:center}:host(ui-file-manager-content) .icon :is(img,ui-icon){--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important;object-fit:contain}:host(ui-file-manager-content) .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .actions{grid-column:actions}:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(4.5rem,1fr) [size] 3.75rem [date] 0 [actions] 6.4rem}:host(ui-file-manager-content) .date{display:none!important}}:host(ui-file-manager-content) .actions{background-color:color-mix(in oklab,var(--color-on-surface,#fff) 5%,transparent);block-size:2.125rem;border:none;border-radius:999px;color:var(--color-on-surface);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:6.4rem;max-inline-size:stretch;padding:.2rem;place-content:center;justify-content:flex-end;place-items:center;place-self:center;justify-self:end;max-inline-size:6.4rem;overflow:hidden;pointer-events:none}:host(ui-file-manager-content) .action-btn{appearance:none;aspect-ratio:1;background-color:initial;block-size:1.85rem;border:none;border-radius:999px;box-shadow:none;color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-shrink:0;inline-size:1.85rem;min-block-size:1.85rem;min-inline-size:1.85rem;overflow:hidden;padding:0;place-content:center;place-items:center;pointer-events:auto;position:relative;transition:background .14s ease,transform .1s ease}:host(ui-file-manager-content) .action-btn:hover{background-color:color-mix(in oklab,var(--color-on-surface) 12%,transparent)}:host(ui-file-manager-content) .action-btn:active{transform:scale(.94)}:host(ui-file-manager-content) .action-btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager-content) .action-btn ui-icon{--ui-icon-size:var(--ui-explorer-action-icon-size,1.15rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager-content) .fm-grid-header{background:color-mix(in oklab,var(--color-on-surface,#fff) 3.5%,transparent);border:none;border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);box-sizing:border-box;color:var(--color-on-surface-variant);display:grid;font-size:.6875rem;font-weight:600;gap:.35rem;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;inline-size:100%;inset-block-start:0;letter-spacing:.04em;min-block-size:2rem;min-inline-size:0;opacity:1;padding:.4rem .65rem;place-content:center;justify-content:start;place-items:center;justify-items:start;pointer-events:auto;position:sticky!important;text-align:start;text-transform:uppercase;touch-action:manipulation;z-index:2}:host(ui-file-manager-content) .fm-grid-header>*{inline-size:auto}:host(ui-file-manager-content) .fm-grid-header .c{font-weight:600}:host(ui-file-manager-content) .fm-grid-header .icon{grid-column:icon}:host(ui-file-manager-content) .fm-grid-header .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .fm-grid-header .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .actions{block-size:fit-content;border-radius:0;box-shadow:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.25rem;grid-column:actions;inline-size:stretch;max-inline-size:stretch;overflow:hidden;padding:0;place-content:center;justify-content:flex-end;place-items:center;justify-items:end;justify-self:end;text-align:end;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}}";
+var FileManagerContent_default$1 = "@layer ux-file-manager-content{:host(ui-file-manager-content){background-color:#f7f8fc;background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border:0 transparent;border-radius:0;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;contain:none;container-type:size;display:flex;flex:1 1 auto;flex-direction:column;grid-column:1/-1;inline-size:100%;margin:0;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:auto;position:relative;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid{align-content:start;block-size:100%;border:0 transparent;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:none;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-rows{align-content:start;block-size:100%;contain:none;contain-intrinsic-size:1px var(--ui-explorer-row-height,var(--touch-min,3rem));content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;gap:var(--gap-sm,.5rem);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;pointer-events:auto;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-gutter:stable;scrollbar-width:thin;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid-rows slot{display:contents!important}:host(ui-file-manager-content) :where(.row){background-color:color-mix(in oklab,var(--color-on-surface,#fff) 3%,transparent);block-size:auto;border:none;border-radius:var(--radius-lg,.75rem);box-sizing:border-box;color:var(--color-on-surface);cursor:pointer;display:grid;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;grid-template-rows:minmax(var(--ui-explorer-row-height,var(--touch-min,3rem)),auto);inline-size:100%;min-block-size:var(--ui-explorer-row-height,var(--touch-min,3rem));min-inline-size:0;order:var(--order,1)!important;place-content:center;place-items:center;justify-items:start;padding:.35rem .65rem;place-self:stretch;pointer-events:auto;touch-action:manipulation;user-drag:none;-webkit-user-drag:none;flex-wrap:nowrap;gap:.35rem;letter-spacing:normal;overflow:hidden;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}@media (hover:hover) and (pointer:fine){:host(ui-file-manager-content) :where(.row){user-drag:element;-webkit-user-drag:element}}:host(ui-file-manager-content) :where(.row) ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size);flex-shrink:0;inline-size:var(--ui-icon-size);min-block-size:var(--ui-icon-size);min-inline-size:var(--ui-icon-size);place-content:center;place-items:center}:host(ui-file-manager-content) :where(.row) :is(a,span){background-color:initial!important}:host(ui-file-manager-content) :where(.row)>*{background-color:initial!important;block-size:auto;min-block-size:0}:host(ui-file-manager-content) .row:hover{background-color:color-mix(in oklab,var(--color-on-surface) 8%,transparent)}:host(ui-file-manager-content) .row:active{background-color:color-mix(in oklab,var(--color-on-surface) 11%,transparent)}:host(ui-file-manager-content) .row:focus-visible{outline:2px solid var(--color-primary,#5a7fff);outline-offset:-2px}:host(ui-file-manager-content) .c:not(.icon){block-size:auto;color:inherit;display:flex;flex-direction:row;inline-size:auto;min-inline-size:0;overflow:hidden;place-content:center;justify-content:start;min-block-size:0;place-items:center;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}:host(ui-file-manager-content) :is(.c.date,.c.name,.c.size){color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);display:block;-webkit-text-fill-color:currentColor}:host(ui-file-manager-content) .c .t{color:inherit;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;-webkit-text-fill-color:currentColor}:host(ui-file-manager-content) .icon{aspect-ratio:1;block-size:1.5rem;display:flex;flex-shrink:0;grid-column:icon;inline-size:1.5rem;min-block-size:1.5rem;min-inline-size:1.5rem;overflow:visible;place-content:center;place-items:center}:host(ui-file-manager-content) .icon :is(img,ui-icon){--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important;object-fit:contain}:host(ui-file-manager-content) .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .actions{grid-column:actions}:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] 2rem [name] minmax(4.5rem,1fr) [size] 3.75rem [date] 0 [actions] 6.4rem}:host(ui-file-manager-content) .date{display:none!important}}:host(ui-file-manager-content) .actions{background-color:color-mix(in oklab,var(--color-on-surface,#fff) 5%,transparent);block-size:2.125rem;border:none;border-radius:999px;color:var(--color-on-surface);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:6.4rem;max-inline-size:stretch;padding:.2rem;place-content:center;justify-content:flex-end;place-items:center;place-self:center;justify-self:end;max-inline-size:6.4rem;overflow:hidden;pointer-events:none}:host(ui-file-manager-content) .action-btn{appearance:none;aspect-ratio:1;background-color:initial;block-size:1.85rem;border:none;border-radius:999px;box-shadow:none;color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-shrink:0;inline-size:1.85rem;min-block-size:1.85rem;min-inline-size:1.85rem;overflow:hidden;padding:0;place-content:center;place-items:center;pointer-events:auto;position:relative;transition:background .14s ease,transform .1s ease}:host(ui-file-manager-content) .action-btn:hover{background-color:color-mix(in oklab,var(--color-on-surface) 12%,transparent)}:host(ui-file-manager-content) .action-btn:active{transform:scale(.94)}:host(ui-file-manager-content) .action-btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager-content) .action-btn ui-icon{--ui-icon-size:var(--ui-explorer-action-icon-size,1.15rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager-content) .fm-grid-header{background:color-mix(in oklab,var(--color-on-surface,#fff) 3.5%,transparent);border:none;border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);box-sizing:border-box;color:#5c5f66;color:light-dark(#5c5f66,#c4c7ce);color:var(--color-on-surface-variant);display:grid;font-size:.6875rem;font-weight:600;grid-template-columns:[icon] 2rem [name] minmax(5rem,1fr) [size] 4.25rem [date] minmax(0,7.5rem) [actions] 6.4rem;inline-size:100%;inset-block-start:0;letter-spacing:.04em;min-inline-size:0;padding:.4rem .65rem;position:sticky!important;text-transform:uppercase;z-index:2;-webkit-text-fill-color:currentColor;gap:.35rem;min-block-size:2rem;opacity:1;place-content:center;justify-content:start;place-items:center;justify-items:start;pointer-events:auto;text-align:start;touch-action:manipulation}:host(ui-file-manager-content) .fm-grid-header>*{inline-size:auto}:host(ui-file-manager-content) .fm-grid-header .c{font-weight:600}:host(ui-file-manager-content) .fm-grid-header .icon{grid-column:icon}:host(ui-file-manager-content) .fm-grid-header .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .fm-grid-header .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .actions{block-size:fit-content;border-radius:0;box-shadow:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.25rem;grid-column:actions;inline-size:stretch;max-inline-size:stretch;overflow:hidden;padding:0;place-content:center;justify-content:flex-end;place-items:center;justify-items:end;justify-self:end;text-align:end;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}}";
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManagerContent.ts
 initGlobalClipboard();
-var styled$1 = preloadStyle(FileManagerContent_default$1);
+try {
+	preloadStyle(FileManagerContent_default$1);
+} catch {}
 var FileManagerContent = class FileManagerContent extends UIElement {
 	gridRowsEl;
 	gridEl;
@@ -28901,7 +29024,20 @@ var FileManagerContent = class FileManagerContent extends UIElement {
 		});
 	}
 	onInitialize() {
-		return super.onInitialize() ?? this;
+		const result = super.onInitialize();
+		this.bindResumePaint();
+		return result ?? this;
+	}
+	/** WHY: Android recents pauses the compositor; names vanish until a style recalc. */
+	bindResumePaint() {
+		const onShow = () => {
+			if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+			const rows = this.findRowsContainer();
+			if (rows) this.kickRowPaint(rows);
+		};
+		addEvent(document, "visibilitychange", onShow);
+		addEvent(document, "cwsp:theme-resume", onShow);
+		addEvent(globalThis, "pageshow", onShow);
 	}
 	eventBelongsToExplorer(ev) {
 		if (!ev) return false;
@@ -29037,6 +29173,15 @@ var FileManagerContent = class FileManagerContent extends UIElement {
 			fragment.append(this.makeListElement(item, operative, index + 1));
 		});
 		rows.append(fragment);
+		this.kickRowPaint(rows);
+	}
+	/** WHY: WebView skips row glyphs after replaceChildren or shell re-slot. */
+	kickRowPaint(rows) {
+		rows.style.translate = "0";
+		rows.offsetHeight;
+		requestAnimationFrame(() => {
+			rows.style.removeProperty("translate");
+		});
 	}
 	makeListElement(item, operative, order) {
 		const op = operative;
@@ -29065,9 +29210,9 @@ var FileManagerContent = class FileManagerContent extends UIElement {
             data-entry-key=${entryKey(item)}
         >
             <div style="pointer-events:none;background-color:transparent;inline-size:1.5rem;block-size:1.5rem;min-inline-size:1.5rem;min-block-size:1.5rem;max-inline-size:1.5rem;max-block-size:1.5rem;flex-shrink:0;overflow:visible" class="c icon">${iconSlot}</div>
-            <div style="pointer-events: none; background-color: transparent;" class="c name" title=${item?.name || ""}>${item?.name || ""}</div>
-            <div style="pointer-events: none; background-color: transparent;" class="c size">${isFile ? formatSize(item?.size) : ""}</div>
-            <div style="pointer-events: none; background-color: transparent;" class="c date">${isFile ? formatDate(item?.lastModified ?? 0) : ""}</div>
+            <div style="pointer-events: none; background-color: transparent;" class="c name" title=${item?.name || ""}><span class="t">${item?.name || ""}</span></div>
+            <div style="pointer-events: none; background-color: transparent;" class="c size"><span class="t">${isFile ? formatSize(item?.size) : ""}</span></div>
+            <div style="pointer-events: none; background-color: transparent;" class="c date"><span class="t">${isFile ? formatDate(item?.lastModified ?? 0) : ""}</span></div>
             <div style="pointer-events: none; background-color: transparent;" class="c actions">
                 <button class="action-btn" title="Copy Path" on:click=${(ev) => {
 			ev.stopPropagation();
@@ -29092,19 +29237,20 @@ var FileManagerContent = class FileManagerContent extends UIElement {
 		bindWith(itemEl, "--order", order, handleStyleChange);
 		return itemEl;
 	}
-	styles = () => styled$1;
+	/** WHY: pass CSS text so Glit can refill / shadow-fallback if the constructable sheet emptied. */
+	styles = () => FileManagerContent_default$1;
 	render = function() {
 		const self = this;
 		const fileHeader = H`<div class="fm-grid-header">
-            <div class="c icon">@</div>
-            <div class="c name">Name</div>
-            <div class="c size">Size</div>
-            <div class="c date">Modified</div>
-            <div class="c actions">Actions</div>
+            <div class="c icon"><span class="t">@</span></div>
+            <div class="c name"><span class="t">Name</span></div>
+            <div class="c size"><span class="t">Size</span></div>
+            <div class="c date"><span class="t">Modified</span></div>
+            <div class="c actions"><span class="t">Actions</span></div>
         </div>`;
 		const operative = self.operativeInstance;
 		if (!operative) return "";
-		const fileRows = H`<div class="fm-grid-rows" style="will-change: contents;"></div>`;
+		const fileRows = H`<div class="fm-grid-rows"></div>`;
 		this.#rowsContainer = fileRows;
 		createItemCtxMenu?.(fileRows, operative.onMenuAction.bind(operative), self.entries);
 		queueMicrotask(() => {
@@ -29135,14 +29281,20 @@ __decorate([property({
 FileManagerContent = __decorate([defineElement("ui-file-manager-content")], FileManagerContent);
 var FileManagerContent_default = FileManagerContent;
 //#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/FileManager.scss?inline
+var FileManager_default = "@layer ux-file-manager{:host(ui-file-manager),:host(ui-file-manager) :where(*){box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}:host(ui-file-manager){background-color:#f7f8fc;background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border-radius:0;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;container-type:inline-size;content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;line-height:normal;margin:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;overflow:hidden;--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;--icon-color:light-dark(#1a1c1f,#e8eaed);--icon-color:var(--color-on-surface)}:host(ui-file-manager) .fm-root{block-size:100%;display:grid;flex:1 1 auto;gap:0;grid-template-columns:[content-col] minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;position:relative}:host(ui-file-manager) .fm-toolbar{background:#f7f8fc;background:light-dark(#f7f8fc,#1a1d24);background:var(--color-surface);border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);display:grid;gap:.625rem;grid-auto-flow:column;grid-column:1/-1;grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);grid-template-rows:minmax(0,1fr);line-height:normal;padding:.5rem .75rem;place-content:center;place-items:center}:host(ui-file-manager) .fm-toolbar :is(button,input){background-color:initial;color:#1a1c1f;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface)}:host(ui-file-manager) .fm-toolbar input{background:color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);block-size:stretch;border:none;border-radius:999px;font:.8125rem/1.35 ui-monospace,Cascadia Code,SF Mono,Consolas,monospace;inline-size:stretch;outline:none;overflow:auto;padding:.45rem .85rem}:host(ui-file-manager) .fm-toolbar input:focus-visible{box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary,#5a7fff) 45%,transparent)}:host(ui-file-manager) .fm-toolbar .btn{align-items:center;appearance:none;aspect-ratio:1/1;background:transparent;block-size:2.5rem;border:0;border-radius:999px;cursor:pointer;display:inline-flex;inline-size:2.5rem;justify-content:center;padding:0;transition:background .14s ease,transform .1s ease}:host(ui-file-manager) .fm-toolbar .btn ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager) .fm-toolbar .btn:hover{background:color-mix(in oklab,var(--color-on-surface) 9%,transparent)}:host(ui-file-manager) .fm-toolbar .btn:active{transform:scale(.96)}:host(ui-file-manager) .fm-toolbar .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager) .fm-toolbar>*{align-items:center;block-size:fit-content;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.2rem;min-block-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-left{grid-column:1}:host(ui-file-manager) .fm-toolbar :is(.fm-toolbar-left,.fm-toolbar-right){background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);border-radius:999px;padding:.2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);block-size:fit-content;border-radius:999px;flex-grow:1;grid-column:2;inline-size:stretch;min-block-size:2.5rem;overflow:hidden;padding:0;place-content:stretch;justify-content:start;place-items:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center>*{block-size:stretch;inline-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center input{background:transparent;inline-size:stretch;padding-inline:.9rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-right{grid-column:3}:host(ui-file-manager) .fm-sidebar{align-content:start;border-radius:.5rem;display:none;gap:.5rem;grid-column:sidebar-col;grid-row:2;justify-content:start;justify-items:start;line-height:normal;padding:.5rem;text-align:start}:host(ui-file-manager) .fm-sidebar .sec{display:grid;gap:.25rem;place-content:start;justify-content:start;place-items:start;justify-items:start}:host(ui-file-manager) .fm-sidebar .sec-title{font-weight:600;opacity:.8;padding-block:.25rem;place-self:start}:host(ui-file-manager) .fm-sidebar .link{appearance:none;border:0;border-radius:.375rem;cursor:pointer;line-height:normal;padding:.25rem .375rem;text-align:start}:host(ui-file-manager) .fm-root--settings .fm-content{pointer-events:none;visibility:hidden}:host(ui-file-manager) .fm-content{block-size:100%;border-radius:0;display:flex;flex:1 1 auto;flex-direction:column;grid-column:content-col;grid-row:2;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0 .35rem .45rem;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-width:thin}:host(ui-file-manager) .status{opacity:.8;padding:.5rem}:host(ui-file-manager) .status.error{color:var(--error-color,crimson)}@container (inline-size < 520px){:host(ui-file-manager) .fm-content{grid-column:1/-1}:host(ui-file-manager) .fm-root{grid-column:1/-1}:host(ui-file-manager) .fm-grid{grid-column:1/-1}:host(ui-file-manager) .fm-root[data-with-sidebar=true]{grid-template-columns:[content-col] minmax(0,1fr)}:host(ui-file-manager) .fm-sidebar{display:none!important}:host(ui-file-manager) .fm-toolbar{gap:.35rem;padding-inline:.4rem}:host(ui-file-manager) .fm-toolbar .btn{block-size:2rem;inline-size:2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{min-inline-size:0}}}";
+//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManager.ts
-var styled = preloadStyle("@function --u2-color-mod(--base-color <color>, --index <number> : 550) returns <color>{--i:clamp(0,var(--index),1000);--pivot:550;--white-distance:clamp(0,calc((var(--pivot) - var(--i)) / var(--pivot)),1);--black-distance:clamp(0,calc((var(--i) - var(--pivot)) / (1000 - var(--pivot))),1);--to-white:pow(var(--white-distance),1.15);--to-black:pow(var(--black-distance),1.08);--center-left:clamp(0,calc(var(--i) / var(--pivot)),1);--center-right:clamp(0,calc((1000 - var(--i)) / (1000 - var(--pivot))),1);--chroma-shape:sqrt(min(var(--center-left),var(--center-right)));--chroma-scale:calc(0.08 + 0.92 * var(--chroma-shape));result:oklch(from var(--base-color) calc(l + (.985 - l) * var(--to-white) + (.16 - l) * var(--to-black)) calc(c * var(--chroma-scale)) h)}@layer ux-file-manager{:host(ui-file-manager),:host(ui-file-manager) :where(*){box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}:host(ui-file-manager){background-color:light-dark(#f7f8fc,#1a1d24);background-color:var(--color-surface);block-size:100%;border-radius:0;color:light-dark(#1a1c1f,#e8eaed);color:var(--color-on-surface);color-scheme:inherit;container-type:inline-size;content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;line-height:normal;margin:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;overflow:hidden;perspective:1000;--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;--icon-color:light-dark(#1a1c1f,#e8eaed);--icon-color:var(--color-on-surface)}:host(ui-file-manager) .fm-root{block-size:100%;display:grid;flex:1 1 auto;gap:0;grid-template-columns:[content-col] minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;position:relative}:host(ui-file-manager) .fm-toolbar{background:light-dark(#f7f8fc,#1a1d24);background:var(--color-surface);border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);display:grid;gap:.625rem;grid-auto-flow:column;grid-column:1/-1;grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);grid-template-rows:minmax(0,1fr);line-height:normal;padding:.5rem .75rem;place-content:center;place-items:center}:host(ui-file-manager) .fm-toolbar :is(button,input){background-color:initial;color:var(--color-on-surface)}:host(ui-file-manager) .fm-toolbar input{background:color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);block-size:stretch;border:none;border-radius:999px;font:.8125rem/1.35 ui-monospace,Cascadia Code,SF Mono,Consolas,monospace;inline-size:stretch;outline:none;overflow:auto;padding:.45rem .85rem}:host(ui-file-manager) .fm-toolbar input:focus-visible{box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary,#5a7fff) 45%,transparent)}:host(ui-file-manager) .fm-toolbar .btn{align-items:center;appearance:none;aspect-ratio:1/1;background:transparent;block-size:2.5rem;border:0;border-radius:999px;cursor:pointer;display:inline-flex;inline-size:2.5rem;justify-content:center;padding:0;transition:background .14s ease,transform .1s ease}:host(ui-file-manager) .fm-toolbar .btn ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager) .fm-toolbar .btn:hover{background:color-mix(in oklab,var(--color-on-surface) 9%,transparent)}:host(ui-file-manager) .fm-toolbar .btn:active{transform:scale(.96)}:host(ui-file-manager) .fm-toolbar .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager) .fm-toolbar>*{align-items:center;block-size:fit-content;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.2rem;min-block-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-left{grid-column:1}:host(ui-file-manager) .fm-toolbar :is(.fm-toolbar-left,.fm-toolbar-right){background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);border-radius:999px;padding:.2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);block-size:fit-content;border-radius:999px;flex-grow:1;grid-column:2;inline-size:stretch;min-block-size:2.5rem;overflow:hidden;padding:0;place-content:stretch;justify-content:start;place-items:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center>*{block-size:stretch;inline-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center input{background:transparent;inline-size:stretch;padding-inline:.9rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-right{grid-column:3}:host(ui-file-manager) .fm-sidebar{align-content:start;border-radius:.5rem;display:none;gap:.5rem;grid-column:sidebar-col;grid-row:2;justify-content:start;justify-items:start;line-height:normal;padding:.5rem;text-align:start}:host(ui-file-manager) .fm-sidebar .sec{display:grid;gap:.25rem;place-content:start;justify-content:start;place-items:start;justify-items:start}:host(ui-file-manager) .fm-sidebar .sec-title{font-weight:600;opacity:.8;padding-block:.25rem;place-self:start}:host(ui-file-manager) .fm-sidebar .link{appearance:none;border:0;border-radius:.375rem;cursor:pointer;line-height:normal;padding:.25rem .375rem;text-align:start}:host(ui-file-manager) .fm-root--settings .fm-content{pointer-events:none;visibility:hidden}:host(ui-file-manager) .fm-content{block-size:100%;border-radius:0;display:flex;flex:1 1 auto;flex-direction:column;grid-column:content-col;grid-row:2;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0 .35rem .45rem;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-width:thin}:host(ui-file-manager) .status{opacity:.8;padding:.5rem}:host(ui-file-manager) .status.error{color:var(--error-color,crimson)}@container (inline-size < 520px){:host(ui-file-manager) .fm-content{grid-column:1/-1}:host(ui-file-manager) .fm-root{grid-column:1/-1}:host(ui-file-manager) .fm-grid{grid-column:1/-1}:host(ui-file-manager) .fm-root[data-with-sidebar=true]{grid-template-columns:[content-col] minmax(0,1fr)}:host(ui-file-manager) .fm-sidebar{display:none!important}:host(ui-file-manager) .fm-toolbar{gap:.35rem;padding-inline:.4rem}:host(ui-file-manager) .fm-toolbar .btn{block-size:2rem;inline-size:2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{min-inline-size:0}}}");
+try {
+	preloadStyle(FileManager_default);
+} catch {}
 var FileManager = class FileManager extends UIElement {
 	gridRowsEl;
 	gridEl;
 	sidebar = "auto";
 	inlineSize;
-	styles = () => styled;
+	/** WHY: pass CSS text so Glit can refill / shadow-fallback if the constructable sheet emptied. */
+	styles = () => FileManager_default;
 	#pathWatcherDisposer = null;
 	/** WHY: `wireExplorerSubtree` sets `path` before `onInitialize` creates the operative. */
 	#pendingPath = null;
@@ -29625,4 +29777,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 //#region ../../modules/projects/fl.ui/src/styles/ui/home-host-apply.scss?inline
 var home_host_apply_default = ":where(body):has(.speed-dial-root),:where(body):has([data-view=home]),:where(html):has(.speed-dial-root),:where(html[data-cwsp-shell-role=launcher]){block-size:var(--lv-height,100lvb);margin:0;max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);overflow:hidden}:where(main,[role=main]):has(>.view-home.env-home-workspace){background:transparent;border:none;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace,.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace){background:none;background-color:initial;border:0 transparent;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none;outline:0 none transparent}:where(main,[role=main]):has(>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace:not(.wf-mounted-view),.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}.env-home-workspace,.view-home.env-home-workspace{box-sizing:border-box;overflow:visible;pointer-events:none}.view-home.env-home-workspace{align-items:stretch;background:transparent;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:100%;justify-items:stretch;min-block-size:var(--lv-height,100lvb);min-inline-size:0;padding:0;position:relative}.view-home.env-home-workspace>.speed-dial-root{block-size:var(--lv-height,100%);inline-size:var(--lv-width,100%);inset:0 auto auto 0;max-block-size:var(--lv-height,100%);max-inline-size:var(--lv-width,100%);pointer-events:auto;position:absolute}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view{align-self:stretch;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:auto;border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;isolation:isolate;margin:0;margin-inline:0;max-inline-size:none;min-block-size:0;outline:none!important;position:relative;z-index:0}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root{block-size:var(--lv-height,100lvb);border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;inline-size:var(--lv-width,100%);max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);outline:none!important}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view{padding-block-end:env(safe-area-inset-block-end,0);padding-block-start:env(safe-area-inset-block-start,0);padding-inline-end:env(safe-area-inset-inline-end,0);padding-inline-start:env(safe-area-inset-inline-start,0)}.view-home.env-home-workspace:not(.wf-mounted-view){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin-inline:0;max-inline-size:none;min-block-size:var(--lv-height,100lvb);outline:none!important}";
 //#endregion
-export { resolveFsBackend as $, registerDirectoryRoot as $t, ICON_BITMAP_SCALE_OPTIONS as A, __vitePreload as An, mountPickedDirectory as At, pinLauncherAppEntry as B, createFileHandler as Bt, applyLauncherIconToUiIcon as C, closeHighestPriority as Cn, restoreWallpaperThemeCache as Ct, resolveIconResourceUrl as D, E as Dn, findEntryRelPath as Dt, getCachedLauncherIconObjectUrl as E, navigate as En, bindDirectoryForLaunchedFiles as Et, findNextFreeSpeedDialCell as F, pickSidecarDirectoryFiles as Ft, createTileUiIconElement as G, parseDataUrl as Gt, tileIconFetchSize as H, decodeBase64ToBytes as Ht, isClientPointOverSpeedDial as I, provideBoundRelative as It, normalizeIconDisplay as J, isVirtualFsPath as Jt, defaultIconScaleForDisplay as K, getDir as Kt, launcher_state_exports as L, relPathCandidates as Lt, applyIconScaleToPaintedNodes as M, originalRelFromRef as Mt, applyItemIconScaleToElement as N, pickAssetDirectory as Nt, tryLaunchSiblingView as O, M$1 as On, indexDirectoryFiles as Ot, buildLauncherAppDragEnvelope as P, pickMarkdownFile as Pt, listVirtualRootEntriesFromRouter as Q, provide as Qt, normalizeItemIconBitmapScale as R, resolveFileUnderDirectory as Rt, isBookmarksPath as S, vector2Ref as Sn, applyWallpaperPaperFromLuma as St, getCachedIconResourceObjectUrl as T, registerModal as Tn, getCachedComponent as Tt, ICON_DISPLAY_OPTIONS as U, isBase64Like as Ut, resolveSpeedDialCellFromClientPoint as V, writeFileSmart as Vt, TILE_SHAPE_OPTIONS as W, normalizeDataAsset as Wt, syncShapelessIconShadow as X, normalizePath as Xt, normalizeTileShape$1 as Y, matchMappedRoot as Yt, ensureDefaultFsBackends as Z, openDirectory as Zt, peekAppMenuSort as _, makeTask as _n, WALLPAPER_IDB_MARKER as _t, getString as a, makeUIState as an, getAppLaunchSpec as at, attachIconResourcePickButton as b, defineElement as bn, refreshAppWallpaperPaint as bt, overlay_back_exports as c, decodeDesktopState as cn, resolveAppLaunchSpec as ct, listWorkspacePages as d, initClipboardReceiver as dn, showSuccess as dt, dynamicTheme as en, subscribeFsBackendRegister as et, switchWorkspacePage as f, writeText$1 as fn, getSpeedDialViewOpener as ft, hydrateAppColorKeys as g, bindOutsideDismiss as gn, src_exports as gt, defaultDirForAppSort as h, elementPointerMap as hn, __decorate as ht, StorageKeys as i, getSpeechPrompt as in, clearAppLaunchSpec as it, addSpeedDialItem as j, observeFileSystemHandle as jt, isAndroidIconRef as k, JSOX as kn, isMarkdownRelativeRef as kt, WORKSPACE_PAGE_EVENT as l, loadDesktopRaw as ln, setAppLaunchSpec as lt, APP_MENU_SORT_OPTIONS as m, resolveOverlayHost as mn, UIElement_default as mt, FileManager as n, createTemplateManager as nn, resolveEntryIcon as nt, setString as o, saveUIState as on, isLauncherLaunchSpecEmpty as ot, APP_MENU_SORT_EVENT as p, registerTransientOverlay as pn, UIElement as pt, inferIconDisplay as q, handleIncomingEntries as qt, FileManagerContent_default as r, pointerAnchorRef as rn, toExplorerStoragePath as rt, installLauncherBackStack as s, HistoryManager_exports as sn, normalizeLauncherLaunchSpec as st, home_host_apply_default as t, placeOverlay as tn, storage_bridge_exports as tt, getActiveWorkspaceId as u, copy as un, showError as ut, sortLauncherApps as v, getBy as vn, getWallpaperStoragePointer as vt, ensureLauncherIconObjectUrl as w, hasActiveCloseable as wn, src_exports$1 as wt, openUnifiedContextMenu as x, H as xn, setAppWallpaperFromBlob as xt, writeAppMenuSort as y, navigationEnable as yn, initializeAppCanvasLayer as yt, parseSpeedDialItemFromJSON as z, saveMarkdownBlob as zt };
+export { resolveFsBackend as $, registerDirectoryRoot as $t, ICON_BITMAP_SCALE_OPTIONS as A, JSOX as An, mountPickedDirectory as At, pinLauncherAppEntry as B, createFileHandler as Bt, applyLauncherIconToUiIcon as C, closeHighestPriority as Cn, restoreWallpaperThemeCache as Ct, resolveIconResourceUrl as D, E as Dn, findEntryRelPath as Dt, getCachedLauncherIconObjectUrl as E, navigate as En, bindDirectoryForLaunchedFiles as Et, findNextFreeSpeedDialCell as F, pickSidecarDirectoryFiles as Ft, createTileUiIconElement as G, parseDataUrl as Gt, tileIconFetchSize as H, decodeBase64ToBytes as Ht, isClientPointOverSpeedDial as I, provideBoundRelative as It, normalizeIconDisplay as J, isVirtualFsPath as Jt, defaultIconScaleForDisplay as K, getDir as Kt, launcher_state_exports as L, relPathCandidates as Lt, applyIconScaleToPaintedNodes as M, originalRelFromRef as Mt, applyItemIconScaleToElement as N, pickAssetDirectory as Nt, tryLaunchSiblingView as O, M$1 as On, indexDirectoryFiles as Ot, buildLauncherAppDragEnvelope as P, pickMarkdownFile as Pt, listVirtualRootEntriesFromRouter as Q, provide as Qt, normalizeItemIconBitmapScale as R, resolveFileUnderDirectory as Rt, isBookmarksPath as S, vector2Ref as Sn, applyWallpaperPaperFromLuma as St, getCachedIconResourceObjectUrl as T, registerModal as Tn, getCachedComponent as Tt, ICON_DISPLAY_OPTIONS as U, isBase64Like as Ut, resolveSpeedDialCellFromClientPoint as V, writeFileSmart as Vt, TILE_SHAPE_OPTIONS as W, normalizeDataAsset as Wt, syncShapelessIconShadow as X, normalizePath as Xt, normalizeTileShape$1 as Y, matchMappedRoot as Yt, ensureDefaultFsBackends as Z, openDirectory as Zt, peekAppMenuSort as _, makeTask as _n, WALLPAPER_IDB_MARKER as _t, getString as a, makeUIState as an, getAppLaunchSpec as at, attachIconResourcePickButton as b, defineElement as bn, refreshAppWallpaperPaint as bt, overlay_back_exports as c, decodeDesktopState as cn, resolveAppLaunchSpec as ct, listWorkspacePages as d, initClipboardReceiver as dn, showSuccess as dt, dynamicTheme as en, subscribeFsBackendRegister as et, switchWorkspacePage as f, writeText$1 as fn, getSpeedDialViewOpener as ft, hydrateAppColorKeys as g, bindOutsideDismiss as gn, src_exports as gt, defaultDirForAppSort as h, elementPointerMap as hn, __decorate as ht, StorageKeys as i, getSpeechPrompt as in, clearAppLaunchSpec as it, addSpeedDialItem as j, __vitePreload as jn, observeFileSystemHandle as jt, isAndroidIconRef as k, Q as kn, isMarkdownRelativeRef as kt, WORKSPACE_PAGE_EVENT as l, loadDesktopRaw as ln, setAppLaunchSpec as lt, APP_MENU_SORT_OPTIONS as m, resolveOverlayHost as mn, UIElement_default as mt, FileManager as n, createTemplateManager as nn, resolveEntryIcon as nt, setString as o, saveUIState as on, isLauncherLaunchSpecEmpty as ot, APP_MENU_SORT_EVENT as p, registerTransientOverlay as pn, UIElement as pt, inferIconDisplay as q, handleIncomingEntries as qt, FileManagerContent_default as r, pointerAnchorRef as rn, toExplorerStoragePath as rt, installLauncherBackStack as s, HistoryManager_exports as sn, normalizeLauncherLaunchSpec as st, home_host_apply_default as t, placeOverlay as tn, storage_bridge_exports as tt, getActiveWorkspaceId as u, copy as un, showError as ut, sortLauncherApps as v, getBy as vn, getWallpaperStoragePointer as vt, ensureLauncherIconObjectUrl as w, hasActiveCloseable as wn, src_exports$1 as wt, openUnifiedContextMenu as x, H as xn, setAppWallpaperFromBlob as xt, writeAppMenuSort as y, navigationEnable as yn, initializeAppCanvasLayer as yt, parseSpeedDialItemFromJSON as z, saveMarkdownBlob as zt };
