@@ -1,12 +1,11 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
-import { n as __exportAll } from "./rolldown-runtime.js";
+import { r as __exportAll } from "./rolldown-runtime.js";
 import { rt as loadSettings } from "../shells/boot-index.js";
 
 import { n as getRuntimeSettings } from "./RuntimeSettings.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";
 import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "./entities.js";
-import "./AIResponseParser.js";
 //#region ../CWSP-document/src/shared/service/processing/adapters.ts
 var detectPlatform = () => {
 	try {
@@ -117,7 +116,7 @@ var unified_exports = /* @__PURE__ */ __exportAll({
 var recognitionCache = new RecognitionCache();
 var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 	const settings = (await loadSettings())?.ai;
-	const { instruction = "", outputFormat = "auto", outputLanguage = "auto", enableSVGImageGeneration = "auto", intermediateRecognition, processingEffort = "low", processingVerbosity = "low", customInstruction, useActiveInstruction = false, includeImageRecognition, dataType } = options;
+	const { instruction = "", outputFormat = "auto", outputLanguage = "auto", enableSVGImageGeneration = "auto", intermediateRecognition, processingEffort = "low", processingVerbosity = "low", customInstruction, useActiveInstruction = false, includeImageRecognition, dataType, signal } = options;
 	const token = settings?.apiKey;
 	if (!token) {
 		const result = {
@@ -131,6 +130,14 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 		const result = {
 			ok: false,
 			error: "No input provided"
+		};
+		sendResponse?.(result);
+		return result;
+	}
+	if (signal?.aborted) {
+		const result = {
+			ok: false,
+			error: "Cancelled"
 		};
 		sendResponse?.(result);
 		return result;
@@ -225,7 +232,8 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 	try {
 		response = await gpt?.sendRequest?.(processingEffort, processingVerbosity, null, {
 			responseFormat: getResponseFormat(outputFormat),
-			temperature: .3
+			temperature: .3,
+			signal
 		});
 	} catch (e) {
 		error = String(e);
