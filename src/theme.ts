@@ -6,6 +6,8 @@
  * then `(prefers-color-scheme)`, so explorer matches the app shell after async theme loads.
  */
 
+import { scheduleBakeScreenColors } from "@fest-lib/style-lib";
+
 export type ExplorerColorScheme = "light" | "dark" | "system";
 
 /** Read app-level resolved theme when available (PWA / shell); else null. */
@@ -38,6 +40,7 @@ export function applyExplorerColorScheme(shellRoot: HTMLElement | null | undefin
     // WHY: `only` stops OS `prefers-color-scheme` from flipping used `light-dark()` under the shell.
     shellRoot.style.setProperty("color-scheme", `${resolved} only`);
     bindExplorerForegroundResync();
+    scheduleBakeScreenColors(shellRoot);
 }
 
 let explorerForegroundBound = false;

@@ -13,7 +13,7 @@
 
 import type { ViewOptions, ViewLifecycle, BaseViewOptions } from "views/types";
 import { createViewConstructor, ViewBase } from "views/registry";
-import { loadAsAdopted, removeAdopted } from "@fest-lib/style-lib";
+import { loadAsAdopted, removeAdopted, scheduleBakeScreenColors, unbakeScreenColors } from "@fest-lib/style-lib";
 import type { FileManager } from "fl-ui/explorer/FileManager";
 import type { ExplorerInjectApi } from "./inject";
 import type { LocalFileManager } from "./runtime";
@@ -146,10 +146,12 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
                 }
                 this.syncExplorerThemeSubscription();
                 this.attachExplorerWire();
+                scheduleBakeScreenColors(this.explorerRoot);
             },
             onUnmount: () => {
                 this.themeSync?.disconnect();
                 this.themeSync = null;
+                unbakeScreenColors(this.explorerRoot);
                 this.detachExplorerWire();
                 removeAdopted(this._sheet);
                 this._sheet = null;
@@ -164,10 +166,12 @@ export const CwViewExplorer = createViewConstructor(TAG, (Base: typeof ViewBase)
                 if (!this.explorerCleanup && this.explorerRoot) {
                     this.attachExplorerWire();
                 }
+                scheduleBakeScreenColors(this.explorerRoot);
             },
             onHide: () => {
                 this.themeSync?.disconnect();
                 this.themeSync = null;
+                unbakeScreenColors(this.explorerRoot);
                 this.detachExplorerWire();
                 try {
                     if (this._sheet) removeAdopted(this._sheet);

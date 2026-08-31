@@ -11,6 +11,7 @@
 
 import type { ShellContext } from "shells/types";
 import { observe } from "@fest-lib/object";
+import { scheduleBakeScreenColors } from "@fest-lib/style-lib";
 import { ensureDefaultFsBackends, resolveFsBackend, toExplorerStoragePath } from "fl-ui/explorer/path-router";
 import {
     addSpeedDialItem,
@@ -928,6 +929,9 @@ export function wireExplorerSubtree(
     if (fm) {
         loadLastPath(fm, wireOpts.initialPath ?? null);
         setupExplorerEvents(fm, wireOpts, injectMerged, signal);
+        const rebakeRows = (): void => scheduleBakeScreenColors(shellRoot);
+        fm.addEventListener("entries-updated", rebakeRows, { signal });
+        fm.addEventListener("rs-navigate", rebakeRows, { signal });
         void import("fl-ui/navigation/overlay-back")
             .then((m) => m.installExplorerBackStack())
             .catch(() => {
