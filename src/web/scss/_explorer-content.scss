@@ -3,4 +3,4 @@
  * FullPath: modules/views/explorer-view/src/web/scss/_explorer-content.scss
  * Reason for changes: Stop forking Explorer list CSS — CRX/shell consume fl.ui SoT.
  */
-@forward "../../../../../modules/projects/fl.ui/src/styles/ui/explorer-content";
+@forward "veela-lib/ui/explorer-content";

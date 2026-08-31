@@ -63,8 +63,7 @@ ui-window.explorer-native-window[native-mode] {
 /* -------------------------------------------------------------------------- */
 /* Explorer view — layout shell + tokens for <ui-file-manager> (light DOM).   */
 /* -------------------------------------------------------------------------- */
-@layer view-explorer {
-    @layer tokens {
+@layer tokens {
         /*
          * Optional shell hook — when embedded with `data-view`, tune layout hints.
          */
@@ -103,7 +102,7 @@ ui-window.explorer-native-window[native-mode] {
         }
     }
 
-    @layer shell {
+@layer layout {
         /*
          * Minimal / immersive: flex-fill for explorer under default slot — selectors live in
          * `minimal-shell/minimal.scss` as `slot:not([name])::slotted([data-view="explorer"])` because
@@ -180,7 +179,7 @@ ui-window.explorer-native-window[native-mode] {
         }
     }
 
-    @layer components {
+@layer components {
         .view-explorer__loading,
         .view-explorer__error {
             display: flex;
@@ -300,11 +299,10 @@ ui-window.explorer-native-window[native-mode] {
         padding: 0;
     }
 
-    @layer animations {
+@layer theme {
         @keyframes rs-spin {
             to {
                 transform: rotate(360deg);
             }
         }
-    }
 }

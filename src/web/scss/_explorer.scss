@@ -1,6 +1,6 @@
 /*
  * Filename: _explorer.scss
  * FullPath: modules/views/explorer-view/src/web/scss/_explorer.scss
- * Reason for changes: One File Manager chrome sheet — fl.ui styles/ui/_explorer.scss.
+ * Reason for changes: One File Manager chrome sheet from canonical Veela.
  */
-@forward "../../../../../modules/projects/fl.ui/src/styles/ui/explorer";
+@forward "veela-lib/ui/explorer";
