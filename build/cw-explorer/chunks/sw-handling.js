@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { Hr as processApiAuthFromSettings, Ir as BROADCAST_CHANNELS, Nr as unifiedMessaging, Tt as classifyOpenKindFromPayload, Ur as readProcessApiResultText, Vr as postProcessApi, _t as writeProcessIngressClipboard, br as consumeCachedShareTargetPayload, ct as allowProcessWebShareLaunch, dt as instructionTextForIngress, gt as resolveProcessIngressKind, hr as unifiedMessaging$1, ht as rememberProcessIngressSettings, lt as formatProcessIngressResult, rt as loadSettings, st as allowProcessWebLaunchQueue, ut as holdCapacitorIngressJob, xr as storeShareTargetPayloadToCache, yr as buildShareDataFromCachedPayload } from "../shells/boot-index.js";
+import { Fr as unifiedMessaging, Gr as processApiAuthFromSettings, Hr as viewBroadcastChannelName, Kr as readProcessApiResultText, Rr as BROADCAST_CHANNELS, Tt as classifyOpenKindFromPayload, Wr as postProcessApi, _t as writeProcessIngressClipboard, br as consumeCachedShareTargetPayload, ct as allowProcessWebShareLaunch, dt as instructionTextForIngress, gt as resolveProcessIngressKind, hr as unifiedMessaging$1, ht as rememberProcessIngressSettings, lt as formatProcessIngressResult, rt as loadSettings, st as allowProcessWebLaunchQueue, ut as holdCapacitorIngressJob, xr as storeShareTargetPayloadToCache, yr as buildShareDataFromCachedPayload } from "../shells/boot-index.js";
 import { Nt as bindDirectoryForLaunchedFiles, Qt as parseDataUrl, Xt as isBase64Like, bn as initClipboardReceiver, yn as copy } from "../com/app.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 import { a as skuIngressHint, i as refineLauncherImageIngress, r as installShellImageOpenListener, t as applyLauncherIngress } from "./sku-ingress.js";
@@ -735,6 +735,9 @@ var bodyLooksLikeHtmlDocument = (snippet) => {
 	return head.startsWith("<!") || /^<\s*html[\s>]/i.test(head) || head.startsWith("<!--");
 };
 var PROBE_TIMEOUT_MS = 8e3;
+/** WHY: Vite 8 only inlines `import.meta.env.DEV` / `BASE_URL` on the exact member access — `(import.meta as any).env.DEV` stays undefined and we only probe `/sw.js` (SPA HTML). */
+var isViteDev = () => Boolean(void 0);
+var viteBaseUrl = () => String("./");
 var probeScriptUrl = async (url) => {
 	const ac = new AbortController();
 	const timer = setTimeout(() => ac.abort(), PROBE_TIMEOUT_MS);
@@ -844,7 +847,7 @@ var dropStaleServiceWorkerRegistrations = async () => {
 };
 /** Vite base (e.g. `/` or `/apps/cw/`) — normalized with trailing slash. */
 var viteBasePrefix = () => {
-	const raw = String("./");
+	const raw = viteBaseUrl();
 	if (raw === "/" || raw === "") return "/";
 	return raw.endsWith("/") ? raw : `${raw}/`;
 };
@@ -890,14 +893,7 @@ var scopeForServiceWorkerScript = (swUrl) => {
 	}
 };
 var getServiceWorkerCandidates = () => {
-	const isDev = Boolean({
-		"BASE_URL": "./",
-		"DEV": false,
-		"MODE": "cw-explorer",
-		"PROD": true,
-		"SSR": false,
-		"VITE_ENABLED_VIEWS": "minimal,explorer,settings,history"
-	}.DEV);
+	const isDev = isViteDev();
 	const bases = serviceWorkerPathBases();
 	const perBaseDev = [];
 	const perBaseProd = [];
@@ -915,7 +911,11 @@ var getServiceWorkerCandidates = () => {
 		...perBaseDev,
 		...devFallbacks,
 		...perBaseProd
-	] : [.../* @__PURE__ */ new Set([...perBaseProd, ...prod])];
+	] : [.../* @__PURE__ */ new Set([
+		...perBaseProd,
+		...prod,
+		"/dev-sw.js?dev-sw"
+	])];
 	return [...new Set(merged)];
 };
 var ensureServiceWorkerRegistered = async () => {
@@ -949,22 +949,23 @@ var ensureServiceWorkerRegistered = async () => {
 	const candidates = getServiceWorkerCandidates();
 	const tryRegister = async (url) => {
 		const scope = scopeForServiceWorkerScript(url);
-		const isDevVirtualWorker = url.includes("/dev-sw.js?dev-sw");
+		if (url.includes("/dev-sw.js?dev-sw")) try {
+			return await navigator.serviceWorker.register(url, {
+				scope,
+				type: "module",
+				updateViaCache: "none"
+			});
+		} catch (eModule) {
+			if (isViteDev()) console.warn("[SW] Dev worker registration failed (module)", url, eModule);
+			return null;
+		}
 		try {
 			return await navigator.serviceWorker.register(url, {
 				scope,
 				updateViaCache: "none"
 			});
 		} catch (eClassic) {
-			if (isDevVirtualWorker) try {
-				return await navigator.serviceWorker.register(url, {
-					scope,
-					type: "module",
-					updateViaCache: "none"
-				});
-			} catch (eModule) {
-				return null;
-			}
+			if (isViteDev()) console.warn("[SW] Registration failed for", url, eClassic);
 			return null;
 		}
 	};
@@ -973,6 +974,10 @@ var ensureServiceWorkerRegistered = async () => {
 		const reg = await tryRegister(url);
 		if (reg) return reg;
 	}
+	if (isViteDev()) try {
+		const probes = await Promise.all(candidates.map(probeScriptUrl));
+		console.warn("[SW] No service worker registered; candidates exhausted. Dev probes:", probes);
+	} catch {}
 	return null;
 };
 //#endregion
@@ -1091,6 +1096,21 @@ var summarizeForLog = (value, partialOptions = {}) => {
 	}, 0, /* @__PURE__ */ new WeakSet());
 };
 //#endregion
+//#region ../CWSP-document/src/shared/routing/channel/workcenter-command-wire.ts
+var WORKCENTER_COMMAND_TYPE = "workcenter-command";
+var postWorkCenterCommand = (command) => {
+	const envelope = {
+		type: WORKCENTER_COMMAND_TYPE,
+		command
+	};
+	const names = [BROADCAST_CHANNELS.WORK_CENTER, viewBroadcastChannelName("workcenter")];
+	for (const name of names) try {
+		const channel = new BroadcastChannel(name);
+		channel.postMessage(envelope);
+		channel.close();
+	} catch {}
+};
+//#endregion
 //#region ../CWSP-document/src/shared/routing/pwa/sw-handling.ts
 /**
 * Window-side PWA integration helpers.
@@ -1196,23 +1216,13 @@ var initServiceWorker = async (_options = _swOptions) => {
 		}
 		try {
 			const registration = await ensureServiceWorkerRegistered();
-			const viteEnv = {
-				"BASE_URL": "./",
-				"DEV": false,
-				"MODE": "cw-explorer",
-				"PROD": true,
-				"SSR": false,
-				"VITE_ENABLED_VIEWS": "minimal,explorer,settings,history"
-			};
 			if (!registration) {
-				if (viteEnv?.DEV) console.warn("[PWA] Service worker not registered (dev): probe failed for dev-sw/sw.js — check Vite BASE_URL matches vite-plugin-pwa dev worker path.");
-				else console.error("[PWA] Service worker registration failed: no valid sw.js found");
+				console.error("[PWA] Service worker registration failed: no valid sw.js found");
 				return null;
 			}
 			bindControllerChangeReload();
 			await probeServiceWorkerUpdate(registration);
 			bindServiceWorkerLifecycleUpdateChecks(registration);
-			if (viteEnv?.DEV && registration.waiting) activateWaitingWorker(registration, "initial");
 			try {
 				if (_swOptions?.immediate === true && registration.waiting) activateWaitingWorker(registration, "initial");
 			} catch (e) {
@@ -1228,13 +1238,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 							kind: "info"
 						});
 						try {
-							if (_swOptions?.immediate === true && !activateWaitingWorker(registration, "updatefound") && viteEnv?.DEV) globalThis.setTimeout(() => {
-								try {
-									activateWaitingWorker(registration, "updatefound");
-								} catch (retryError) {
-									console.warn("[PWA] Delayed SW activation failed:", retryError);
-								}
-							}, 0);
+							if (_swOptions?.immediate === true && !activateWaitingWorker(registration, "updatefound") && false);
 						} catch (e) {
 							console.warn("[PWA] Failed to auto-activate waiting service worker on updatefound:", e);
 						}
@@ -1245,7 +1249,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 				globalThis?.clearInterval?.(_swUpdateInterval);
 				_swUpdateInterval = null;
 			}
-			if (!viteEnv?.DEV) _swUpdateInterval = globalThis?.setInterval?.(() => {
+			_swUpdateInterval = globalThis?.setInterval?.(() => {
 				registration?.update?.().catch?.(console.warn);
 			}, 3e5);
 			console.log("[PWA] Service worker registered successfully");
@@ -1757,6 +1761,18 @@ var deliverProcessIngressResult = async (text, raw, copyToClipboard) => {
 			}
 		});
 		workCenterChannel.close();
+		postWorkCenterCommand({
+			type: "ingress.apply",
+			payload: {
+				type: "share-target-result",
+				data: {
+					content: text,
+					rawData: raw,
+					timestamp: Date.now(),
+					source: "share-target"
+				}
+			}
+		});
 	}
 };
 /**

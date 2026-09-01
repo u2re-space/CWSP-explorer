@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { Bt as skuForOpenSink, Ct as classifyOpenKind, Dt as looksLikePreviewableBinary, Ft as resolveOpenPlacement, J as ensureSpeedDialMeta, K as addSpeedDialItem, Mt as rememberOpenPolicyFromSettings, Nt as resolveExplorerOpenSink, Pt as resolveHostOpenPolicy, Ut as viewIdForOpenSink, X as persistSpeedDialMeta, Y as persistSpeedDialItems, Z as speedDialItems, jt as peekOpenPolicy, q as createEmptySpeedDialItem, rt as loadSettings, wt as classifyOpenKindFromName, zt as sinkToOpenLinkTarget } from "../shells/boot-index.js";
 import { E as isBookmarksPath, T as openUnifiedContextMenu, rt as resolveFsBackend, st as toExplorerStoragePath, tt as ensureDefaultFsBackends } from "../com/app.js";
@@ -212,7 +212,7 @@ var openNativeStorageByPolicy = async (sourcePath, sink, mimeType) => {
 	const { openNativeStorageFile } = await __vitePreload(async () => {
 		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.at);
 		return { openNativeStorageFile };
-	}, __vite__mapDeps([5,2]), import.meta.url);
+	}, __vite__mapDeps([4,2]), import.meta.url);
 	const mime = String(mimeType || "").trim() || guessMimeFromName(sourcePath);
 	if (sink === "system" || sink === "external" || sink === "ask") return openNativeStorageFile(sourcePath, {
 		chooser: true,
@@ -242,7 +242,7 @@ var nativeViewUri = async (sourcePath) => {
 		const { resolveNativeStorageUri } = await __vitePreload(async () => {
 			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.at);
 			return { resolveNativeStorageUri };
-		}, __vite__mapDeps([5,2]), import.meta.url);
+		}, __vite__mapDeps([4,2]), import.meta.url);
 		const uri = await resolveNativeStorageUri(p);
 		if (uri) return uri;
 	} catch {}
@@ -618,7 +618,7 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 			const { provide } = await __vitePreload(async () => {
 				const { provide } = await import("../com/app.js").then((n) => n.jt);
 				return { provide };
-			}, __vite__mapDeps([5,2]), import.meta.url);
+			}, __vite__mapDeps([4,2]), import.meta.url);
 			item.file = await provide(sourcePath);
 		} catch {}
 	};
@@ -860,7 +860,7 @@ function wireExplorerSubtree(shellRoot, wireOpts) {
 		const rebakeRows = () => scheduleBakeScreenColors(shellRoot);
 		fm.addEventListener("entries-updated", rebakeRows, { signal });
 		fm.addEventListener("rs-navigate", rebakeRows, { signal });
-		__vitePreload(() => import("../com/app.js").then((n) => n.d).then((m) => m.installExplorerBackStack()), __vite__mapDeps([5,2]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app.js").then((n) => n.d).then((m) => m.installExplorerBackStack()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
 		return {
 			cleanup: () => {
 				writePersistedExplorerPath(fm.path || "/user/");

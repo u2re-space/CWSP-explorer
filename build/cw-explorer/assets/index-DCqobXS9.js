@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import "../chunks/vite-preload-BsPm7yBB.js";
 import { _ as stashSkuHandoff, a as applyCwspSku } from "../shells/boot-history-base.js";
 

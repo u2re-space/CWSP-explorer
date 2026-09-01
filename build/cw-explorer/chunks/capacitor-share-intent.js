@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { tr as splitMultiValueList } from "../shells/boot-index.js";
 
 import { n as isCapacitorNative } from "./capacitor-permissions.js";

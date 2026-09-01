@@ -1,10 +1,10 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Ar as registerComponent, Hr as processApiAuthFromSettings, Lr as ROUTE_HASHES, Or as initializeComponent, Ur as readProcessApiResultText, Vr as postProcessApi, jr as sendMessage, rt as loadSettings } from "../shells/boot-index.js";
-import { i as validateReadableFileForIngress } from "../com/service.js";
+import { Ar as initializeComponent, Cr as viewBroadcastChannelName, Gr as processApiAuthFromSettings, Kr as readProcessApiResultText, Mr as registerComponent, Nr as sendMessage, Sr as BROADCAST_CHANNELS, Ur as isProcessApiUnavailable, Wr as postProcessApi, rt as loadSettings, zr as ROUTE_HASHES } from "../shells/boot-index.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
+import { i as validateReadableFileForIngress } from "../com/service.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
 import { s as takeHeldIngressFiles } from "./sku-ingress.js";
 import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
@@ -1441,7 +1441,7 @@ var tryProcessApiTurn = async (input, options) => {
 		mode: "smartRecognize",
 		customInstruction: options.instruction || options.customInstruction || void 0
 	}, auth, { signal: options.signal });
-	if (!posted.json) return null;
+	if (isProcessApiUnavailable(posted) || !posted.json) return null;
 	const json = posted.json;
 	if (json.ok === false) {
 		const error = String(json.error || "");
@@ -1786,7 +1786,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Cr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Tr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1847,7 +1847,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Cr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Tr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -4193,7 +4193,7 @@ var dataUrlToFile = async (url, name) => {
 	}
 };
 var extractPdf = async (file) => {
-	const [{ getDocument, GlobalWorkerOptions }, worker] = await Promise.all([__vitePreload(() => import("../vendor/pdfjs-dist.js").then((n) => n.n), __vite__mapDeps([7,1,5]), import.meta.url), __vitePreload(() => import("../vendor/pdfjs-dist.js").then((n) => n.t), __vite__mapDeps([7,1,5]), import.meta.url)]);
+	const [{ getDocument, GlobalWorkerOptions }, worker] = await Promise.all([__vitePreload(() => import("../vendor/pdfjs-dist.js").then((n) => n.n), __vite__mapDeps([7,1,4]), import.meta.url), __vitePreload(() => import("../vendor/pdfjs-dist.js").then((n) => n.t), __vite__mapDeps([7,1,4]), import.meta.url)]);
 	if (!GlobalWorkerOptions.workerSrc) GlobalWorkerOptions.workerSrc = worker.default;
 	const document = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
 	const pages = [];
@@ -4272,6 +4272,40 @@ var WorkCenterDocumentPreparer = class {
 			};
 		}
 	}
+};
+var isWorkCenterCommand = (value) => {
+	if (!value || typeof value !== "object") return false;
+	const type = String(value.type || "");
+	return type === "hydrate" || type === "snapshot" || type === "draft.set" || type === "draft.commit" || type === "attach.add" || type === "attach.remove" || type === "turn.execute" || type === "turn.cancel" || type === "turn.retry" || type === "ingress.apply";
+};
+var isWorkCenterCommandEnvelope = (value) => {
+	if (!value || typeof value !== "object") return false;
+	const row = value;
+	return row.type === "workcenter-command" && isWorkCenterCommand(row.command);
+};
+//#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterCommandBus.ts
+var channelNames = () => [BROADCAST_CHANNELS.WORK_CENTER, viewBroadcastChannelName("workcenter")];
+var bindWorkCenterCommandBus = (handler) => {
+	if (typeof BroadcastChannel === "undefined") return () => {};
+	const channels = [];
+	const onMessage = (event) => {
+		const data = event.data;
+		const command = isWorkCenterCommandEnvelope(data) ? data.command : isWorkCenterCommand(data) ? data : null;
+		if (!command) return;
+		handler(command);
+	};
+	for (const name of channelNames()) try {
+		const channel = new BroadcastChannel(name);
+		channel.addEventListener("message", onMessage);
+		channels.push(channel);
+	} catch {}
+	return () => {
+		for (const channel of channels) try {
+			channel.removeEventListener("message", onMessage);
+			channel.close();
+		} catch {}
+	};
 };
 //#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenter.ts
@@ -4358,6 +4392,7 @@ var WorkCenterManager = class {
 	documentPreparer;
 	sessionReady;
 	processedMessageIds = /* @__PURE__ */ new Set();
+	unbindCommandBus = () => {};
 	constructor(dependencies) {
 		this.deps = dependencies;
 		this.state = WorkCenterStateManager.createDefaultState();
@@ -4397,6 +4432,7 @@ var WorkCenterManager = class {
 			syncFromSession: () => this.syncStateFromSession()
 		});
 		this.events = new WorkCenterEvents(dependencies, this.actions, this.templates, this.voice, this.history, this.attachmentIngress, this.state);
+		this.unbindCommandBus = bindWorkCenterCommandBus((command) => this.dispatchCommand(command));
 		this.shareTarget.initShareTargetListener(this.state);
 		registerComponent("workcenter-core", "workcenter");
 		this.sessionReady.then(() => this.shareTarget.processQueuedMessages(this.state));
@@ -4502,6 +4538,45 @@ var WorkCenterManager = class {
 		await this.session.persistDraft();
 		this.deps.render?.();
 	}
+	async dispatchCommand(command) {
+		await this.sessionReady;
+		switch (command.type) {
+			case "hydrate":
+				await this.hydrateSession();
+				return;
+			case "snapshot": return;
+			case "draft.set":
+				this.session.setDraft(command.draft);
+				this.state.draft = command.draft;
+				this.state.currentPrompt = command.draft.content;
+				this.paintLiveConversation("if-idle");
+				return;
+			case "draft.commit":
+			case "turn.execute":
+				await this.actions.executeUnifiedAction(this.state);
+				return;
+			case "attach.add":
+				if (command.files?.length) await this.addFiles(command.files);
+				return;
+			case "attach.remove": {
+				const next = (this.state.draft.attachments || []).filter((item) => item.hash !== command.hash);
+				this.state.draft.attachments = next;
+				this.session.setDraft(this.state.draft);
+				this.paintLiveConversation("if-idle");
+				return;
+			}
+			case "turn.cancel":
+				await this.actions.cancelConversationTurn(this.state, command.assistantId);
+				return;
+			case "turn.retry":
+				await this.actions.retryConversationTurn(this.state, command.assistantId);
+				return;
+			case "ingress.apply":
+				await this.handleExternalMessage(command.payload);
+				return;
+			default: return;
+		}
+	}
 	/** Normalize all channel/share payloads into the active conversation draft. */
 	async handleIncomingContent(data, contentType) {
 		await this.sessionReady;
@@ -4534,6 +4609,10 @@ var WorkCenterManager = class {
 	*/
 	async handleExternalMessage(message) {
 		if (!message) return;
+		if (isWorkCenterCommandEnvelope(message)) {
+			await this.dispatchCommand(message.command);
+			return;
+		}
 		await this.sessionReady;
 		const messageId = typeof message?.id === "string" ? message.id : "";
 		if (messageId) {
@@ -4577,6 +4656,7 @@ var WorkCenterManager = class {
 		return this.state;
 	}
 	destroy() {
+		this.unbindCommandBus();
 		this.ui.setContainer(null);
 		this.attachments.setContainer(null);
 		this.prompts.setContainer(null);

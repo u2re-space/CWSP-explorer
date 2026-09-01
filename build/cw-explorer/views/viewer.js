@@ -2,9 +2,9 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js","../chunks/DocxExport.js","../chunks/BootLoader.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js","../chunks/sku-ingress.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { Ct as classifyOpenKind, Dt as looksLikePreviewableBinary, It as resolveOpenPolicy, Mr as sendProtocolMessage, Mt as rememberOpenPolicyFromSettings, Pt as resolveHostOpenPolicy, Tr as createProtocolEnvelope, mr as ingressStampWasSuperseded, rt as loadSettings } from "../shells/boot-index.js";
-import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
+import { Ct as classifyOpenKind, Dr as createProtocolEnvelope, Dt as looksLikePreviewableBinary, It as resolveOpenPolicy, Mt as rememberOpenPolicyFromSettings, Pr as sendProtocolMessage, Pt as resolveHostOpenPolicy, mr as ingressStampWasSuperseded, rt as loadSettings } from "../shells/boot-index.js";
 import { An as H, Bt as pickAssetDirectory, Ft as indexDirectoryFiles, Gt as resolveFileUnderDirectory, Ht as pickSidecarDirectoryFiles, It as isMarkdownRelativeRef, Kt as saveMarkdownBlob, Lt as mountPickedDirectory, Pt as findEntryRelPath, Qt as parseDataUrl, Rt as observeFileSystemHandle, Ut as provideBoundRelative, Vt as pickMarkdownFile, Wt as relPathCandidates, Xt as isBase64Like, Yt as decodeBase64ToBytes, Zt as normalizeDataAsset, an as matchMappedRoot, cn as provide, in as isVirtualFsPath, nn as getDir, on as normalizePath, s as purify, sn as openDirectory, zt as originalRelFromRef } from "../com/app.js";
+import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 import { VIEWER_CSS_LAYER_ORDER, cssLayerBlock, cssLayerOrder, loadAsAdopted, normalizeCssForLayer, removeAdopted, scheduleBakeScreenColors, unbakeScreenColors } from "/fest/style-lib.js";
 import { affected, ref } from "/fest/object.js";
 import { ensureStyleSheet, reinitializeRegistry } from "/fest/icon.js";
@@ -1567,7 +1567,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				const { bootLoader } = await __vitePreload(async () => {
 					const { bootLoader } = await import("../chunks/BootLoader.js").then((n) => n.t);
 					return { bootLoader };
-				}, __vite__mapDeps([3,1,4,5,6,7,0,8,9,10]), import.meta.url);
+				}, __vite__mapDeps([3,1,4,5,6,0,7,8,9,10]), import.meta.url);
 				const shell = bootLoader.getShell();
 				if (shell?.navigate && ![
 					"window",
@@ -2516,7 +2516,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
 					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Sn);
 					return { invokeCwsPlatformIPC };
-				}, __vite__mapDeps([6,1,5,7,0,8]), import.meta.url);
+				}, __vite__mapDeps([6,1,5,0,7,8]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
 				if (!peek?.ok) return;
 				const echo = peek.echo || peek;
@@ -2528,7 +2528,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 						const { dataUrlToFile } = await __vitePreload(async () => {
 							const { dataUrlToFile } = await import("../chunks/sku-ingress.js").then((n) => n.o);
 							return { dataUrlToFile };
-						}, __vite__mapDeps([11,1,5,6,7,0,8]), import.meta.url);
+						}, __vite__mapDeps([11,1,5,6,0,7,8]), import.meta.url);
 						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
 					}
 				}

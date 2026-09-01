@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { rt as loadSettings } from "../shells/boot-index.js";
 

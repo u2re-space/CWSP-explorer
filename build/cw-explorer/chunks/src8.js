@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","./launcher-bridge.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { c as isCwspNativeHost, d as isWebHubSurface, i as apkManifestForSku, l as isCwspSku, m as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { C as applyTheme, D as defaultColorSource, E as FALLBACK_BASE_COLOR, O as isAppearanceColorSource, Ot as mergeOpenPolicy, Pt as resolveHostOpenPolicy, Qn as resolveCwspUrlFields, St as OPEN_KINDS, Vt as stampHostOpenPolicy, _ as resolveEffectiveHubSettingsSection, at as saveSettings, b as visibleHubSettingsSections, bt as normalizeEcosystemToken, d as defaultSettingsTabForProfile, dr as isEnabledView, et as ensureCapacitorCwspSettingsSeeded, f as hasBuiltInSettingsPanel, ft as mergeProcessIngress, g as rememberSettingsAreaSection, gr as DEFAULT_INSTRUCTION_TEMPLATES, h as readSettingsAreaSection, it as noteSettingsControlSync, jr as sendMessage, k as normalizeHexColor, l as SIBLING_HUB_SETTINGS_SECTIONS, m as pruneBuiltInSettingsTabs, nt as getLastSettingsSaveReport, ot as PROCESS_INGRESS_KIND_LABELS, p as hubSettingsSectionPath, qt as applyAirpadRuntimeFromAppSettings, rt as loadSettings, t as navigateToView, tt as ensureCrxCwspSettingsSeeded, u as canonicalHubSettingsSection, v as resolveSettingsShellProfile, vt as BUILTIN_AI_MODELS, xt as resolveEcosystemToken, y as skuForHubSettingsSection } from "../shells/boot-index.js";
+import { C as applyTheme, D as defaultColorSource, E as FALLBACK_BASE_COLOR, Nr as sendMessage, O as isAppearanceColorSource, Ot as mergeOpenPolicy, Pt as resolveHostOpenPolicy, Qn as resolveCwspUrlFields, St as OPEN_KINDS, Vt as stampHostOpenPolicy, _ as resolveEffectiveHubSettingsSection, at as saveSettings, b as visibleHubSettingsSections, bt as normalizeEcosystemToken, d as defaultSettingsTabForProfile, dr as isEnabledView, et as ensureCapacitorCwspSettingsSeeded, f as hasBuiltInSettingsPanel, ft as mergeProcessIngress, g as rememberSettingsAreaSection, gr as DEFAULT_INSTRUCTION_TEMPLATES, h as readSettingsAreaSection, it as noteSettingsControlSync, k as normalizeHexColor, l as SIBLING_HUB_SETTINGS_SECTIONS, m as pruneBuiltInSettingsTabs, nt as getLastSettingsSaveReport, ot as PROCESS_INGRESS_KIND_LABELS, p as hubSettingsSectionPath, qt as applyAirpadRuntimeFromAppSettings, rt as loadSettings, t as navigateToView, tt as ensureCrxCwspSettingsSeeded, u as canonicalHubSettingsSection, v as resolveSettingsShellProfile, vt as BUILTIN_AI_MODELS, xt as resolveEcosystemToken, y as skuForHubSettingsSection } from "../shells/boot-index.js";
 import { $t as StorageKeys, An as H, en as setString } from "../com/app.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 import { r as requestCapacitorSettingsPermissionsAfterSave } from "./capacitor-settings-permissions.js";
@@ -532,7 +532,7 @@ var createMarkdownSection = () => H`<section class="card settings-tab-panel" dat
 //#region ../../modules/views/settings-view/src/sections/SettingsAI.ts
 var createAiSection = () => H`<section class="card settings-tab-panel is-active" data-tab-panel="ai">
       <h3>AI</h3>
-      <p class="settings-hint">Process chat posts to process.u2re.space / ai.u2re.space <code>/api/process</code>. Base URL and key below are the direct-model fallback and are also sent with that request.</p>
+      <p class="settings-hint">Process chat posts to <code>/api/process</code> (PWA SW, Capacitor Java, then process.u2re.space). Base URL and key below are the same fallback the backends use when core is down.</p>
       <form class="settings-panel-form" novalidate onsubmit="return false">
       <label class="field">
         <span>Base URL</span>
@@ -1681,8 +1681,8 @@ var registerWorkcenterSettingsContribution = () => registerSettingsContribution(
 		settingsCheckboxField("Auto-run pinned tasks", "views.workcenter.autoRunPinned"),
 		settingsTextField("Default instruction id", "views.workcenter.defaultInstructionId", "(none)"),
 		settingsHeading("File types and incoming actions"),
-		settingsHint("PWA/Web is not a Share Target. Open with / Launch Queue still opens files here. On Android, Share and Open with follow these per-type actions. “Run AI and write to clipboard” can keep a background service so the result still lands after Share."),
-		settingsHint("Chat and AI actions POST to the VDS process API at process.u2re.space / ai.u2re.space (`/api/process`). LAN and Capacitor use that public host; the dedicated hosts stay same-origin."),
+		settingsHint("PWA/Web Share Target and Launch Queue open files here. On Android, Share and Open with follow these per-type actions. “Run AI and write to clipboard” can keep a background service so the result still lands after Share."),
+		settingsHint("Chat and AI actions POST to `/api/process`. PWA service worker and Capacitor Java run the same key-on-request fallback as Fastify; dedicated hosts stay same-origin, LAN still uses process.u2re.space."),
 		settingsCheckboxField("Allow automatic AI for incoming files", "ai.processIngress.autoProcess"),
 		settingsCheckboxField("Android: keep background service for clipboard-write", "ai.processIngress.backgroundClipboard"),
 		settingsSelectField("AI action", "ai.shareTargetMode", [["recognize", "Recognize"], ["analyze", "Analyze"]]),
@@ -2153,7 +2153,7 @@ var refreshInstalledSiblingSettingsSections = async () => {
 			const { launcherHasPackages } = await __vitePreload(async () => {
 				const { launcherHasPackages } = await import("./launcher-bridge.js");
 				return { launcherHasPackages };
-			}, __vite__mapDeps([3,4,2,5,6,1,7]), import.meta.url);
+			}, __vite__mapDeps([3,4,2,5,1,6,7]), import.meta.url);
 			const map = await launcherHasPackages(wanted.map((row) => row.pkg));
 			cachedInstalled = wanted.filter((row) => map[row.pkg] === true).map((row) => row.section);
 		} catch {
@@ -2601,7 +2601,7 @@ var resolveCwspSettingsBeforeSave = async (settings) => {
 	const { sanitizeFleetSelfWireNodeId } = await __vitePreload(async () => {
 		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.kn);
 		return { sanitizeFleetSelfWireNodeId };
-	}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
+	}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 	const canonicalUserId = sanitizeFleetSelfWireNodeId(core.userId);
 	if (canonicalUserId) core.userId = canonicalUserId;
 	const isControlSpaHost = (host) => {
@@ -3234,7 +3234,7 @@ var createSettingsView = (opts) => {
 					paintApkVersion(el, info?.echo || {}, info);
 				}
 			}));
-		}), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).catch(() => {});
+		}), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url).catch(() => {});
 	}).catch(() => {
 		renderMcpConfigurations(mcpSection, []);
 	});
@@ -3366,11 +3366,11 @@ var createSettingsView = (opts) => {
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-app-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.z).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.z).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-notification-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.z).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.z).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		const crxPairBtn = t?.closest?.("button[data-action=\"crx-control-pair\"]");
@@ -3449,7 +3449,7 @@ var createSettingsView = (opts) => {
 						const { invokeCwsNative } = await __vitePreload(async () => {
 							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Sn);
 							return { invokeCwsNative };
-						}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
+						}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 						const result = await invokeCwsNative(pairRegenBtn ? "control:public-token:regenerate" : "control:pairing:status", {});
 						const echo = result?.controlPairing || result?.echo || {};
 						if (echo?.deviceCode || echo?.publicToken) {
@@ -3493,7 +3493,7 @@ var createSettingsView = (opts) => {
 					const { invokeCwsNative } = await __vitePreload(async () => {
 						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Sn);
 						return { invokeCwsNative };
-					}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
+					}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 					const s = await loadSettings();
 					const safEl = root.querySelector("[data-files-saf-uri]");
 					const pathsEl = root.querySelector("[data-files-storage-paths]");
@@ -3571,7 +3571,7 @@ var createSettingsView = (opts) => {
 					const { invokeCwsNative } = await __vitePreload(async () => {
 						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Sn);
 						return { invokeCwsNative };
-					}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
+					}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 					const clicked = apkInstallBtn || apkCheckBtn;
 					const target = apkUpdateTarget(clicked);
 					const result = await invokeCwsNative(channel, {
@@ -3869,7 +3869,7 @@ var createSettingsView = (opts) => {
 						const { invokeCwsNative } = await __vitePreload(async () => {
 							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Sn);
 							return { invokeCwsNative };
-						}, __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
+						}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 						await invokeCwsNative("runtime:reload-settings", {});
 					} catch (e) {
 						console.warn("[Settings] Java /ws reload skipped", e);
@@ -3879,8 +3879,8 @@ var createSettingsView = (opts) => {
 				await m.applyHubSocketFromSettings(saved);
 				__vitePreload(() => import("../shells/boot-index.js").then((n) => n.c).then((ws) => {
 					if (typeof ws.reconnectTransportAfterLifecycleResume === "function") ws.reconnectTransportAfterLifecycleResume("settings-save");
-				}), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url).catch(() => void 0);
-			}), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url);
+				}), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url).catch(() => void 0);
+			}), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 			applyTheme(saved);
 			opts.onTheme?.(saved.appearance?.theme || "auto");
 			const parts = ["Saved locally"];
@@ -4123,7 +4123,7 @@ var SettingsView = class {
 			this.handleMessage({ data: payload });
 			(async () => {
 				try {
-					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.$), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.S), __vite__mapDeps([4,2,5,6,1,7]), import.meta.url)]);
+					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.$), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.S), __vite__mapDeps([4,2,5,1,6,7]), import.meta.url)]);
 					const cur = await loadSettings();
 					const patch = payload;
 					applyTheme({

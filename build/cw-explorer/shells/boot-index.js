@@ -2,8 +2,8 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../chunks/LogSanitizer.js","../chunks/sku-ingress.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
-import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { Et as initializeAppCanvasLayer, Jt as writeFileSmart, Rn as Q, St as __decorate, bt as UIElement, gn as saveUIState, hn as makeUIState, kn as defineElement, zn as JSOX } from "../com/app.js";
+import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { i as core_default, r as scss_default } from "../fest/veela.js";
 import { loadAsAdopted } from "/fest/style-lib.js";
 import { createProtocolEnvelope, createProtocolEnvelope as createProtocolEnvelope$2, createServiceChannelManager, getUnifiedMessaging, isProtocolEnvelope, normalizeProtocolEnvelope } from "/fest/uniform.js";
@@ -11,9 +11,11 @@ import { withTimeout } from "/fest/core.js";
 import { fixOrientToScreen } from "/fest/dom.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
 import "/fest/icon.js";
-//#region ../CWSP-document/src/shared/routing/api/process-api.ts
+//#region ../CWSP-document/src/shared/routing/api/process-api-path.ts
 var PROCESS_API_PUBLIC_ORIGIN$1 = "https://process.u2re.space";
 var PROCESS_API_PREFIX$1 = "/api/process";
+//#endregion
+//#region ../CWSP-document/src/shared/routing/api/process-api.ts
 var PROCESS_API_SUFFIX$1 = {
 	processing: "processing",
 	recognize: "ai/recognize",
@@ -40,7 +42,7 @@ var isCapacitorNative$5 = () => {
 var needsRemoteProcessApi$1 = () => {
 	try {
 		if (isExtensionProtocol$1(String(globalThis.location?.protocol || "").toLowerCase())) return true;
-		if (isCapacitorNative$5()) return true;
+		if (isCapacitorNative$5()) return false;
 		const host = String(globalThis.location?.hostname || "").toLowerCase();
 		if (!host) return true;
 		return !PROCESS_SAME_ORIGIN_HOSTS$1.has(host);
@@ -67,6 +69,17 @@ var processApiAuthFromSettings = (settings) => {
 		mcp: Array.isArray(settings?.ai?.mcp) ? settings.ai.mcp : void 0
 	};
 };
+/** True when :443 never reached a working CWSP core — caller should run in-browser AI. */
+var isProcessApiUnavailable = (posted) => {
+	if (posted.status === 0 || posted.status >= 500) return true;
+	const error = String(posted.error || "").toLowerCase();
+	if (/failed to fetch|networkerror|econnrefused|certificate|aborted/.test(error)) return true;
+	if (!posted.json || typeof posted.json !== "object") return !posted.ok;
+	const row = posted.json;
+	if (row.ok !== false) return false;
+	const detail = `${row.error || ""} ${row.hint || ""}`.toLowerCase();
+	return row.layer === "api" || /unreachable|econnrefused|certificate|bad gateway/.test(detail);
+};
 var readProcessApiResultText = (json) => {
 	if (!json || typeof json !== "object") return "";
 	const row = json;
@@ -83,18 +96,7 @@ var readProcessApiResultText = (json) => {
 	for (const item of candidates) if (typeof item === "string" && item.trim()) return item;
 	return "";
 };
-var postProcessApi = async (suffix, body = {}, auth, init) => {
-	const url = resolveProcessApiUrl$1(suffix);
-	const payload = {
-		...body,
-		...auth?.userId ? { userId: auth.userId } : {},
-		...auth?.userKey ? { userKey: auth.userKey } : {},
-		...auth?.accessToken ? { accessToken: auth.accessToken } : {},
-		...auth?.apiKey ? { apiKey: auth.apiKey } : {},
-		...auth?.baseUrl ? { baseUrl: auth.baseUrl } : {},
-		...auth?.model ? { model: auth.model } : {},
-		...auth?.mcp ? { mcp: auth.mcp } : {}
-	};
+var fetchProcessApi = async (url, suffix, payload, init) => {
 	try {
 		const isGet = suffix === "health";
 		const res = await fetch(url, {
@@ -129,6 +131,69 @@ var postProcessApi = async (suffix, body = {}, auth, init) => {
 			error: String(error instanceof Error ? error.message : error)
 		};
 	}
+};
+var tryNativeProcessApi = async (payload) => {
+	if (!isCapacitorNative$5()) return null;
+	try {
+		const { CwsBridge } = await __vitePreload(async () => {
+			const { CwsBridge } = await import(
+				/* @vite-ignore */
+				"../native/cws-bridge.ts"
+);
+			return { CwsBridge };
+		}, [], import.meta.url);
+		const plugin = CwsBridge;
+		const row = typeof plugin.processApi === "function" ? await plugin.processApi(payload) : await CwsBridge.invoke({
+			channel: "process:api",
+			payload
+		});
+		if (!row || typeof row !== "object") return null;
+		const json = row;
+		if (json.echo && json.ok === true && json.error == null && !("result" in json) && !("fallback" in json)) return null;
+		return {
+			ok: json.ok !== false,
+			status: 200,
+			json
+		};
+	} catch {
+		return null;
+	}
+};
+var postProcessApi = async (suffix, body = {}, auth, init) => {
+	const path = processApiPath$1(suffix);
+	const payload = {
+		...body,
+		...auth?.userId ? { userId: auth.userId } : {},
+		...auth?.userKey ? { userKey: auth.userKey } : {},
+		...auth?.baseUrl ? { baseUrl: auth.baseUrl } : {},
+		...auth?.accessToken ? { accessToken: auth.accessToken } : {},
+		...auth?.apiKey ? { apiKey: auth.apiKey } : {},
+		...auth?.model ? { model: auth.model } : {},
+		...auth?.mcp ? { mcp: auth.mcp } : {}
+	};
+	if (suffix !== "health" && (auth?.apiKey || payload.apiKey)) {
+		const native = await tryNativeProcessApi(payload);
+		if (native && !isProcessApiUnavailable(native) && native.json) return native;
+	}
+	const urls = [];
+	const remote = `${PROCESS_API_PUBLIC_ORIGIN$1}${path}`;
+	const local = path;
+	if (needsRemoteProcessApi$1()) urls.push(remote);
+	else {
+		urls.push(local);
+		if (isCapacitorNative$5()) urls.push(remote);
+	}
+	let last = null;
+	for (const url of urls) {
+		last = await fetchProcessApi(url, suffix, payload, init);
+		if (!isProcessApiUnavailable(last)) return last;
+	}
+	return last ?? {
+		ok: false,
+		status: 0,
+		json: null,
+		error: "Process API unavailable"
+	};
 };
 //#endregion
 //#region ../CWSP-document/src/shared/other/config/Names.ts
@@ -169,7 +234,7 @@ var BROADCAST_CHANNELS$1 = {
 	SERVICE_EDITOR: "rs-service-editor",
 	SERVICE_HOME: "rs-service-home"
 };
-var viewBroadcastChannelName = (viewId) => {
+var viewBroadcastChannelName$1 = (viewId) => {
 	return `rs-view-${normalizeViewId$1(viewId) || "app"}`;
 };
 /**
@@ -467,9 +532,11 @@ function getServiceChannels() {
 }
 var serviceChannels = getServiceChannels();
 //#endregion
-//#region ../../modules/projects/subsystem/src/routing/api/process-api.ts
+//#region ../../modules/projects/subsystem/src/routing/api/process-api-path.ts
 var PROCESS_API_PUBLIC_ORIGIN = "https://process.u2re.space";
 var PROCESS_API_PREFIX = "/api/process";
+//#endregion
+//#region ../../modules/projects/subsystem/src/routing/api/process-api.ts
 var PROCESS_API_SUFFIX = {
 	processing: "processing",
 	recognize: "ai/recognize",
@@ -496,7 +563,7 @@ var isCapacitorNative$4 = () => {
 var needsRemoteProcessApi = () => {
 	try {
 		if (isExtensionProtocol(String(globalThis.location?.protocol || "").toLowerCase())) return true;
-		if (isCapacitorNative$4()) return true;
+		if (isCapacitorNative$4()) return false;
 		const host = String(globalThis.location?.hostname || "").toLowerCase();
 		if (!host) return true;
 		return !PROCESS_SAME_ORIGIN_HOSTS.has(host);
@@ -1368,7 +1435,7 @@ var mapUnifiedMessageToView = (view, message) => {
 */
 function subscribeViewChannel(viewId, handler) {
 	if (typeof BroadcastChannel === "undefined") return () => {};
-	const bc = new BroadcastChannel(viewBroadcastChannelName(normalizeViewId$1(viewId)));
+	const bc = new BroadcastChannel(viewBroadcastChannelName$1(normalizeViewId$1(viewId)));
 	bc.addEventListener("message", handler);
 	return () => {
 		bc.removeEventListener("message", handler);
@@ -1599,6 +1666,9 @@ var BROADCAST_CHANNELS = {
 	SERVICE_HISTORY: "rs-service-history",
 	SERVICE_EDITOR: "rs-service-editor",
 	SERVICE_HOME: "rs-service-home"
+};
+var viewBroadcastChannelName = (viewId) => {
+	return `rs-view-${normalizeViewId(viewId) || "app"}`;
 };
 /**
 * Component and module identifiers
@@ -3333,7 +3403,7 @@ function registerDefaultViews() {
 		id: "viewer",
 		name: "Viewer",
 		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([22,4,23,1,2,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([22,4,1,2,23,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "workcenter",
@@ -3381,7 +3451,7 @@ function registerDefaultViews() {
 		id: "print",
 		name: "Print",
 		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([22,4,23,1,2,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([22,4,1,2,23,24]), import.meta.url)
 	});
 }
 var defaultTheme = {
@@ -5207,6 +5277,13 @@ var cws_bridge_exports = /* @__PURE__ */ __exportAll({
 	patchNativeUnifiedSettingsDetailed: () => patchNativeUnifiedSettingsDetailed$1
 });
 var CwsBridgeWeb$1 = class extends WebPlugin {
+	async processApi() {
+		return {
+			ok: false,
+			error: "web",
+			fallback: "none"
+		};
+	}
 	async getShellInfo() {
 		return {
 			shell: "browser",
@@ -6373,6 +6450,13 @@ var mergeProcessIngress$1 = (...layers) => {
 //#endregion
 //#region ../../modules/projects/subsystem/src/routing/native/cws-bridge.ts
 var CwsBridgeWeb = class extends WebPlugin {
+	async processApi() {
+		return {
+			ok: false,
+			error: "web",
+			fallback: "none"
+		};
+	}
 	async getShellInfo() {
 		return {
 			shell: "browser",
@@ -10012,37 +10096,15 @@ var rememberProcessIngressSettings = (settings) => {
 var peekProcessIngressSettings = () => settingsPeek;
 /** True when a settings blob has been loaded (defaults still apply on Capacitor). */
 var processIngressSettingsFound = (settings) => Boolean(settings?.ai && (settings.ai.processIngress || typeof settings.ai.autoProcessShared === "boolean"));
-var isProcessSkuHost = () => {
-	try {
-		if (String(globalThis.document?.documentElement?.dataset?.cwspSku || "").trim() === "process") return true;
-	} catch {}
-	try {
-		const loc = String(globalThis.location?.hostname || "");
-		return /^(process|workcenter|ai)\./i.test(loc);
-	} catch {
-		return false;
-	}
-};
-var isCapacitorNativeSync = () => {
-	try {
-		const g = globalThis;
-		return Boolean(g.Capacitor?.isNativePlatform?.() || g.Capacitor?.getPlatform?.() === "android" || g.Capacitor?.getPlatform?.() === "ios" || g.__CWS_NATIVE__ === true);
-	} catch {
-		return false;
-	}
-};
 /**
-* INVARIANT: Process PWA/Web is not a Share Target (no `share_target` in the manifest).
-* Capacitor/Android still uses Share + Open-with.
+* INVARIANT: Process PWA/Web is a Share Target (manifest `share_target`) and Launch Queue.
+* Capacitor/Android still uses OS Share + Open-with.
 */
 var allowProcessWebShareLaunch = (settings) => {
-	if (!isProcessSkuHost()) return true;
-	if (isCapacitorNativeSync()) return true;
-	return false;
+	return true;
 };
 /**
 * INVARIANT: Process PWA/Web consumes Launch Queue like document/explorer (`file_handlers`).
-* Share Target stays off; Open with / file-handler launches still attach in Work Center.
 */
 var allowProcessWebLaunchQueue = (settings) => {
 	return true;
@@ -17479,4 +17541,4 @@ function navigateToView(view, params) {
 	});
 }
 //#endregion
-export { Settings_exports as $, resolveFleetWanGatewayHost as $n, getAirPadHandshakeConnectionType as $t, getTransitionDirection as A, isAssociableFleetWireNodeId as An, registerComponent$1 as Ar, open_policy_exports as At, isCapacitorNativeShell as B, sanitizeFleetSelfWireNodeId as Bn, viewBroadcastChannelName as Br, skuForOpenSink as Bt, applyTheme as C, initCwsNativeBridge$1 as Cn, UnifiedMessaging_exports as Cr, classifyOpenKind as Ct, defaultColorSource as D, DEFAULT_DESK_WIRE_NODE_ID as Dn, hasPendingMessages as Dr, looksLikePreviewableBinary as Dt, FALLBACK_BASE_COLOR as E, isCapacitorCwsNativeShell$1 as En, enqueuePendingMessage as Er, inferIngressChannels as Et, packetWireDedupeGuard as F, isHomeFleetLanHost as Fn, API_ENDPOINTS as Fr, resolveOpenPlacement as Ft, applyTheme$1 as G, CWSP_DEFAULT_HTTP_PORTS as Gn, loadSettings$1 as Gt, writeClipboardImageToDevice as H, shouldFleetDeskGatewayProbeFallbacks as Hn, processApiAuthFromSettings as Hr, surfaceForSku as Ht, annotateCoordinatorPayload as I, isOffHomeFleetNetwork as In, BROADCAST_CHANNELS$1 as Ir, resolveOpenPolicy as It, ensureSpeedDialMeta as J, buildEndpointOriginCandidates as Jn, getAccessToken as Jt, addSpeedDialItem as K, CWSP_FLEET_LAN_GATEWAY_HOST as Kn, shouldDeferCrxHubSocketBootstrap$1 as Kt, shouldAnnotateCoordinatorPayload as L, isOnHomeFleetLanPageHost as Ln, ROUTE_HASHES$1 as Lr, sinkToAction as Lt, ensureAppLayers as M, isFleetGatewayWireNodeId as Mn, sendProtocolMessage as Mr, rememberOpenPolicyFromSettings as Mt, annotatePacketWireHash as N, isGatewayHttpsOrigin as Nn, unifiedMessaging$1 as Nr, resolveExplorerOpenSink as Nt, isAppearanceColorSource as O, FLEET_GATEWAY_WIRE_NODE_ID as On, initializeComponent$1 as Or, mergeOpenPolicy as Ot, inferWireDedupeCategory as P, isGuestPrivateLanIpv4 as Pn, serviceChannels as Pr, resolveHostOpenPolicy as Pt, canParseURL as Q, resolveCwspUrlFields as Qn, getAirPadHandshakeArchetype as Qt, annotatePacketWireTime64 as R, normalizeWireNodeIdForWire as Rn, getBroadcastChannelForDestination as Rr, sinkToDestination as Rt, Theme_exports as S, cws_bridge_exports as Sn, settleIngressPaintForMinimalShell as Sr, OPEN_KINDS as St, syncBrowserChromeTheme as T, invokeCwsPlatformIPC$1 as Tn, createProtocolEnvelope$2 as Tr, classifyOpenKindFromPayload as Tt, writeClipboardTextToDevice as U, shouldPreferWanGatewayForAirpad as Un, readProcessApiResultText as Ur, viewIdForOpenSink as Ut, readClipboardTextFromDevice as V, shouldConnectViaFleetGateway as Vn, postProcessApi as Vr, stampHostOpenPolicy as Vt, loadStyleSystem as W, CWSP_DEFAULT_HTTPS_PORTS as Wn, ensureCapacitorCwspSettingsSeeded$1 as Wt, persistSpeedDialMeta as X, parseConnectHostInput as Xn, getAirPadDirectTargetUrl as Xt, persistSpeedDialItems as Y, collectEndpointProbeCandidates as Yn, getAirPadClientId as Yt, speedDialItems as Z, probeEndpointOriginReport as Zn, getAirPadEndpointUrl as Zt, resolveEffectiveHubSettingsSection as _, isShellRemoteClipboardBridgeEnabled as _n, templates_exports as _r, writeProcessIngressClipboard as _t, initWebSocket as a, getClipboardBroadcastWireTargets as an, ShellRegistry as ar, saveSettings as at, visibleHubSettingsSections as b, ecosystem_skus_exports as bn, consumeCachedShareTargetPayload as br, normalizeEcosystemToken as bt, websocket_exports as c, getRemoteProtocol as cn, defaultTheme as cr, allowProcessWebShareLaunch as ct, defaultSettingsTabForProfile as d, isClipboardHubBootstrapEnabled as dn, isEnabledView as dr, instructionTextForIngress as dt, getAirPadPeerInstanceId as en, splitConnectHostList as er, ensureCapacitorCwspSettingsSeeded as et, hasBuiltInSettingsPanel as f, isClipboardSenderAllowedForInbound as fn, pickEnabledView as fr, mergeProcessIngress as ft, rememberSettingsAreaSection as g, isPushLocalClipboardToLanEnabled as gn, DEFAULT_INSTRUCTION_TEMPLATES as gr, resolveProcessIngressKind as gt, readSettingsAreaSection as h, isPreferNativeWebsocketEnabled as hn, unifiedMessaging as hr, rememberProcessIngressSettings as ht, disconnectWS as i, getClientAccessToken as in, initializeLayers as ir, noteSettingsControlSync as it, withViewTransition as j, isFleetDeskWireNodeId as jn, sendMessage as jr, peekOpenPolicy as jt, normalizeHexColor as k, airpad_cwsp_client_parity_exports as kn, processInitialContent as kr, normalizeOpenSink as kt, SIBLING_HUB_SETTINGS_SECTIONS$1 as l, getRemoteRouteTarget as ln, initializeRegistries as lr, formatProcessIngressResult as lt, pruneBuiltInSettingsTabs as m, isNeutralinoNodeClipboardHubOwned as mn, ingressStampWasSuperseded as mr, process_ingress_exports as mt, hub_socket_boot_exports as n, getAirPadTransportSecret as nn, Capacitor as nr, getLastSettingsSaveReport as nt, isWSConnected as o, getClipboardPushIntervalMs as on, ViewRegistry as or, PROCESS_INGRESS_KIND_LABELS as ot, hubSettingsSectionPath$1 as p, isMaintainHubSocketConnectionEnabled as pn, startImplicitViewMessagingBridge as pr, peekProcessIngressSettings as pt, createEmptySpeedDialItem as q, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as qn, applyAirpadRuntimeFromAppSettings as qt, connectWS as r, getAssociatedClientToken as rn, dist_exports as rr, loadSettings as rt, onWSConnectionChange as s, getRemoteHost as sn, darkTheme as sr, allowProcessWebLaunchQueue as st, navigateToView as t, getAirPadTransportMode as tn, splitMultiValueList as tr, ensureCrxCwspSettingsSeeded as tt, canonicalHubSettingsSection$1 as u, isApplyRemoteClipboardToDeviceEnabled as un, lightTheme as ur, holdCapacitorIngressJob as ut, resolveSettingsShellProfile as v, setAirpadCredentialInvalidator as vn, CORE_ENTITY_EXTRACTION_INSTRUCTION as vr, BUILTIN_AI_MODELS as vt, resyncThemeAfterAdoptedViewSheet as w, invokeCwsNative as wn, createMessageWithOverrides as wr, classifyOpenKindFromName as wt, scheduleViewModulePrefetch as x, CwsBridge$1 as xn, storeShareTargetPayloadToCache as xr, resolveEcosystemToken as xt, skuForHubSettingsSection as y, DEFAULT_SETTINGS$1 as yn, buildShareDataFromCachedPayload as yr, DEFAULT_SETTINGS as yt, clipboard_device_exports as z, sanitizeFleetRouteTarget as zn, normalizeDestination$1 as zr, sinkToOpenLinkTarget as zt };
+export { Settings_exports as $, resolveFleetWanGatewayHost as $n, getAirPadHandshakeConnectionType as $t, getTransitionDirection as A, isAssociableFleetWireNodeId as An, initializeComponent$1 as Ar, open_policy_exports as At, isCapacitorNativeShell as B, sanitizeFleetSelfWireNodeId as Bn, getBroadcastChannelForDestination as Br, skuForOpenSink as Bt, applyTheme as C, initCwsNativeBridge$1 as Cn, viewBroadcastChannelName as Cr, classifyOpenKind as Ct, defaultColorSource as D, DEFAULT_DESK_WIRE_NODE_ID as Dn, createProtocolEnvelope$2 as Dr, looksLikePreviewableBinary as Dt, FALLBACK_BASE_COLOR as E, isCapacitorCwsNativeShell$1 as En, createMessageWithOverrides as Er, inferIngressChannels as Et, packetWireDedupeGuard as F, isHomeFleetLanHost as Fn, unifiedMessaging$1 as Fr, resolveOpenPlacement as Ft, applyTheme$1 as G, CWSP_DEFAULT_HTTP_PORTS as Gn, processApiAuthFromSettings as Gr, loadSettings$1 as Gt, writeClipboardImageToDevice as H, shouldFleetDeskGatewayProbeFallbacks as Hn, viewBroadcastChannelName$1 as Hr, surfaceForSku as Ht, annotateCoordinatorPayload as I, isOffHomeFleetNetwork as In, serviceChannels as Ir, resolveOpenPolicy as It, ensureSpeedDialMeta as J, buildEndpointOriginCandidates as Jn, getAccessToken as Jt, addSpeedDialItem as K, CWSP_FLEET_LAN_GATEWAY_HOST as Kn, readProcessApiResultText as Kr, shouldDeferCrxHubSocketBootstrap$1 as Kt, shouldAnnotateCoordinatorPayload as L, isOnHomeFleetLanPageHost as Ln, API_ENDPOINTS as Lr, sinkToAction as Lt, ensureAppLayers as M, isFleetGatewayWireNodeId as Mn, registerComponent$1 as Mr, rememberOpenPolicyFromSettings as Mt, annotatePacketWireHash as N, isGatewayHttpsOrigin as Nn, sendMessage as Nr, resolveExplorerOpenSink as Nt, isAppearanceColorSource as O, FLEET_GATEWAY_WIRE_NODE_ID as On, enqueuePendingMessage as Or, mergeOpenPolicy as Ot, inferWireDedupeCategory as P, isGuestPrivateLanIpv4 as Pn, sendProtocolMessage as Pr, resolveHostOpenPolicy as Pt, canParseURL as Q, resolveCwspUrlFields as Qn, getAirPadHandshakeArchetype as Qt, annotatePacketWireTime64 as R, normalizeWireNodeIdForWire as Rn, BROADCAST_CHANNELS$1 as Rr, sinkToDestination as Rt, Theme_exports as S, cws_bridge_exports as Sn, BROADCAST_CHANNELS as Sr, OPEN_KINDS as St, syncBrowserChromeTheme as T, invokeCwsPlatformIPC$1 as Tn, UnifiedMessaging_exports as Tr, classifyOpenKindFromPayload as Tt, writeClipboardTextToDevice as U, shouldPreferWanGatewayForAirpad as Un, isProcessApiUnavailable as Ur, viewIdForOpenSink as Ut, readClipboardTextFromDevice as V, shouldConnectViaFleetGateway as Vn, normalizeDestination$1 as Vr, stampHostOpenPolicy as Vt, loadStyleSystem as W, CWSP_DEFAULT_HTTPS_PORTS as Wn, postProcessApi as Wr, ensureCapacitorCwspSettingsSeeded$1 as Wt, persistSpeedDialMeta as X, parseConnectHostInput as Xn, getAirPadDirectTargetUrl as Xt, persistSpeedDialItems as Y, collectEndpointProbeCandidates as Yn, getAirPadClientId as Yt, speedDialItems as Z, probeEndpointOriginReport as Zn, getAirPadEndpointUrl as Zt, resolveEffectiveHubSettingsSection as _, isShellRemoteClipboardBridgeEnabled as _n, templates_exports as _r, writeProcessIngressClipboard as _t, initWebSocket as a, getClipboardBroadcastWireTargets as an, ShellRegistry as ar, saveSettings as at, visibleHubSettingsSections as b, ecosystem_skus_exports as bn, consumeCachedShareTargetPayload as br, normalizeEcosystemToken as bt, websocket_exports as c, getRemoteProtocol as cn, defaultTheme as cr, allowProcessWebShareLaunch as ct, defaultSettingsTabForProfile as d, isClipboardHubBootstrapEnabled as dn, isEnabledView as dr, instructionTextForIngress as dt, getAirPadPeerInstanceId as en, splitConnectHostList as er, ensureCapacitorCwspSettingsSeeded as et, hasBuiltInSettingsPanel as f, isClipboardSenderAllowedForInbound as fn, pickEnabledView as fr, mergeProcessIngress as ft, rememberSettingsAreaSection as g, isPushLocalClipboardToLanEnabled as gn, DEFAULT_INSTRUCTION_TEMPLATES as gr, resolveProcessIngressKind as gt, readSettingsAreaSection as h, isPreferNativeWebsocketEnabled as hn, unifiedMessaging as hr, rememberProcessIngressSettings as ht, disconnectWS as i, getClientAccessToken as in, initializeLayers as ir, noteSettingsControlSync as it, withViewTransition as j, isFleetDeskWireNodeId as jn, processInitialContent as jr, peekOpenPolicy as jt, normalizeHexColor as k, airpad_cwsp_client_parity_exports as kn, hasPendingMessages as kr, normalizeOpenSink as kt, SIBLING_HUB_SETTINGS_SECTIONS$1 as l, getRemoteRouteTarget as ln, initializeRegistries as lr, formatProcessIngressResult as lt, pruneBuiltInSettingsTabs as m, isNeutralinoNodeClipboardHubOwned as mn, ingressStampWasSuperseded as mr, process_ingress_exports as mt, hub_socket_boot_exports as n, getAirPadTransportSecret as nn, Capacitor as nr, getLastSettingsSaveReport as nt, isWSConnected as o, getClipboardPushIntervalMs as on, ViewRegistry as or, PROCESS_INGRESS_KIND_LABELS as ot, hubSettingsSectionPath$1 as p, isMaintainHubSocketConnectionEnabled as pn, startImplicitViewMessagingBridge as pr, peekProcessIngressSettings as pt, createEmptySpeedDialItem as q, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as qn, applyAirpadRuntimeFromAppSettings as qt, connectWS as r, getAssociatedClientToken as rn, dist_exports as rr, loadSettings as rt, onWSConnectionChange as s, getRemoteHost as sn, darkTheme as sr, allowProcessWebLaunchQueue as st, navigateToView as t, getAirPadTransportMode as tn, splitMultiValueList as tr, ensureCrxCwspSettingsSeeded as tt, canonicalHubSettingsSection$1 as u, isApplyRemoteClipboardToDeviceEnabled as un, lightTheme as ur, holdCapacitorIngressJob as ut, resolveSettingsShellProfile as v, setAirpadCredentialInvalidator as vn, CORE_ENTITY_EXTRACTION_INSTRUCTION as vr, BUILTIN_AI_MODELS as vt, resyncThemeAfterAdoptedViewSheet as w, invokeCwsNative as wn, settleIngressPaintForMinimalShell as wr, classifyOpenKindFromName as wt, scheduleViewModulePrefetch as x, CwsBridge$1 as xn, storeShareTargetPayloadToCache as xr, resolveEcosystemToken as xt, skuForHubSettingsSection as y, DEFAULT_SETTINGS$1 as yn, buildShareDataFromCachedPayload as yr, DEFAULT_SETTINGS as yt, clipboard_device_exports as z, sanitizeFleetRouteTarget as zn, ROUTE_HASHES$1 as zr, sinkToOpenLinkTarget as zt };

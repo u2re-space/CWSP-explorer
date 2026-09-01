@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { An as H, Fn as navigate, Ln as M, Ot as setAppWallpaperFromBlob, Pn as registerModal, T as openUnifiedContextMenu, Tt as getWallpaperStoragePointer, g as app_menu_default, jn as vector2Ref, nt as listVirtualRootEntriesFromRouter, pn as pointerAnchorRef, rn as handleIncomingEntries, rt as resolveFsBackend, u as installLauncherBackStack, wn as elementPointerMap } from "../com/app.js";
 import { n as speed_dial_default, t as home_host_apply_default } from "../fest/veela.js";
 import { a as HomeChannelAction } from "../views/viewer.js";

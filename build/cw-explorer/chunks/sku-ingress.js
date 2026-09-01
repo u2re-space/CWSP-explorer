@@ -307,7 +307,7 @@ var openShellImageInViewer = async (file) => {
 	const { dispatchViewTransfer } = await __vitePreload(async () => {
 		const { dispatchViewTransfer } = await import("./ViewTransferRouting.js");
 		return { dispatchViewTransfer };
-	}, __vite__mapDeps([2,3,4,1,5,0,6,7]), import.meta.url);
+	}, __vite__mapDeps([2,3,4,1,0,5,6,7]), import.meta.url);
 	await dispatchViewTransfer({
 		source: "clipboard",
 		route: "clipboard",
@@ -354,7 +354,7 @@ var installShellImageOpenListener = () => {
 				const { loadSettings } = await __vitePreload(async () => {
 					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.$);
 					return { loadSettings };
-				}, __vite__mapDeps([4,1,3,5,0,6]), import.meta.url);
+				}, __vite__mapDeps([4,1,3,0,5,6]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
 					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.At);
 					return {
@@ -362,7 +362,7 @@ var installShellImageOpenListener = () => {
 						rememberOpenPolicyFromSettings,
 						resolveOpenPolicy
 					};
-				}, __vite__mapDeps([4,1,3,5,0,6]), import.meta.url);
+				}, __vite__mapDeps([4,1,3,0,5,6]), import.meta.url);
 				const settings = await loadSettings().catch(() => null);
 				rememberOpenPolicyFromSettings(settings);
 				const sink = resolveOpenPolicy(settings?.openPolicy ?? peekOpenPolicy(), "shell", "image", "open");
@@ -374,7 +374,7 @@ var installShellImageOpenListener = () => {
 					const { dispatchViewTransfer } = await __vitePreload(async () => {
 						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js");
 						return { dispatchViewTransfer };
-					}, __vite__mapDeps([2,3,4,1,5,0,6,7]), import.meta.url);
+					}, __vite__mapDeps([2,3,4,1,0,5,6,7]), import.meta.url);
 					await dispatchViewTransfer({
 						source: "clipboard",
 						route: "clipboard",
@@ -394,7 +394,7 @@ var installShellImageOpenListener = () => {
 					const { dispatchViewTransfer } = await __vitePreload(async () => {
 						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js");
 						return { dispatchViewTransfer };
-					}, __vite__mapDeps([2,3,4,1,5,0,6,7]), import.meta.url);
+					}, __vite__mapDeps([2,3,4,1,0,5,6,7]), import.meta.url);
 					await dispatchViewTransfer({
 						source: "clipboard",
 						route: "clipboard",
