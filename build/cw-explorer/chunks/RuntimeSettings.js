@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { _t as DEFAULT_SETTINGS } from "../shells/boot-index.js";
+import { yt as DEFAULT_SETTINGS } from "../shells/boot-index.js";
 
 //#region ../CWSP-document/src/shared/other/config/RuntimeSettings.ts
 var RuntimeSettings_exports = /* @__PURE__ */ __exportAll({ getRuntimeSettings: () => getRuntimeSettings });

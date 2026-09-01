@@ -2,7 +2,7 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { Bt as surfaceForSku, Ct as classifyOpenKindFromPayload, Ft as sinkToAction, It as sinkToDestination, Pt as resolveOpenPolicy, dt as peekProcessIngressSettings, kt as peekOpenPolicy, mt as resolveProcessIngressKind, wt as inferIngressChannels } from "../shells/boot-index.js";
+import { Et as inferIngressChannels, Ht as surfaceForSku, It as resolveOpenPolicy, Lt as sinkToAction, Rt as sinkToDestination, Tt as classifyOpenKindFromPayload, gt as resolveProcessIngressKind, jt as peekOpenPolicy, pt as peekProcessIngressSettings } from "../shells/boot-index.js";
 
 //#region ../CWSP-document/src/shared/routing/channel/sku-ingress.ts
 var sku_ingress_exports = /* @__PURE__ */ __exportAll({
@@ -356,7 +356,7 @@ var installShellImageOpenListener = () => {
 					return { loadSettings };
 				}, __vite__mapDeps([4,1,3,5,0,6]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
-					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.Ot);
+					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.At);
 					return {
 						peekOpenPolicy,
 						rememberOpenPolicyFromSettings,

@@ -2,7 +2,7 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Er as initializeComponent, Fr as ROUTE_HASHES, Or as registerComponent, kr as sendMessage } from "../shells/boot-index.js";
+import { Ar as registerComponent, Hr as processApiAuthFromSettings, Lr as ROUTE_HASHES, Or as initializeComponent, Ur as readProcessApiResultText, Vr as postProcessApi, jr as sendMessage, rt as loadSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
@@ -38,12 +38,58 @@ var formatFileSize = (bytes) => {
 	if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
 	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 };
+var formatAttachCount = (count) => count === 1 ? "1 file" : `${count} files`;
+var attachmentGlyph = (attachment) => {
+	if (attachment.url) return "link";
+	const type = attachment.type.toLowerCase();
+	const name = attachment.name.toLowerCase();
+	if (type.startsWith("image/")) return "image";
+	if (type === "application/pdf" || name.endsWith(".pdf")) return "file-pdf";
+	if (type.includes("wordprocessingml") || name.endsWith(".docx") || name.endsWith(".doc")) return "file-doc";
+	if (type.includes("spreadsheetml") || name.endsWith(".xlsx") || name.endsWith(".xls")) return "file-xls";
+	if (type.startsWith("text/") || name.endsWith(".md") || name.endsWith(".txt") || name.endsWith(".csv")) return "file-text";
+	return "paperclip";
+};
+/** Grow the composer textarea with its text; a dragged min-height can still expand further. */
+var syncWorkCenterComposerHeight = (root) => {
+	if (!root?.querySelector(".prompt-input")) return;
+};
+/** After attachments land, grow the composer (and a floating window) so the rail is not clipped. */
+var syncWorkCenterChatForAttachments = (root) => {
+	syncWorkCenterComposerHeight(root);
+	const composer = root?.querySelector("[data-workcenter-composer]");
+	if (!composer) return;
+	const rail = composer.querySelector("[data-draft-files]");
+	const hasFiles = Boolean(rail && !rail.hidden);
+	composer.classList.toggle("has-attachments", hasFiles);
+	if (!hasFiles) {
+		composer.style.removeProperty("--wc-composer-min");
+		return;
+	}
+	const chat = root instanceof HTMLElement ? root : composer.closest(".workcenter-chat");
+	const needed = Math.max(composer.scrollHeight, composer.offsetHeight, 200);
+	const cap = chat ? Math.max(200, chat.clientHeight * .75 || 540) : 540;
+	composer.style.setProperty("--wc-composer-min", `${Math.min(needed, cap)}px`);
+	const extra = rail?.getBoundingClientRect().height || 0;
+	const frame = chat?.closest("ui-window");
+	if (!(frame instanceof HTMLElement) || extra <= 0) return;
+	const rect = frame.getBoundingClientRect();
+	const next = Math.min((globalThis.innerHeight || rect.height) * .92, rect.height + extra);
+	if (next > rect.height + 4) frame.style.blockSize = `${Math.round(next)}px`;
+};
 var appendAttachmentCard = (target, attachment, presentation, removable = false) => {
-	const card = document.createElement("div");
-	card.className = "wc-attachment-chip";
+	const card = document.createElement("article");
+	card.className = `wc-attachment-chip${attachment.type.startsWith("image/") ? " is-image" : ""}`;
 	card.dataset.attachmentHash = attachment.hash;
 	const file = presentation?.fileFor(attachment) ?? null;
 	const preview = file ? presentation?.getPreviewUrl(file) : null;
+	const open = document.createElement("button");
+	open.type = "button";
+	open.className = "wc-attachment-chip__open";
+	open.dataset.action = "view-attachment";
+	open.dataset.attachmentHash = attachment.hash;
+	open.setAttribute("aria-label", `View ${attachment.name}`);
+	open.title = `View ${attachment.name}`;
 	if (preview) {
 		const image = document.createElement("img");
 		image.className = "wc-attachment-chip__preview";
@@ -51,27 +97,34 @@ var appendAttachmentCard = (target, attachment, presentation, removable = false)
 		image.alt = "";
 		image.decoding = "async";
 		image.loading = "lazy";
-		card.append(image);
-	} else card.append(icon(attachment.url ? "link" : "paperclip", "16"));
-	const label = document.createElement(attachment.url ? "a" : "span");
+		open.append(image);
+	} else {
+		const glyph = icon(attachmentGlyph(attachment), "20");
+		glyph.classList.add("wc-attachment-chip__glyph");
+		open.append(glyph);
+	}
+	const copy = document.createElement("span");
+	copy.className = "wc-attachment-chip__copy";
+	const label = document.createElement("span");
 	label.className = "wc-attachment-chip__label";
 	label.textContent = attachment.url || attachment.name;
-	if (attachment.url) {
-		const link = label;
-		link.href = attachment.url;
-		link.target = "_blank";
-		link.rel = "noreferrer";
-	}
-	card.append(label);
 	const meta = document.createElement("span");
 	meta.className = "wc-attachment-chip__meta";
 	meta.textContent = attachment.error || formatFileSize(attachment.size);
-	card.append(meta);
+	copy.append(label, meta);
+	open.append(copy);
+	card.append(open);
+	const actions = document.createElement("div");
+	actions.className = "wc-attachment-chip__actions";
+	const download = button("download-attachment", `Download ${attachment.name}`, "download", "wc-chip-remove");
+	download.dataset.attachmentHash = attachment.hash;
+	actions.append(download);
 	if (removable) {
-		const remove = button("remove-draft-attachment", `Remove ${attachment.name}`, "x", "wc-chip-remove");
+		const remove = button("remove-draft-attachment", `Remove ${attachment.name}`, "trash", "wc-chip-remove");
 		remove.dataset.attachmentHash = attachment.hash;
-		card.append(remove);
+		actions.append(remove);
 	}
+	card.append(actions);
 	target.append(card);
 };
 var appendMessage = (transcript, message, presentation) => {
@@ -282,22 +335,58 @@ var createWorkCenterChatShell = (options) => {
 	composer.className = "workcenter-composer";
 	composer.dataset.workcenterComposer = "";
 	composer.setAttribute("aria-label", "Message composer");
+	const resize = document.createElement("div");
+	resize.className = "workcenter-composer__resize";
+	resize.dataset.composerResize = "";
+	resize.setAttribute("role", "separator");
+	resize.setAttribute("aria-orientation", "horizontal");
+	resize.setAttribute("aria-label", "Resize composer");
+	resize.title = "Drag to stretch the composer";
+	composer.append(resize);
+	const fileRail = document.createElement("div");
+	fileRail.className = "workcenter-composer__files";
+	fileRail.dataset.draftFiles = "";
+	fileRail.hidden = options.draft.attachments.length === 0;
+	const fileHead = document.createElement("div");
+	fileHead.className = "workcenter-composer__files-head";
+	const fileLabel = document.createElement("span");
+	fileLabel.dataset.attachLabel = "";
+	fileLabel.textContent = formatAttachCount(options.draft.attachments.length);
+	fileHead.append(fileLabel);
 	const chips = document.createElement("div");
 	chips.className = "workcenter-composer__attachments";
 	chips.dataset.draftAttachments = "";
 	for (const attachment of options.draft.attachments) appendAttachmentCard(chips, attachment, options.attachments, true);
-	composer.append(chips);
+	fileRail.append(fileHead, chips);
+	composer.append(fileRail);
 	const inputRow = document.createElement("div");
 	inputRow.className = "workcenter-composer__input-row";
 	const prompt = document.createElement("textarea");
 	prompt.className = "prompt-input";
 	prompt.name = "prompt";
 	prompt.rows = 1;
+	prompt.dataset.composerAutogrow = "";
 	prompt.placeholder = "Message Work Center…";
 	prompt.value = options.draft.content;
 	prompt.setAttribute("aria-label", "Message Work Center");
 	inputRow.append(prompt);
-	inputRow.append(button("select-files", "Attach files", "paperclip"));
+	const attach = document.createElement("label");
+	attach.className = "wc-icon-button wc-attach-button";
+	attach.dataset.action = "select-files";
+	attach.setAttribute("aria-label", options.draft.attachments.length ? `Attach files, ${formatAttachCount(options.draft.attachments.length)} attached` : "Attach files");
+	attach.title = "Attach files";
+	const picker = document.createElement("input");
+	picker.type = "file";
+	picker.multiple = true;
+	picker.className = "wc-file-picker";
+	picker.dataset.workcenterFilePicker = "";
+	const badge = document.createElement("span");
+	badge.className = "wc-attach-count";
+	badge.dataset.attachCount = "";
+	badge.textContent = String(options.draft.attachments.length);
+	badge.hidden = options.draft.attachments.length === 0;
+	attach.append(picker, icon("paperclip"), badge);
+	inputRow.append(attach);
 	inputRow.append(button("voice-input", "Voice input", "microphone"));
 	const send = button("execute", "Send message", "arrow-up", "wc-send-button");
 	send.type = "submit";
@@ -351,11 +440,41 @@ var WorkCenterUI = class {
 		this.setContainer(container);
 		return container;
 	}
-	updateFileCounter(state) {
-		const attachments = this.container?.querySelector("[data-draft-attachments]");
+	/** Rebuild transcript + draft chips on an already-mounted chat root. */
+	paintConversation(state, root = this.container, syncPrompt = "replace") {
+		const transcript = root?.querySelector("[data-workcenter-transcript]");
+		if (transcript) {
+			transcript.replaceChildren();
+			if (!state.messages.length) {
+				const empty = document.createElement("p");
+				empty.className = "workcenter-transcript__empty";
+				empty.textContent = "Start with a question or attach something to review.";
+				transcript.append(empty);
+			} else for (const message of state.messages) appendMessage(transcript, message, this.presentation);
+			transcript.scrollTop = transcript.scrollHeight;
+		}
+		this.updateFileCounter(state, root);
+		const input = root?.querySelector(".prompt-input");
+		if (input && (syncPrompt === "replace" || input !== document.activeElement)) input.value = state.draft.content;
+		syncWorkCenterComposerHeight(root);
+	}
+	updateFileCounter(state, root = this.container) {
+		const count = state.draft.attachments.length;
+		const rail = root?.querySelector("[data-draft-files]");
+		if (rail) rail.hidden = count === 0;
+		const label = root?.querySelector("[data-attach-label]");
+		if (label) label.textContent = formatAttachCount(count);
+		const badge = root?.querySelector("[data-attach-count]");
+		if (badge) {
+			badge.textContent = String(count);
+			badge.hidden = count === 0;
+		}
+		(root?.querySelector("[data-action='select-files']"))?.setAttribute("aria-label", count ? `Attach files, ${formatAttachCount(count)} attached` : "Attach files");
+		const attachments = root?.querySelector("[data-draft-attachments]");
 		if (!attachments) return;
 		attachments.replaceChildren();
 		for (const attachment of state.draft.attachments) appendAttachmentCard(attachments, attachment, this.presentation, true);
+		syncWorkCenterChatForAttachments(root);
 	}
 	updateFileList(state) {
 		this.updateFileCounter(state);
@@ -363,6 +482,7 @@ var WorkCenterUI = class {
 	updatePromptInput(state) {
 		const input = this.container?.querySelector(".prompt-input");
 		if (input) input.value = state.draft.content;
+		syncWorkCenterComposerHeight(this.container);
 	}
 	updateTemplateSelect(_state) {}
 	updateVoiceButton(_state) {}
@@ -919,7 +1039,7 @@ var WorkCenterTemplates = class {
 	/** Get default instruction templates (for seeding). Dynamic import avoids TDZ when workcenter loads before `com/app` finishes. */
 	async getDefaultTemplates() {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
-			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.hr);
+			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n._r);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
 		}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 		return DEFAULT_INSTRUCTION_TEMPLATES;
@@ -1293,8 +1413,56 @@ var WorkCenterTurnService = class {
 * FIND:workcenter-turn
 * WHY: Keep provider execution separate from the pure request builder so UI
 * contracts can be verified without loading application settings or workers.
+* INVARIANT: Process PWA posts to /api/process on process.u2re.space / ai.u2re.space first.
 */
-var defaultExecutor = async (input, options) => processDataWithInstruction(input, options);
+var flattenResponsesInput = (input) => {
+	const texts = [];
+	for (const item of input) {
+		if (typeof item === "string") {
+			texts.push(item);
+			continue;
+		}
+		const content = item?.content;
+		if (typeof content === "string") texts.push(content);
+		if (!Array.isArray(content)) continue;
+		for (const part of content) if (typeof part === "string") texts.push(part);
+		else if (part && typeof part === "object" && typeof part.text === "string") texts.push(part.text);
+	}
+	return texts.join("\n\n").trim();
+};
+var tryProcessApiTurn = async (input, options) => {
+	const text = flattenResponsesInput(input);
+	if (!text) return null;
+	const settings = await loadSettings().catch(() => null);
+	const auth = processApiAuthFromSettings(settings);
+	const posted = await postProcessApi("processing", {
+		input: text,
+		text,
+		mode: "smartRecognize",
+		customInstruction: options.instruction || options.customInstruction || void 0
+	}, auth, { signal: options.signal });
+	if (!posted.json) return null;
+	const json = posted.json;
+	if (json.ok === false) {
+		const error = String(json.error || "");
+		if (/missing credentials|invalid credentials/i.test(error)) return null;
+		return {
+			ok: false,
+			error: error || "Process API failed"
+		};
+	}
+	const data = readProcessApiResultText(json);
+	if (!data) return null;
+	return {
+		ok: true,
+		data
+	};
+};
+var defaultExecutor = async (input, options) => {
+	const remote = await tryProcessApiTurn(input, options).catch(() => null);
+	if (remote) return remote;
+	return processDataWithInstruction(input, options);
+};
 var defaultService = new WorkCenterTurnService();
 /** Execute one turn using the app's shared direct-file capability cache. */
 var runWorkCenterTurn = (request) => defaultService.run(request, defaultExecutor);
@@ -1453,21 +1621,28 @@ var WorkCenterActions = class {
 	async executeConversationTurn(state) {
 		const conversation = this.conversation;
 		if (!conversation) return;
-		if (this.activeTurns.size > 0) {
-			this.deps.showMessage("Wait for the current response before sending another message");
-			return;
+		try {
+			if (this.activeTurns.size > 0) {
+				this.deps.showMessage("Wait for the current response before sending another message");
+				return;
+			}
+			if (!state.draft.content.trim() && state.draft.attachments.length === 0) {
+				this.deps.showMessage("Enter a prompt or attach a file first");
+				return;
+			}
+			conversation.session.setDraft(state.draft);
+			const submitted = conversation.session.commitDraft(this.requestOptions(state));
+			state.files = [];
+			this.syncConversationState(state);
+			conversation.session.persistDraft().catch(() => {
+				this.deps.showMessage("Unable to save this chat locally");
+			});
+			const controller = new AbortController();
+			this.activeTurns.set(submitted.assistant.id, controller);
+			await this.runConversationTurn(state, submitted.user, submitted.assistant, controller);
+		} catch (error) {
+			this.deps.showMessage(error instanceof Error ? error.message : "Unable to send the message");
 		}
-		if (!state.draft.content.trim() && state.draft.attachments.length === 0) {
-			this.deps.showMessage("Enter a prompt or attach a file first");
-			return;
-		}
-		await this.persistDraft(state);
-		const submitted = await conversation.session.submitDraft(this.requestOptions(state));
-		state.files = [];
-		this.syncConversationState(state);
-		const controller = new AbortController();
-		this.activeTurns.set(submitted.assistant.id, controller);
-		await this.runConversationTurn(state, submitted.user, submitted.assistant, controller);
 	}
 	async retryConversationTurn(state, assistantId) {
 		const conversation = this.conversation;
@@ -1611,7 +1786,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.xr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Cr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1672,7 +1847,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.xr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Cr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -2015,9 +2190,93 @@ var WorkCenterDataProcessing = class {
 	}
 };
 //#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterAttachmentViewer.ts
+var TEXT_TYPES = /* @__PURE__ */ new Set([
+	"application/json",
+	"application/xml",
+	"application/javascript",
+	"application/typescript",
+	"application/x-javascript",
+	"text/uri-list",
+	"text/markdown"
+]);
+var isTextAttachment = (file, type) => {
+	if (type.startsWith("text/")) return true;
+	if (TEXT_TYPES.has(type)) return true;
+	return /\.(txt|md|json|csv|xml|svg|ts|js|mjs|css|scss|html|yml|yaml)$/i.test(file.name);
+};
+var closeExistingViewer = (host) => {
+	host.querySelector("[data-workcenter-attachment-viewer]")?.remove();
+};
+/** Download the stored blob, or open a remote URL when there is no local file. */
+var downloadWorkCenterAttachment = (options) => {
+	const href = options.objectUrl || options.remoteUrl;
+	if (!href) return;
+	const link = document.createElement("a");
+	link.href = href;
+	if (options.objectUrl) link.download = options.name;
+	else link.target = "_blank";
+	link.rel = "noreferrer";
+	link.click();
+};
+/** Show the attachment in a modal, a new tab, or as readable text. */
+var openWorkCenterAttachment = async (options) => {
+	const { host, attachment, file, objectUrl } = options;
+	if (attachment.url) {
+		window.open(attachment.url, "_blank", "noopener,noreferrer");
+		return;
+	}
+	if (!file && !objectUrl) return;
+	closeExistingViewer(host);
+	const type = (file?.type || attachment.type || "").toLowerCase();
+	const dialog = document.createElement("dialog");
+	dialog.className = "wc-attachment-viewer";
+	dialog.dataset.workcenterAttachmentViewer = "";
+	dialog.setAttribute("aria-label", attachment.name);
+	const header = document.createElement("header");
+	header.className = "wc-attachment-viewer__header";
+	const title = document.createElement("h3");
+	title.textContent = attachment.name;
+	const close = document.createElement("button");
+	close.type = "button";
+	close.className = "wc-icon-button";
+	close.setAttribute("aria-label", "Close attachment");
+	close.dataset.action = "close-attachment-viewer";
+	close.textContent = "×";
+	header.append(title, close);
+	dialog.append(header);
+	const body = document.createElement("div");
+	body.className = "wc-attachment-viewer__body";
+	if (type.startsWith("image/") && objectUrl) {
+		const image = document.createElement("img");
+		image.className = "wc-attachment-viewer__frame";
+		image.src = objectUrl;
+		image.alt = attachment.name;
+		body.append(image);
+	} else if (file && isTextAttachment(file, type)) {
+		const pre = document.createElement("pre");
+		pre.className = "wc-attachment-viewer__text";
+		pre.textContent = await file.text();
+		body.append(pre);
+	} else if (objectUrl) {
+		const frame = document.createElement("iframe");
+		frame.className = "wc-attachment-viewer__frame";
+		frame.src = objectUrl;
+		frame.title = attachment.name;
+		body.append(frame);
+	}
+	dialog.append(body);
+	dialog.addEventListener("close", () => dialog.remove());
+	dialog.addEventListener("click", (event) => {
+		if (event.target === dialog) dialog.close();
+	});
+	close.addEventListener("click", () => dialog.close());
+	host.append(dialog);
+	if (typeof dialog.showModal === "function") dialog.showModal();
+	else dialog.setAttribute("open", "");
+};
+//#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterEvents.ts
-/** Any file — size/type checks happen in attachment ingress, not the picker. */
-var FILE_ACCEPT = "*/*";
 var isHttpUrl = (value) => {
 	try {
 		const url = new URL(value);
@@ -2050,53 +2309,89 @@ var WorkCenterEvents = class {
 		this.container = container;
 	}
 	setupWorkCenterEvents() {
-		if (!this.container) return;
-		this.setupFilePicker();
-		this.setupComposerInput();
-		this.setupClipboardIngress();
-		this.setupDropIngress();
-		this.setupRequestOptions();
-		this.setupVoiceInput();
-		this.setupActions();
+		this.bindLiveChats();
 	}
-	setupFilePicker() {
-		if (!this.container) return;
-		const input = document.createElement("input");
-		input.type = "file";
-		input.multiple = true;
-		input.accept = FILE_ACCEPT;
-		input.hidden = true;
-		input.dataset.workcenterFilePicker = "";
-		input.addEventListener("change", async () => {
+	/** Bind Send/Enter/drop on every mounted chat, including a visible clone GLit left behind. */
+	bindLiveChats() {
+		for (const root of this.liveRoots()) this.bindRoot(root);
+	}
+	liveRoots() {
+		const roots = /* @__PURE__ */ new Set();
+		if (this.container) roots.add(this.container);
+		if (typeof document !== "undefined") document.querySelectorAll(".workcenter-chat").forEach((node) => {
+			if (node.isConnected || node === this.container) roots.add(node);
+		});
+		return [...roots];
+	}
+	bindRoot(root) {
+		if (root.dataset.wcEventsBound === "1") return;
+		root.dataset.wcEventsBound = "1";
+		this.setupFilePicker(root);
+		this.setupComposerInput(root);
+		this.setupComposerResize(root);
+		this.setupClipboardIngress(root);
+		this.setupDropIngress(root);
+		this.setupRequestOptions(root);
+		this.setupVoiceInput(root);
+		this.setupActions(root);
+		syncWorkCenterComposerHeight(root);
+	}
+	sendComposer(root) {
+		this.syncDraftFromComposer(root);
+		this.actions.executeUnifiedAction(this.state);
+	}
+	syncDraftFromComposer(preferred) {
+		const roots = preferred ? [preferred, ...this.liveRoots()] : this.liveRoots();
+		for (const root of roots) {
+			const input = root.querySelector(".prompt-input");
+			if (!input) continue;
+			if (!root.isConnected && root !== preferred && root !== this.container) continue;
+			this.state.draft.content = input.value;
+			this.state.currentPrompt = input.value;
+			if (root.isConnected) break;
+		}
+	}
+	setupFilePicker(root = this.container) {
+		if (!root) return;
+		let input = root.querySelector("[data-workcenter-file-picker]");
+		if (!input) {
+			input = document.createElement("input");
+			input.type = "file";
+			input.multiple = true;
+			input.className = "wc-file-picker";
+			input.dataset.workcenterFilePicker = "";
+			root.append(input);
+		}
+		input.addEventListener("change", () => {
 			const files = Array.from(input.files || []);
 			input.value = "";
 			if (!files.length) return;
-			if (!(await this.ingress.addFiles(files)).length) this.deps.showMessage?.("Could not attach that file");
+			this.attachFiles(files);
 		});
-		this.container.append(input);
 	}
-	setupComposerInput() {
-		const input = this.container?.querySelector(".prompt-input");
-		const composer = this.container?.querySelector("[data-workcenter-composer]");
+	setupComposerInput(root) {
+		const input = root.querySelector(".prompt-input");
+		const composer = root.querySelector("[data-workcenter-composer]");
 		if (!input || !composer) return;
 		input.addEventListener("input", () => {
 			this.state.draft.content = input.value;
 			this.state.currentPrompt = input.value;
+			syncWorkCenterComposerHeight(root);
 			this.scheduleDraftPersistence();
 		});
 		input.addEventListener("keydown", (event) => {
 			if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
 				event.preventDefault();
-				this.actions.executeUnifiedAction(this.state);
+				this.sendComposer(root);
 			}
 		});
 		composer.addEventListener("submit", (event) => {
 			event.preventDefault();
-			this.actions.executeUnifiedAction(this.state);
+			this.sendComposer(root);
 		});
 	}
-	setupClipboardIngress() {
-		this.container?.addEventListener("paste", (event) => {
+	setupClipboardIngress(root) {
+		root.addEventListener("paste", (event) => {
 			const data = event.clipboardData;
 			if (!data) return;
 			const target = event.target;
@@ -2106,12 +2401,12 @@ var WorkCenterEvents = class {
 			const urls = candidates.filter((candidate) => candidate.kind === "url").map((candidate) => candidate.url);
 			if (files.length) {
 				event.preventDefault();
-				this.ingress.addFiles(files);
+				this.attachFiles(files);
 				return;
 			}
 			if (!editable && urls.length) {
 				event.preventDefault();
-				Promise.all(urls.map((url) => this.ingress.addUrl(url)));
+				Promise.all(urls.map((url) => this.attachUrl(url)));
 				return;
 			}
 			if (editable) return;
@@ -2122,51 +2417,54 @@ var WorkCenterEvents = class {
 			}
 		});
 	}
-	setupDropIngress() {
-		const composer = this.container?.querySelector("[data-workcenter-composer]");
-		if (!composer) return;
-		composer.addEventListener("dragover", (event) => {
+	setupDropIngress(root) {
+		const composer = root.querySelector("[data-workcenter-composer]");
+		const accept = (event) => {
 			event.preventDefault();
-			composer.classList.add("is-dragging");
+			if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+			composer?.classList.add("is-dragging");
+		};
+		root.addEventListener("dragover", accept);
+		root.addEventListener("dragenter", accept);
+		root.addEventListener("dragleave", (event) => {
+			if (event.relatedTarget instanceof Node && root.contains(event.relatedTarget)) return;
+			composer?.classList.remove("is-dragging");
 		});
-		composer.addEventListener("dragleave", (event) => {
-			if (event.relatedTarget instanceof Node && composer.contains(event.relatedTarget)) return;
-			composer.classList.remove("is-dragging");
-		});
-		composer.addEventListener("drop", (event) => {
+		root.addEventListener("drop", (event) => {
 			event.preventDefault();
-			composer.classList.remove("is-dragging");
+			event.stopPropagation();
+			composer?.classList.remove("is-dragging");
 			const data = event.dataTransfer;
 			if (!data) return;
 			const candidates = collectAttachmentCandidates(data, "drop");
 			const files = candidates.filter((candidate) => candidate.kind === "file").map((candidate) => candidate.file);
 			const urls = candidates.filter((candidate) => candidate.kind === "url").map((candidate) => candidate.url);
-			if (files.length) this.ingress.addFiles(files);
-			if (urls.length) Promise.all(urls.map((url) => this.ingress.addUrl(url)));
+			if (files.length) this.attachFiles(files);
+			if (urls.length) Promise.all(urls.map((url) => this.attachUrl(url)));
 			if (files.length || urls.length) return;
 			const text = data.getData("text/plain").trim();
 			if (!text) return;
 			if (isHttpUrl(text)) {
-				this.ingress.addUrl(text);
+				this.attachUrl(text);
 				return;
 			}
 			this.appendDraftText(text);
 		});
 	}
-	setupRequestOptions() {
+	setupRequestOptions(root) {
 		for (const [selector, property] of [
 			[".format-select", "outputFormat"],
 			[".language-select", "selectedLanguage"],
 			[".recognition-select", "recognitionFormat"],
 			[".processing-select", "processingFormat"]
 		]) {
-			const select = this.container?.querySelector(selector);
+			const select = root.querySelector(selector);
 			select?.addEventListener("change", () => {
 				this.state[property] = select.value;
 				WorkCenterStateManager.saveState(this.state);
 			});
 		}
-		const template = this.container?.querySelector(".template-select");
+		const template = root.querySelector(".template-select");
 		template?.addEventListener("change", () => {
 			this.state.selectedTemplate = template.value;
 			if (template.value) {
@@ -2177,29 +2475,31 @@ var WorkCenterEvents = class {
 			this.actions.persistDraft(this.state);
 			this.deps.render?.();
 		});
-		const instruction = this.container?.querySelector(".instruction-select");
+		const instruction = root.querySelector(".instruction-select");
 		instruction?.addEventListener("change", () => {
 			this.templates.applyInstruction(this.state, instruction.value);
 			WorkCenterStateManager.saveState(this.state);
 		});
 	}
-	setupVoiceInput() {
-		const voice = this.container?.querySelector("[data-action=\"voice-input\"]");
+	setupVoiceInput(root) {
+		const voice = root.querySelector("[data-action=\"voice-input\"]");
 		if (!voice) return;
 		voice.addEventListener("mousedown", () => this.voice.startVoiceRecording(this.state));
 		const stop = () => this.voice.stopVoiceRecording(this.state);
 		voice.addEventListener("mouseup", stop);
 		voice.addEventListener("mouseleave", stop);
 	}
-	setupActions() {
-		this.container?.addEventListener("click", (event) => {
+	setupActions(root) {
+		root.addEventListener("click", (event) => {
 			const actionElement = event.target.closest("[data-action]");
 			const action = actionElement?.dataset.action;
 			if (!action || !actionElement) return;
 			switch (action) {
-				case "select-files":
-					(this.container?.querySelector("[data-workcenter-file-picker]"))?.click();
+				case "execute":
+					event.preventDefault();
+					this.sendComposer(root);
 					break;
+				case "select-files": break;
 				case "new-chat":
 					this.actions.startNewConversation(this.state);
 					break;
@@ -2212,15 +2512,32 @@ var WorkCenterEvents = class {
 				case "copy-turn":
 					this.actions.copyConversationTurn(this.state, actionElement.dataset.turnId || "");
 					break;
+				case "view-attachment":
+					event.preventDefault();
+					this.viewAttachment(actionElement.dataset.attachmentHash || "");
+					break;
+				case "download-attachment":
+					event.preventDefault();
+					event.stopPropagation();
+					this.downloadAttachment(actionElement.dataset.attachmentHash || "");
+					break;
 				case "remove-draft-attachment":
+					event.preventDefault();
+					event.stopPropagation();
 					this.ingress.remove(actionElement.dataset.attachmentHash || "");
 					break;
+				case "close-attachment-viewer": {
+					const viewer = root.querySelector("[data-workcenter-attachment-viewer]");
+					if (typeof HTMLDialogElement !== "undefined" && viewer instanceof HTMLDialogElement && typeof viewer.close === "function") viewer.close();
+					else viewer?.remove();
+					break;
+				}
 				case "open-request-options":
 					this.togglePanel("[data-workcenter-request-options]", actionElement);
-					this.templates.fillInstructionSelects(this.container, this.state);
+					this.templates.fillInstructionSelects(root, this.state);
 					break;
 				case "refresh-instructions":
-					this.templates.fillInstructionSelects(this.container, this.state);
+					this.templates.fillInstructionSelects(root, this.state);
 					break;
 				case "open-secondary":
 					this.togglePanel("[data-workcenter-secondary]", actionElement);
@@ -2228,8 +2545,89 @@ var WorkCenterEvents = class {
 				case "view-action-history":
 					this.history.showActionHistory();
 					break;
-				case "edit-templates": this.templates.showTemplateEditor(this.state, this.container);
+				case "edit-templates": this.templates.showTemplateEditor(this.state, root);
 			}
+		});
+	}
+	async attachFiles(files) {
+		if (!(await this.ingress.addFiles(files)).length) this.deps.showMessage?.("Could not attach that file");
+	}
+	async attachUrl(url) {
+		await this.ingress.addUrl(url);
+	}
+	setupComposerResize(root) {
+		const handle = root.querySelector("[data-composer-resize]");
+		const composer = root.querySelector("[data-workcenter-composer]");
+		if (!handle || !composer) return;
+		handle.addEventListener("pointerdown", (event) => {
+			if (event.button !== 0) return;
+			event.preventDefault();
+			handle.setPointerCapture?.(event.pointerId);
+			const startY = event.clientY;
+			const startHeight = composer.getBoundingClientRect().height;
+			const hostHeight = root.getBoundingClientRect().height || startHeight;
+			const limit = Math.max(96, hostHeight * .75);
+			const onMove = (move) => {
+				const next = Math.min(limit, Math.max(72, startHeight + (startY - move.clientY)));
+				composer.style.setProperty("--wc-composer-min", `${next}px`);
+				syncWorkCenterComposerHeight(root);
+			};
+			const onUp = () => {
+				handle.removeEventListener("pointermove", onMove);
+				handle.removeEventListener("pointerup", onUp);
+				handle.removeEventListener("pointercancel", onUp);
+			};
+			handle.addEventListener("pointermove", onMove);
+			handle.addEventListener("pointerup", onUp);
+			handle.addEventListener("pointercancel", onUp);
+		});
+	}
+	findAttachment(hash) {
+		if (!hash) return null;
+		const draft = this.state.draft.attachments.find((attachment) => attachment.hash === hash);
+		if (draft) return draft;
+		for (const message of this.state.messages) {
+			const found = message.attachments.find((attachment) => attachment.hash === hash);
+			if (found) return found;
+		}
+		return null;
+	}
+	async viewAttachment(hash) {
+		const attachment = this.findAttachment(hash);
+		const host = this.liveRoots().find((node) => node.isConnected) ?? this.container;
+		if (!attachment || !host) return;
+		const file = attachment.url ? this.ingress.fileFor(attachment) : await this.ingress.resolve(attachment);
+		if (!file && !attachment.url) {
+			this.deps.showMessage?.("Attachment is no longer available");
+			return;
+		}
+		await openWorkCenterAttachment({
+			host,
+			attachment,
+			file,
+			objectUrl: file ? this.ingress.objectUrlFor(file) : null
+		});
+	}
+	async downloadAttachment(hash) {
+		const attachment = this.findAttachment(hash);
+		if (!attachment) return;
+		if (attachment.url && !this.ingress.fileFor(attachment)) {
+			downloadWorkCenterAttachment({
+				name: attachment.name,
+				remoteUrl: attachment.url,
+				objectUrl: null
+			});
+			return;
+		}
+		const file = await this.ingress.resolve(attachment);
+		if (!file) {
+			this.deps.showMessage?.("Attachment is no longer available");
+			return;
+		}
+		downloadWorkCenterAttachment({
+			name: attachment.name,
+			remoteUrl: attachment.url,
+			objectUrl: this.ingress.objectUrlFor(file)
 		});
 	}
 	appendDraftText(text) {
@@ -2237,7 +2635,10 @@ var WorkCenterEvents = class {
 		this.state.draft.content = next;
 		this.state.currentPrompt = next;
 		this.actions.persistDraft(this.state);
-		this.deps.render?.();
+		for (const root of this.liveRoots()) {
+			const input = root.querySelector(".prompt-input");
+			if (input) input.value = next;
+		}
 	}
 	scheduleDraftPersistence() {
 		if (this.draftPersistTimer) clearTimeout(this.draftPersistTimer);
@@ -2247,7 +2648,7 @@ var WorkCenterEvents = class {
 		}, 180);
 	}
 	togglePanel(selector, trigger) {
-		const panel = this.container?.querySelector(selector);
+		const panel = (trigger.closest(".workcenter-chat") ?? this.container)?.querySelector(selector);
 		if (!panel) return;
 		panel.hidden = !panel.hidden;
 		trigger.setAttribute("aria-expanded", String(!panel.hidden));
@@ -3462,7 +3863,11 @@ var WorkCenterSession = class {
 	async persistDraft() {
 		await this.persist();
 	}
-	async submitDraft(request) {
+	/**
+	* Move the live draft into a user/assistant pair without waiting on OPFS.
+	* WHY: A hung attachment `put` must not block the transcript from accepting Send/Enter.
+	*/
+	commitDraft(request) {
 		const now = Date.now();
 		const user = {
 			id: createId("user"),
@@ -3488,11 +3893,15 @@ var WorkCenterSession = class {
 			content: "",
 			attachments: []
 		};
-		await this.persist();
 		return {
 			user: cloneMessage(user),
 			assistant: cloneMessage(assistant)
 		};
+	}
+	async submitDraft(request) {
+		const submitted = this.commitDraft(request);
+		await this.persist();
+		return submitted;
 	}
 	async completeAssistant(id, completion) {
 		const message = this.state.messages.find((entry) => entry.id === id && entry.role === "assistant");
@@ -3570,10 +3979,28 @@ var WorkCenterSession = class {
 * Work Center's single attachment mutation path.
 *
 * FIND:workcenter-attachment-ingress
-* INVARIANT: Validation and persistence finish before a draft receives a new
-* reference, preventing partial attachments after a failed paste or drop.
+* INVARIANT: The live draft receives a file before OPFS persistence, so a hung
+* worker cannot hide an attachment the user just picked or dropped.
 */
 var toRef = (ref) => ({ ...ref });
+var asFile = (value) => {
+	if (typeof File !== "undefined" && value instanceof File) return value;
+	const blob = value;
+	return new File([blob], String(value?.name || "attachment"), {
+		type: String(value?.type || blob.type || "application/octet-stream"),
+		lastModified: Number(value?.lastModified) || Date.now()
+	});
+};
+var toHex = (bytes) => [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+var localHash = async (file) => {
+	const bytes = await file.arrayBuffer();
+	try {
+		if (globalThis.crypto?.subtle) return toHex(await globalThis.crypto.subtle.digest("SHA-256", bytes));
+	} catch {}
+	let hash = 2166136261;
+	for (const byte of new Uint8Array(bytes)) hash = Math.imul(hash ^ byte, 16777619);
+	return `fnv-${(hash >>> 0).toString(16)}-${file.size}`;
+};
 var nameForUrl = (url) => {
 	try {
 		return new URL(url).hostname || "link";
@@ -3591,25 +4018,52 @@ var WorkCenterAttachmentIngress = class {
 	}
 	async addFiles(files) {
 		const added = [];
-		for (const file of files) {
+		for (const incoming of files) {
+			const file = asFile(incoming);
 			const validation = validateReadableFileForIngress(file);
 			if (!validation.ok) {
 				this.options.onRejected?.(validation.reason || "Unsupported file");
 				continue;
 			}
-			try {
-				const ref = toRef(await this.options.store.put(file));
-				if (this.options.state.draft.attachments.some((item) => item.hash === ref.hash)) continue;
-				this.options.state.draft.attachments.push(ref);
-				this.options.state.files.push(file);
-				this.filesByHash.set(ref.hash, file);
-				added.push(ref);
-			} catch (error) {
-				this.options.onRejected?.(error instanceof Error ? error.message : "Unable to store attachment");
-			}
+			const hash = await localHash(file);
+			if (this.filesByHash.has(hash) || this.options.state.draft.attachments.some((item) => item.hash === hash)) continue;
+			const ref = {
+				hash,
+				path: "",
+				name: file.name || "attachment",
+				type: file.type || "application/octet-stream",
+				size: file.size,
+				lastModified: file.lastModified || Date.now()
+			};
+			this.options.state.draft.attachments.push(ref);
+			this.options.state.files.push(file);
+			this.filesByHash.set(ref.hash, file);
+			added.push(ref);
+			this.persistInBackground(file, ref);
 		}
 		if (added.length) this.options.onChanged?.();
 		return added;
+	}
+	async persistInBackground(file, ref) {
+		try {
+			const stored = toRef(await this.options.store.put(file));
+			const draftRef = this.options.state.draft.attachments.find((item) => item.hash === ref.hash);
+			if (!draftRef) return;
+			if (this.options.state.draft.attachments.find((item) => item !== draftRef && item.hash === stored.hash)) {
+				this.remove(ref.hash);
+				return;
+			}
+			this.filesByHash.set(stored.hash, file);
+			Object.assign(draftRef, stored);
+			this.options.onChanged?.();
+		} catch {
+			try {
+				const hash = await localHash(file);
+				const draftRef = this.options.state.draft.attachments.find((item) => item.hash === ref.hash);
+				if (draftRef && !this.filesByHash.has(hash)) draftRef.hash = hash;
+				this.filesByHash.set(hash, file);
+			} catch {}
+		}
 	}
 	/** Store a URL as a local text file while retaining link-card metadata. */
 	async addUrl(url) {
@@ -3646,15 +4100,16 @@ var WorkCenterAttachmentIngress = class {
 		return file;
 	}
 	remove(hash) {
+		if (!hash) return;
 		const file = this.filesByHash.get(hash);
 		if (file) this.revokePreview(file);
 		this.filesByHash.delete(hash);
 		this.options.state.draft.attachments = this.options.state.draft.attachments.filter((attachment) => attachment.hash !== hash);
-		this.options.state.files = this.options.state.files.filter((candidate) => candidate !== file);
+		this.options.state.files = this.options.state.draft.attachments.map((attachment) => this.filesByHash.get(attachment.hash)).filter((candidate) => Boolean(candidate));
 		this.options.onChanged?.();
 	}
-	getPreviewUrl(file) {
-		if (!file.type.startsWith("image/")) return null;
+	/** Blob URL for any stored file so the viewer can open PDFs and downloads, not only image thumbs. */
+	objectUrlFor(file) {
 		const existing = this.previewUrls.get(file);
 		if (existing) return existing;
 		try {
@@ -3664,6 +4119,10 @@ var WorkCenterAttachmentIngress = class {
 		} catch {
 			return null;
 		}
+	}
+	getPreviewUrl(file) {
+		if (!file.type.startsWith("image/")) return null;
+		return this.objectUrlFor(file);
 	}
 	revokePreview(file) {
 		const url = this.previewUrls.get(file);
@@ -3912,10 +4371,7 @@ var WorkCenterManager = class {
 					this.deps.showMessage("Unable to save the attachment draft");
 				});
 				this.deps.onFilesChanged?.();
-				if ((this.ui?.getContainer())?.isConnected) {
-					this.ui.updateFileCounter(this.state);
-					this.ui.updatePromptInput(this.state);
-				} else this.deps.render?.();
+				this.paintLiveConversation("if-idle");
 			},
 			onRejected: (reason) => this.deps.showMessage(reason)
 		});
@@ -3956,18 +4412,51 @@ var WorkCenterManager = class {
 	async hydrateSession() {
 		try {
 			const snapshot = await this.session.hydrate();
-			if (snapshot.messages.length > 0 || Boolean(snapshot.draft.content) || snapshot.draft.attachments.length > 0) this.state.files = await this.attachmentIngress.hydrate(snapshot.draft.attachments);
-			else if (this.state.draft.content) {
+			if (snapshot.messages.length > 0 || Boolean(snapshot.draft.content) || snapshot.draft.attachments.length > 0) {
+				const refs = [...snapshot.draft.attachments, ...snapshot.messages.flatMap((message) => message.attachments)];
+				await this.attachmentIngress.hydrate(refs);
+				this.state.files = snapshot.draft.attachments.map((ref) => this.attachmentIngress.fileFor(ref)).filter((file) => file !== null);
+			} else if (this.state.draft.content) {
 				this.session.setDraft(this.state.draft);
 				await this.session.persistDraft();
 			}
 			this.syncStateFromSession(false);
+			this.session.setDraft(this.state.draft);
 		} catch (error) {
 			console.warn("[WorkCenter] Failed to hydrate local session:", error);
 			this.state.sessionHydrated = true;
 		} finally {
-			this.deps.render?.();
+			this.paintLiveConversation();
 		}
+	}
+	/** Prefer a connected chat root so GLit remounts do not steal the live composer. */
+	adoptLiveRoot(root) {
+		this.ui.setContainer(root);
+		this.events.setContainer(root);
+		this.events.bindLiveChats();
+	}
+	/** Paint transcript + draft on every live chat root and bind Send/Enter there. */
+	paintLiveConversation(syncPrompt = "replace") {
+		const hosts = this.liveChatHosts();
+		let painted = false;
+		for (const host of hosts) {
+			if (!host.querySelector("[data-workcenter-transcript]")) continue;
+			this.ui.paintConversation(this.state, host, syncPrompt);
+			painted = true;
+		}
+		this.events.bindLiveChats();
+		if (!painted) this.deps.render?.();
+	}
+	liveChatHosts() {
+		const hosts = /* @__PURE__ */ new Set();
+		const current = this.ui?.getContainer();
+		if (current) hosts.add(current);
+		if (typeof document !== "undefined") document.querySelectorAll(".workcenter-chat").forEach((node) => hosts.add(node));
+		return hosts;
+	}
+	/** Paint chips on every live chat root — GLit/shell remounts can leave a detached SoT node. */
+	paintDraftAttachments() {
+		this.paintLiveConversation();
 	}
 	syncStateFromSession(render = true) {
 		const snapshot = this.session.snapshot();
@@ -3979,7 +4468,7 @@ var WorkCenterManager = class {
 		this.state.sessionEpoch = snapshot.epoch;
 		this.state.sessionHydrated = true;
 		this.deps.onFilesChanged?.();
-		if (render) this.deps.render?.();
+		if (render) this.paintLiveConversation();
 	}
 	async addFiles(files) {
 		await this.sessionReady;

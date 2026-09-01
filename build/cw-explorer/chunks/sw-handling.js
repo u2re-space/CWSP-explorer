@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { Ct as classifyOpenKindFromPayload, Pr as BROADCAST_CHANNELS, _r as buildShareDataFromCachedPayload, ct as holdCapacitorIngressJob, ht as writeProcessIngressClipboard, jr as unifiedMessaging, lt as instructionTextForIngress, mt as resolveProcessIngressKind, pr as unifiedMessaging$1, pt as rememberProcessIngressSettings, rt as loadSettings, st as formatProcessIngressResult, vr as consumeCachedShareTargetPayload, yr as storeShareTargetPayloadToCache, zr as resolveProcessApiUrl } from "../shells/boot-index.js";
+import { Hr as processApiAuthFromSettings, Ir as BROADCAST_CHANNELS, Nr as unifiedMessaging, Tt as classifyOpenKindFromPayload, Ur as readProcessApiResultText, Vr as postProcessApi, _t as writeProcessIngressClipboard, br as consumeCachedShareTargetPayload, ct as allowProcessWebShareLaunch, dt as instructionTextForIngress, gt as resolveProcessIngressKind, hr as unifiedMessaging$1, ht as rememberProcessIngressSettings, lt as formatProcessIngressResult, rt as loadSettings, st as allowProcessWebLaunchQueue, ut as holdCapacitorIngressJob, xr as storeShareTargetPayloadToCache, yr as buildShareDataFromCachedPayload } from "../shells/boot-index.js";
 import { Nt as bindDirectoryForLaunchedFiles, Qt as parseDataUrl, Xt as isBase64Like, bn as initClipboardReceiver, yn as copy } from "../com/app.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 import { a as skuIngressHint, i as refineLauncherImageIngress, r as installShellImageOpenListener, t as applyLauncherIngress } from "./sku-ingress.js";
@@ -676,6 +676,7 @@ var KNOWN_PATH_MOUNTS = [
 	"explorer",
 	"workcenter",
 	"process",
+	"ai",
 	"kvm"
 ];
 /** Dedicated PWA hosts — app lives at `/`. Hub/LAN keep `/markdown` `/viewer` path mounts. */
@@ -686,6 +687,7 @@ var DEDICATED_SKU_HOSTS = [
 	"www.explorer.u2re.space",
 	"process.u2re.space",
 	"workcenter.u2re.space",
+	"ai.u2re.space",
 	"cwsp.u2re.space",
 	"www.cwsp.u2re.space",
 	"transfer.u2re.space"
@@ -1440,7 +1442,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		rememberProcessIngressSettings(loadedSettings);
 		autoProcessShared = (loadedSettings?.ai?.autoProcessShared ?? true) !== false;
 		const { rememberOpenPolicyFromSettings } = await __vitePreload(async () => {
-			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.Ot);
+			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.At);
 			return { rememberOpenPolicyFromSettings };
 		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		rememberOpenPolicyFromSettings(loadedSettings);
@@ -1867,30 +1869,26 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 		} else throw new Error("No processable content found");
 		const analyze = settings?.ai?.shareTargetMode === "analyze";
 		console.log("[ShareTarget] Calling unified processing API");
-		const response = await fetch(resolveProcessApiUrl("processing"), {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				content: processingContent,
-				text: contentType === "text" ? processingContent : void 0,
-				input: processingContent,
-				url: type === "url" ? content : void 0,
-				contentType,
-				processingType: analyze ? "general-processing" : "recognize-content",
-				mode: analyze ? "analyze" : "smartRecognize",
-				customInstruction: customInstruction || void 0,
-				metadata: {
-					source: "share-target",
-					title: shareData.title || "Shared Content",
-					timestamp: Date.now(),
-					kind: ingress.kind,
-					instructionId: ingress.instructionId || ""
-				}
-			})
-		});
-		if (!response.ok) throw new Error(`Processing API failed: ${response.status}`);
-		const result = await response.json();
-		const text = extractProcessApiText(result);
+		const posted = await postProcessApi("processing", {
+			content: processingContent,
+			text: contentType === "text" ? processingContent : void 0,
+			input: processingContent,
+			url: type === "url" ? content : void 0,
+			contentType,
+			processingType: analyze ? "general-processing" : "recognize-content",
+			mode: analyze ? "analyze" : "smartRecognize",
+			customInstruction: customInstruction || void 0,
+			metadata: {
+				source: "share-target",
+				title: shareData.title || "Shared Content",
+				timestamp: Date.now(),
+				kind: ingress.kind,
+				instructionId: ingress.instructionId || ""
+			}
+		}, processApiAuthFromSettings(settings));
+		if (!posted.ok) throw new Error(`Processing API failed: ${posted.status || posted.error || "network"}`);
+		const result = posted.json;
+		const text = readProcessApiResultText(result) || extractProcessApiText(result);
 		console.log("[ShareTarget] Unified processing completed:", {
 			ok: result?.ok,
 			success: result?.success
@@ -2016,6 +2014,7 @@ var tryServerSideProcessing = async (shareData, copyToClipboard = true) => {
 * be staged or routed.
 */
 var handleShareTarget = () => {
+	if (!allowProcessWebShareLaunch()) console.log("[ShareTarget] Process PWA/Web OS share-target is off; launch-queue replay stays on");
 	const params = new URLSearchParams(globalThis?.location?.search);
 	const shared = params.get("shared");
 	const hasExplicitSharedFlow = shared === "1" || shared === "true" || shared === "test";
@@ -2207,6 +2206,10 @@ var handleShareTarget = () => {
 * transfer pipeline.
 */
 var setupLaunchQueueConsumer = async () => {
+	if (!allowProcessWebLaunchQueue()) {
+		console.log("[LaunchQueue] Process PWA/Web launch-queue is off");
+		return;
+	}
 	if (!("launchQueue" in globalThis)) {
 		console.log("[LaunchQueue] launchQueue API not available");
 		return;

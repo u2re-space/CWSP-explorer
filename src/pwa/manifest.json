@@ -1,8 +1,8 @@
 {
     "id": "/",
-    "name": "CWSP Explorer",
+    "name": "CWSP-explorer",
     "short_name": "Explorer",
-    "description": "Standalone file manager (OPFS)",
+    "description": "CWSP-explorer file manager (explorer.u2re.space)",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

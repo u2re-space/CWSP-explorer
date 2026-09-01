@@ -1,4 +1,4 @@
-import { yn as CwsBridge } from "./boot-index.js";
+import { xn as CwsBridge } from "./boot-index.js";
 import { An as H, In as E, St as __decorate, gt as statusbar_default, kn as defineElement, kt as applyWallpaperPaperFromLuma, xt as UIElement_default } from "../com/app.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
