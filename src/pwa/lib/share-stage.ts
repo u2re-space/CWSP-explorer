@@ -9,6 +9,12 @@
  * WHY: Slim Explorer SW + client drain must not pull CrossWord ExecutionCore / Settings.
  * INVARIANT: only Cache Storage + FormData/File — safe on ServiceWorkerGlobalScope.
  */
+import {
+    safeCacheMatch,
+    safeCacheOpen,
+    safeCachePut,
+    safeCachesDelete
+} from "com/routing/pwa/sw-cache";
 
 export const SHARE_CACHE_NAME = "share-target-data";
 export const SHARE_CACHE_KEY = "/share-target-data";
@@ -79,7 +85,8 @@ export async function stageShareFromFormData(formData: FormData): Promise<boolea
     }
 
     try {
-        const cache = await caches.open(SHARE_CACHE_NAME);
+        const cache = await safeCacheOpen(SHARE_CACHE_NAME);
+        if (!cache) return false;
         const meta: StagedShareMeta = {
             title,
             text,
@@ -87,7 +94,8 @@ export async function stageShareFromFormData(formData: FormData): Promise<boolea
             timestamp,
             fileCount: files.length
         };
-        await cache.put(
+        await safeCachePut(
+            cache,
             SHARE_CACHE_KEY,
             new Response(JSON.stringify(meta), { headers: { "Content-Type": "application/json" } })
         );
@@ -101,7 +109,7 @@ export async function stageShareFromFormData(formData: FormData): Promise<boolea
             headers.set("X-File-Name", encodeURIComponent(file.name || `file-${i}`));
             headers.set("X-File-Size", String(file.size || 0));
             headers.set("X-File-LastModified", String(file.lastModified ?? 0));
-            await cache.put(key, new Response(file, { headers }));
+            await safeCachePut(cache, key, new Response(file, { headers }));
             manifest.push({
                 key,
                 name: file.name || `file-${i}`,
@@ -111,7 +119,8 @@ export async function stageShareFromFormData(formData: FormData): Promise<boolea
             });
         }
 
-        await cache.put(
+        await safeCachePut(
+            cache,
             SHARE_FILES_MANIFEST_KEY,
             new Response(JSON.stringify({ files: manifest, timestamp }), {
                 headers: { "Content-Type": "application/json" }
@@ -127,9 +136,10 @@ export async function stageShareFromFormData(formData: FormData): Promise<boolea
 /** Read staged share files for the page (OPFS ingest). */
 export async function loadStagedShareFiles(): Promise<StagedSharePayload | null> {
     try {
-        const cache = await caches.open(SHARE_CACHE_NAME);
-        const metaRes = await cache.match(SHARE_CACHE_KEY);
-        const manRes = await cache.match(SHARE_FILES_MANIFEST_KEY);
+        const cache = await safeCacheOpen(SHARE_CACHE_NAME);
+        if (!cache) return null;
+        const metaRes = await safeCacheMatch(cache, SHARE_CACHE_KEY);
+        const manRes = await safeCacheMatch(cache, SHARE_FILES_MANIFEST_KEY);
         if (!manRes) return null;
 
         const meta: StagedShareMeta = metaRes
@@ -138,7 +148,7 @@ export async function loadStagedShareFiles(): Promise<StagedSharePayload | null>
         const man = (await manRes.json()) as { files?: StagedShareFileMeta[] };
         const files: File[] = [];
         for (const entry of man.files || []) {
-            const res = await cache.match(entry.key);
+            const res = await safeCacheMatch(cache, entry.key);
             if (!res) continue;
             const blob = await res.blob();
             const nameHeader = res.headers.get("X-File-Name");
@@ -160,7 +170,7 @@ export async function loadStagedShareFiles(): Promise<StagedSharePayload | null>
 
 export async function clearStagedShare(): Promise<void> {
     try {
-        await caches.delete(SHARE_CACHE_NAME);
+        await safeCachesDelete(SHARE_CACHE_NAME);
     } catch {
         /* ignore */
     }

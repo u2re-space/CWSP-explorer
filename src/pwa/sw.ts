@@ -6,7 +6,8 @@
  * Reason for changes: Slim online-first Explorer SW (share-target only).
  */
 import "./sw-preamble";
-import { stageShareFromFormData } from "./lib/share-stage";
+import { collectShareFiles, stageShareFromFormData } from "./lib/share-stage";
+import { publishSwShareReceived, shareLandingPath } from "com/routing/pwa/sw-result-wire";
 
 declare const self: ServiceWorkerGlobalScope & {
     __WB_MANIFEST: Array<{ url: string; revision?: string | null }>;
@@ -38,34 +39,35 @@ const isViteDevNoise = (url: URL): boolean => {
 };
 
 async function handleShareTarget(request: Request): Promise<Response> {
+    const landing = new URL(shareLandingPath("explorer"), self.location.origin);
     try {
         const formData = await request.formData();
+        const files = await collectShareFiles(formData);
         await stageShareFromFormData(formData);
+        const title = String(formData.get("title") || "").trim();
+        const text = String(formData.get("text") || "").trim();
+        const url = String(formData.get("url") || "").trim();
+        publishSwShareReceived({
+            title,
+            text,
+            url,
+            files,
+            fileCount: files.length,
+            timestamp: Date.now(),
+            source: "share-target"
+        });
     } catch (err) {
         console.warn("[explorer-sw] share-target parse failed", err);
     }
 
-    const redirectUrl = new URL("/", self.location.origin);
-    redirectUrl.searchParams.set("shared", "1");
-
-    const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    for (const client of clientsList) {
-        if ("focus" in client) {
-            try {
-                await (client as WindowClient).focus();
-                if ("navigate" in client) {
-                    await (client as WindowClient).navigate(redirectUrl.href);
-                } else {
-                    await self.clients.openWindow(redirectUrl.href);
-                }
-                return Response.redirect(redirectUrl.href, 303);
-            } catch {
-                /* try next / openWindow */
-            }
-        }
+    const clientsList = await self.clients?.matchAll?.({ type: "window", includeUncontrolled: true }) || [];
+    const first = clientsList[0] as WindowClient | undefined;
+    if (first && typeof first.focus === "function") {
+        await first.focus().catch(() => undefined);
+    } else {
+        await self.clients?.openWindow?.(landing.href);
     }
-    await self.clients.openWindow(redirectUrl.href);
-    return Response.redirect(redirectUrl.href, 303);
+    return Response.redirect(landing.href, 303);
 }
 
 self.addEventListener("fetch", (event) => {
