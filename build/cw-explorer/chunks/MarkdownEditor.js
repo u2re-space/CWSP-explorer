@@ -2346,9 +2346,9 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 					const blob = read.echo || read;
 					if (blob?.data) {
 						const { dataUrlToFile } = await __vitePreload(async () => {
-							const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
+							const { dataUrlToFile } = await import("./sku-ingress.js");
 							return { dataUrlToFile };
-						}, __vite__mapDeps([11,1,5,6,0,7,8]), import.meta.url);
+						}, __vite__mapDeps([11,5,6,1,0,7,8]), import.meta.url);
 						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
 					}
 				}

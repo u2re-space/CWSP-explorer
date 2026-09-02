@@ -1,11 +1,12 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { Ar as consumeCachedShareTargetPayload, Dr as processApiAuthFromSettings, Dt as classifyOpenKindFromPayload, Er as postProcessApi, Gr as unifiedMessaging$1, Jr as BROADCAST_CHANNELS$1, Mr as safeCacheMatch, Nr as safeCacheOpen, Or as readProcessApiResultText, _t as rememberProcessIngressSettings, at as loadSettings, br as unifiedMessaging, dt as formatProcessIngressResult, ft as holdCapacitorIngressJob, jr as storeShareTargetPayloadToCache, kr as buildShareDataFromCachedPayload, lt as allowProcessWebLaunchQueue, pt as instructionTextForIngress, ut as allowProcessWebShareLaunch, vt as resolveProcessIngressKind, xr as unwrapSwInteropMessage, yt as writeProcessIngressClipboard } from "../shells/boot-index.js";
+import { Ar as consumeCachedShareTargetPayload$1, Dr as processApiAuthFromSettings, Dt as classifyOpenKindFromPayload, Er as postProcessApi, Kr as unifiedMessaging$1, Mr as safeCacheMatch, Nr as safeCacheOpen, Or as readProcessApiResultText, Pr as safeCachePut, Yr as BROADCAST_CHANNELS, _t as rememberProcessIngressSettings, at as loadSettings, br as unifiedMessaging, dt as formatProcessIngressResult, ft as holdCapacitorIngressJob, jr as storeShareTargetPayloadToCache$1, kr as buildShareDataFromCachedPayload, lt as allowProcessWebLaunchQueue, pt as instructionTextForIngress, ut as allowProcessWebShareLaunch, vt as resolveProcessIngressKind, xr as unwrapSwInteropMessage, yt as writeProcessIngressClipboard } from "../shells/boot-index.js";
 import { Nt as bindDirectoryForLaunchedFiles, Qt as parseDataUrl, Xt as isBase64Like, bn as initClipboardReceiver, yn as copy } from "../com/app.js";
 import { t as summarizeForLog$1 } from "./log-sanitizer.js";
-import { a as skuIngressHint, i as refineLauncherImageIngress, r as installShellImageOpenListener, t as applyLauncherIngress } from "./sku-ingress.js";
+import { applyLauncherIngress, flushHeldIngressToWorkCenter, holdIngressFiles, installShellImageOpenListener, peekHeldIngressFiles, refineLauncherImageIngress, skuIngressHint } from "./sku-ingress.js";
 import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "./ViewTransferRouting.js";
+import { postWorkCenterCommand } from "./workcenter-command-wire.js";
 //#region ../CWSP-document/src/shared/boot/toast.ts
 var DEFAULT_CONFIG = {
 	containerId: "rs-toast-layer",
@@ -366,205 +367,6 @@ var listenForToasts = () => {
 var initToastReceiver = () => {
 	return listenForToasts();
 };
-//#endregion
-//#region ../CWSP-document/src/shared/other/config/Names.ts
-/**
-* Broadcast channel names used throughout the application
-*/
-var BROADCAST_CHANNELS = {
-	SHARE_TARGET: "rs-share-target",
-	TOAST: "rs-toast",
-	CLIPBOARD: "rs-clipboard",
-	WORK_CENTER: "rs-workcenter",
-	MARKDOWN_VIEWER: "rs-markdown-viewer",
-	SETTINGS: "rs-settings",
-	GENERAL: "rs-app-general",
-	MINIMAL_APP: "minimal-app",
-	MAIN_APP: "main-app",
-	FILE_EXPLORER: "file-explorer",
-	PRINT_VIEWER: "print-viewer",
-	SETTINGS_VIEWER: "settings-viewer",
-	HISTORY_VIEWER: "history-viewer",
-	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
-	FILE_EXPLORER_CHANNEL: "file-explorer",
-	SETTINGS_CHANNEL: "settings",
-	HISTORY_CHANNEL: "history",
-	PRINT_CHANNEL: "print",
-	SERVICE_WORKCENTER: "rs-service-workcenter",
-	SERVICE_SETTINGS: "rs-service-settings",
-	SERVICE_VIEWER: "rs-service-viewer",
-	SERVICE_EXPLORER: "rs-service-explorer",
-	SERVICE_AIRPAD: "rs-service-airpad",
-	SERVICE_NETWORK: "rs-service-network",
-	SERVICE_PRINT: "rs-service-print",
-	SERVICE_HISTORY: "rs-service-history",
-	SERVICE_EDITOR: "rs-service-editor",
-	SERVICE_HOME: "rs-service-home"
-};
-var viewBroadcastChannelName = (viewId) => {
-	return `rs-view-${normalizeViewId(viewId) || "app"}`;
-};
-/**
-* Component and module identifiers
-*/
-var COMPONENTS = {
-	WORK_CENTER: "workcenter",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	MARKDOWN_EDITOR: "markdown-editor",
-	RICH_EDITOR: "rich-editor",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	FILE_PICKER: "file-picker",
-	FILE_EXPLORER: "file-explorer",
-	WORKCENTER_CORE: "workcenter-core",
-	BASIC_WORKCENTER: "basic-workcenter",
-	BASIC_VIEWER: "basic-viewer",
-	BASIC_EXPLORER: "basic-explorer",
-	BASIC_SETTINGS: "basic-settings",
-	BASIC_HISTORY: "basic-history",
-	BASIC_PRINT: "basic-print",
-	AIRPAD: "airpad",
-	NETWORK: "network",
-	HOME: "home",
-	EDITOR: "editor",
-	VIEWER: "viewer",
-	EXPLORER: "explorer",
-	PRINT: "print"
-};
-/**
-* Location hash identifiers for app navigation
-*/
-var ROUTE_HASHES = {
-	MARKDOWN_VIEWER: "#markdown-viewer",
-	MARKDOWN_EDITOR: "#markdown-editor",
-	RICH_EDITOR: "#rich-editor",
-	SETTINGS: "#settings",
-	HISTORY: "#history",
-	WORKCENTER: "#workcenter",
-	FILE_PICKER: "#file-picker",
-	FILE_EXPLORER: "#file-explorer",
-	PRINT: "#print",
-	AIRPAD: "#airpad",
-	NETWORK: "#network",
-	WORKCENTER_FILES: "#workcenter-files",
-	WORKCENTER_TEXT: "#workcenter-text",
-	WORKCENTER_IMAGES: "#workcenter-images",
-	WORKCENTER_PROCESSING: "#workcenter-processing",
-	SHARE_TARGET_TEXT: "#share-target-text",
-	SHARE_TARGET_FILES: "#share-target-files",
-	SHARE_TARGET_URL: "#share-target-url",
-	SHARE_TARGET_IMAGE: "#share-target-image"
-};
-/**
-* Destination identifiers for unified messaging
-*/
-var DESTINATIONS = {
-	WORKCENTER: "workcenter",
-	CLIPBOARD: "clipboard",
-	VIEWER: "viewer",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	EXPLORER: "explorer",
-	FILE_EXPLORER: "file-explorer",
-	PRINT: "print",
-	PRINT_VIEWER: "print-viewer",
-	EDITOR: "editor",
-	AIRPAD: "airpad",
-	HOME: "home",
-	BASIC_APP: "basic-app",
-	MAIN_APP: "main-app"
-};
-var CANONICAL_VIEW_IDS = [
-	"viewer",
-	"workcenter",
-	"explorer",
-	"editor",
-	"settings",
-	"history",
-	"home",
-	"airpad",
-	"print"
-];
-/**
-* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
-* `basic-*` destinations. Keep alias resolution centralized here so transports,
-* views, and workers can agree on one canonical target vocabulary.
-*/
-var DESTINATION_ALIASES = {
-	viewer: [
-		DESTINATIONS.VIEWER,
-		DESTINATIONS.MARKDOWN_VIEWER,
-		COMPONENTS.BASIC_VIEWER
-	],
-	workcenter: [
-		DESTINATIONS.WORKCENTER,
-		COMPONENTS.BASIC_WORKCENTER,
-		COMPONENTS.WORKCENTER_CORE
-	],
-	explorer: [
-		DESTINATIONS.EXPLORER,
-		DESTINATIONS.FILE_EXPLORER,
-		COMPONENTS.BASIC_EXPLORER
-	],
-	editor: [
-		DESTINATIONS.EDITOR,
-		COMPONENTS.MARKDOWN_EDITOR,
-		COMPONENTS.RICH_EDITOR
-	],
-	settings: [
-		DESTINATIONS.SETTINGS,
-		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
-		COMPONENTS.BASIC_SETTINGS
-	],
-	history: [
-		DESTINATIONS.HISTORY,
-		BROADCAST_CHANNELS.HISTORY_CHANNEL,
-		COMPONENTS.BASIC_HISTORY
-	],
-	print: [
-		DESTINATIONS.PRINT,
-		DESTINATIONS.PRINT_VIEWER,
-		COMPONENTS.BASIC_PRINT
-	],
-	airpad: [DESTINATIONS.AIRPAD],
-	home: [DESTINATIONS.HOME],
-	clipboard: [DESTINATIONS.CLIPBOARD],
-	"basic-app": [DESTINATIONS.BASIC_APP],
-	"main-app": [DESTINATIONS.MAIN_APP]
-};
-var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
-	out[canonical] = canonical;
-	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
-	return out;
-}, {});
-var normalizeDestination = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "";
-	return DESTINATION_LOOKUP[raw] || raw;
-};
-var normalizeViewId = (value) => {
-	const canonical = normalizeDestination(value);
-	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
-	return "viewer";
-};
-BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
-ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
-//#endregion
-//#region ../CWSP-document/src/shared/routing/channel/workcenter-command-wire.ts
-var WORKCENTER_COMMAND_TYPE = "workcenter-command";
-var postWorkCenterCommand = (command) => {
-	const envelope = {
-		type: WORKCENTER_COMMAND_TYPE,
-		command
-	};
-	const names = [BROADCAST_CHANNELS.WORK_CENTER, viewBroadcastChannelName("workcenter")];
-	for (const name of names) try {
-		const channel = new BroadcastChannel(name);
-		channel.postMessage(envelope);
-		channel.close();
-	} catch {}
-};
 ({
 	process: "/workcenter?shared=1",
 	document: "/viewer?shared=1",
@@ -575,7 +377,36 @@ var postWorkCenterCommand = (command) => {
 }).process;
 //#endregion
 //#region ../CWSP-document/src/shared/routing/pwa/sw-result-wire.ts
-var PROCESS_PENDING_PATH = "/process/pending";
+var PENDING_CACHE = "rs-process-pending-v1";
+var PENDING_CACHE_URL = "/process/pending.json";
+var loadPending = async () => {
+	try {
+		const cache = await safeCacheOpen(PENDING_CACHE);
+		const response = await safeCacheMatch(cache, PENDING_CACHE_URL);
+		if (!response) return [];
+		const json = await response.json();
+		return Array.isArray(json?.operations) ? json.operations : [];
+	} catch {
+		return [];
+	}
+};
+var savePending = async (operations) => {
+	const cache = await safeCacheOpen(PENDING_CACHE);
+	if (!cache) return;
+	await safeCachePut(cache, PENDING_CACHE_URL, new Response(JSON.stringify({ operations: operations.slice(-10) }), { headers: {
+		"Content-Type": "application/json; charset=utf-8",
+		"Cache-Control": "no-store"
+	} }));
+};
+var readPendingProcessResults = () => loadPending();
+var clearPendingProcessResults = async (ids) => {
+	if (!ids?.length) {
+		await savePending([]);
+		return;
+	}
+	const keep = new Set(ids);
+	await savePending((await loadPending()).filter((item) => !keep.has(item.id)));
+};
 //#endregion
 //#region ../CWSP-document/src/shared/routing/pwa/sw-page-bridge.ts
 var RESULT_TYPES = /* @__PURE__ */ new Set([
@@ -636,7 +467,7 @@ var hydrateShareInput = async (data) => {
 		source: base.source || "share-target"
 	};
 	try {
-		const cached = await consumeCachedShareTargetPayload({ clear: false });
+		const cached = await consumeCachedShareTargetPayload$1({ clear: false });
 		if (!cached) return {
 			...base,
 			source: base.source || "share-target"
@@ -662,6 +493,8 @@ var hydrateShareInput = async (data) => {
 };
 var deliverShareTargetInput = async (data) => {
 	const payload = await hydrateShareInput(data);
+	const files = Array.isArray(payload.files) ? payload.files.filter((file) => typeof File !== "undefined" && file instanceof File) : [];
+	if (files.length) holdIngressFiles(files);
 	return deliverSwResultToWorkCenter("share-target-input", payload, String(payload.text || payload.title || ""));
 };
 var deliverSwResultToWorkCenter = async (type, data, extraText = "") => {
@@ -723,11 +556,7 @@ var replayProcessPending = async () => {
 		if (!loc || !/^https?:$/.test(String(loc.protocol || ""))) return;
 		const href = String(loc.href || "");
 		if (href.startsWith("chrome-extension://") || href.startsWith("moz-extension://")) return;
-		const response = await fetch(PROCESS_PENDING_PATH, { cache: "no-store" });
-		const type = String(response.headers.get("content-type") || "").toLowerCase();
-		if (!response.ok || !type.includes("application/json")) return;
-		const json = await response.json();
-		const operations = Array.isArray(json?.operations) ? json.operations : [];
+		const operations = await readPendingProcessResults();
 		if (!operations.length) return;
 		for (const operation of operations) {
 			const opType = String(operation.type || "process-api-result");
@@ -738,10 +567,7 @@ var replayProcessPending = async () => {
 			}
 			await deliverSwResultToWorkCenter(opType, payload, String(operation.text || ""));
 		}
-		await fetch(PROCESS_PENDING_PATH, {
-			method: "DELETE",
-			cache: "no-store"
-		}).catch(() => void 0);
+		await clearPendingProcessResults();
 	} catch {}
 };
 /** Bind SW postMessage + deferred replay. Idempotent. */
@@ -755,7 +581,7 @@ var bindSwPageBridge = () => {
 		navigator.serviceWorker?.addEventListener("message", onSwMessage);
 	} catch {}
 	const replayShareCache = () => {
-		consumeCachedShareTargetPayload({ clear: false }).then((cached) => {
+		consumeCachedShareTargetPayload$1({ clear: false }).then((cached) => {
 			if (!cached) return;
 			if (Date.now() - Number(cached.meta?.timestamp || Date.now()) > 3e5) return;
 			const hasFiles = Array.isArray(cached.files) && cached.files.length > 0;
@@ -1195,6 +1021,14 @@ function pathForSkuHostView(viewPath) {
 	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS[sku]?.includes(seg) ? "/" : path;
 	return "/";
 }
+var normalizeAppPath = (path) => String(path || "/").replace(/\/+$/, "") || "/";
+/**
+* WHY: process.u2re.space `/workcenter` and `/` are the same app. Hard-nav between them
+* remounts the SPA and drops in-memory share files (`holdIngressFiles`).
+*/
+function sameSkuHostViewPath(currentPath, destPath) {
+	return normalizeAppPath(pathForSkuHostView(currentPath)) === normalizeAppPath(pathForSkuHostView(destPath));
+}
 //#endregion
 //#region ../CWSP-document/src/shared/routing/pwa/sw-url.ts
 var isLikelyJavaScriptContentType = (contentType) => {
@@ -1582,6 +1416,18 @@ var summarizeForLog = (value, partialOptions = {}) => {
 * page side, while `src/pwa/sw.ts` owns the worker-side behavior.
 */
 /**
+* WHY: page `sw-handling.js` imports these from unhashed `boot-index.js` (`dt`/`ft`).
+* Stale SW `assets-cache` + a new barrel → `X is not a function` on share-target.
+*/
+var consumeCachedShareTargetPayload = (opts) => {
+	if (typeof consumeCachedShareTargetPayload$1 !== "function") return Promise.resolve(null);
+	return consumeCachedShareTargetPayload$1(opts);
+};
+var storeShareTargetPayloadToCache = (payload) => {
+	if (typeof storeShareTargetPayloadToCache$1 !== "function") return Promise.resolve(false);
+	return storeShareTargetPayloadToCache$1(payload);
+};
+/**
 * WHY: MV3 extension pages (`chrome-extension:`) do not expose PWA-relative routes (`/clipboard/pending`)
 * or the site service worker bundle. Running ingress here caused `fetch('/clipboard/pending')` →
 * `chrome-extension://…/clipboard/pending` (404) and needless SW / launch-queue churn during boot.
@@ -1606,6 +1452,43 @@ var shouldRunPwaIngress = () => {
 		return false;
 	}
 };
+/**
+* WHY: BootLoader runs `initIngressPWA` before shell.navigate. Share / launch-queue
+* must wait until Work Center (or settings) is mounted, otherwise `content-attach`
+* and `ingress.apply` fire into an unbound bus and binary payloads are dropped.
+*/
+var waitForBootReady = (timeoutMs = 8e3) => {
+	try {
+		if (typeof document !== "undefined" && document.documentElement?.dataset?.cwspBoot === "ready") return Promise.resolve();
+	} catch {}
+	return new Promise((resolve) => {
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			try {
+				globalThis.removeEventListener?.("cwsp:boot-ready", onReady);
+			} catch {}
+			resolve();
+		};
+		const onReady = () => finish();
+		try {
+			globalThis.addEventListener?.("cwsp:boot-ready", onReady, { once: true });
+		} catch {
+			finish();
+			return;
+		}
+		globalThis.setTimeout(finish, timeoutMs);
+	});
+};
+var recentShareRoute = /* @__PURE__ */ new Map();
+var ingressRouteFingerprint = (shareData) => [
+	shareData.title || "",
+	(shareData.text || "").slice(0, 64),
+	shareData.url || shareData.sharedUrl || "",
+	(Array.isArray(shareData.files) ? shareData.files : []).filter((file) => file instanceof File).map((file) => `${file.name}:${file.size}`).join(","),
+	shareData.fileCount || 0
+].join("|");
 var _swInitPromise = null;
 var _swControllerReloadBound = false;
 var _swReloadPending = false;
@@ -1897,9 +1780,18 @@ var mergeUrlParamsShareWithCache = async (fromUrl) => {
 	}
 };
 var routeToTransferView = async (shareData, source, hint, pending = false) => {
+	const routeKey = ingressRouteFingerprint(shareData);
+	const prevRoute = recentShareRoute.get(routeKey);
+	if (routeKey !== "||||0" && prevRoute && Date.now() - prevRoute < 5e3) {
+		console.log("[ViewTransfer] Skipping duplicate ingress route");
+		return true;
+	}
+	if (routeKey !== "||||0") recentShareRoute.set(routeKey, Date.now());
+	await waitForBootReady();
 	await waitForIngressPipelineSlot();
 	const preparedData = await hydrateTextPayloadFromFiles(shareData);
 	const files = Array.isArray(preparedData.files) ? preparedData.files.filter((file) => file instanceof File) : [];
+	holdIngressFiles(files);
 	console.log("[ViewTransfer] Pipeline input:", summarizeForLog({
 		source,
 		pending,
@@ -1976,11 +1868,6 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		messageType: resolved.messageType,
 		contentType: resolved.contentType
 	});
-	if (sku === "process" && resolvedHint?.action === "process") try {
-		await processShareTargetData(preparedData, true);
-	} catch (error) {
-		console.warn("[ViewTransfer] Process SKU auto-AI failed:", error);
-	}
 	if (resolved.destination === "home") {
 		const capacitorNative = (() => {
 			try {
@@ -2014,6 +1901,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 	const currentPath = (globalThis?.location?.pathname || "").replace(/\/+$/, "") || "/";
 	const destPath = pathForSkuHostView(resolved.routePath);
 	const destNorm = destPath.replace(/\/+$/, "") || "/";
+	const alreadyOnDest = sameSkuHostViewPath(currentPath, destPath);
 	let silentRoute = false;
 	try {
 		const sp = new URLSearchParams(globalThis?.location?.search || "");
@@ -2022,7 +1910,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		silentRoute = false;
 	}
 	const tryNavigateLiveShell = async () => {
-		if (!delivered) return false;
+		if (!delivered && peekHeldIngressFiles().length === 0) return false;
 		try {
 			const { bootLoader } = await __vitePreload(async () => {
 				const { bootLoader } = await import("./BootLoader.js").then((n) => n.t);
@@ -2047,26 +1935,32 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 					pending,
 					delivered
 				});
+				await flushHeldIngressToWorkCenter();
+				return true;
+			}
+			if (activeView === resolved.destination) {
+				console.log("[ViewTransfer] Already on destination view — skip remount", {
+					activeView,
+					source
+				});
+				await flushHeldIngressToWorkCenter();
 				return true;
 			}
 			await shell.navigate(resolved.destination, void 0, { force: true });
 			console.log("[ViewTransfer] Routed through live shell:", resolved.routePath);
+			await flushHeldIngressToWorkCenter();
 			return true;
 		} catch (error) {
 			console.warn("[ViewTransfer] Live shell routing failed, falling back to hard navigation:", error);
 			return false;
 		}
 	};
+	let leftTheDocument = false;
 	if (silentRoute) {
-		if (currentPath !== destNorm) console.log("[ViewTransfer] Silent mode: skipping navigation; delivery via channels only:", destNorm);
+		if (!alreadyOnDest) console.log("[ViewTransfer] Silent mode: skipping navigation; delivery via channels only:", destNorm);
 		else await tryNavigateLiveShell();
-		return delivered;
-	}
-	if (resolved.destination === "home" || sku === "launcher") {
-		await tryNavigateLiveShell();
-		return delivered;
-	}
-	if (currentPath !== destNorm) {
+	} else if (resolved.destination === "home" || sku === "launcher") await tryNavigateLiveShell();
+	else if (!alreadyOnDest) {
 		if (!await tryNavigateLiveShell()) {
 			if ((() => {
 				try {
@@ -2075,22 +1969,33 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 				} catch {
 					return false;
 				}
-			})()) {
-				console.warn("[ViewTransfer] Skipping hard navigation on Capacitor:", destNorm);
-				return delivered;
+			})()) console.warn("[ViewTransfer] Skipping hard navigation on Capacitor:", destNorm);
+			else {
+				const nextUrl = new URL(globalThis?.location?.href);
+				nextUrl.pathname = destPath;
+				nextUrl.search = "";
+				nextUrl.hash = "";
+				if (pending) nextUrl.searchParams.set("shared", "1");
+				console.log("[ViewTransfer] Navigating to resolved route:", nextUrl.toString());
+				leftTheDocument = true;
+				globalThis.location.href = nextUrl.toString();
 			}
-			const nextUrl = new URL(globalThis?.location?.href);
-			nextUrl.pathname = destPath;
-			nextUrl.search = "";
-			nextUrl.hash = "";
-			if (pending) nextUrl.searchParams.set("shared", "1");
-			console.log("[ViewTransfer] Navigating to resolved route:", nextUrl.toString());
-			globalThis.location.href = nextUrl.toString();
 		}
-		return delivered;
+	} else {
+		await tryNavigateLiveShell();
+		console.log("[ViewTransfer] Already on resolved route:", destNorm);
 	}
-	await tryNavigateLiveShell();
-	console.log("[ViewTransfer] Already on resolved route:", destNorm);
+	if (!leftTheDocument && resolved.destination === "workcenter") await flushHeldIngressToWorkCenter();
+	/**
+	* WHY: auto-process after Work Center is mounted. Running AI before navigate
+	* posted `share-target-result` onto an unbound command bus (settings / cold boot).
+	* Hard-nav leaves processing to the next document (`?shared=1` + cache).
+	*/
+	if (!leftTheDocument && sku === "process" && resolvedHint?.action === "process") try {
+		await processShareTargetData(preparedData, true);
+	} catch (error) {
+		console.warn("[ViewTransfer] Process SKU auto-AI failed:", error);
+	}
 	return delivered;
 };
 /** Capacitor / sku-boot entry: stage files then run the same share pipeline as PWA. */
@@ -2438,13 +2343,13 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 	}
 };
 var CHANNELS = {
-	SHARE_TARGET: BROADCAST_CHANNELS$1.SHARE_TARGET,
-	TOAST: BROADCAST_CHANNELS$1.TOAST,
-	CLIPBOARD: BROADCAST_CHANNELS$1.CLIPBOARD,
-	MINIMAL_APP: BROADCAST_CHANNELS$1.MINIMAL_APP,
-	MAIN_APP: BROADCAST_CHANNELS$1.MAIN_APP,
-	FILE_EXPLORER: BROADCAST_CHANNELS$1.FILE_EXPLORER,
-	PRINT_VIEWER: BROADCAST_CHANNELS$1.PRINT_VIEWER
+	SHARE_TARGET: BROADCAST_CHANNELS.SHARE_TARGET,
+	TOAST: BROADCAST_CHANNELS.TOAST,
+	CLIPBOARD: BROADCAST_CHANNELS.CLIPBOARD,
+	MINIMAL_APP: BROADCAST_CHANNELS.MINIMAL_APP,
+	MAIN_APP: BROADCAST_CHANNELS.MAIN_APP,
+	FILE_EXPLORER: BROADCAST_CHANNELS.FILE_EXPLORER,
+	PRINT_VIEWER: BROADCAST_CHANNELS.PRINT_VIEWER
 };
 /**
 * Fallback to server-side AI processing when client-side fails
@@ -2554,9 +2459,9 @@ var handleShareTarget = () => {
 				if (res.ok) {
 					const row = await res.json();
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
+						const { dataUrlToFile } = await import("./sku-ingress.js");
 						return { dataUrlToFile };
-					}, __vite__mapDeps([11,1,2,0,3,4,5]), import.meta.url);
+					}, __vite__mapDeps([11,2,0,1,3,4,5]), import.meta.url);
 					const files = [];
 					for (const item of row.files || []) {
 						if (!item?.data) continue;
@@ -2590,6 +2495,7 @@ var handleShareTarget = () => {
 			});
 			if (content || type === "file" || pendingFiles) {
 				console.log("[ShareTarget] Routing merged share payload");
+				holdIngressFiles(Array.isArray(transferPayload.files) ? transferPayload.files.filter((file) => file instanceof File) : []);
 				try {
 					if (!await routeToTransferView(transferPayload, "share-target", extractTransferHint(transferPayload), true)) await processShareTargetData(transferPayload, true);
 				} catch (error) {
@@ -2841,6 +2747,7 @@ var setupLaunchQueueConsumer = async () => {
 						source: "launch-queue",
 						staged
 					});
+					holdIngressFiles(files);
 					showToast({
 						message: `Received ${files.length} file(s)`,
 						kind: "info"
@@ -2856,10 +2763,12 @@ var setupLaunchQueueConsumer = async () => {
 							hint
 						}, "launch-queue", hint, true)) {
 							const url = new URL(globalThis?.location?.href);
-							url.pathname = pathForSkuHostView("/share-target");
+							url.pathname = pathForSkuHostView("/workcenter");
+							url.search = "";
 							url.searchParams.set("shared", "1");
 							url.hash = "";
-							globalThis.location.href = url.toString();
+							if (sameSkuHostViewPath(globalThis.location.pathname, url.pathname)) console.warn("[LaunchQueue] Already on process landing — skip /share-target hard-nav");
+							else globalThis.location.href = url.toString();
 						}
 					} else showToast({
 						message: `Failed to stage ${files.length} launched file(s)`,
@@ -2877,7 +2786,8 @@ var setupLaunchQueueConsumer = async () => {
 var _ingressPwaPromise = null;
 /**
 * Single entry for page boot: SW registration, share-target URL/cache pipeline, clipboard receivers, launch queue.
-* Called from {@link BootLoader} so share-target is not dead code and runs after settings but before shell paint-heavy work.
+* Called from {@link BootLoader} after settings. Route/process waits for `cwsp:boot-ready`
+* so Work Center can attach files (and auto-process) instead of dropping the payload.
 */
 var initIngressPWA = async () => {
 	if (_ingressPwaPromise) return _ingressPwaPromise;

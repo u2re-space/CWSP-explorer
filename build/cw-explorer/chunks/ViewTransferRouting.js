@@ -1,10 +1,10 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
-import { Bt as sinkToDestination, Dt as classifyOpenKindFromPayload, Ht as skuForOpenSink, Nt as peekOpenPolicy, Ot as inferIngressChannels, Qr as viewBroadcastChannelName, Rr as enqueuePendingMessage, Rt as resolveOpenPolicy, Wr as sendProtocolMessage, Wt as surfaceForSku, Zr as normalizeDestination, ht as peekProcessIngressSettings, jt as normalizeOpenSink } from "../shells/boot-index.js";
+import { $r as viewBroadcastChannelName, Bt as sinkToDestination, Dt as classifyOpenKindFromPayload, Gr as sendProtocolMessage, Ht as skuForOpenSink, Nt as peekOpenPolicy, Ot as inferIngressChannels, Qr as normalizeDestination, Rt as resolveOpenPolicy, Wt as surfaceForSku, ht as peekProcessIngressSettings, jt as normalizeOpenSink, zr as enqueuePendingMessage } from "../shells/boot-index.js";
 
 import { t as summarizeForLog } from "./log-sanitizer.js";
-import { a as skuIngressHint, n as holdIngressFiles } from "./sku-ingress.js";
+import { holdIngressFiles, skuIngressHint } from "./sku-ingress.js";
 //#region ../CWSP-document/src/shared/routing/channel/ViewTransferRouting.ts
 /**
 * Canonical classification for share-target / launch-queue files (extension often beats flaky MIME).
@@ -125,6 +125,7 @@ var resolveViewTransfer = (payload) => {
 		content: payload.text,
 		url: payload.url,
 		files,
+		fileCount: files.length || Number(payload.fileCount || 0),
 		filename: hint?.filename || files[0]?.name,
 		source: payload.source,
 		route: payload.route,
@@ -286,6 +287,7 @@ var dispatchViewTransfer = async (payload) => {
 	}
 	const files = Array.isArray(payload.files) ? payload.files : [];
 	holdIngressFiles(files);
+	const heldForWorkCenter = normalizeDestination(resolved.destination) === "workcenter" && files.some((file) => file instanceof File);
 	const hasBinaryPayload = resolved.contentType === "image" || resolved.contentType === "file";
 	const message = {
 		id: crypto.randomUUID(),
@@ -312,12 +314,19 @@ var dispatchViewTransfer = async (payload) => {
 		dstChannel: normalizeDestination(resolved.destination)
 	});
 	let queuedAsPending = false;
-	if (!deliveredNow && !hasBinaryPayload) try {
+	/**
+	* WHY: File blobs cannot go through IDB pending. Hold them in memory and still
+	* enqueue a files-stripped `content-attach` so Work Center `onShow` / replay
+	* calls `takeHeldIngressFiles`. Skipping the queue for images left share/launch
+	* as a no-op when the view was not mounted yet (settings, cold boot).
+	*/
+	if (!deliveredNow && (!hasBinaryPayload || heldForWorkCenter)) try {
 		const pendingMessage = {
 			...message,
 			data: {
 				...message.data || {},
-				files: []
+				files: [],
+				fileCount: Number(message.data?.fileCount || files.length || 0)
 			}
 		};
 		enqueuePendingMessage(resolved.destination, pendingMessage);
@@ -325,11 +334,12 @@ var dispatchViewTransfer = async (payload) => {
 	} catch (error) {
 		console.warn("[ViewTransfer] Failed to enqueue pending message:", error);
 	}
-	const delivered = deliveredNow || queuedAsPending;
+	const delivered = deliveredNow || queuedAsPending || heldForWorkCenter;
 	console.log("[ViewTransfer] Message delivery status:", {
 		deliveredNow,
 		queuedAsPending,
 		hasBinaryPayload,
+		heldForWorkCenter,
 		delivered,
 		destination: resolved.destination,
 		routePath: resolved.routePath

@@ -2,11 +2,11 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Dr as processApiAuthFromSettings, Er as postProcessApi, Jr as BROADCAST_CHANNELS, Or as readProcessApiResultText, Qr as viewBroadcastChannelName, Tr as isProcessApiUnavailable, Ur as sendMessage, Yr as ROUTE_HASHES, _r as initializeComponent, at as loadSettings, vr as registerComponent, xr as unwrapSwInteropMessage, yr as replayQueuedMessagesForDestination } from "../shells/boot-index.js";
+import { $r as viewBroadcastChannelName, Dr as processApiAuthFromSettings, Er as postProcessApi, Or as readProcessApiResultText, Tr as isProcessApiUnavailable, Wr as sendMessage, Xr as ROUTE_HASHES, Yr as BROADCAST_CHANNELS, _r as initializeComponent, at as loadSettings, vr as registerComponent, xr as unwrapSwInteropMessage, yr as replayQueuedMessagesForDestination } from "../shells/boot-index.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
-import { s as takeHeldIngressFiles } from "./sku-ingress.js";
+import { dropHeldIngressFiles, onHeldIngressFiles, takeHeldIngressFiles } from "./sku-ingress.js";
 import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
@@ -1818,7 +1818,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Fr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ir);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1879,7 +1879,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Fr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ir);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -3398,6 +3398,7 @@ var ActionHistoryStore = class {
 		};
 		this.state.entries.unshift(fullEntry);
 		if (this.state.entries.length > this.state.maxEntries) this.state.entries = this.state.entries.slice(0, this.state.maxEntries);
+		this.saveHistory();
 		return fullEntry;
 	}
 	/**
@@ -3407,6 +3408,7 @@ var ActionHistoryStore = class {
 		const index = this.state.entries.findIndex((entry) => entry.id === id);
 		if (index === -1) return false;
 		Object.assign(this.state.entries[index], updates);
+		this.saveHistory();
 		return true;
 	}
 	/**
@@ -3874,10 +3876,28 @@ var slimRawResult = (value) => {
 		responseId: typeof row.responseId === "string" ? row.responseId : void 0
 	};
 };
-var isSnapshot = (value) => {
+var isSnapshot$1 = (value) => {
 	if (!value || typeof value !== "object") return false;
 	const candidate = value;
 	return candidate.version === 1 && Array.isArray(candidate.messages) && !!candidate.draft && typeof candidate.draft.content === "string" && Array.isArray(candidate.draft.attachments);
+};
+/** Higher epoch wins (New chat). Same epoch: longer transcript, then draft attachments. */
+var rankSessionSnapshot = (snapshot) => {
+	if (!isSnapshot$1(snapshot)) return -1;
+	return snapshot.epoch * 1e6 + snapshot.messages.length * 10 + snapshot.draft.attachments.length + (snapshot.draft.content.trim() ? 1 : 0);
+};
+var pickRichestSessionSnapshot = (...candidates) => {
+	let best = null;
+	let bestRank = -1;
+	for (const candidate of candidates) {
+		if (!isSnapshot$1(candidate)) continue;
+		const rank = rankSessionSnapshot(candidate);
+		if (rank > bestRank) {
+			best = candidate;
+			bestRank = rank;
+		}
+	}
+	return best;
 };
 /** Conversation mutation facade that persists every durable transition. */
 var WorkCenterSession = class {
@@ -3885,13 +3905,17 @@ var WorkCenterSession = class {
 	state = emptySnapshot();
 	persistGeneration = 0;
 	persistTail = Promise.resolve();
+	lastPersistedEpoch = 0;
+	lastPersistedMessageCount = 0;
 	constructor(persistence) {
 		this.persistence = persistence;
 	}
 	async hydrate() {
 		const restored = await this.persistence.load();
 		if (this.state.messages.length > 0) return this.snapshot();
-		this.state = isSnapshot(restored) ? cloneSnapshot(restored) : emptySnapshot();
+		this.state = isSnapshot$1(restored) ? cloneSnapshot(restored) : emptySnapshot();
+		this.lastPersistedEpoch = this.state.epoch;
+		this.lastPersistedMessageCount = this.state.messages.length;
 		return this.snapshot();
 	}
 	snapshot() {
@@ -4040,14 +4064,20 @@ var WorkCenterSession = class {
 			...emptySnapshot(),
 			epoch: this.state.epoch + 1
 		};
+		this.lastPersistedEpoch = this.state.epoch;
+		this.lastPersistedMessageCount = 0;
 		await this.persistence.clear();
+		await this.persist({ allowEmpty: true });
 	}
-	persist() {
+	persist(opts) {
 		const generation = ++this.persistGeneration;
 		const snapshot = this.snapshot();
 		this.persistTail = this.persistTail.catch(() => void 0).then(async () => {
 			if (generation !== this.persistGeneration) return;
+			if (!opts?.allowEmpty && snapshot.messages.length === 0 && this.lastPersistedMessageCount > 0 && snapshot.epoch === this.lastPersistedEpoch) return;
 			await this.persistence.save(snapshot);
+			this.lastPersistedEpoch = snapshot.epoch;
+			this.lastPersistedMessageCount = snapshot.messages.length;
 		});
 		return this.persistTail;
 	}
@@ -4218,18 +4248,102 @@ var WorkCenterAttachmentIngress = class {
 //#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterSessionPersistence.ts
 /**
-* OPFS adapter for the single persisted Work Center conversation.
+* Durable adapter for the single persisted Work Center conversation.
 *
 * FIND:workcenter-session-persistence
-* WHY: The state machine remains testable against memory while this adapter
-* owns the physical OPFS namespace and never serializes File bytes to JSON.
+* WHY: OPFS via the worker bridge times out on process.u2re.space; the
+* transcript must still survive reload. File bytes stay content-addressed;
+* this adapter never serializes File objects into JSON.
 */
 var WORKCENTER_OPFS_NAMESPACE = "/user/workcenter";
 var MANIFEST_PATH = "session.json";
+var WORKCENTER_SESSION_IDB_NAME = "cwsp-workcenter";
+var IDB_STORE = "kv";
+var IDB_KEY = "session";
+var WORKCENTER_SESSION_LS_KEY = "cwsp-workcenter-session-v1";
+var isSnapshot = (value) => {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value;
+	return candidate.version === 1 && Array.isArray(candidate.messages) && !!candidate.draft && typeof candidate.draft.content === "string" && Array.isArray(candidate.draft.attachments);
+};
+var readLocalSnapshot = () => {
+	try {
+		if (typeof localStorage === "undefined") return null;
+		const raw = localStorage.getItem(WORKCENTER_SESSION_LS_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		return isSnapshot(parsed) ? parsed : null;
+	} catch {
+		return null;
+	}
+};
+var writeLocalSnapshot = (snapshot) => {
+	try {
+		if (typeof localStorage === "undefined") return;
+		if (!snapshot) {
+			localStorage.removeItem(WORKCENTER_SESSION_LS_KEY);
+			return;
+		}
+		localStorage.setItem(WORKCENTER_SESSION_LS_KEY, JSON.stringify(snapshot));
+	} catch {}
+};
+var openSessionIdb = () => new Promise((resolve, reject) => {
+	if (typeof indexedDB === "undefined") {
+		reject(/* @__PURE__ */ new Error("IndexedDB unavailable"));
+		return;
+	}
+	const req = indexedDB.open(WORKCENTER_SESSION_IDB_NAME, 1);
+	req.onupgradeneeded = () => {
+		const db = req.result;
+		if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+	};
+	req.onsuccess = () => resolve(req.result);
+	req.onerror = () => reject(req.error || /* @__PURE__ */ new Error("IndexedDB open failed"));
+});
+var readIdbSnapshot = async () => {
+	try {
+		const db = await openSessionIdb();
+		return await new Promise((resolve, reject) => {
+			const tx = db.transaction(IDB_STORE, "readonly");
+			const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+			req.onsuccess = () => {
+				const value = req.result;
+				resolve(isSnapshot(value) ? value : null);
+			};
+			req.onerror = () => reject(req.error);
+			tx.oncomplete = () => db.close();
+		});
+	} catch {
+		return null;
+	}
+};
+var writeIdbSnapshot = async (snapshot) => {
+	const db = await openSessionIdb();
+	await new Promise((resolve, reject) => {
+		const tx = db.transaction(IDB_STORE, "readwrite");
+		const store = tx.objectStore(IDB_STORE);
+		const req = snapshot ? store.put(snapshot, IDB_KEY) : store.delete(IDB_KEY);
+		req.onerror = () => reject(req.error);
+		tx.oncomplete = () => {
+			db.close();
+			resolve();
+		};
+		tx.onerror = () => reject(tx.error);
+	});
+};
 var createWorkCenterSessionPersistence = (store = createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE)) => ({
-	load: () => store.readJson(MANIFEST_PATH),
-	save: (snapshot) => store.writeJson(MANIFEST_PATH, snapshot),
-	clear: () => store.clear()
+	load: async () => {
+		const [opfs, idb] = await Promise.all([store.readJson(MANIFEST_PATH).catch(() => null), readIdbSnapshot()]);
+		return pickRichestSessionSnapshot(opfs, idb, readLocalSnapshot());
+	},
+	save: async (snapshot) => {
+		writeLocalSnapshot(snapshot);
+		await Promise.allSettled([writeIdbSnapshot(snapshot).catch(() => void 0), store.writeJson(MANIFEST_PATH, snapshot)]);
+	},
+	clear: async () => {
+		writeLocalSnapshot(null);
+		await Promise.allSettled([writeIdbSnapshot(null).catch(() => void 0), store.clear()]);
+	}
 });
 var createWorkCenterAttachmentStore = () => createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE);
 //#endregion
@@ -4395,7 +4509,10 @@ var bindWorkCenterCommandBus = (handler) => {
 };
 //#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenter.ts
-var WorkCenter_exports = /* @__PURE__ */ __exportAll({ WorkCenterManager: () => WorkCenterManager });
+var WorkCenter_exports = /* @__PURE__ */ __exportAll({
+	WorkCenterManager: () => WorkCenterManager,
+	queryLiveWorkCenterChats: () => queryLiveWorkCenterChats
+});
 var MATH_DELIMITER_PATTERN = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|(?<!\$)\$[^$\n]+\$|\\\([\s\S]*?\\\)/;
 var FENCED_CODE_PATTERN = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g;
 var INLINE_CODE_PATTERN = /`[^`\n]+`/g;
@@ -4458,6 +4575,32 @@ f?.use?.(src_default({
 	});
 	return restore(katexNode.innerHTML);
 } } });
+/** Composer lives under `cw-shell-*` shadow — `document.querySelector` misses it. */
+var queryLiveWorkCenterChats = () => {
+	const out = [];
+	const add = (node) => {
+		if (!(node instanceof HTMLElement) || !node.isConnected) return;
+		const host = (node.classList.contains("workcenter-chat") ? node : node.querySelector(".workcenter-chat")) || (node.querySelector("[data-workcenter-composer]") ? node : null);
+		if (!host || out.includes(host)) return;
+		if (!host.querySelector("[data-workcenter-transcript], [data-workcenter-composer]")) return;
+		out.push(host);
+	};
+	if (typeof document === "undefined") return out;
+	add(document.querySelector(".workcenter-chat"));
+	document.querySelectorAll("cw-workcenter-view").forEach((ce) => {
+		add(ce);
+		add(ce.shadowRoot?.querySelector(".workcenter-chat") ?? null);
+	});
+	document.querySelectorAll("[data-shell], cw-shell-minimal, cw-shell-immersive, cw-shell-content, cw-shell-environment").forEach((shell) => {
+		const sr = shell.shadowRoot;
+		if (!sr) return;
+		sr.querySelectorAll(".workcenter-chat, [data-workcenter-composer]").forEach((node) => {
+			const chat = node.closest?.(".workcenter-chat") || node;
+			add(chat);
+		});
+	});
+	return out;
+};
 var WorkCenterManager = class {
 	state;
 	deps;
@@ -4480,6 +4623,8 @@ var WorkCenterManager = class {
 	processedMessageIds = /* @__PURE__ */ new Set();
 	deliveredResultKeys = /* @__PURE__ */ new Set();
 	unbindCommandBus = () => {};
+	unbindHeldIngress = () => {};
+	unbindPagePersist = () => {};
 	constructor(dependencies) {
 		this.deps = dependencies;
 		this.state = WorkCenterStateManager.createDefaultState();
@@ -4520,6 +4665,13 @@ var WorkCenterManager = class {
 		});
 		this.events = new WorkCenterEvents(dependencies, this.actions, this.templates, this.voice, this.history, this.attachmentIngress, this.state);
 		this.unbindCommandBus = bindWorkCenterCommandBus((command) => this.dispatchCommand(command));
+		this.unbindHeldIngress = onHeldIngressFiles((files) => {
+			this.handleIncomingContent({
+				files,
+				fileCount: files.length
+			}, "file");
+		});
+		this.unbindPagePersist = this.bindPagePersist();
 		this.shareTarget.initShareTargetListener(this.state);
 		registerComponent("workcenter-core", "workcenter");
 		this.sessionReady.then(() => this.shareTarget.processQueuedMessages(this.state));
@@ -4528,8 +4680,13 @@ var WorkCenterManager = class {
 			console.log(`[WorkCenter] Processing pending message:`, message);
 			this.handleExternalMessage(message);
 		}
-		this.sessionReady.then(() => {
-			replayQueuedMessagesForDestination("workcenter").catch(() => void 0);
+		this.sessionReady.then(async () => {
+			await replayQueuedMessagesForDestination("workcenter").catch(() => void 0);
+			const held = takeHeldIngressFiles();
+			if (held.length) await this.handleIncomingContent({
+				files: held,
+				fileCount: held.length
+			}, "file");
 		});
 		if (typeof globalThis !== "undefined") globalThis?.addEventListener?.("hashchange", () => {
 			this.attachments.updateDropHint?.();
@@ -4553,6 +4710,7 @@ var WorkCenterManager = class {
 			this.state.sessionHydrated = true;
 		} finally {
 			this.paintLiveConversation();
+			if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => this.paintLiveConversation());
 		}
 	}
 	/** Prefer a connected chat root so GLit remounts do not steal the live composer. */
@@ -4577,7 +4735,7 @@ var WorkCenterManager = class {
 		const hosts = /* @__PURE__ */ new Set();
 		const current = this.ui?.getContainer();
 		if (current) hosts.add(current);
-		if (typeof document !== "undefined") document.querySelectorAll(".workcenter-chat").forEach((node) => hosts.add(node));
+		for (const chat of queryLiveWorkCenterChats()) hosts.add(chat);
 		return hosts;
 	}
 	/** Paint chips on every live chat root — GLit/shell remounts can leave a detached SoT node. */
@@ -4710,7 +4868,10 @@ var WorkCenterManager = class {
 		await this.sessionReady;
 		try {
 			const files = [];
-			if (Array.isArray(data?.files)) files.push(...data.files.filter((entry) => entry instanceof File));
+			if (Array.isArray(data?.files)) {
+				for (const entry of data.files) if (entry instanceof File) files.push(entry);
+				else if (typeof Blob !== "undefined" && entry instanceof Blob) files.push(new File([entry], String(data?.filename || data?.title || `attachment-${Date.now()}`), { type: entry.type || "application/octet-stream" }));
+			}
 			if (data?.file instanceof File) files.push(data.file);
 			if (typeof Blob !== "undefined" && data?.blob instanceof Blob) files.push(new File([data.blob], String(data.filename || `attachment-${Date.now()}.${contentType === "markdown" ? "md" : "txt"}`), { type: data.blob.type || "application/octet-stream" }));
 			if (Array.isArray(data?.attachments)) for (const attachment of data.attachments) {
@@ -4723,9 +4884,15 @@ var WorkCenterManager = class {
 			const text = rawText === void 0 || rawText === null ? "" : typeof rawText === "string" ? rawText : JSON.stringify(rawText, null, 2);
 			if (!files.length && (String(data?.filename || "").trim() || text.trim())) files.push(new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" }));
 			const attached = await this.attachmentIngress.addFiles(files);
+			if (attached.length) dropHeldIngressFiles(files);
 			if (typeof data?.url === "string") await this.attachmentIngress.addUrl(data.url);
 			if (text.trim() && attached.length === 0) await this.appendDraftText(text);
-			if (attached.length) this.deps.showMessage(attached.length === 1 ? `Attached ${attached[0]?.name || "file"}` : `Attached ${attached.length} files`);
+			if (attached.length) {
+				const live = queryLiveWorkCenterChats()[0];
+				if (live) this.adoptLiveRoot(live);
+				this.paintLiveConversation();
+				this.deps.showMessage(attached.length === 1 ? `Attached ${attached[0]?.name || "file"}` : `Attached ${attached.length} files`);
+			}
 		} catch (error) {
 			console.warn("[WorkCenter] Failed to attach incoming content:", error);
 			this.deps.showMessage("Failed to attach content");
@@ -4796,8 +4963,29 @@ var WorkCenterManager = class {
 	getState() {
 		return this.state;
 	}
+	/** Flush transcript + draft when the Process PWA is backgrounded or reloaded. */
+	bindPagePersist() {
+		if (typeof window === "undefined") return () => {};
+		const flush = () => {
+			try {
+				this.session.setDraft(this.state.draft);
+				this.session.persistDraft();
+			} catch {}
+		};
+		const onVisibility = () => {
+			if (document.visibilityState === "hidden") flush();
+		};
+		window.addEventListener("pagehide", flush);
+		document.addEventListener("visibilitychange", onVisibility);
+		return () => {
+			window.removeEventListener("pagehide", flush);
+			document.removeEventListener("visibilitychange", onVisibility);
+		};
+	}
 	destroy() {
 		this.unbindCommandBus();
+		this.unbindHeldIngress();
+		this.unbindPagePersist();
 		this.ui.setContainer(null);
 		this.attachments.setContainer(null);
 		this.prompts.setContainer(null);
@@ -4814,8 +5002,9 @@ var WorkCenterManager = class {
 		this.ui.updateFileCounter(this.state);
 		this.history.updateRecentHistory(this.state);
 		this.templates.fillInstructionSelects(container, this.state);
+		if (this.state.sessionHydrated) this.paintLiveConversation();
 		return container;
 	}
 };
 //#endregion
-export { WorkCenter_exports as n, WorkCenterManager as t };
+export { WorkCenter_exports as n, queryLiveWorkCenterChats as r, WorkCenterManager as t };

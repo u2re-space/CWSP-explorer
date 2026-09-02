@@ -1,33 +1,114 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./log-sanitizer.js"])))=>i.map(i=>d[i]);
-import { r as __exportAll } from "./rolldown-runtime.js";
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { Bt as sinkToDestination, Dt as classifyOpenKindFromPayload, Nt as peekOpenPolicy, Ot as inferIngressChannels, Rt as resolveOpenPolicy, Wt as surfaceForSku, ht as peekProcessIngressSettings, vt as resolveProcessIngressKind, zt as sinkToAction } from "../shells/boot-index.js";
 
 //#region ../CWSP-document/src/shared/routing/channel/sku-ingress.ts
-var sku_ingress_exports = /* @__PURE__ */ __exportAll({
-	applyLauncherIngress: () => applyLauncherIngress,
-	dataUrlToFile: () => dataUrlToFile,
-	holdIngressFiles: () => holdIngressFiles,
-	installShellImageOpenListener: () => installShellImageOpenListener,
-	isWallpaperCompatible: () => isWallpaperCompatible,
-	looksLikeDirectoryPath: () => looksLikeDirectoryPath,
-	looksLikeWallpaperFile: () => looksLikeWallpaperFile,
-	refineLauncherImageIngress: () => refineLauncherImageIngress,
-	skuIngressHint: () => skuIngressHint,
-	takeHeldIngressFiles: () => takeHeldIngressFiles
-});
 /**
 * Same-tab File objects die when unified messaging queues through IDB/JSON.
 * Hold them in memory so Work Center can still attach the real blobs.
 */
 var heldIngressFiles = [];
-var holdIngressFiles = (files) => {
-	heldIngressFiles.length = 0;
-	if (!Array.isArray(files)) return;
-	for (const file of files) if (file instanceof File) heldIngressFiles.push(file);
+var heldIngressListeners = /* @__PURE__ */ new Set();
+var ingressFileKey = (file) => `${file.name}|${file.size}|${file.lastModified}`;
+var notifyHeldIngress = () => {
+	if (!heldIngressFiles.length) return;
+	const snapshot = heldIngressFiles.slice();
+	for (const listener of heldIngressListeners) try {
+		listener(snapshot);
+	} catch {}
 };
+var holdIngressFiles = (files) => {
+	const incoming = Array.isArray(files) ? files.filter((file) => file instanceof File) : [];
+	if (!incoming.length) return;
+	const seen = new Set(heldIngressFiles.map(ingressFileKey));
+	let added = 0;
+	for (const file of incoming) {
+		const key = ingressFileKey(file);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		heldIngressFiles.push(file);
+		added += 1;
+	}
+	if (added === 0) {
+		notifyHeldIngress();
+		return;
+	}
+	notifyHeldIngress();
+};
+var peekHeldIngressFiles = () => heldIngressFiles.slice();
 var takeHeldIngressFiles = () => heldIngressFiles.splice(0, heldIngressFiles.length);
+/** Drop only the Files that a view already attached — keep the rest of a merged hold. */
+var dropHeldIngressFiles = (files) => {
+	if (!files?.length) return;
+	const drop = new Set(files.filter((file) => file instanceof File).map(ingressFileKey));
+	if (!drop.size) return;
+	for (let i = heldIngressFiles.length - 1; i >= 0; i--) if (drop.has(ingressFileKey(heldIngressFiles[i]))) heldIngressFiles.splice(i, 1);
+};
+var collectWorkCenterFlushHosts = () => {
+	if (typeof document === "undefined") return [];
+	const hosts = [];
+	const seen = /* @__PURE__ */ new Set();
+	const add = (node) => {
+		if (!node || seen.has(node)) return;
+		seen.add(node);
+		hosts.push(node);
+	};
+	document.querySelectorAll("cw-workcenter-view").forEach(add);
+	document.querySelectorAll("[data-shell], cw-shell-minimal, cw-shell-immersive, cw-shell-content, cw-shell-environment").forEach((shell) => {
+		shell.shadowRoot?.querySelectorAll("cw-workcenter-view").forEach(add);
+	});
+	return hosts;
+};
+/**
+* Same-heap attach after share/launch. Unified `deliveredNow` is not proof chips painted
+* (settle + supersede can skip `handleMessage`; `navigate(workcenter)` remounts an empty draft).
+*/
+var flushHeldIngressToWorkCenter = async () => {
+	const files = peekHeldIngressFiles();
+	if (!files.length) return 0;
+	notifyHeldIngress();
+	try {
+		const { postWorkCenterCommand } = await __vitePreload(async () => {
+			const { postWorkCenterCommand } = await import("./workcenter-command-wire.js");
+			return { postWorkCenterCommand };
+		}, [], import.meta.url);
+		postWorkCenterCommand({
+			type: "attach.add",
+			files
+		});
+	} catch {}
+	console.log("[sku-ingress] Flushing held ingress to Work Center", {
+		fileCount: files.length,
+		names: files.map((file) => file.name)
+	});
+	for (const host of collectWorkCenterFlushHosts()) try {
+		if (typeof host.addFiles === "function") await host.addFiles(files);
+		else if (typeof host.handleMessage === "function") await host.handleMessage({
+			type: "content-attach",
+			data: {
+				files,
+				fileCount: files.length
+			}
+		});
+	} catch (error) {
+		console.warn("[sku-ingress] flush to Work Center failed", error);
+	}
+	return files.length;
+};
+/**
+* Work Center subscribes here so a hold after `sessionReady` still paints chips.
+* If files are already held, the listener runs immediately.
+*/
+var onHeldIngressFiles = (listener) => {
+	heldIngressListeners.add(listener);
+	if (heldIngressFiles.length) try {
+		listener(heldIngressFiles.slice());
+	} catch {}
+	return () => {
+		heldIngressListeners.delete(listener);
+	};
+};
 var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.V), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
@@ -429,4 +510,4 @@ var installShellImageOpenListener = () => {
 	});
 };
 //#endregion
-export { skuIngressHint as a, refineLauncherImageIngress as i, holdIngressFiles as n, sku_ingress_exports as o, installShellImageOpenListener as r, takeHeldIngressFiles as s, applyLauncherIngress as t };
+export { applyLauncherIngress, dataUrlToFile, dropHeldIngressFiles, flushHeldIngressToWorkCenter, holdIngressFiles, installShellImageOpenListener, onHeldIngressFiles, peekHeldIngressFiles, refineLauncherImageIngress, skuIngressHint, takeHeldIngressFiles };
