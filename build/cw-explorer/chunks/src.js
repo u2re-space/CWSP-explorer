@@ -349,6 +349,7 @@ var writePersistedExplorerPath = (path) => {
 function loadLastPath(explorer, initialPath) {
 	try {
 		ensureDefaultFsBackends();
+		__vitePreload(() => import("../com/app.js").then((n) => n.jt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
 	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();

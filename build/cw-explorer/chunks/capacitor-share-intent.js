@@ -70,6 +70,13 @@ var isDocumentSku = () => {
 		return false;
 	}
 };
+var isTransferSku = () => {
+	try {
+		return String(document.documentElement?.dataset?.cwspSku || "").trim() === "transfer";
+	} catch {
+		return false;
+	}
+};
 var consumeNativePendingShare = async () => {
 	try {
 		const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
@@ -129,6 +136,7 @@ var enqueueShareIngest = (job) => {
 var installCapacitorShareIntentBridge = () => {
 	if (!isCapacitorNative() || installed) return;
 	installed = true;
+	if (isTransferSku()) return;
 	const handler = (ev) => {
 		(async () => {
 			const { text, title, asset, pending } = parseSharePayload(ev.detail);
@@ -223,7 +231,7 @@ var installCapacitorShareIntentBridge = () => {
 			window.addEventListener("cwsp:boot-ready", onReady);
 			window.setTimeout(done, 4e3);
 		});
-		if (isDocumentSku()) return;
+		if (isDocumentSku() || isTransferSku()) return;
 		const native = await consumeNativePendingShare().catch(() => null);
 		if (native) await ingestParsedShare(native);
 	});

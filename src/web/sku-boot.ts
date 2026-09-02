@@ -90,6 +90,7 @@ export const bootExplorerSku = async (
         /* ignore */
     }
     installExplorerShareIngress();
+    void import("@fest-lib/lure").then((m) => m.ensureRemoteMountedFs()).catch(() => {});
 
     if (host === "capacitor") {
         try {

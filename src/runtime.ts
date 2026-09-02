@@ -308,6 +308,7 @@ const writePersistedExplorerPath = (path: string): void => {
 function loadLastPath(explorer: LocalFileManager, initialPath: string | null | undefined): void {
     try {
         ensureDefaultFsBackends();
+        void import("@fest-lib/lure").then((m) => m.ensureRemoteMountedFs()).catch(() => {});
     } catch {
         /* registry optional */
     }

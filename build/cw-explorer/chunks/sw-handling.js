@@ -2095,6 +2095,15 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 };
 /** Capacitor / sku-boot entry: stage files then run the same share pipeline as PWA. */
 var ingestSharePayload = async (shareData, source = "share-target") => {
+	const capacitorNative = (() => {
+		try {
+			const c = globalThis.Capacitor;
+			return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+		} catch {
+			return false;
+		}
+	})();
+	if (capacitorNative && inferCwspSkuFromLocation() === "transfer") return true;
 	const files = Array.isArray(shareData.files) ? shareData.files.filter((f) => f instanceof File) : [];
 	try {
 		await storeShareTargetPayloadToCache({
@@ -2130,15 +2139,7 @@ var ingestSharePayload = async (shareData, source = "share-target") => {
 			src: String(shareData.url || shareData.sharedUrl || "")
 		});
 	} catch {}
-	const native = (() => {
-		try {
-			const c = globalThis.Capacitor;
-			return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-		} catch {
-			return false;
-		}
-	})();
-	return routeToTransferView(shareData, source, extractTransferHint(shareData), native);
+	return routeToTransferView(shareData, source, extractTransferHint(shareData), capacitorNative);
 };
 /**
 * Extract processable content from share data
