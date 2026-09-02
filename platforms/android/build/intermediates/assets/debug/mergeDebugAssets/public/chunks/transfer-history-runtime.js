@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 
 /**
 * Recent-history window for collapsing identical clipboard bodies that lack a
@@ -635,7 +635,7 @@ function startCapacitorTransferHistory() {
 	window.addEventListener("cws:transferHistory", onCapWindowEvent);
 	document.addEventListener("cws:transferHistory", onCapWindowEvent);
 	__vitePreload(async () => {
-		const { CwsBridge } = await import("../shells/boot-index.js").then((n) => n.bn);
+		const { CwsBridge } = await import("../shells/boot-index.js").then((n) => n.wn);
 		return { CwsBridge };
 	}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).then(async ({ CwsBridge }) => {
 		try {
@@ -794,7 +794,7 @@ async function dispatchHistoryAction(entry, action) {
 			localFilePath: entry.localFilePath || ""
 		};
 		const { invokeCwsNative } = await __vitePreload(async () => {
-			const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.bn);
+			const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.wn);
 			return { invokeCwsNative };
 		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		if ((await invokeCwsNative({

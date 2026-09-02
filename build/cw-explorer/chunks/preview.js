@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { dr as isEnabledView } from "../shells/boot-index.js";
+import { pr as isEnabledView } from "../shells/boot-index.js";
 import { An as H } from "../com/app.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
@@ -148,7 +148,7 @@ var MinimalShell = class extends ShellBase {
 		navRight.appendChild(btn);
 		btn.addEventListener("click", () => {
 			__vitePreload(async () => {
-				const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.$);
+				const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.tt);
 				return { loadSettings };
 			}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).then(({ loadSettings }) => loadSettings()).then((s) => __vitePreload(async () => {
 				const { openAdminDoorFromCore } = await import("./admin-doors.js").then((n) => n.t);

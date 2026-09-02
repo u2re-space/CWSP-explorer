@@ -1,6 +1,6 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
-import { $n as splitMultiValueList } from "../shells/boot-index.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./log-sanitizer.js","./ViewTransferRouting.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+import { rr as splitMultiValueList } from "../shells/boot-index.js";
 
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region ../CWSP-document/src/frontend/boot/capacitor-share-intent.ts
@@ -73,7 +73,7 @@ var isDocumentSku = () => {
 var consumeNativePendingShare = async () => {
 	try {
 		const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.bn);
+			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.wn);
 			return { invokeCwsPlatformIPC };
 		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
@@ -134,10 +134,10 @@ var installCapacitorShareIntentBridge = () => {
 			const { text, title, asset, pending } = parseSharePayload(ev.detail);
 			try {
 				const [{ loadSettings }, ws, { classifyOpenKindFromPayload }, ingress] = await Promise.all([
-					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.$), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.tt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
 					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.c), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
-					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.Ot), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
-					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.ft), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url)
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.Mt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.gt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url)
 				]);
 				const settings = await loadSettings();
 				ingress.rememberProcessIngressSettings(settings);

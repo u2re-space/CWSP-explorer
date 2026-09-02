@@ -1,8 +1,8 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../views/viewer.js","./rolldown-runtime.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../com/app.js","../fest/veela.js","./MarkdownEditor.js","./QuillEditor.js","../vendor/quill.js","../vendor/lodash-es.js","../vendor/parchment.js","../vendor/fast-diff.js","../vendor/lodash.clonedeep.js","../vendor/lodash.isequal.js","../vendor/eventemitter3.js","./WorkCenter.js","./LogSanitizer.js","./sku-ingress.js","./ShareTargetGateway.js","./utils.js","./CustomInstructions.js","./entities.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./src.js","./DocxExport.js"])))=>i.map(i=>d[i]);
-import { Dr as processInitialContent, Er as initializeComponent, Ir as getBroadcastChannelForDestination, Or as registerComponent, Pr as BROADCAST_CHANNELS, Sr as createMessageWithOverrides, Tr as hasPendingMessages, br as settleIngressPaintForMinimalShell, jr as unifiedMessaging, rt as loadSettings, wr as enqueuePendingMessage } from "../shells/boot-index.js";
-import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, r as validateIngressBeforeViewHandle, t as pickAuthoritativeTransferFiles } from "../com/service.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../views/viewer.js","./rolldown-runtime.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/app.js","../com/service.js","../fest/veela.js","./MarkdownEditor.js","./QuillEditor.js","../vendor/quill.js","../vendor/lodash-es.js","../vendor/parchment.js","../vendor/fast-diff.js","../vendor/lodash.clonedeep.js","../vendor/lodash.isequal.js","../vendor/eventemitter3.js","./WorkCenter.js","./log-sanitizer.js","./sku-ingress.js","./ShareTargetGateway.js","./utils.js","./CustomInstructions.js","./entities.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./src.js","./DocxExport.js"])))=>i.map(i=>d[i]);
+import { Br as initializeComponent, Gr as unifiedMessaging, Hr as registerComponent, Ir as createMessageWithOverrides, Jr as BROADCAST_CHANNELS, Pr as settleIngressPaintForMinimalShell, Rr as enqueuePendingMessage, Vr as processInitialContent, Xr as getBroadcastChannelForDestination, at as loadSettings, zr as hasPendingMessages } from "../shells/boot-index.js";
 import { An as H, Mt as getCachedComponent, fn as createTemplateManager, mn as getSpeechPrompt, qt as createFileHandler } from "../com/app.js";
+import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, r as validateIngressBeforeViewHandle, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 import { r as fetchSwCachedEntries } from "./ShareTargetGateway.js";
 import { loadAsAdopted } from "/fest/style-lib.js";
 import { clearIconCache, clearIconCaches, debugIconSystem, ensureStyleSheet, reinitializeRegistry, testIconRacing } from "/fest/icon.js";
@@ -927,7 +927,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const editor = (await getCachedComponent("quill-editor", () => __vitePreload(() => import("./QuillEditor.js"), __vite__mapDeps([8,5,1,9,10,11,12,13,14,15]), import.meta.url), { componentName: "QuillEditor" })).component.createQuillEditor({
+			const editor = (await getCachedComponent("quill-editor", () => __vitePreload(() => import("./QuillEditor.js"), __vite__mapDeps([8,4,1,9,10,11,12,13,14,15]), import.meta.url), { componentName: "QuillEditor" })).component.createQuillEditor({
 				initialContent: state.markdown || "",
 				onContentChange: (content) => {
 					state.markdown = content;
@@ -984,7 +984,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.jt), __vite__mapDeps([5,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
+			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.jt), __vite__mapDeps([4,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
 			if (state.history.length === 0) state.history = historyManager.getAllEntries();
 			const historyElement = historyManager.createHistoryView((entry) => {
 				if (state.view === "workcenter") getCachedComponent("workcenter", () => __vitePreload(() => import("./WorkCenter.js").then((n) => n.n).then((m) => m.WorkCenterManager), __vite__mapDeps([16,1,2,3,4,5,6,17,18,19,20,21,22,23,24,25,26]), import.meta.url), { componentName: "WorkCenter" }).then(() => {
@@ -1550,7 +1550,7 @@ var mountShellApp = (mountElement, options = {}) => {
 					const { downloadMarkdownAsDocx } = await __vitePreload(async () => {
 						const { downloadMarkdownAsDocx } = await import("./DocxExport.js");
 						return { downloadMarkdownAsDocx };
-					}, __vite__mapDeps([32,1,5]), import.meta.url);
+					}, __vite__mapDeps([32,1,4]), import.meta.url);
 					await downloadMarkdownAsDocx(md, {
 						title: "CWSP-shell",
 						filename: `crossword-${Date.now()}.docx`

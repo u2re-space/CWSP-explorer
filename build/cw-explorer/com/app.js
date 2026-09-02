@@ -31537,7 +31537,7 @@ async function getLauncherBridgeForSpeedDial() {
 /** Launch a sibling ecosystem APK by SKU (launcher HOME only). */
 async function launchEcosystemSku(sku) {
 	const { androidPackageForSku, isCwspSku } = await __vitePreload(async () => {
-		const { androidPackageForSku, isCwspSku } = await import("../shells/boot-index.js").then((n) => n.bn);
+		const { androidPackageForSku, isCwspSku } = await import("../shells/boot-index.js").then((n) => n.Sn);
 		return {
 			androidPackageForSku,
 			isCwspSku
@@ -31554,7 +31554,7 @@ async function launchEcosystemSku(sku) {
 async function tryLaunchSiblingView(view) {
 	try {
 		const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await __vitePreload(async () => {
-			const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await import("../shells/boot-index.js").then((n) => n.bn);
+			const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await import("../shells/boot-index.js").then((n) => n.Sn);
 			return {
 				isCwspNativeHost,
 				readCwspSku,

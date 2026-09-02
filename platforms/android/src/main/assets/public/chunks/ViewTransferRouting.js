@@ -1,9 +1,9 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/service.js","../com/app.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
-import { Ar as sendProtocolMessage, Bt as surfaceForSku, Ct as classifyOpenKindFromPayload, Dt as normalizeOpenSink, It as sinkToDestination, Lr as normalizeDestination, Pt as resolveOpenPolicy, Rr as viewBroadcastChannelName, Rt as skuForOpenSink, dt as peekProcessIngressSettings, kt as peekOpenPolicy, wr as enqueuePendingMessage, wt as inferIngressChannels } from "../shells/boot-index.js";
+import { Bt as sinkToDestination, Dt as classifyOpenKindFromPayload, Ht as skuForOpenSink, Nt as peekOpenPolicy, Ot as inferIngressChannels, Qr as viewBroadcastChannelName, Rr as enqueuePendingMessage, Rt as resolveOpenPolicy, Wr as sendProtocolMessage, Wt as surfaceForSku, Zr as normalizeDestination, ht as peekProcessIngressSettings, jt as normalizeOpenSink } from "../shells/boot-index.js";
 
-import { t as summarizeForLog } from "./LogSanitizer.js";
+import { t as summarizeForLog } from "./log-sanitizer.js";
 import { a as skuIngressHint, n as holdIngressFiles } from "./sku-ingress.js";
 //#region ../CWSP-document/src/shared/routing/channel/ViewTransferRouting.ts
 /**

@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./DocxExport.js","./BootLoader.js","../shells/preference.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/service.js","../fest/veela.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { Ct as classifyOpenKind, Dt as looksLikePreviewableBinary, It as resolveOpenPolicy, Mt as rememberOpenPolicyFromSettings, Pt as resolveHostOpenPolicy, mr as ingressStampWasSuperseded, rt as loadSettings } from "../shells/boot-index.js";
+import { It as resolveHostOpenPolicy, Pt as rememberOpenPolicyFromSettings, Rt as resolveOpenPolicy, Tt as classifyOpenKind, at as loadSettings, gr as ingressStampWasSuperseded, kt as looksLikePreviewableBinary } from "../shells/boot-index.js";
 import { An as H, Bt as pickAssetDirectory, Ft as indexDirectoryFiles, Gt as resolveFileUnderDirectory, Ht as pickSidecarDirectoryFiles, It as isMarkdownRelativeRef, Kt as saveMarkdownBlob, Lt as mountPickedDirectory, Pt as findEntryRelPath, Qt as parseDataUrl, Rt as observeFileSystemHandle, Ut as provideBoundRelative, Vt as pickMarkdownFile, Wt as relPathCandidates, Xt as isBase64Like, Yt as decodeBase64ToBytes, Zt as normalizeDataAsset, an as matchMappedRoot, cn as provide, in as isVirtualFsPath, nn as getDir, on as normalizePath, s as purify, sn as openDirectory, zt as originalRelFromRef } from "../com/app.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 import { c as createViewConstructor, l as createViewState, n as sendViewProtocolMessage, r as ExplorerChannelAction, s as ViewerChannelAction } from "../views/viewer.js";
@@ -2334,7 +2334,7 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 				const g = globalThis;
 				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Sn);
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.wn);
 					return { invokeCwsPlatformIPC };
 				}, __vite__mapDeps([6,1,5,0,7,8]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });

@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../chunks/LogSanitizer.js","../chunks/sku-ingress.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../chunks/log-sanitizer.js","../chunks/sku-ingress.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../chunks/capacitor-share-intent2.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
 import { Et as initializeAppCanvasLayer, Jt as writeFileSmart, Rn as Q, St as __decorate, bt as UIElement, gn as saveUIState, hn as makeUIState, kn as defineElement, zn as JSOX } from "../com/app.js";
@@ -11,11 +11,11 @@ import { withTimeout } from "/fest/core.js";
 import { fixOrientToScreen } from "/fest/dom.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
 import "/fest/icon.js";
-//#region ../CWSP-document/src/shared/routing/api/process-api-path.ts
+//#region ../../modules/projects/subsystem/src/routing/api/process-api-path.ts
 var PROCESS_API_PUBLIC_ORIGIN$1 = "https://process.u2re.space";
 var PROCESS_API_PREFIX$1 = "/api/process";
 //#endregion
-//#region ../CWSP-document/src/shared/routing/api/process-api.ts
+//#region ../../modules/projects/subsystem/src/routing/api/process-api.ts
 var PROCESS_API_SUFFIX$1 = {
 	processing: "processing",
 	recognize: "ai/recognize",
@@ -55,148 +55,8 @@ var resolveProcessApiUrl$1 = (suffix = "processing") => {
 	const path = processApiPath$1(suffix);
 	return needsRemoteProcessApi$1() ? `${PROCESS_API_PUBLIC_ORIGIN$1}${path}` : path;
 };
-var processApiAuthFromSettings = (settings) => {
-	const core = settings?.core || {};
-	const socket = core.socket || {};
-	const accessToken = String(socket.accessToken || socket.airpadAuthToken || "").trim();
-	return {
-		userId: String(core.userId || "").trim() || void 0,
-		userKey: String(core.userKey || "").trim() || void 0,
-		accessToken: accessToken || void 0,
-		apiKey: String(settings?.ai?.apiKey || "").trim() || void 0,
-		baseUrl: String(settings?.ai?.baseUrl || "").trim() || void 0,
-		model: String(settings?.ai?.model || "").trim() || void 0,
-		mcp: Array.isArray(settings?.ai?.mcp) ? settings.ai.mcp : void 0
-	};
-};
-/** True when :443 never reached a working CWSP core — caller should run in-browser AI. */
-var isProcessApiUnavailable = (posted) => {
-	if (posted.status === 0 || posted.status >= 500) return true;
-	const error = String(posted.error || "").toLowerCase();
-	if (/failed to fetch|networkerror|econnrefused|certificate|aborted/.test(error)) return true;
-	if (!posted.json || typeof posted.json !== "object") return !posted.ok;
-	const row = posted.json;
-	if (row.ok !== false) return false;
-	const detail = `${row.error || ""} ${row.hint || ""}`.toLowerCase();
-	return row.layer === "api" || /unreachable|econnrefused|certificate|bad gateway/.test(detail);
-};
-var readProcessApiResultText = (json) => {
-	if (!json || typeof json !== "object") return "";
-	const row = json;
-	if (row.ok === false || row.success === false) return "";
-	const inner = row.result && typeof row.result === "object" ? row.result : null;
-	const candidates = [
-		row.data,
-		inner?.data,
-		inner?.text,
-		inner?.content,
-		row.text,
-		row.result
-	];
-	for (const item of candidates) if (typeof item === "string" && item.trim()) return item;
-	return "";
-};
-var fetchProcessApi = async (url, suffix, payload, init) => {
-	try {
-		const isGet = suffix === "health";
-		const res = await fetch(url, {
-			method: isGet ? "GET" : "POST",
-			headers: isGet ? { Accept: "application/json" } : {
-				"Content-Type": "application/json",
-				Accept: "application/json"
-			},
-			body: isGet ? void 0 : JSON.stringify(payload),
-			signal: init?.signal
-		});
-		const text = await res.text();
-		let json = null;
-		try {
-			json = text ? JSON.parse(text) : null;
-		} catch {
-			json = {
-				ok: false,
-				error: text
-			};
-		}
-		return {
-			ok: res.ok,
-			status: res.status,
-			json
-		};
-	} catch (error) {
-		return {
-			ok: false,
-			status: 0,
-			json: null,
-			error: String(error instanceof Error ? error.message : error)
-		};
-	}
-};
-var tryNativeProcessApi = async (payload) => {
-	if (!isCapacitorNative$5()) return null;
-	try {
-		const { CwsBridge } = await __vitePreload(async () => {
-			const { CwsBridge } = await import(
-				/* @vite-ignore */
-				"../native/cws-bridge.ts"
-);
-			return { CwsBridge };
-		}, [], import.meta.url);
-		const plugin = CwsBridge;
-		const row = typeof plugin.processApi === "function" ? await plugin.processApi(payload) : await CwsBridge.invoke({
-			channel: "process:api",
-			payload
-		});
-		if (!row || typeof row !== "object") return null;
-		const json = row;
-		if (json.echo && json.ok === true && json.error == null && !("result" in json) && !("fallback" in json)) return null;
-		return {
-			ok: json.ok !== false,
-			status: 200,
-			json
-		};
-	} catch {
-		return null;
-	}
-};
-var postProcessApi = async (suffix, body = {}, auth, init) => {
-	const path = processApiPath$1(suffix);
-	const payload = {
-		...body,
-		...auth?.userId ? { userId: auth.userId } : {},
-		...auth?.userKey ? { userKey: auth.userKey } : {},
-		...auth?.baseUrl ? { baseUrl: auth.baseUrl } : {},
-		...auth?.accessToken ? { accessToken: auth.accessToken } : {},
-		...auth?.apiKey ? { apiKey: auth.apiKey } : {},
-		...auth?.model ? { model: auth.model } : {},
-		...auth?.mcp ? { mcp: auth.mcp } : {}
-	};
-	if (suffix !== "health" && (auth?.apiKey || payload.apiKey)) {
-		const native = await tryNativeProcessApi(payload);
-		if (native && !isProcessApiUnavailable(native) && native.json) return native;
-	}
-	const urls = [];
-	const remote = `${PROCESS_API_PUBLIC_ORIGIN$1}${path}`;
-	const local = path;
-	if (needsRemoteProcessApi$1()) urls.push(remote);
-	else {
-		urls.push(local);
-		if (isCapacitorNative$5()) urls.push(remote);
-	}
-	let last = null;
-	for (const url of urls) {
-		last = await fetchProcessApi(url, suffix, payload, init);
-		if (!isProcessApiUnavailable(last)) return last;
-	}
-	return last ?? {
-		ok: false,
-		status: 0,
-		json: null,
-		error: "Process API unavailable"
-	};
-};
 //#endregion
-//#region ../CWSP-document/src/shared/other/config/Names.ts
+//#region ../../modules/projects/subsystem/src/other/config/Names.ts
 /**
 * Centralized naming system for CWSP-shell application
 * Consolidates component names, channel names, route names, etc.
@@ -204,7 +64,7 @@ var postProcessApi = async (suffix, body = {}, auth, init) => {
 /**
 * Broadcast channel names used throughout the application
 */
-var BROADCAST_CHANNELS$1 = {
+var BROADCAST_CHANNELS = {
 	SHARE_TARGET: "rs-share-target",
 	TOAST: "rs-toast",
 	CLIPBOARD: "rs-clipboard",
@@ -234,13 +94,13 @@ var BROADCAST_CHANNELS$1 = {
 	SERVICE_EDITOR: "rs-service-editor",
 	SERVICE_HOME: "rs-service-home"
 };
-var viewBroadcastChannelName$1 = (viewId) => {
-	return `rs-view-${normalizeViewId$1(viewId) || "app"}`;
+var viewBroadcastChannelName = (viewId) => {
+	return `rs-view-${normalizeViewId(viewId) || "app"}`;
 };
 /**
 * Component and module identifiers
 */
-var COMPONENTS$1 = {
+var COMPONENTS = {
 	WORK_CENTER: "workcenter",
 	MARKDOWN_VIEWER: "markdown-viewer",
 	MARKDOWN_EDITOR: "markdown-editor",
@@ -291,7 +151,7 @@ var API_ENDPOINTS = {
 /**
 * Location hash identifiers for app navigation
 */
-var ROUTE_HASHES$1 = {
+var ROUTE_HASHES = {
 	MARKDOWN_VIEWER: "#markdown-viewer",
 	MARKDOWN_EDITOR: "#markdown-editor",
 	RICH_EDITOR: "#rich-editor",
@@ -331,7 +191,7 @@ var CONTENT_TYPES = {
 /**
 * Destination identifiers for unified messaging
 */
-var DESTINATIONS$1 = {
+var DESTINATIONS = {
 	WORKCENTER: "workcenter",
 	CLIPBOARD: "clipboard",
 	VIEWER: "viewer",
@@ -348,7 +208,7 @@ var DESTINATIONS$1 = {
 	BASIC_APP: "basic-app",
 	MAIN_APP: "main-app"
 };
-var CANONICAL_VIEW_IDS$1 = [
+var CANONICAL_VIEW_IDS = [
 	"viewer",
 	"workcenter",
 	"explorer",
@@ -364,93 +224,94 @@ var CANONICAL_VIEW_IDS$1 = [
 * `basic-*` destinations. Keep alias resolution centralized here so transports,
 * views, and workers can agree on one canonical target vocabulary.
 */
-var DESTINATION_ALIASES$1 = {
+var DESTINATION_ALIASES = {
 	viewer: [
-		DESTINATIONS$1.VIEWER,
-		DESTINATIONS$1.MARKDOWN_VIEWER,
-		COMPONENTS$1.BASIC_VIEWER
+		DESTINATIONS.VIEWER,
+		DESTINATIONS.MARKDOWN_VIEWER,
+		COMPONENTS.BASIC_VIEWER
 	],
 	workcenter: [
-		DESTINATIONS$1.WORKCENTER,
-		COMPONENTS$1.BASIC_WORKCENTER,
-		COMPONENTS$1.WORKCENTER_CORE
+		DESTINATIONS.WORKCENTER,
+		COMPONENTS.BASIC_WORKCENTER,
+		COMPONENTS.WORKCENTER_CORE
 	],
 	explorer: [
-		DESTINATIONS$1.EXPLORER,
-		DESTINATIONS$1.FILE_EXPLORER,
-		COMPONENTS$1.BASIC_EXPLORER
+		DESTINATIONS.EXPLORER,
+		DESTINATIONS.FILE_EXPLORER,
+		COMPONENTS.BASIC_EXPLORER
 	],
 	editor: [
-		DESTINATIONS$1.EDITOR,
-		COMPONENTS$1.MARKDOWN_EDITOR,
-		COMPONENTS$1.RICH_EDITOR
+		DESTINATIONS.EDITOR,
+		COMPONENTS.MARKDOWN_EDITOR,
+		COMPONENTS.RICH_EDITOR
 	],
 	settings: [
-		DESTINATIONS$1.SETTINGS,
-		BROADCAST_CHANNELS$1.SETTINGS_CHANNEL,
-		COMPONENTS$1.BASIC_SETTINGS
+		DESTINATIONS.SETTINGS,
+		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
+		COMPONENTS.BASIC_SETTINGS
 	],
 	history: [
-		DESTINATIONS$1.HISTORY,
-		BROADCAST_CHANNELS$1.HISTORY_CHANNEL,
-		COMPONENTS$1.BASIC_HISTORY
+		DESTINATIONS.HISTORY,
+		BROADCAST_CHANNELS.HISTORY_CHANNEL,
+		COMPONENTS.BASIC_HISTORY
 	],
 	print: [
-		DESTINATIONS$1.PRINT,
-		DESTINATIONS$1.PRINT_VIEWER,
-		COMPONENTS$1.BASIC_PRINT
+		DESTINATIONS.PRINT,
+		DESTINATIONS.PRINT_VIEWER,
+		COMPONENTS.BASIC_PRINT
 	],
-	airpad: [DESTINATIONS$1.AIRPAD],
-	home: [DESTINATIONS$1.HOME],
-	clipboard: [DESTINATIONS$1.CLIPBOARD],
-	"basic-app": [DESTINATIONS$1.BASIC_APP],
-	"main-app": [DESTINATIONS$1.MAIN_APP]
+	airpad: [DESTINATIONS.AIRPAD],
+	home: [DESTINATIONS.HOME],
+	clipboard: [DESTINATIONS.CLIPBOARD],
+	"basic-app": [DESTINATIONS.BASIC_APP],
+	"main-app": [DESTINATIONS.MAIN_APP]
 };
-var DESTINATION_LOOKUP$1 = Object.entries(DESTINATION_ALIASES$1).reduce((out, [canonical, aliases]) => {
+var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
 	out[canonical] = canonical;
 	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
 	return out;
 }, {});
-var normalizeDestination$1 = (value) => {
+var normalizeDestination = (value) => {
 	const raw = String(value || "").trim().toLowerCase();
 	if (!raw) return "";
-	return DESTINATION_LOOKUP$1[raw] || raw;
+	return DESTINATION_LOOKUP[raw] || raw;
 };
-var getDestinationAliases$1 = (value) => {
-	const canonical = normalizeDestination$1(value);
+var getDestinationAliases = (value) => {
+	const canonical = normalizeDestination(value);
 	if (!canonical) return [];
-	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES$1[canonical] || []])];
+	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES[canonical] || []])];
 };
-var normalizeViewId$1 = (value) => {
-	const canonical = normalizeDestination$1(value);
-	if (CANONICAL_VIEW_IDS$1.includes(canonical)) return canonical;
+var matchesDestination = (candidate, expected) => Boolean(normalizeDestination(candidate) && normalizeDestination(candidate) === normalizeDestination(expected));
+var normalizeViewId = (value) => {
+	const canonical = normalizeDestination(value);
+	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
 	return "viewer";
 };
 var getBroadcastChannelForDestination = (value) => {
-	switch (normalizeDestination$1(value)) {
-		case "viewer": return BROADCAST_CHANNELS$1.MARKDOWN_VIEWER;
-		case "workcenter": return BROADCAST_CHANNELS$1.WORK_CENTER;
-		case "explorer": return BROADCAST_CHANNELS$1.FILE_EXPLORER;
-		case "settings": return BROADCAST_CHANNELS$1.SETTINGS;
-		case "history": return BROADCAST_CHANNELS$1.HISTORY_VIEWER;
-		case "print": return BROADCAST_CHANNELS$1.PRINT_VIEWER;
-		case "clipboard": return BROADCAST_CHANNELS$1.CLIPBOARD;
-		case "main-app": return BROADCAST_CHANNELS$1.MAIN_APP;
-		case "basic-app": return BROADCAST_CHANNELS$1.MINIMAL_APP;
+	switch (normalizeDestination(value)) {
+		case "viewer": return BROADCAST_CHANNELS.MARKDOWN_VIEWER;
+		case "workcenter": return BROADCAST_CHANNELS.WORK_CENTER;
+		case "explorer": return BROADCAST_CHANNELS.FILE_EXPLORER;
+		case "settings": return BROADCAST_CHANNELS.SETTINGS;
+		case "history": return BROADCAST_CHANNELS.HISTORY_VIEWER;
+		case "print": return BROADCAST_CHANNELS.PRINT_VIEWER;
+		case "clipboard": return BROADCAST_CHANNELS.CLIPBOARD;
+		case "main-app": return BROADCAST_CHANNELS.MAIN_APP;
+		case "basic-app": return BROADCAST_CHANNELS.MINIMAL_APP;
 		default: return null;
 	}
 };
 var createDestinationChannelMappings = () => {
 	const mappings = {};
-	for (const canonical of Object.keys(DESTINATION_ALIASES$1)) {
+	for (const canonical of Object.keys(DESTINATION_ALIASES)) {
 		const channel = getBroadcastChannelForDestination(canonical);
 		if (!channel) continue;
-		for (const alias of getDestinationAliases$1(canonical)) mappings[alias] = channel;
+		for (const alias of getDestinationAliases(canonical)) mappings[alias] = channel;
 	}
 	return mappings;
 };
-BROADCAST_CHANNELS$1.SERVICE_WORKCENTER, BROADCAST_CHANNELS$1.SERVICE_SETTINGS, BROADCAST_CHANNELS$1.SERVICE_VIEWER, BROADCAST_CHANNELS$1.SERVICE_EXPLORER, BROADCAST_CHANNELS$1.SERVICE_AIRPAD, BROADCAST_CHANNELS$1.SERVICE_NETWORK, BROADCAST_CHANNELS$1.SERVICE_PRINT, BROADCAST_CHANNELS$1.SERVICE_HISTORY, BROADCAST_CHANNELS$1.SERVICE_EDITOR, BROADCAST_CHANNELS$1.SERVICE_HOME;
-ROUTE_HASHES$1.WORKCENTER, ROUTE_HASHES$1.SETTINGS, ROUTE_HASHES$1.MARKDOWN_VIEWER, ROUTE_HASHES$1.FILE_EXPLORER, ROUTE_HASHES$1.NETWORK, ROUTE_HASHES$1.PRINT, ROUTE_HASHES$1.HISTORY, ROUTE_HASHES$1.MARKDOWN_EDITOR;
+BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
+ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
 //#endregion
 //#region ../CWSP-document/src/shared/routing/channel/ServiceChannels.ts
 /**
@@ -459,57 +320,57 @@ ROUTE_HASHES$1.WORKCENTER, ROUTE_HASHES$1.SETTINGS, ROUTE_HASHES$1.MARKDOWN_VIEW
 */
 var SERVICE_CHANNEL_CONFIG = {
 	workcenter: {
-		broadcastName: BROADCAST_CHANNELS$1.WORK_CENTER,
-		routeHash: ROUTE_HASHES$1.WORKCENTER,
-		component: COMPONENTS$1.WORK_CENTER,
+		broadcastName: BROADCAST_CHANNELS.WORK_CENTER,
+		routeHash: ROUTE_HASHES.WORKCENTER,
+		component: COMPONENTS.WORK_CENTER,
 		description: "AI work center for processing files and content"
 	},
 	settings: {
-		broadcastName: BROADCAST_CHANNELS$1.SETTINGS,
-		routeHash: ROUTE_HASHES$1.SETTINGS,
-		component: COMPONENTS$1.SETTINGS,
+		broadcastName: BROADCAST_CHANNELS.SETTINGS,
+		routeHash: ROUTE_HASHES.SETTINGS,
+		component: COMPONENTS.SETTINGS,
 		description: "Application settings and configuration"
 	},
 	airpad: {
-		broadcastName: BROADCAST_CHANNELS$1.SERVICE_AIRPAD,
-		routeHash: ROUTE_HASHES$1.AIRPAD,
-		component: COMPONENTS$1.AIRPAD,
+		broadcastName: BROADCAST_CHANNELS.SERVICE_AIRPAD,
+		routeHash: ROUTE_HASHES.AIRPAD,
+		component: COMPONENTS.AIRPAD,
 		description: "AirPad remote trackpad/keyboard + clipboard"
 	},
 	network: {
-		broadcastName: BROADCAST_CHANNELS$1.SERVICE_NETWORK,
-		routeHash: ROUTE_HASHES$1.NETWORK,
-		component: COMPONENTS$1.NETWORK,
+		broadcastName: BROADCAST_CHANNELS.SERVICE_NETWORK,
+		routeHash: ROUTE_HASHES.NETWORK,
+		component: COMPONENTS.NETWORK,
 		description: "CWSP network status, probes, and endpoint routing"
 	},
 	viewer: {
-		broadcastName: BROADCAST_CHANNELS$1.MARKDOWN_VIEWER,
-		routeHash: ROUTE_HASHES$1.MARKDOWN_VIEWER,
-		component: COMPONENTS$1.MARKDOWN_VIEWER,
+		broadcastName: BROADCAST_CHANNELS.MARKDOWN_VIEWER,
+		routeHash: ROUTE_HASHES.MARKDOWN_VIEWER,
+		component: COMPONENTS.MARKDOWN_VIEWER,
 		description: "Content viewer for markdown and files"
 	},
 	explorer: {
-		broadcastName: BROADCAST_CHANNELS$1.FILE_EXPLORER,
-		routeHash: ROUTE_HASHES$1.FILE_EXPLORER,
-		component: COMPONENTS$1.FILE_EXPLORER,
+		broadcastName: BROADCAST_CHANNELS.FILE_EXPLORER,
+		routeHash: ROUTE_HASHES.FILE_EXPLORER,
+		component: COMPONENTS.FILE_EXPLORER,
 		description: "File explorer and browser"
 	},
 	print: {
-		broadcastName: BROADCAST_CHANNELS$1.PRINT_CHANNEL,
-		routeHash: ROUTE_HASHES$1.PRINT,
-		component: COMPONENTS$1.BASIC_PRINT,
+		broadcastName: BROADCAST_CHANNELS.PRINT_CHANNEL,
+		routeHash: ROUTE_HASHES.PRINT,
+		component: COMPONENTS.BASIC_PRINT,
 		description: "Print preview and export"
 	},
 	history: {
-		broadcastName: BROADCAST_CHANNELS$1.HISTORY_CHANNEL,
-		routeHash: ROUTE_HASHES$1.HISTORY,
-		component: COMPONENTS$1.HISTORY,
+		broadcastName: BROADCAST_CHANNELS.HISTORY_CHANNEL,
+		routeHash: ROUTE_HASHES.HISTORY,
+		component: COMPONENTS.HISTORY,
 		description: "Action history and undo/redo"
 	},
 	editor: {
 		broadcastName: "rs-editor",
-		routeHash: ROUTE_HASHES$1.MARKDOWN_EDITOR,
-		component: COMPONENTS$1.MARKDOWN_EDITOR,
+		routeHash: ROUTE_HASHES.MARKDOWN_EDITOR,
+		component: COMPONENTS.MARKDOWN_EDITOR,
 		description: "Content editor"
 	},
 	home: {
@@ -531,51 +392,6 @@ function getServiceChannels() {
 	return appServiceChannelManager;
 }
 var serviceChannels = getServiceChannels();
-//#endregion
-//#region ../../modules/projects/subsystem/src/routing/api/process-api-path.ts
-var PROCESS_API_PUBLIC_ORIGIN = "https://process.u2re.space";
-var PROCESS_API_PREFIX = "/api/process";
-//#endregion
-//#region ../../modules/projects/subsystem/src/routing/api/process-api.ts
-var PROCESS_API_SUFFIX = {
-	processing: "processing",
-	recognize: "ai/recognize",
-	analyze: "ai/analyze",
-	health: "health"
-};
-var PROCESS_SAME_ORIGIN_HOSTS = /* @__PURE__ */ new Set([
-	"process.u2re.space",
-	"workcenter.u2re.space",
-	"ai.u2re.space",
-	"u2re.space",
-	"www.u2re.space"
-]);
-var isExtensionProtocol = (protocol) => protocol === "chrome-extension:" || protocol === "moz-extension:" || protocol === "safari-web-extension:";
-var isCapacitorNative$4 = () => {
-	try {
-		const g = globalThis;
-		return typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform();
-	} catch {
-		return false;
-	}
-};
-/** Dedicated process / hub hosts stay same-origin. Everything else uses https://process.u2re.space. */
-var needsRemoteProcessApi = () => {
-	try {
-		if (isExtensionProtocol(String(globalThis.location?.protocol || "").toLowerCase())) return true;
-		if (isCapacitorNative$4()) return false;
-		const host = String(globalThis.location?.hostname || "").toLowerCase();
-		if (!host) return true;
-		return !PROCESS_SAME_ORIGIN_HOSTS.has(host);
-	} catch {
-		return true;
-	}
-};
-var processApiPath = (suffix = "processing") => `${PROCESS_API_PREFIX}/${PROCESS_API_SUFFIX[suffix]}`;
-var resolveProcessApiUrl = (suffix = "processing") => {
-	const path = processApiPath(suffix);
-	return needsRemoteProcessApi() ? `${PROCESS_API_PUBLIC_ORIGIN}${path}` : path;
-};
 //#endregion
 //#region ../../modules/projects/subsystem/src/service/instructions/core.ts
 var AI_INSTRUCTIONS$1 = {
@@ -833,7 +649,7 @@ AI_INSTRUCTIONS$1.CRX_WRITE_CODE;
 AI_INSTRUCTIONS$1.CRX_EXTRACT_CSS;
 //#endregion
 //#region ../../modules/projects/subsystem/src/routing/channel/UnifiedAIConfig.ts
-var processApiUrl$1 = () => resolveProcessApiUrl("processing");
+var processApiUrl$1 = () => resolveProcessApiUrl$1("processing");
 var UNIFIED_PROCESSING_RULES$1 = {
 	"share-target": {
 		processingUrl: processApiUrl$1(),
@@ -1114,8 +930,8 @@ var normalizeInteropTransportName$1 = (value) => {
 var createInteropEnvelope$1 = (input) => {
 	const id = String(input.id || input.uuid || "").trim() || randomId$1();
 	const source = String(input.source || input.sender || input.srcChannel || "interop").trim() || "interop";
-	const destination = normalizeDestination$1(input.destination || input.target);
-	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination$1(entry)).filter(Boolean))] : destination ? getDestinationAliases$1(destination) : [];
+	const destination = normalizeDestination(input.destination || input.target);
+	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination(entry)).filter(Boolean))] : destination ? getDestinationAliases(destination) : [];
 	const payload = input.payload ?? input.data;
 	const timestamp = Number(input.timestamp ?? Date.now()) || Date.now();
 	return {
@@ -1203,15 +1019,15 @@ var UnifiedMessaging_exports = /* @__PURE__ */ __exportAll({
 	initializeComponent: () => initializeComponent$1,
 	processInitialContent: () => processInitialContent,
 	registerComponent: () => registerComponent$1,
-	replayQueuedMessagesForDestination: () => replayQueuedMessagesForDestination,
+	replayQueuedMessagesForDestination: () => replayQueuedMessagesForDestination$1,
 	sendMessage: () => sendMessage,
 	sendProtocolMessage: () => sendProtocolMessage,
 	unifiedMessaging: () => unifiedMessaging$1
 });
 var APP_CHANNEL_MAPPINGS$1 = {
 	...createDestinationChannelMappings(),
-	[DESTINATIONS$1.WORKCENTER]: BROADCAST_CHANNELS$1.WORK_CENTER,
-	[DESTINATIONS$1.CLIPBOARD]: BROADCAST_CHANNELS$1.CLIPBOARD
+	[DESTINATIONS.WORKCENTER]: BROADCAST_CHANNELS.WORK_CENTER,
+	[DESTINATIONS.CLIPBOARD]: BROADCAST_CHANNELS.CLIPBOARD
 };
 var appMessagingInstance$1 = null;
 /**
@@ -1277,10 +1093,10 @@ function initializeComponent$1(componentId) {
 	return unifiedMessaging$1.initializeComponent(componentId);
 }
 function hasPendingMessages(destination) {
-	return unifiedMessaging$1.hasPendingMessages(normalizeDestination$1(destination) || destination);
+	return unifiedMessaging$1.hasPendingMessages(normalizeDestination(destination) || destination);
 }
 function enqueuePendingMessage(destination, message) {
-	const dest = normalizeDestination$1(destination) || String(destination ?? "").trim();
+	const dest = normalizeDestination(destination) || String(destination ?? "").trim();
 	if (!dest || !message) return;
 	unifiedMessaging$1.enqueuePendingMessage(dest, message);
 }
@@ -1288,11 +1104,11 @@ function enqueuePendingMessage(destination, message) {
 * Replay IndexedDB-backed queued messages for a destination (mail/deferred pipeline).
 * Safe after handlers register — implicit view bridge calls this post-bind.
 */
-function replayQueuedMessagesForDestination(destination) {
+function replayQueuedMessagesForDestination$1(destination) {
 	return unifiedMessaging$1.processQueuedMessages(destination);
 }
 function registerComponent$1(componentId, destination) {
-	unifiedMessaging$1.registerComponent(componentId, normalizeDestination$1(destination) || destination);
+	unifiedMessaging$1.registerComponent(componentId, normalizeDestination(destination) || destination);
 }
 function processInitialContent(content) {
 	const contentType = String(content?.contentType ?? content?.type ?? CONTENT_TYPES.OTHER);
@@ -1307,10 +1123,10 @@ function processInitialContent(content) {
 	const meta = contentMetadata;
 	const source = String(content?.source ?? meta?.source ?? "content-association");
 	const tasks = resolved.pipeline.map((dest) => {
-		if (dest === DESTINATIONS$1.VIEWER) return sendMessage({
+		if (dest === DESTINATIONS.VIEWER) return sendMessage({
 			type: "content-view",
 			source,
-			destination: DESTINATIONS$1.VIEWER,
+			destination: DESTINATIONS.VIEWER,
 			contentType: resolved.normalizedContentType,
 			data: {
 				content: payload?.text ?? payload?.content ?? payload,
@@ -1324,10 +1140,10 @@ function processInitialContent(content) {
 				processingSource: content?.processingSource
 			}
 		});
-		if (dest === DESTINATIONS$1.EXPLORER) return sendMessage({
+		if (dest === DESTINATIONS.EXPLORER) return sendMessage({
 			type: "content-explorer",
 			source,
-			destination: DESTINATIONS$1.EXPLORER,
+			destination: DESTINATIONS.EXPLORER,
 			contentType: resolved.normalizedContentType,
 			data: {
 				action: "save",
@@ -1343,7 +1159,7 @@ function processInitialContent(content) {
 		return sendMessage({
 			type: "content-share",
 			source,
-			destination: DESTINATIONS$1.WORKCENTER,
+			destination: DESTINATIONS.WORKCENTER,
 			contentType: resolved.normalizedContentType,
 			data: payload,
 			metadata: {
@@ -1367,7 +1183,7 @@ function createMessageWithOverrides(type, source, contentType, data, overrideFac
 		id: crypto.randomUUID(),
 		type,
 		source,
-		destination: resolved.destination === DESTINATIONS$1.VIEWER ? DESTINATIONS$1.VIEWER : resolved.destination === DESTINATIONS$1.EXPLORER ? DESTINATIONS$1.EXPLORER : DESTINATIONS$1.WORKCENTER,
+		destination: resolved.destination === DESTINATIONS.VIEWER ? DESTINATIONS.VIEWER : resolved.destination === DESTINATIONS.EXPLORER ? DESTINATIONS.EXPLORER : DESTINATIONS.WORKCENTER,
 		contentType,
 		data,
 		metadata: {
@@ -1405,7 +1221,7 @@ var VIEW_MESSAGE_FALLBACKS = {
 	print: ["content-view"]
 };
 var inferViewDestination = (viewId) => {
-	return normalizeViewId$1(viewId);
+	return normalizeViewId(viewId);
 };
 var selectMessageTypeForView = (view, incomingType) => {
 	const checks = [incomingType, ...VIEW_MESSAGE_FALLBACKS[view.id] || []];
@@ -1435,7 +1251,7 @@ var mapUnifiedMessageToView = (view, message) => {
 */
 function subscribeViewChannel(viewId, handler) {
 	if (typeof BroadcastChannel === "undefined") return () => {};
-	const bc = new BroadcastChannel(viewBroadcastChannelName$1(normalizeViewId$1(viewId)));
+	const bc = new BroadcastChannel(viewBroadcastChannelName(normalizeViewId(viewId)));
 	bc.addEventListener("message", handler);
 	return () => {
 		bc.removeEventListener("message", handler);
@@ -1633,211 +1449,109 @@ function scheduleSerialViewIngressDelivery(view, task) {
 	return next;
 }
 //#endregion
-//#region ../../modules/projects/subsystem/src/other/config/Names.ts
-/**
-* Broadcast channel names used throughout the application
-*/
-var BROADCAST_CHANNELS = {
-	SHARE_TARGET: "rs-share-target",
-	TOAST: "rs-toast",
-	CLIPBOARD: "rs-clipboard",
-	WORK_CENTER: "rs-workcenter",
-	MARKDOWN_VIEWER: "rs-markdown-viewer",
-	SETTINGS: "rs-settings",
-	GENERAL: "rs-app-general",
-	MINIMAL_APP: "minimal-app",
-	MAIN_APP: "main-app",
-	FILE_EXPLORER: "file-explorer",
-	PRINT_VIEWER: "print-viewer",
-	SETTINGS_VIEWER: "settings-viewer",
-	HISTORY_VIEWER: "history-viewer",
-	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
-	FILE_EXPLORER_CHANNEL: "file-explorer",
-	SETTINGS_CHANNEL: "settings",
-	HISTORY_CHANNEL: "history",
-	PRINT_CHANNEL: "print",
-	SERVICE_WORKCENTER: "rs-service-workcenter",
-	SERVICE_SETTINGS: "rs-service-settings",
-	SERVICE_VIEWER: "rs-service-viewer",
-	SERVICE_EXPLORER: "rs-service-explorer",
-	SERVICE_AIRPAD: "rs-service-airpad",
-	SERVICE_NETWORK: "rs-service-network",
-	SERVICE_PRINT: "rs-service-print",
-	SERVICE_HISTORY: "rs-service-history",
-	SERVICE_EDITOR: "rs-service-editor",
-	SERVICE_HOME: "rs-service-home"
+//#region ../CWSP-document/src/shared/routing/pwa/sw-cache.ts
+var originHint = () => {
+	try {
+		const origin = globalThis.location?.origin;
+		if (origin) return origin;
+	} catch {}
+	return "https://localhost";
 };
-var viewBroadcastChannelName = (viewId) => {
-	return `rs-view-${normalizeViewId(viewId) || "app"}`;
+var toCacheRequestInfo = (requestLike) => {
+	if (!requestLike) return void 0;
+	return requestLike instanceof URL ? requestLike.toString() : requestLike;
+};
+var cacheKeyString = (request) => {
+	if (typeof request === "string") return request;
+	if (request instanceof Request) return request.url;
+	return "";
 };
 /**
-* Component and module identifiers
+* Cache#match rejects blob:/data:/non-GET. chrome-extension: is valid in MV3.
+* Relative paths (`/share-target-data`) resolve against the worker origin.
 */
-var COMPONENTS = {
-	WORK_CENTER: "workcenter",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	MARKDOWN_EDITOR: "markdown-editor",
-	RICH_EDITOR: "rich-editor",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	FILE_PICKER: "file-picker",
-	FILE_EXPLORER: "file-explorer",
-	WORKCENTER_CORE: "workcenter-core",
-	BASIC_WORKCENTER: "basic-workcenter",
-	BASIC_VIEWER: "basic-viewer",
-	BASIC_EXPLORER: "basic-explorer",
-	BASIC_SETTINGS: "basic-settings",
-	BASIC_HISTORY: "basic-history",
-	BASIC_PRINT: "basic-print",
-	AIRPAD: "airpad",
-	NETWORK: "network",
-	HOME: "home",
-	EDITOR: "editor",
-	VIEWER: "viewer",
-	EXPLORER: "explorer",
-	PRINT: "print"
+var isCacheApiKey = (request) => {
+	if (request instanceof Request && String(request.method || "GET").toUpperCase() !== "GET") return false;
+	const raw = cacheKeyString(request);
+	if (!raw) return false;
+	try {
+		const protocol = new URL(raw, originHint()).protocol;
+		return protocol === "http:" || protocol === "https:" || protocol === "chrome-extension:" || protocol === "moz-extension:";
+	} catch {
+		return raw.startsWith("/");
+	}
 };
-/**
-* Location hash identifiers for app navigation
-*/
-var ROUTE_HASHES = {
-	MARKDOWN_VIEWER: "#markdown-viewer",
-	MARKDOWN_EDITOR: "#markdown-editor",
-	RICH_EDITOR: "#rich-editor",
-	SETTINGS: "#settings",
-	HISTORY: "#history",
-	WORKCENTER: "#workcenter",
-	FILE_PICKER: "#file-picker",
-	FILE_EXPLORER: "#file-explorer",
-	PRINT: "#print",
-	AIRPAD: "#airpad",
-	NETWORK: "#network",
-	WORKCENTER_FILES: "#workcenter-files",
-	WORKCENTER_TEXT: "#workcenter-text",
-	WORKCENTER_IMAGES: "#workcenter-images",
-	WORKCENTER_PROCESSING: "#workcenter-processing",
-	SHARE_TARGET_TEXT: "#share-target-text",
-	SHARE_TARGET_FILES: "#share-target-files",
-	SHARE_TARGET_URL: "#share-target-url",
-	SHARE_TARGET_IMAGE: "#share-target-image"
+var asMatchKey = (request) => {
+	if (typeof request === "string") return request;
+	if (typeof Request !== "undefined" && request instanceof Request) return request;
 };
-/**
-* Destination identifiers for unified messaging
-*/
-var DESTINATIONS = {
-	WORKCENTER: "workcenter",
-	CLIPBOARD: "clipboard",
-	VIEWER: "viewer",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	EXPLORER: "explorer",
-	FILE_EXPLORER: "file-explorer",
-	PRINT: "print",
-	PRINT_VIEWER: "print-viewer",
-	EDITOR: "editor",
-	AIRPAD: "airpad",
-	HOME: "home",
-	BASIC_APP: "basic-app",
-	MAIN_APP: "main-app"
+var cachesApi = () => {
+	try {
+		return globalThis.caches || null;
+	} catch {
+		return null;
+	}
 };
-var CANONICAL_VIEW_IDS = [
-	"viewer",
-	"workcenter",
-	"explorer",
-	"editor",
-	"settings",
-	"history",
-	"home",
-	"airpad",
-	"print"
-];
-/**
-* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
-* `basic-*` destinations. Keep alias resolution centralized here so transports,
-* views, and workers can agree on one canonical target vocabulary.
-*/
-var DESTINATION_ALIASES = {
-	viewer: [
-		DESTINATIONS.VIEWER,
-		DESTINATIONS.MARKDOWN_VIEWER,
-		COMPONENTS.BASIC_VIEWER
-	],
-	workcenter: [
-		DESTINATIONS.WORKCENTER,
-		COMPONENTS.BASIC_WORKCENTER,
-		COMPONENTS.WORKCENTER_CORE
-	],
-	explorer: [
-		DESTINATIONS.EXPLORER,
-		DESTINATIONS.FILE_EXPLORER,
-		COMPONENTS.BASIC_EXPLORER
-	],
-	editor: [
-		DESTINATIONS.EDITOR,
-		COMPONENTS.MARKDOWN_EDITOR,
-		COMPONENTS.RICH_EDITOR
-	],
-	settings: [
-		DESTINATIONS.SETTINGS,
-		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
-		COMPONENTS.BASIC_SETTINGS
-	],
-	history: [
-		DESTINATIONS.HISTORY,
-		BROADCAST_CHANNELS.HISTORY_CHANNEL,
-		COMPONENTS.BASIC_HISTORY
-	],
-	print: [
-		DESTINATIONS.PRINT,
-		DESTINATIONS.PRINT_VIEWER,
-		COMPONENTS.BASIC_PRINT
-	],
-	airpad: [DESTINATIONS.AIRPAD],
-	home: [DESTINATIONS.HOME],
-	clipboard: [DESTINATIONS.CLIPBOARD],
-	"basic-app": [DESTINATIONS.BASIC_APP],
-	"main-app": [DESTINATIONS.MAIN_APP]
+var safeCacheOpen = async (name) => {
+	const store = cachesApi();
+	if (!store || typeof store.open !== "function") return null;
+	try {
+		return await store.open(name);
+	} catch {
+		return null;
+	}
 };
-var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
-	out[canonical] = canonical;
-	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
-	return out;
-}, {});
-var normalizeDestination = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "";
-	return DESTINATION_LOOKUP[raw] || raw;
+var safeCacheMatch = async (cache, requestLike) => {
+	const request = toCacheRequestInfo(requestLike);
+	if (!cache || !request) return void 0;
+	const key = asMatchKey(request);
+	if (!key || !isCacheApiKey(key)) return void 0;
+	const match = cache.match;
+	if (typeof match !== "function") return void 0;
+	try {
+		return await match.call(cache, key) ?? void 0;
+	} catch (error) {
+		console.warn("[SW] Cache.match failed:", request, error);
+		return;
+	}
 };
-var getDestinationAliases = (value) => {
-	const canonical = normalizeDestination(value);
-	if (!canonical) return [];
-	return [.../* @__PURE__ */ new Set([canonical, ...DESTINATION_ALIASES[canonical] || []])];
+var safeCachePut = async (cache, requestLike, response) => {
+	const request = toCacheRequestInfo(requestLike);
+	if (!cache || !request || typeof cache.put !== "function") return false;
+	const key = asMatchKey(request);
+	if (!key || !isCacheApiKey(key)) return false;
+	try {
+		await cache.put(key, response);
+		return true;
+	} catch (error) {
+		console.warn("[SW] Cache.put failed:", request, error);
+		return false;
+	}
 };
-var matchesDestination = (candidate, expected) => Boolean(normalizeDestination(candidate) && normalizeDestination(candidate) === normalizeDestination(expected));
-var normalizeViewId = (value) => {
-	const canonical = normalizeDestination(value);
-	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
-	return "viewer";
+var safeCacheDelete = async (cache, requestLike) => {
+	const request = toCacheRequestInfo(requestLike);
+	if (!cache || !request || typeof cache.delete !== "function") return false;
+	try {
+		return await cache.delete(request);
+	} catch {
+		return false;
+	}
 };
-BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
-ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
 //#endregion
 //#region ../CWSP-document/src/shared/routing/channel/ShareTargetGateway.ts
 var SHARE_CACHE_NAME = "share-target-data";
 var SHARE_CACHE_KEY = "/share-target-data";
 var SHARE_FILES_MANIFEST_KEY = "/share-target-files";
 var SHARE_FILE_PREFIX = "/share-target-file/";
-var hasCaches = () => typeof globalThis !== "undefined" && "caches" in globalThis;
 /** Persist the last share-target payload so the app can recover it after navigation or cold start. */
 var storeShareTargetPayloadToCache = async (payload) => {
-	if (!hasCaches()) return false;
 	const files = Array.isArray(payload.files) ? payload.files : [];
 	const meta = payload.meta ?? {};
 	try {
-		const cache = await caches.open(SHARE_CACHE_NAME);
+		const cache = await safeCacheOpen(SHARE_CACHE_NAME);
+		if (!cache) return false;
 		const timestamp = Number(meta?.timestamp) || Date.now();
-		await cache.put(SHARE_CACHE_KEY, new Response(JSON.stringify({
+		await safeCachePut(cache, SHARE_CACHE_KEY, new Response(JSON.stringify({
 			...meta,
 			title: meta?.title,
 			text: meta?.text,
@@ -1858,7 +1572,7 @@ var storeShareTargetPayloadToCache = async (payload) => {
 			headers.set("X-File-Name", encodeURIComponent(file.name || `file-${i}`));
 			headers.set("X-File-Size", String(file.size || 0));
 			headers.set("X-File-LastModified", String(file.lastModified ?? 0));
-			await cache.put(key, new Response(file, { headers }));
+			await safeCachePut(cache, key, new Response(file, { headers }));
 			fileManifest.push({
 				key,
 				name: file.name || `file-${i}`,
@@ -1867,7 +1581,7 @@ var storeShareTargetPayloadToCache = async (payload) => {
 				lastModified: file.lastModified ?? void 0
 			});
 		}
-		await cache.put(SHARE_FILES_MANIFEST_KEY, new Response(JSON.stringify({
+		await safeCachePut(cache, SHARE_FILES_MANIFEST_KEY, new Response(JSON.stringify({
 			files: fileManifest,
 			timestamp
 		}), { headers: { "Content-Type": "application/json" } }));
@@ -1883,11 +1597,11 @@ var storeShareTargetPayloadToCache = async (payload) => {
 */
 var consumeCachedShareTargetPayload = async (opts = {}) => {
 	const clear = opts.clear !== false;
-	if (!hasCaches()) return null;
 	try {
-		const cache = await caches.open(SHARE_CACHE_NAME);
-		const metaResp = await cache.match(SHARE_CACHE_KEY);
-		const manifestResp = await cache.match(SHARE_FILES_MANIFEST_KEY);
+		const cache = await safeCacheOpen(SHARE_CACHE_NAME);
+		if (!cache) return null;
+		const metaResp = await safeCacheMatch(cache, SHARE_CACHE_KEY);
+		const manifestResp = await safeCacheMatch(cache, SHARE_FILES_MANIFEST_KEY);
 		if (!metaResp && !manifestResp) return null;
 		const meta = metaResp ? await metaResp.json().catch(() => null) : null;
 		const manifest = manifestResp ? await manifestResp.json().catch(() => null) : null;
@@ -1896,7 +1610,7 @@ var consumeCachedShareTargetPayload = async (opts = {}) => {
 		for (const fm of fileMeta) {
 			const fileKey = typeof fm?.key === "string" ? fm.key.trim() : String(fm?.key ?? "").trim();
 			if (!fileKey) continue;
-			const response = await cache.match(fileKey);
+			const response = await safeCacheMatch(cache, fileKey);
 			if (!response) continue;
 			const blob = await response.blob();
 			files.push(new File([blob], fm.name || "shared-file", {
@@ -1905,9 +1619,9 @@ var consumeCachedShareTargetPayload = async (opts = {}) => {
 			}));
 		}
 		if (clear) {
-			await cache.delete(SHARE_CACHE_KEY).catch(() => {});
-			await cache.delete(SHARE_FILES_MANIFEST_KEY).catch(() => {});
-			for (const fm of fileMeta) if (fm?.key) await cache.delete(fm.key).catch(() => {});
+			await safeCacheDelete(cache, SHARE_CACHE_KEY);
+			await safeCacheDelete(cache, SHARE_FILES_MANIFEST_KEY);
+			for (const fm of fileMeta) if (fm?.key) await safeCacheDelete(cache, fm.key);
 		}
 		return {
 			meta: meta || {},
@@ -1953,6 +1667,231 @@ var buildShareDataFromCachedPayload = (payload) => {
 	};
 	if (hintOut !== void 0) out.hint = hintOut;
 	return out;
+};
+//#endregion
+//#region ../CWSP-document/src/shared/routing/api/process-api-path.ts
+var PROCESS_API_PUBLIC_ORIGIN = "https://process.u2re.space";
+var PROCESS_API_PREFIX = "/api/process";
+//#endregion
+//#region ../CWSP-document/src/shared/routing/api/process-api-result.ts
+var asTrimmed = (value) => typeof value === "string" ? value.trim() : "";
+var fromChoices = (value) => {
+	if (!Array.isArray(value) || !value.length) return "";
+	const first = value[0];
+	return asTrimmed(first?.message?.content) || asTrimmed(first?.text);
+};
+var fromRecognized = (value) => {
+	const text = asTrimmed(value);
+	if (text) return text;
+	if (!Array.isArray(value) || !value.length) return "";
+	return value.map((item) => typeof item === "string" ? item : item == null ? "" : JSON.stringify(item)).filter(Boolean).join("\n").trim();
+};
+var fromRecord = (row) => {
+	if (row.ok === false || row.success === false) return "";
+	const inner = row.result && typeof row.result === "object" ? row.result : null;
+	const candidates = [
+		row.data,
+		inner?.data,
+		inner?.text,
+		inner?.content,
+		row.text,
+		row.content,
+		row.verbose_data,
+		inner?.verbose_data,
+		row.output_text,
+		inner?.output_text
+	];
+	for (const item of candidates) {
+		const text = asTrimmed(item);
+		if (text) return text;
+	}
+	const recognized = fromRecognized(row.recognized_data ?? inner?.recognized_data);
+	if (recognized) return recognized;
+	const choices = fromChoices(row.choices ?? inner?.choices);
+	if (choices) return choices;
+	if (typeof inner?.result === "string") return inner.result.trim();
+	return "";
+};
+/** Display text for chat / pipeline. Empty when the payload is a failed envelope. */
+var readProcessApiResultText = (json) => {
+	if (json == null) return "";
+	if (typeof json === "string") {
+		const trimmed = json.trim();
+		if (!trimmed) return "";
+		if (trimmed.startsWith("{") || trimmed.startsWith("[")) try {
+			return readProcessApiResultText(JSON.parse(trimmed)) || trimmed;
+		} catch {
+			return trimmed;
+		}
+		return trimmed;
+	}
+	if (typeof json !== "object") return String(json).trim();
+	return fromRecord(json);
+};
+//#endregion
+//#region ../CWSP-document/src/shared/routing/api/process-api.ts
+var PROCESS_API_SUFFIX = {
+	processing: "processing",
+	recognize: "ai/recognize",
+	analyze: "ai/analyze",
+	health: "health"
+};
+var PROCESS_SAME_ORIGIN_HOSTS = /* @__PURE__ */ new Set([
+	"process.u2re.space",
+	"workcenter.u2re.space",
+	"ai.u2re.space",
+	"u2re.space",
+	"www.u2re.space"
+]);
+var isExtensionProtocol = (protocol) => protocol === "chrome-extension:" || protocol === "moz-extension:" || protocol === "safari-web-extension:";
+var isCapacitorNative$4 = () => {
+	try {
+		const g = globalThis;
+		return typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform();
+	} catch {
+		return false;
+	}
+};
+/** Dedicated process / hub hosts stay same-origin. Everything else uses https://process.u2re.space. */
+var needsRemoteProcessApi = () => {
+	try {
+		if (isExtensionProtocol(String(globalThis.location?.protocol || "").toLowerCase())) return true;
+		if (isCapacitorNative$4()) return false;
+		const host = String(globalThis.location?.hostname || "").toLowerCase();
+		if (!host) return true;
+		return !PROCESS_SAME_ORIGIN_HOSTS.has(host);
+	} catch {
+		return true;
+	}
+};
+var processApiPath = (suffix = "processing") => `${PROCESS_API_PREFIX}/${PROCESS_API_SUFFIX[suffix]}`;
+var resolveProcessApiUrl = (suffix = "processing") => {
+	const path = processApiPath(suffix);
+	return needsRemoteProcessApi() ? `${PROCESS_API_PUBLIC_ORIGIN}${path}` : path;
+};
+var processApiAuthFromSettings = (settings) => {
+	const core = settings?.core || {};
+	const socket = core.socket || {};
+	const accessToken = String(socket.accessToken || socket.airpadAuthToken || "").trim();
+	return {
+		userId: String(core.userId || "").trim() || void 0,
+		userKey: String(core.userKey || "").trim() || void 0,
+		accessToken: accessToken || void 0,
+		apiKey: String(settings?.ai?.apiKey || "").trim() || void 0,
+		baseUrl: String(settings?.ai?.baseUrl || "").trim() || void 0,
+		model: String(settings?.ai?.model || "").trim() || void 0,
+		mcp: Array.isArray(settings?.ai?.mcp) ? settings.ai.mcp : void 0
+	};
+};
+/** True when :443 never reached a working CWSP core — caller should run in-browser AI. */
+var isProcessApiUnavailable = (posted) => {
+	if (posted.status === 0 || posted.status >= 500) return true;
+	const error = String(posted.error || "").toLowerCase();
+	if (/failed to fetch|networkerror|econnrefused|certificate|aborted/.test(error)) return true;
+	if (!posted.json || typeof posted.json !== "object") return !posted.ok;
+	const row = posted.json;
+	if (row.ok !== false) return false;
+	const detail = `${row.error || ""} ${row.hint || ""}`.toLowerCase();
+	return row.layer === "api" || /unreachable|econnrefused|certificate|bad gateway/.test(detail);
+};
+var fetchProcessApi = async (url, suffix, payload, init) => {
+	try {
+		const isGet = suffix === "health";
+		const res = await fetch(url, {
+			method: isGet ? "GET" : "POST",
+			headers: isGet ? { Accept: "application/json" } : {
+				"Content-Type": "application/json",
+				Accept: "application/json"
+			},
+			body: isGet ? void 0 : JSON.stringify(payload),
+			signal: init?.signal
+		});
+		const text = await res.text();
+		let json = null;
+		try {
+			json = text ? JSON.parse(text) : null;
+		} catch {
+			json = {
+				ok: false,
+				error: text
+			};
+		}
+		return {
+			ok: res.ok,
+			status: res.status,
+			json
+		};
+	} catch (error) {
+		return {
+			ok: false,
+			status: 0,
+			json: null,
+			error: String(error instanceof Error ? error.message : error)
+		};
+	}
+};
+var tryNativeProcessApi = async (payload) => {
+	if (!isCapacitorNative$4()) return null;
+	try {
+		const { CwsBridge } = await __vitePreload(async () => {
+			const { CwsBridge } = await import(
+				/* @vite-ignore */
+				"../native/cws-bridge.ts"
+);
+			return { CwsBridge };
+		}, [], import.meta.url);
+		const plugin = CwsBridge;
+		const row = typeof plugin.processApi === "function" ? await plugin.processApi(payload) : await CwsBridge.invoke({
+			channel: "process:api",
+			payload
+		});
+		if (!row || typeof row !== "object") return null;
+		const json = row;
+		if (json.echo && json.ok === true && json.error == null && !("result" in json) && !("fallback" in json)) return null;
+		return {
+			ok: json.ok !== false,
+			status: 200,
+			json
+		};
+	} catch {
+		return null;
+	}
+};
+var postProcessApi = async (suffix, body = {}, auth, init) => {
+	const path = processApiPath(suffix);
+	const payload = {
+		...body,
+		...auth?.userId ? { userId: auth.userId } : {},
+		...auth?.userKey ? { userKey: auth.userKey } : {},
+		...auth?.baseUrl ? { baseUrl: auth.baseUrl } : {},
+		...auth?.accessToken ? { accessToken: auth.accessToken } : {},
+		...auth?.apiKey ? { apiKey: auth.apiKey } : {},
+		...auth?.model ? { model: auth.model } : {},
+		...auth?.mcp ? { mcp: auth.mcp } : {}
+	};
+	if (suffix !== "health" && (auth?.apiKey || payload.apiKey)) {
+		const native = await tryNativeProcessApi(payload);
+		if (native && !isProcessApiUnavailable(native) && native.json) return native;
+	}
+	const urls = [];
+	const remote = `${PROCESS_API_PUBLIC_ORIGIN}${path}`;
+	const local = path;
+	if (needsRemoteProcessApi()) urls.push(remote);
+	else {
+		urls.push(local);
+		if (isCapacitorNative$4()) urls.push(remote);
+	}
+	let last = null;
+	for (const url of urls) {
+		last = await fetchProcessApi(url, suffix, payload, init);
+		if (!isProcessApiUnavailable(last)) return last;
+	}
+	return last ?? {
+		ok: false,
+		status: 0,
+		json: null,
+		error: "Process API unavailable"
+	};
 };
 var CORE_ENTITY_EXTRACTION_INSTRUCTION = `
 Extract structured entity data from the provided content.
@@ -2418,7 +2357,7 @@ Example output format:
 ];
 //#endregion
 //#region ../CWSP-document/src/shared/routing/channel/UnifiedAIConfig.ts
-var processApiUrl = () => resolveProcessApiUrl$1("processing");
+var processApiUrl = () => resolveProcessApiUrl("processing");
 var UNIFIED_PROCESSING_RULES = {
 	"share-target": {
 		processingUrl: processApiUrl(),
@@ -2533,6 +2472,49 @@ Object.fromEntries(Object.entries(UNIFIED_PROCESSING_RULES).map(([key, config]) 
 	...config.supportedContentTypes && { supportedContentTypes: config.supportedContentTypes }
 }]));
 //#endregion
+//#region ../CWSP-document/src/shared/routing/channel/sw-unwrap.ts
+var PROTOCOL_MAIL_TYPES = /* @__PURE__ */ new Set([
+	"request",
+	"response",
+	"invoke",
+	"ack",
+	"act",
+	"ask"
+]);
+var inferMailType = (row, type, data) => {
+	if (type && !PROTOCOL_MAIL_TYPES.has(type)) return type;
+	const payload = data && typeof data === "object" ? data : null;
+	if (row.type === "workcenter-command" || row.command) return "workcenter-command";
+	if (Array.isArray(row.operations) || Array.isArray(payload?.operations)) return "pending-operations";
+	if (Array.isArray(row.results)) return "commit-to-clipboard";
+	if (payload && (payload.rawData != null || payload.source === "share-target") && payload.content != null) return "share-target-result";
+	if (row.type === "share-received" || payload?.source === "share-target" || payload?.fileCount != null || Array.isArray(payload?.files)) return type === "share-target-input" ? "share-target-input" : "share-received";
+	if (payload && (payload.success === true || payload.success === false || payload.fallback != null)) return "ai-result";
+	return type || "ai-result";
+};
+/**
+* Unwrap SW / Uniform envelopes so page listeners see the app verb + payload.
+* WHY: workers wrap mail in protocol fields; chat must still see `ai-result`.
+*/
+var unwrapSwInteropMessage = (value) => {
+	if (value == null) return null;
+	if (typeof value !== "object") return {
+		type: "ai-result",
+		data: value,
+		raw: { data: value }
+	};
+	const row = value;
+	const nested = row.data && typeof row.data === "object" ? row.data : null;
+	return {
+		type: inferMailType(row, String(row.what || (typeof row.type === "string" ? row.type : "") || nested?.type || ""), row.data ?? row.payload ?? nested?.data ?? row),
+		data: row.data ?? row.payload ?? nested?.data ?? row,
+		command: row.command ?? nested?.command,
+		operations: row.operations ?? nested?.operations,
+		results: row.results ?? nested?.results,
+		raw: row
+	};
+};
+//#endregion
 //#region ../CWSP-document/src/shared/routing/channel/UniformInterop.ts
 /**
 * Shared interop helpers for CWSP-shell transport envelopes.
@@ -2606,8 +2588,8 @@ var normalizeInteropTransportName = (value) => {
 var createInteropEnvelope = (input) => {
 	const id = String(input.id || input.uuid || "").trim() || randomId();
 	const source = String(input.source || input.sender || input.srcChannel || "interop").trim() || "interop";
-	const destination = normalizeDestination$1(input.destination || input.target);
-	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination$1(entry)).filter(Boolean))] : destination ? getDestinationAliases$1(destination) : [];
+	const destination = normalizeDestination(input.destination || input.target);
+	const destinations = Array.isArray(input.destinations) && input.destinations.length > 0 ? [...new Set(input.destinations.map((entry) => normalizeDestination(entry)).filter(Boolean))] : destination ? getDestinationAliases(destination) : [];
 	const payload = input.payload ?? input.data;
 	const timestamp = Number(input.timestamp ?? Date.now()) || Date.now();
 	return {
@@ -2688,8 +2670,8 @@ var toUnifiedInteropMessage = (input) => {
 */
 var APP_CHANNEL_MAPPINGS = {
 	...createDestinationChannelMappings(),
-	[DESTINATIONS$1.WORKCENTER]: BROADCAST_CHANNELS$1.WORK_CENTER,
-	[DESTINATIONS$1.CLIPBOARD]: BROADCAST_CHANNELS$1.CLIPBOARD
+	[DESTINATIONS.WORKCENTER]: BROADCAST_CHANNELS.WORK_CENTER,
+	[DESTINATIONS.CLIPBOARD]: BROADCAST_CHANNELS.CLIPBOARD
 };
 var appMessagingInstance = null;
 /**
@@ -2717,20 +2699,27 @@ var unifiedMessaging = getUnifiedMessaging$1();
 * Register a handler using the app-configured manager
 */
 function registerHandler(destination, handler) {
-	const aliases = getDestinationAliases$1(destination);
-	const names = aliases.length > 0 ? aliases : [normalizeDestination$1(destination) || destination];
+	const aliases = getDestinationAliases(destination);
+	const names = aliases.length > 0 ? aliases : [normalizeDestination(destination) || destination];
 	for (const name of names) unifiedMessaging.registerHandler(name, handler);
 }
 function unregisterHandler(destination, handler) {
-	const aliases = getDestinationAliases$1(destination);
-	const names = aliases.length > 0 ? aliases : [normalizeDestination$1(destination) || destination];
+	const aliases = getDestinationAliases(destination);
+	const names = aliases.length > 0 ? aliases : [normalizeDestination(destination) || destination];
 	for (const name of names) unifiedMessaging.unregisterHandler(name, handler);
 }
 function initializeComponent(componentId) {
 	return unifiedMessaging.initializeComponent(componentId);
 }
+/**
+* Replay IndexedDB-backed queued messages for a destination (mail/deferred pipeline).
+* Safe after handlers register — implicit view bridge calls this post-bind.
+*/
+function replayQueuedMessagesForDestination(destination) {
+	return unifiedMessaging.processQueuedMessages(destination);
+}
 function registerComponent(componentId, destination) {
-	unifiedMessaging.registerComponent(componentId, normalizeDestination$1(destination) || destination);
+	unifiedMessaging.registerComponent(componentId, normalizeDestination(destination) || destination);
 }
 //#endregion
 //#region ../CWSP-document/src/shared/routing/core/channel-mixin.ts
@@ -2882,7 +2871,7 @@ function parseJsonObject(raw) {
 	}
 }
 function buildUnifiedMessageFromStaging(rec) {
-	const destination = normalizeDestination$1(String(rec.destination ?? "")) || String(rec.destination ?? "").trim();
+	const destination = normalizeDestination(String(rec.destination ?? "")) || String(rec.destination ?? "").trim();
 	if (!destination) return null;
 	return {
 		id: typeof rec.id === "string" ? rec.id : crypto.randomUUID(),
@@ -2910,7 +2899,7 @@ function readDeferFlushDestination(el) {
 function consumeDeferFlush(el) {
 	const destRaw = readDeferFlushDestination(el);
 	if (!destRaw) return;
-	replayQueuedMessagesForDestination(normalizeDestination$1(destRaw) || normalizeViewId$1(destRaw)).catch(() => void 0);
+	replayQueuedMessagesForDestination$1(normalizeDestination(destRaw) || normalizeViewId(destRaw)).catch(() => void 0);
 	el.removeAttribute("data-cw-unified-defer-flush");
 }
 function consumePending(el) {
@@ -2924,7 +2913,7 @@ function consumePending(el) {
 function consumeMail(el) {
 	const rec = parseJsonObject(el.getAttribute("data-cw-unified-mail"));
 	if (!rec) return;
-	const destination = normalizeDestination$1(String(rec.destination || "")) || String(rec.destination || "").trim();
+	const destination = normalizeDestination(String(rec.destination || "")) || String(rec.destination || "").trim();
 	if (!destination) return;
 	sendProtocolMessage({
 		type: String(rec.type || "dispatch"),
@@ -2956,15 +2945,15 @@ function processStagedUnifiedMarkers(scope) {
 }
 function flushDeferredTransportForView(view, explicitDestination) {
 	const dest = explicitDestination || inferViewDestination(String(view.id || ""));
-	const aliases = getDestinationAliases$1(dest);
+	const aliases = getDestinationAliases(dest);
 	const targets = /* @__PURE__ */ new Set();
 	for (const x of [dest, ...aliases]) {
-		const n = normalizeDestination$1(x) || String(x || "").trim();
-		if (n) targets.add(normalizeViewId$1(n));
+		const n = normalizeDestination(x) || String(x || "").trim();
+		if (n) targets.add(normalizeViewId(n));
 	}
 	(async () => {
 		for (const t of targets) try {
-			await replayQueuedMessagesForDestination(t);
+			await replayQueuedMessagesForDestination$1(t);
 		} catch {}
 	})();
 }
@@ -2990,7 +2979,7 @@ function attachImplicitViewMessaging(view, options = {}) {
 	const existing = cleanupByView.get(view);
 	if (existing) return existing;
 	const destination = options.destination || inferViewDestination(String(view.id || ""));
-	const destinationKey = normalizeViewId$1(destination);
+	const destinationKey = normalizeViewId(destination);
 	const displaced = activeHostByDestination.get(destinationKey);
 	if (displaced && displaced !== view) cleanupByView.get(displaced)?.();
 	const inner = bindViewReceiveChannel(view, {
@@ -14829,6 +14818,7 @@ var isCapacitorNative = () => {
 };
 //#endregion
 //#region ../../modules/projects/subsystem/src/boot/capacitor-settings-permissions.ts
+var capacitor_settings_permissions_exports = /* @__PURE__ */ __exportAll({ ensureCapacitorBridgeDaemonStarted: () => ensureCapacitorBridgeDaemonStarted });
 var cap = () => {
 	try {
 		const c = globalThis?.Capacitor;
@@ -17147,6 +17137,10 @@ var STYLE_CONFIGS = {
 			}
 			initializeLayers();
 			initCwsNativeBridge$1().catch(() => {});
+			if (isCapacitorCwsNativeShell$1()) {
+				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([54,1,2]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), [], import.meta.url).catch(() => void 0);
+			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
 					const { initFrontendDebugCapture } = await import("../chunks/frontend-debug-capture2.js");
@@ -17180,7 +17174,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([54,4,1,2,27,28,55]), import.meta.url);
+				}, __vite__mapDeps([55,4,1,2,27,28,56]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);
@@ -17541,4 +17535,4 @@ function navigateToView(view, params) {
 	});
 }
 //#endregion
-export { Settings_exports as $, resolveFleetWanGatewayHost as $n, getAirPadHandshakeConnectionType as $t, getTransitionDirection as A, isAssociableFleetWireNodeId as An, initializeComponent$1 as Ar, open_policy_exports as At, isCapacitorNativeShell as B, sanitizeFleetSelfWireNodeId as Bn, getBroadcastChannelForDestination as Br, skuForOpenSink as Bt, applyTheme as C, initCwsNativeBridge$1 as Cn, viewBroadcastChannelName as Cr, classifyOpenKind as Ct, defaultColorSource as D, DEFAULT_DESK_WIRE_NODE_ID as Dn, createProtocolEnvelope$2 as Dr, looksLikePreviewableBinary as Dt, FALLBACK_BASE_COLOR as E, isCapacitorCwsNativeShell$1 as En, createMessageWithOverrides as Er, inferIngressChannels as Et, packetWireDedupeGuard as F, isHomeFleetLanHost as Fn, unifiedMessaging$1 as Fr, resolveOpenPlacement as Ft, applyTheme$1 as G, CWSP_DEFAULT_HTTP_PORTS as Gn, processApiAuthFromSettings as Gr, loadSettings$1 as Gt, writeClipboardImageToDevice as H, shouldFleetDeskGatewayProbeFallbacks as Hn, viewBroadcastChannelName$1 as Hr, surfaceForSku as Ht, annotateCoordinatorPayload as I, isOffHomeFleetNetwork as In, serviceChannels as Ir, resolveOpenPolicy as It, ensureSpeedDialMeta as J, buildEndpointOriginCandidates as Jn, getAccessToken as Jt, addSpeedDialItem as K, CWSP_FLEET_LAN_GATEWAY_HOST as Kn, readProcessApiResultText as Kr, shouldDeferCrxHubSocketBootstrap$1 as Kt, shouldAnnotateCoordinatorPayload as L, isOnHomeFleetLanPageHost as Ln, API_ENDPOINTS as Lr, sinkToAction as Lt, ensureAppLayers as M, isFleetGatewayWireNodeId as Mn, registerComponent$1 as Mr, rememberOpenPolicyFromSettings as Mt, annotatePacketWireHash as N, isGatewayHttpsOrigin as Nn, sendMessage as Nr, resolveExplorerOpenSink as Nt, isAppearanceColorSource as O, FLEET_GATEWAY_WIRE_NODE_ID as On, enqueuePendingMessage as Or, mergeOpenPolicy as Ot, inferWireDedupeCategory as P, isGuestPrivateLanIpv4 as Pn, sendProtocolMessage as Pr, resolveHostOpenPolicy as Pt, canParseURL as Q, resolveCwspUrlFields as Qn, getAirPadHandshakeArchetype as Qt, annotatePacketWireTime64 as R, normalizeWireNodeIdForWire as Rn, BROADCAST_CHANNELS$1 as Rr, sinkToDestination as Rt, Theme_exports as S, cws_bridge_exports as Sn, BROADCAST_CHANNELS as Sr, OPEN_KINDS as St, syncBrowserChromeTheme as T, invokeCwsPlatformIPC$1 as Tn, UnifiedMessaging_exports as Tr, classifyOpenKindFromPayload as Tt, writeClipboardTextToDevice as U, shouldPreferWanGatewayForAirpad as Un, isProcessApiUnavailable as Ur, viewIdForOpenSink as Ut, readClipboardTextFromDevice as V, shouldConnectViaFleetGateway as Vn, normalizeDestination$1 as Vr, stampHostOpenPolicy as Vt, loadStyleSystem as W, CWSP_DEFAULT_HTTPS_PORTS as Wn, postProcessApi as Wr, ensureCapacitorCwspSettingsSeeded$1 as Wt, persistSpeedDialMeta as X, parseConnectHostInput as Xn, getAirPadDirectTargetUrl as Xt, persistSpeedDialItems as Y, collectEndpointProbeCandidates as Yn, getAirPadClientId as Yt, speedDialItems as Z, probeEndpointOriginReport as Zn, getAirPadEndpointUrl as Zt, resolveEffectiveHubSettingsSection as _, isShellRemoteClipboardBridgeEnabled as _n, templates_exports as _r, writeProcessIngressClipboard as _t, initWebSocket as a, getClipboardBroadcastWireTargets as an, ShellRegistry as ar, saveSettings as at, visibleHubSettingsSections as b, ecosystem_skus_exports as bn, consumeCachedShareTargetPayload as br, normalizeEcosystemToken as bt, websocket_exports as c, getRemoteProtocol as cn, defaultTheme as cr, allowProcessWebShareLaunch as ct, defaultSettingsTabForProfile as d, isClipboardHubBootstrapEnabled as dn, isEnabledView as dr, instructionTextForIngress as dt, getAirPadPeerInstanceId as en, splitConnectHostList as er, ensureCapacitorCwspSettingsSeeded as et, hasBuiltInSettingsPanel as f, isClipboardSenderAllowedForInbound as fn, pickEnabledView as fr, mergeProcessIngress as ft, rememberSettingsAreaSection as g, isPushLocalClipboardToLanEnabled as gn, DEFAULT_INSTRUCTION_TEMPLATES as gr, resolveProcessIngressKind as gt, readSettingsAreaSection as h, isPreferNativeWebsocketEnabled as hn, unifiedMessaging as hr, rememberProcessIngressSettings as ht, disconnectWS as i, getClientAccessToken as in, initializeLayers as ir, noteSettingsControlSync as it, withViewTransition as j, isFleetDeskWireNodeId as jn, processInitialContent as jr, peekOpenPolicy as jt, normalizeHexColor as k, airpad_cwsp_client_parity_exports as kn, hasPendingMessages as kr, normalizeOpenSink as kt, SIBLING_HUB_SETTINGS_SECTIONS$1 as l, getRemoteRouteTarget as ln, initializeRegistries as lr, formatProcessIngressResult as lt, pruneBuiltInSettingsTabs as m, isNeutralinoNodeClipboardHubOwned as mn, ingressStampWasSuperseded as mr, process_ingress_exports as mt, hub_socket_boot_exports as n, getAirPadTransportSecret as nn, Capacitor as nr, getLastSettingsSaveReport as nt, isWSConnected as o, getClipboardPushIntervalMs as on, ViewRegistry as or, PROCESS_INGRESS_KIND_LABELS as ot, hubSettingsSectionPath$1 as p, isMaintainHubSocketConnectionEnabled as pn, startImplicitViewMessagingBridge as pr, peekProcessIngressSettings as pt, createEmptySpeedDialItem as q, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as qn, applyAirpadRuntimeFromAppSettings as qt, connectWS as r, getAssociatedClientToken as rn, dist_exports as rr, loadSettings as rt, onWSConnectionChange as s, getRemoteHost as sn, darkTheme as sr, allowProcessWebLaunchQueue as st, navigateToView as t, getAirPadTransportMode as tn, splitMultiValueList as tr, ensureCrxCwspSettingsSeeded as tt, canonicalHubSettingsSection$1 as u, isApplyRemoteClipboardToDeviceEnabled as un, lightTheme as ur, holdCapacitorIngressJob as ut, resolveSettingsShellProfile as v, setAirpadCredentialInvalidator as vn, CORE_ENTITY_EXTRACTION_INSTRUCTION as vr, BUILTIN_AI_MODELS as vt, resyncThemeAfterAdoptedViewSheet as w, invokeCwsNative as wn, settleIngressPaintForMinimalShell as wr, classifyOpenKindFromName as wt, scheduleViewModulePrefetch as x, CwsBridge$1 as xn, storeShareTargetPayloadToCache as xr, resolveEcosystemToken as xt, skuForHubSettingsSection as y, DEFAULT_SETTINGS$1 as yn, buildShareDataFromCachedPayload as yr, DEFAULT_SETTINGS as yt, clipboard_device_exports as z, sanitizeFleetRouteTarget as zn, ROUTE_HASHES$1 as zr, sinkToOpenLinkTarget as zt };
+export { speedDialItems as $, probeEndpointOriginReport as $n, getAirPadEndpointUrl as $t, isAppearanceColorSource as A, FLEET_GATEWAY_WIRE_NODE_ID as An, consumeCachedShareTargetPayload as Ar, mergeOpenPolicy as At, annotatePacketWireTime64 as B, normalizeWireNodeIdForWire as Bn, initializeComponent$1 as Br, sinkToDestination as Bt, scheduleViewModulePrefetch as C, CwsBridge$1 as Cn, templates_exports as Cr, resolveEcosystemToken as Ct, syncBrowserChromeTheme as D, invokeCwsPlatformIPC$1 as Dn, processApiAuthFromSettings as Dr, classifyOpenKindFromPayload as Dt, resyncThemeAfterAdoptedViewSheet as E, invokeCwsNative as En, postProcessApi as Er, classifyOpenKindFromName as Et, annotatePacketWireHash as F, isGatewayHttpsOrigin as Fn, UnifiedMessaging_exports as Fr, resolveExplorerOpenSink as Ft, writeClipboardTextToDevice as G, shouldPreferWanGatewayForAirpad as Gn, unifiedMessaging$1 as Gr, viewIdForOpenSink as Gt, isCapacitorNativeShell as H, sanitizeFleetSelfWireNodeId as Hn, registerComponent$1 as Hr, skuForOpenSink as Ht, inferWireDedupeCategory as I, isGuestPrivateLanIpv4 as In, createMessageWithOverrides as Ir, resolveHostOpenPolicy as It, addSpeedDialItem as J, CWSP_FLEET_LAN_GATEWAY_HOST as Jn, BROADCAST_CHANNELS as Jr, shouldDeferCrxHubSocketBootstrap$1 as Jt, loadStyleSystem as K, CWSP_DEFAULT_HTTPS_PORTS as Kn, serviceChannels as Kr, ensureCapacitorCwspSettingsSeeded$1 as Kt, packetWireDedupeGuard as L, isHomeFleetLanHost as Ln, createProtocolEnvelope$2 as Lr, resolveOpenPlacement as Lt, getTransitionDirection as M, isAssociableFleetWireNodeId as Mn, safeCacheMatch as Mr, open_policy_exports as Mt, withViewTransition as N, isFleetDeskWireNodeId as Nn, safeCacheOpen as Nr, peekOpenPolicy as Nt, FALLBACK_BASE_COLOR as O, isCapacitorCwsNativeShell$1 as On, readProcessApiResultText as Or, inferIngressChannels as Ot, ensureAppLayers as P, isFleetGatewayWireNodeId as Pn, settleIngressPaintForMinimalShell as Pr, rememberOpenPolicyFromSettings as Pt, persistSpeedDialMeta as Q, parseConnectHostInput as Qn, viewBroadcastChannelName as Qr, getAirPadDirectTargetUrl as Qt, annotateCoordinatorPayload as R, isOffHomeFleetNetwork as Rn, enqueuePendingMessage as Rr, resolveOpenPolicy as Rt, visibleHubSettingsSections as S, ecosystem_skus_exports as Sn, DEFAULT_INSTRUCTION_TEMPLATES as Sr, normalizeEcosystemToken as St, applyTheme as T, initCwsNativeBridge$1 as Tn, isProcessApiUnavailable as Tr, classifyOpenKind as Tt, readClipboardTextFromDevice as U, shouldConnectViaFleetGateway as Un, sendMessage as Ur, stampHostOpenPolicy as Ut, clipboard_device_exports as V, sanitizeFleetRouteTarget as Vn, processInitialContent as Vr, sinkToOpenLinkTarget as Vt, writeClipboardImageToDevice as W, shouldFleetDeskGatewayProbeFallbacks as Wn, sendProtocolMessage as Wr, surfaceForSku as Wt, ensureSpeedDialMeta as X, buildEndpointOriginCandidates as Xn, getBroadcastChannelForDestination as Xr, getAccessToken as Xt, createEmptySpeedDialItem as Y, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as Yn, ROUTE_HASHES as Yr, applyAirpadRuntimeFromAppSettings as Yt, persistSpeedDialItems as Z, collectEndpointProbeCandidates as Zn, normalizeDestination as Zr, getAirPadClientId as Zt, readSettingsAreaSection as _, isPreferNativeWebsocketEnabled as _n, initializeComponent as _r, rememberProcessIngressSettings as _t, initWebSocket as a, getAssociatedClientToken as an, dist_exports as ar, loadSettings as at, resolveSettingsShellProfile as b, setAirpadCredentialInvalidator as bn, unifiedMessaging as br, BUILTIN_AI_MODELS as bt, websocket_exports as c, getClipboardPushIntervalMs as cn, ViewRegistry as cr, PROCESS_INGRESS_KIND_LABELS as ct, SIBLING_HUB_SETTINGS_SECTIONS$1 as d, getRemoteRouteTarget as dn, initializeRegistries as dr, formatProcessIngressResult as dt, getAirPadHandshakeArchetype as en, resolveCwspUrlFields as er, canParseURL as et, canonicalHubSettingsSection$1 as f, isApplyRemoteClipboardToDeviceEnabled as fn, lightTheme as fr, holdCapacitorIngressJob as ft, pruneBuiltInSettingsTabs as g, isNeutralinoNodeClipboardHubOwned as gn, ingressStampWasSuperseded as gr, process_ingress_exports as gt, hubSettingsSectionPath$1 as h, isMaintainHubSocketConnectionEnabled as hn, startImplicitViewMessagingBridge as hr, peekProcessIngressSettings as ht, disconnectWS as i, getAirPadTransportSecret as in, Capacitor as ir, getLastSettingsSaveReport as it, normalizeHexColor as j, airpad_cwsp_client_parity_exports as jn, storeShareTargetPayloadToCache as jr, normalizeOpenSink as jt, defaultColorSource as k, DEFAULT_DESK_WIRE_NODE_ID as kn, buildShareDataFromCachedPayload as kr, looksLikePreviewableBinary as kt, capacitor_settings_permissions_exports as l, getRemoteHost as ln, darkTheme as lr, allowProcessWebLaunchQueue as lt, hasBuiltInSettingsPanel as m, isClipboardSenderAllowedForInbound as mn, pickEnabledView as mr, mergeProcessIngress as mt, hub_socket_boot_exports as n, getAirPadPeerInstanceId as nn, splitConnectHostList as nr, ensureCapacitorCwspSettingsSeeded as nt, isWSConnected as o, getClientAccessToken as on, initializeLayers as or, noteSettingsControlSync as ot, defaultSettingsTabForProfile as p, isClipboardHubBootstrapEnabled as pn, isEnabledView as pr, instructionTextForIngress as pt, applyTheme$1 as q, CWSP_DEFAULT_HTTP_PORTS as qn, API_ENDPOINTS as qr, loadSettings$1 as qt, connectWS as r, getAirPadTransportMode as rn, splitMultiValueList as rr, ensureCrxCwspSettingsSeeded as rt, onWSConnectionChange as s, getClipboardBroadcastWireTargets as sn, ShellRegistry as sr, saveSettings as st, navigateToView as t, getAirPadHandshakeConnectionType as tn, resolveFleetWanGatewayHost as tr, Settings_exports as tt, isCapacitorNative as u, getRemoteProtocol as un, defaultTheme as ur, allowProcessWebShareLaunch as ut, rememberSettingsAreaSection as v, isPushLocalClipboardToLanEnabled as vn, registerComponent as vr, resolveProcessIngressKind as vt, Theme_exports as w, cws_bridge_exports as wn, CORE_ENTITY_EXTRACTION_INSTRUCTION as wr, OPEN_KINDS as wt, skuForHubSettingsSection as x, DEFAULT_SETTINGS$1 as xn, unwrapSwInteropMessage as xr, DEFAULT_SETTINGS as xt, resolveEffectiveHubSettingsSection as y, isShellRemoteClipboardBridgeEnabled as yn, replayQueuedMessagesForDestination as yr, writeProcessIngressClipboard as yt, shouldAnnotateCoordinatorPayload as z, isOnHomeFleetLanPageHost as zn, hasPendingMessages as zr, sinkToAction as zt };

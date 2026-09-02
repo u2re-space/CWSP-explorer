@@ -2,10 +2,10 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Ar as initializeComponent, Cr as viewBroadcastChannelName, Gr as processApiAuthFromSettings, Kr as readProcessApiResultText, Mr as registerComponent, Nr as sendMessage, Sr as BROADCAST_CHANNELS, Ur as isProcessApiUnavailable, Wr as postProcessApi, rt as loadSettings, zr as ROUTE_HASHES } from "../shells/boot-index.js";
+import { Dr as processApiAuthFromSettings, Er as postProcessApi, Jr as BROADCAST_CHANNELS, Or as readProcessApiResultText, Qr as viewBroadcastChannelName, Tr as isProcessApiUnavailable, Ur as sendMessage, Yr as ROUTE_HASHES, _r as initializeComponent, at as loadSettings, vr as registerComponent, xr as unwrapSwInteropMessage, yr as replayQueuedMessagesForDestination } from "../shells/boot-index.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
-import { t as summarizeForLog } from "./LogSanitizer.js";
+import { t as summarizeForLog } from "./log-sanitizer.js";
 import { s as takeHeldIngressFiles } from "./sku-ingress.js";
 import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
@@ -1039,7 +1039,7 @@ var WorkCenterTemplates = class {
 	/** Get default instruction templates (for seeding). Dynamic import avoids TDZ when workcenter loads before `com/app` finishes. */
 	async getDefaultTemplates() {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
-			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n._r);
+			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Cr);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
 		}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 		return DEFAULT_INSTRUCTION_TEMPLATES;
@@ -1430,7 +1430,24 @@ var flattenResponsesInput = (input) => {
 	}
 	return texts.join("\n\n").trim();
 };
+var hasVisualInput = (input) => {
+	for (const item of input) {
+		const content = item?.content;
+		if (!Array.isArray(content)) continue;
+		for (const part of content) {
+			const type = String(part?.type || "");
+			if (type === "input_image" || type === "input_file" || type === "image_url" || type === "image") return true;
+		}
+	}
+	return false;
+};
+var processApiTurnSignal = (signal) => {
+	const timed = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(12e3) : void 0;
+	if (timed && signal && typeof AbortSignal.any === "function") return AbortSignal.any([signal, timed]);
+	return timed || signal;
+};
 var tryProcessApiTurn = async (input, options) => {
+	if (hasVisualInput(input)) return null;
 	const text = flattenResponsesInput(input);
 	if (!text) return null;
 	const settings = await loadSettings().catch(() => null);
@@ -1440,7 +1457,7 @@ var tryProcessApiTurn = async (input, options) => {
 		text,
 		mode: "smartRecognize",
 		customInstruction: options.instruction || options.customInstruction || void 0
-	}, auth, { signal: options.signal });
+	}, auth, { signal: processApiTurnSignal(options.signal) });
 	if (isProcessApiUnavailable(posted) || !posted.json) return null;
 	const json = posted.json;
 	if (json.ok === false) {
@@ -1717,10 +1734,14 @@ var WorkCenterActions = class {
 				signal: controller.signal
 			});
 			if (epoch !== conversation.session.epoch()) return;
-			if (controller.signal.aborted || result.error === "Cancelled") await conversation.session.cancel(assistant.id);
+			if (controller.signal.aborted || result.error === "Cancelled") conversation.session.applyAssistantCompletion(assistant.id, {
+				status: "cancelled",
+				content: "",
+				error: "Cancelled"
+			});
 			else if (result.ok) {
-				const content = String(result.data || "");
-				await conversation.session.completeAssistant(assistant.id, {
+				const content = this.extractTurnText(result);
+				conversation.session.applyAssistantCompletion(assistant.id, {
 					status: "complete",
 					content,
 					rawResult: result
@@ -1733,25 +1754,36 @@ var WorkCenterActions = class {
 					recognizedAs: "markdown",
 					responseId: result.responseId || void 0
 				};
-			} else await conversation.session.completeAssistant(assistant.id, {
+			} else conversation.session.applyAssistantCompletion(assistant.id, {
 				status: "failed",
 				content: "",
 				error: result.error || "The request did not return a response"
 			});
+			this.syncConversationState(state);
+			conversation.session.persistDraft().catch(() => void 0);
 		} catch (error) {
-			if (epoch === conversation.session.epoch()) await conversation.session.completeAssistant(assistant.id, {
-				status: controller.signal.aborted ? "cancelled" : "failed",
-				content: "",
-				error: controller.signal.aborted ? "Cancelled" : error instanceof Error ? error.message : "Failed to process message"
-			});
+			if (epoch === conversation.session.epoch()) {
+				conversation.session.applyAssistantCompletion(assistant.id, {
+					status: controller.signal.aborted ? "cancelled" : "failed",
+					content: "",
+					error: controller.signal.aborted ? "Cancelled" : error instanceof Error ? error.message : "Failed to process message"
+				});
+				this.syncConversationState(state);
+				conversation.session.persistDraft().catch(() => void 0);
+			}
 		} finally {
 			if (this.activeTurns.get(assistant.id) === controller) this.activeTurns.delete(assistant.id);
-			if (epoch === conversation.session.epoch()) {
-				this.syncConversationState(state);
-				this.history.updateRecentHistory(state);
-				this.ui.updateDataPipeline(state);
-			}
+			this.syncConversationState(state);
+			this.history.updateRecentHistory(state);
+			this.ui.updateDataPipeline(state);
 		}
+	}
+	extractTurnText(result) {
+		if (result == null) return "";
+		if (typeof result === "string") return readProcessApiResultText(result);
+		const row = result;
+		if (typeof row.data === "string" && row.data.trim()) return row.data.trim();
+		return readProcessApiResultText(result) || readProcessApiResultText(row.raw) || "";
 	}
 	getLastSuccessfulPrompt() {
 		return this.history.getLastSuccessfulPrompt();
@@ -1786,7 +1818,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Tr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Fr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1847,7 +1879,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Tr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Fr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -3831,6 +3863,17 @@ var cloneSnapshot = (snapshot) => ({
 	},
 	messages: snapshot.messages.map(cloneMessage)
 });
+/** Persist only display fields — GPT envelopes can be huge or cyclic and stall OPFS. */
+var slimRawResult = (value) => {
+	if (value == null || typeof value !== "object") return value;
+	const row = value;
+	return {
+		ok: row.ok,
+		data: typeof row.data === "string" ? row.data : void 0,
+		error: typeof row.error === "string" ? row.error : void 0,
+		responseId: typeof row.responseId === "string" ? row.responseId : void 0
+	};
+};
 var isSnapshot = (value) => {
 	if (!value || typeof value !== "object") return false;
 	const candidate = value;
@@ -3840,11 +3883,14 @@ var isSnapshot = (value) => {
 var WorkCenterSession = class {
 	persistence;
 	state = emptySnapshot();
+	persistGeneration = 0;
+	persistTail = Promise.resolve();
 	constructor(persistence) {
 		this.persistence = persistence;
 	}
 	async hydrate() {
 		const restored = await this.persistence.load();
+		if (this.state.messages.length > 0) return this.snapshot();
 		this.state = isSnapshot(restored) ? cloneSnapshot(restored) : emptySnapshot();
 		return this.snapshot();
 	}
@@ -3853,6 +3899,20 @@ var WorkCenterSession = class {
 	}
 	epoch() {
 		return this.state.epoch;
+	}
+	latestPendingAssistant() {
+		for (let index = this.state.messages.length - 1; index >= 0; index -= 1) {
+			const message = this.state.messages[index];
+			if (message?.role === "assistant" && message.status === "pending") return cloneMessage(message);
+		}
+		return null;
+	}
+	latestCompleteAssistant() {
+		for (let index = this.state.messages.length - 1; index >= 0; index -= 1) {
+			const message = this.state.messages[index];
+			if (message?.role === "assistant" && message.status === "complete") return cloneMessage(message);
+		}
+		return null;
 	}
 	setDraft(draft) {
 		this.state.draft = {
@@ -3903,15 +3963,28 @@ var WorkCenterSession = class {
 		await this.persist();
 		return submitted;
 	}
-	async completeAssistant(id, completion) {
-		const message = this.state.messages.find((entry) => entry.id === id && entry.role === "assistant");
+	/** In-memory completion so the transcript can paint before OPFS save. */
+	applyAssistantCompletion(id, completion) {
+		let message = this.state.messages.find((entry) => entry.id === id && entry.role === "assistant");
+		if (!message) for (let index = this.state.messages.length - 1; index >= 0; index -= 1) {
+			const entry = this.state.messages[index];
+			if (entry?.role === "assistant" && entry.status === "pending") {
+				message = entry;
+				break;
+			}
+		}
 		if (!message) return null;
 		message.status = completion.status;
 		if (completion.content !== void 0) message.content = completion.content;
-		if (completion.rawResult !== void 0) message.rawResult = completion.rawResult;
+		if (completion.rawResult !== void 0) message.rawResult = slimRawResult(completion.rawResult);
 		if (completion.error !== void 0) message.error = completion.error;
-		await this.persist();
 		return cloneMessage(message);
+	}
+	async completeAssistant(id, completion) {
+		const message = this.applyAssistantCompletion(id, completion);
+		if (!message) return null;
+		await this.persist();
+		return message;
 	}
 	async markAttachmentError(messageId, attachmentHash, error) {
 		const attachment = this.state.messages.find((entry) => entry.id === messageId)?.attachments.find((entry) => entry.hash === attachmentHash);
@@ -3969,8 +4042,14 @@ var WorkCenterSession = class {
 		};
 		await this.persistence.clear();
 	}
-	async persist() {
-		await this.persistence.save(this.snapshot());
+	persist() {
+		const generation = ++this.persistGeneration;
+		const snapshot = this.snapshot();
+		this.persistTail = this.persistTail.catch(() => void 0).then(async () => {
+			if (generation !== this.persistGeneration) return;
+			await this.persistence.save(snapshot);
+		});
+		return this.persistTail;
 	}
 };
 //#endregion
@@ -4290,7 +4369,14 @@ var bindWorkCenterCommandBus = (handler) => {
 	if (typeof BroadcastChannel === "undefined") return () => {};
 	const channels = [];
 	const onMessage = (event) => {
-		const data = event.data;
+		const unwrapped = unwrapSwInteropMessage(event.data);
+		const data = unwrapped ? unwrapped.type === "workcenter-command" && unwrapped.command ? {
+			type: "workcenter-command",
+			command: unwrapped.command
+		} : unwrapped.command && isWorkCenterCommand(unwrapped.command) ? {
+			type: "workcenter-command",
+			command: unwrapped.command
+		} : unwrapped.raw : event.data;
 		const command = isWorkCenterCommandEnvelope(data) ? data.command : isWorkCenterCommand(data) ? data : null;
 		if (!command) return;
 		handler(command);
@@ -4392,6 +4478,7 @@ var WorkCenterManager = class {
 	documentPreparer;
 	sessionReady;
 	processedMessageIds = /* @__PURE__ */ new Set();
+	deliveredResultKeys = /* @__PURE__ */ new Set();
 	unbindCommandBus = () => {};
 	constructor(dependencies) {
 		this.deps = dependencies;
@@ -4441,6 +4528,9 @@ var WorkCenterManager = class {
 			console.log(`[WorkCenter] Processing pending message:`, message);
 			this.handleExternalMessage(message);
 		}
+		this.sessionReady.then(() => {
+			replayQueuedMessagesForDestination("workcenter").catch(() => void 0);
+		});
 		if (typeof globalThis !== "undefined") globalThis?.addEventListener?.("hashchange", () => {
 			this.attachments.updateDropHint?.();
 		});
@@ -4577,6 +4667,44 @@ var WorkCenterManager = class {
 			default: return;
 		}
 	}
+	resultText(data) {
+		if (data == null) return "";
+		if (typeof data === "string") return data.trim();
+		const row = data;
+		return String(readProcessApiResultText(data) || row.content || row.text || (typeof row.data === "string" ? row.data : "") || "").trim();
+	}
+	rememberResult(text) {
+		const key = text.replace(/\s+/g, " ").slice(0, 400);
+		if (!key) return false;
+		if (this.deliveredResultKeys.has(key)) return false;
+		this.deliveredResultKeys.add(key);
+		if (this.deliveredResultKeys.size > 32) {
+			const first = this.deliveredResultKeys.values().next().value;
+			if (first) this.deliveredResultKeys.delete(first);
+		}
+		return true;
+	}
+	/** Complete a waiting turn, or append a late SW / share result that missed the fetch. */
+	async applyArrivedResult(note, raw, completePendingTurn) {
+		if (!note) return;
+		const pending = completePendingTurn ? this.session.latestPendingAssistant() : null;
+		if (pending) {
+			this.session.applyAssistantCompletion(pending.id, {
+				status: "complete",
+				content: note,
+				rawResult: raw
+			});
+			this.rememberResult(note);
+			this.session.persistDraft().catch(() => void 0);
+			this.syncStateFromSession(true);
+			return;
+		}
+		const last = this.session.latestCompleteAssistant();
+		if (last && last.content.replace(/\s+/g, " ").trim() === note.replace(/\s+/g, " ").trim()) return;
+		if (!this.rememberResult(note)) return;
+		await this.session.appendAssistantNote(note);
+		this.syncStateFromSession(true);
+	}
 	/** Normalize all channel/share payloads into the active conversation draft. */
 	async handleIncomingContent(data, contentType) {
 		await this.sessionReady;
@@ -4613,6 +4741,16 @@ var WorkCenterManager = class {
 			await this.dispatchCommand(message.command);
 			return;
 		}
+		const unwrapped = unwrapSwInteropMessage(message);
+		if (unwrapped?.command && isWorkCenterCommand(unwrapped.command)) {
+			await this.dispatchCommand(unwrapped.command);
+			return;
+		}
+		if (unwrapped?.type) message = {
+			...message && typeof message === "object" ? message : {},
+			type: unwrapped.type,
+			data: unwrapped.data ?? message.data
+		};
 		await this.sessionReady;
 		const messageId = typeof message?.id === "string" ? message.id : "";
 		if (messageId) {
@@ -4623,28 +4761,31 @@ var WorkCenterManager = class {
 				if (!iter.done) this.processedMessageIds.delete(iter.value);
 			}
 		}
-		if (message.type === "share-target-input" && message.data) {
+		if ((message.type === "share-target-input" || message.type === "share-received") && message.data) {
 			await this.handleIncomingContent(message.data, message.contentType || "text");
 			return;
 		}
 		if (message.type === "share-target-result" && message.data) {
-			const note = String(message.data.content ?? message.data.rawData ?? "").trim();
-			if (note) {
-				await this.session.appendAssistantNote(note);
-				this.syncStateFromSession(false);
-			}
-			await this.shareTarget.addShareTargetResult(this.state, message.data);
+			const note = this.resultText(message.data);
+			await this.applyArrivedResult(note, message.data, false);
+			await this.shareTarget.addShareTargetResult(this.state, {
+				...message.data,
+				content: note || message.data.content
+			});
 			this.ui.updateDataPipeline(this.state);
+			this.paintLiveConversation();
 			return;
 		}
-		if (message.type === "ai-result" && message.data) {
-			const note = String(message.data.data ?? message.data.content ?? message.data.text ?? "").trim();
-			if (note && message.data.success !== false) {
-				await this.session.appendAssistantNote(note);
-				this.syncStateFromSession(false);
-			}
-			await this.shareTarget.handleAIResult(this.state, message.data);
+		if ((message.type === "ai-result" || message.type === "process-api-result") && message.data) {
+			const note = this.resultText(message.data);
+			if (message.data.success !== false) await this.applyArrivedResult(note, message.data, true);
+			await this.shareTarget.handleAIResult(this.state, {
+				success: message.data.success !== false,
+				data: note || message.data.data || message.data,
+				error: message.data.error
+			});
 			this.ui.updateDataPipeline(this.state);
+			this.paintLiveConversation();
 			return;
 		}
 		if ((message.type === "content-share" || message.type === "content-attach" || message.type === "file-attach") && message.data) {
