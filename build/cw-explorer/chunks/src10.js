@@ -1,6 +1,6 @@
 import { v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { St as __decorate, bt as UIElement, kn as defineElement } from "../com/app.js";
-import { flushHeldIngressToWorkCenter, peekHeldIngressFiles, registerWorkCenterFlushHost } from "./sku-ingress.js";
+import { a as flushHeldIngressToWorkCenter, d as peekHeldIngressFiles, p as registerWorkCenterFlushHost } from "../views/viewer.js";
 import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "./WorkCenter.js";
 import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";
 //#region ../../modules/views/workcenter-view/src/scss/_index.scss?inline
@@ -307,13 +307,16 @@ var WorkCenterView = class WorkCenterView extends UIElement {
 		if (initialMessage) this.pendingMessages.unshift(initialMessage);
 		const handoff = takeSkuHandoff("workcenter", "process");
 		if (handoff && (handoff.content || handoff.filename)) this.pendingMessages.unshift({
-			type: "content-share",
-			contentType: "markdown",
+			type: "content-attach",
+			contentType: "file",
 			data: {
 				text: handoff.content,
-				content: handoff.content,
 				filename: handoff.filename,
-				source: "sku-handoff"
+				source: "sku-handoff",
+				hint: {
+					action: "attach",
+					filename: handoff.filename
+				}
 			}
 		});
 	}

@@ -223,7 +223,10 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 					if (recognizedContent) processedItem = recognizedContent;
 				}
 			}
-			if (processedItem !== null && processedItem !== void 0) await gpt?.attachToRequest?.(processedItem);
+			if (processedItem !== null && processedItem !== void 0) {
+				const attachKind = dataType === "image" || isImageData(processedItem) ? "input_image" : null;
+				await gpt?.attachToRequest?.(processedItem, attachKind);
+			}
 		}
 	}
 	await gpt.askToDoAction(finalInstruction);

@@ -1,4 +1,4 @@
-import { Jr as API_ENDPOINTS } from "../shells/boot-index.js";
+import { Xr as API_ENDPOINTS } from "../shells/boot-index.js";
 //#region ../../modules/projects/subsystem/src/routing/pwa/sw-cache.ts
 var originHint = () => {
 	try {

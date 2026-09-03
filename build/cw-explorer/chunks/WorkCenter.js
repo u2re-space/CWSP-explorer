@@ -2,11 +2,11 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { $r as viewBroadcastChannelName, Dr as processApiAuthFromSettings, Er as postProcessApi, Or as readProcessApiResultText, Tr as isProcessApiUnavailable, Wr as sendMessage, Xr as ROUTE_HASHES, Yr as BROADCAST_CHANNELS, _r as initializeComponent, at as loadSettings, vr as registerComponent, xr as unwrapSwInteropMessage, yr as replayQueuedMessagesForDestination } from "../shells/boot-index.js";
+import { Ar as readProcessApiResultText, Cr as unwrapSwInteropMessage, Dr as isProcessApiUnavailable, Kr as sendMessage, Or as postProcessApi, Qr as ROUTE_HASHES, Zr as BROADCAST_CHANNELS, at as loadSettings, br as registerComponent, kr as processApiAuthFromSettings, ti as viewBroadcastChannelName, xr as replayQueuedMessagesForDestination, yr as initializeComponent } from "../shells/boot-index.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
+import { g as takeHeldIngressFiles, i as dropHeldIngressFiles, l as isAndroidLocalShareUri, u as onHeldIngressFiles } from "../views/viewer.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
-import { dropHeldIngressFiles, onHeldIngressFiles, takeHeldIngressFiles } from "./sku-ingress.js";
 import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
@@ -1039,7 +1039,7 @@ var WorkCenterTemplates = class {
 	/** Get default instruction templates (for seeding). Dynamic import avoids TDZ when workcenter loads before `com/app` finishes. */
 	async getDefaultTemplates() {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
-			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Cr);
+			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Tr);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
 		}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 		return DEFAULT_INSTRUCTION_TEMPLATES;
@@ -1820,7 +1820,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ir);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Rr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1881,7 +1881,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ir);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Rr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -3883,6 +3883,7 @@ var isSnapshot$1 = (value) => {
 	const candidate = value;
 	return candidate.version === 1 && Array.isArray(candidate.messages) && !!candidate.draft && typeof candidate.draft.content === "string" && Array.isArray(candidate.draft.attachments);
 };
+var sessionSnapshotHasContent = (snapshot) => Boolean(snapshot && (snapshot.messages.length > 0 || snapshot.draft.attachments.length > 0 || Boolean(snapshot.draft.content.trim())));
 /** Higher epoch wins (New chat). Same epoch: longer transcript, then draft attachments. */
 var rankSessionSnapshot = (snapshot) => {
 	if (!isSnapshot$1(snapshot)) return -1;
@@ -3900,6 +3901,12 @@ var pickRichestSessionSnapshot = (...candidates) => {
 		}
 	}
 	return best;
+};
+/** LS/IDB beat a stale empty higher-epoch OPFS snapshot. */
+var resolveLoadedSessionSnapshot = (local, idb, opfs) => {
+	const quick = pickRichestSessionSnapshot(idb, local);
+	if (sessionSnapshotHasContent(quick)) return quick;
+	return pickRichestSessionSnapshot(opfs, quick);
 };
 /** Conversation mutation facade that persists every durable transition. */
 var WorkCenterSession = class {
@@ -3921,7 +3928,7 @@ var WorkCenterSession = class {
 		}
 		this.state = isSnapshot$1(restored) ? cloneSnapshot(restored) : emptySnapshot();
 		this.markHydrated();
-		if (this.state.messages.length > 0) await this.persist();
+		if (this.state.messages.length > 0) this.persist().catch(() => void 0);
 		return this.snapshot();
 	}
 	markHydrated() {
@@ -4350,16 +4357,20 @@ var withTimeout = (task, ms, fallback) => Promise.race([task, new Promise((resol
 var createWorkCenterSessionPersistence = (store = createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE)) => ({
 	load: async () => {
 		const local = readLocalSnapshot();
-		const quick = pickRichestSessionSnapshot(await withTimeout(readIdbSnapshot(), 200, null), local);
-		return pickRichestSessionSnapshot(await withTimeout(store.readJson(MANIFEST_PATH).catch(() => null), quick ? 150 : 400, null), quick);
+		const idb = await withTimeout(readIdbSnapshot(), 200, null);
+		const quick = resolveLoadedSessionSnapshot(local, idb, null);
+		if (sessionSnapshotHasContent(quick)) return quick;
+		return resolveLoadedSessionSnapshot(local, idb, await withTimeout(store.readJson(MANIFEST_PATH).catch(() => null), 400, null));
 	},
 	save: async (snapshot) => {
 		writeLocalSnapshot(snapshot);
-		await Promise.allSettled([writeIdbSnapshot(snapshot).catch(() => void 0), store.writeJson(MANIFEST_PATH, snapshot)]);
+		await withTimeout(writeIdbSnapshot(snapshot).catch(() => void 0), 250, void 0);
+		store.writeJson(MANIFEST_PATH, snapshot).catch(() => void 0);
 	},
 	clear: async () => {
 		writeLocalSnapshot(null);
-		await Promise.allSettled([writeIdbSnapshot(null).catch(() => void 0), store.clear()]);
+		await withTimeout(writeIdbSnapshot(null).catch(() => void 0), 250, void 0);
+		store.clear().catch(() => void 0);
 	}
 });
 var createWorkCenterAttachmentStore = () => createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE);
@@ -4908,6 +4919,8 @@ var WorkCenterManager = class {
 	}
 	/** Normalize all channel/share payloads into the active conversation draft. */
 	async handleIncomingContent(data, contentType) {
+		const action = String(data?.hint?.action || data?.action || "").toLowerCase();
+		if (action === "process") return;
 		await this.whenSessionReady();
 		try {
 			const files = [];
@@ -4925,11 +4938,23 @@ var WorkCenterManager = class {
 			if (!files.length) files.push(...takeHeldIngressFiles());
 			const rawText = data?.text ?? data?.content;
 			const text = rawText === void 0 || rawText === null ? "" : typeof rawText === "string" ? rawText : JSON.stringify(rawText, null, 2);
-			if (!files.length && (String(data?.filename || "").trim() || text.trim())) files.push(new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" }));
+			if (!files.length && !isAndroidLocalShareUri(text) && !isAndroidLocalShareUri(typeof data?.url === "string" ? data.url : "") && (String(data?.filename || "").trim() || text.trim())) files.push(new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" }));
 			const attached = await this.attachmentIngress.addFiles(files);
 			if (attached.length) dropHeldIngressFiles(files);
-			if (typeof data?.url === "string") await this.attachmentIngress.addUrl(data.url);
-			if (text.trim() && attached.length === 0) await this.appendDraftText(text);
+			if (typeof data?.url === "string" && !isAndroidLocalShareUri(data.url)) await this.attachmentIngress.addUrl(data.url);
+			const source = String(data?.source || data?.route || "").toLowerCase();
+			const shareLike = action === "attach" || /share|launch|capacitor|sku-handoff|open-with/.test(source);
+			if (text.trim() && attached.length === 0 && !isAndroidLocalShareUri(text)) {
+				if (shareLike) {
+					const extra = await this.attachmentIngress.addFiles([new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" })]);
+					if (extra.length) {
+						const live = queryLiveWorkCenterChats()[0];
+						if (live) this.adoptLiveRoot(live);
+						this.paintLiveConversation();
+						this.deps.showMessage(extra.length === 1 ? `Attached ${extra[0]?.name || "file"}` : `Attached ${extra.length} files`);
+					}
+				} else await this.appendDraftText(text);
+			}
 			if (attached.length) {
 				const live = queryLiveWorkCenterChats()[0];
 				if (live) this.adoptLiveRoot(live);
@@ -4975,17 +5000,7 @@ var WorkCenterManager = class {
 			await this.handleIncomingContent(message.data, message.contentType || "text");
 			return;
 		}
-		if (message.type === "share-target-result" && message.data) {
-			const note = this.resultText(message.data);
-			await this.applyArrivedResult(note, message.data, false);
-			await this.shareTarget.addShareTargetResult(this.state, {
-				...message.data,
-				content: note || message.data.content
-			});
-			this.ui.updateDataPipeline(this.state);
-			this.paintLiveConversation();
-			return;
-		}
+		if (message.type === "share-target-result") return;
 		if ((message.type === "ai-result" || message.type === "process-api-result") && message.data) {
 			const note = this.resultText(message.data);
 			if (message.data.success !== false) await this.applyArrivedResult(note, message.data, true);

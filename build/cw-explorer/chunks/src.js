@@ -1,9 +1,9 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { $ as speedDialItems, Et as classifyOpenKindFromName, Ft as resolveExplorerOpenSink, Gt as viewIdForOpenSink, Ht as skuForOpenSink, It as resolveHostOpenPolicy, J as addSpeedDialItem, Lt as resolveOpenPlacement, Nt as peekOpenPolicy, Pt as rememberOpenPolicyFromSettings, Q as persistSpeedDialMeta, Tt as classifyOpenKind, Vt as sinkToOpenLinkTarget, X as ensureSpeedDialMeta, Y as createEmptySpeedDialItem, Z as persistSpeedDialItems, at as loadSettings, kt as looksLikePreviewableBinary } from "../shells/boot-index.js";
+import { $ as speedDialItems, At as looksLikePreviewableBinary, Dt as classifyOpenKindFromName, Et as classifyOpenKind, Ft as rememberOpenPolicyFromSettings, Ht as sinkToOpenLinkTarget, It as resolveExplorerOpenSink, J as addSpeedDialItem, Kt as viewIdForOpenSink, Lt as resolveHostOpenPolicy, Pt as peekOpenPolicy, Q as persistSpeedDialMeta, Rt as resolveOpenPlacement, Ut as skuForOpenSink, X as ensureSpeedDialMeta, Y as createEmptySpeedDialItem, Z as persistSpeedDialItems, at as loadSettings } from "../shells/boot-index.js";
 import { E as isBookmarksPath, T as openUnifiedContextMenu, rt as resolveFsBackend, st as toExplorerStoragePath, tt as ensureDefaultFsBackends } from "../com/app.js";
-import { c as createViewConstructor, n as sendViewProtocolMessage, r as ExplorerChannelAction } from "../views/viewer.js";
+import { C as createViewConstructor, _ as sendViewProtocolMessage, v as ExplorerChannelAction } from "../views/viewer.js";
 import { loadAsAdopted, removeAdopted, scheduleBakeScreenColors, unbakeScreenColors } from "/fest/style-lib.js";
 import { observe } from "/fest/object.js";
 //#region src/inject.ts

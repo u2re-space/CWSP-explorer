@@ -1,6 +1,6 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./log-sanitizer.js","./ViewTransferRouting.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
-import { rr as splitMultiValueList } from "../shells/boot-index.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./toast.js","./sw-handling.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+import { ir as splitMultiValueList } from "../shells/boot-index.js";
 
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region ../CWSP-document/src/frontend/boot/capacitor-share-intent.ts
@@ -12,26 +12,26 @@ import { n as isCapacitorNative } from "./capacitor-permissions.js";
 * (process → AI/attach, document → viewer, explorer → path/ask, shell → pin/wallpaper).
 * Document SKU does not ack pending-share — the viewer pull paints then acks.
 */
+var emptyParsedShare = () => ({
+	text: "",
+	title: "",
+	name: "",
+	mime: "",
+	asset: null,
+	pending: false
+});
 var parseSharePayload = (detail) => {
-	if (detail == null) return {
-		text: "",
-		title: "",
-		asset: null,
-		pending: false
-	};
+	if (detail == null) return emptyParsedShare();
 	if (typeof detail === "string") {
 		const trimmed = detail.trim();
-		if (!trimmed) return {
-			text: "",
-			title: "",
-			asset: null,
-			pending: false
-		};
+		if (!trimmed) return emptyParsedShare();
 		try {
 			const parsed = JSON.parse(trimmed);
 			return {
 				text: String(parsed?.text || "").trim() || (parsed?.asset ? "" : trimmed),
 				title: String(parsed?.title || "").trim(),
+				name: String(parsed?.name || "").trim(),
+				mime: String(parsed?.mime || "").trim(),
 				asset: parsed?.asset && typeof parsed.asset === "object" ? parsed.asset : parsed?.name ? {
 					name: parsed.name,
 					mimeType: parsed.mime
@@ -40,22 +40,30 @@ var parseSharePayload = (detail) => {
 			};
 		} catch {
 			return {
-				text: trimmed,
-				title: "",
-				asset: null,
-				pending: false
+				...emptyParsedShare(),
+				text: trimmed
 			};
 		}
 	}
 	return {
 		text: String(detail.text || "").trim(),
 		title: String(detail.title || "").trim(),
+		name: String(detail.name || "").trim(),
+		mime: String(detail.mime || "").trim(),
 		asset: detail.asset && typeof detail.asset === "object" ? detail.asset : detail.name ? {
 			name: detail.name,
 			mimeType: detail.mime
 		} : null,
 		pending: detail.pending === true
 	};
+};
+var looksLikeFileShare = (echo) => {
+	if (echo.hasFile) return true;
+	const mime = String(echo.mime || "").toLowerCase();
+	const name = String(echo.name || echo.title || "").toLowerCase();
+	if (mime.startsWith("image/") || mime.startsWith("application/") || mime.startsWith("audio/") || mime.startsWith("video/")) return true;
+	if (/\.(pdf|docx?|odt|rtf|pptx?|xlsx?|md|markdown|txt|png|jpe?g|gif|webp|html?|csv|json)$/i.test(name)) return true;
+	return false;
 };
 var readDestinationNodes = (settings) => {
 	const cwsp = settings.cwsp && typeof settings.cwsp === "object" ? settings.cwsp : {};
@@ -70,37 +78,75 @@ var isDocumentSku = () => {
 		return false;
 	}
 };
+var isTransferSku = () => {
+	try {
+		return String(document.documentElement?.dataset?.cwspSku || "").trim() === "transfer";
+	} catch {
+		return false;
+	}
+};
 var consumeNativePendingShare = async () => {
 	try {
 		const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.wn);
+			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Tn);
 			return { invokeCwsPlatformIPC };
 		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
 		if (!peek?.ok) return null;
 		const echo = peek.echo || peek;
-		const text = String(echo.text || "").trim();
+		if (!echo.text && !echo.title && !echo.name && !echo.url && !echo.hasFile) return null;
+		const { dataUrlToFile, filenameFromLocalShareUri, isAndroidLocalShareUri } = await __vitePreload(async () => {
+			const { dataUrlToFile, filenameFromLocalShareUri, isAndroidLocalShareUri } = await import("./sku-ingress.js");
+			return {
+				dataUrlToFile,
+				filenameFromLocalShareUri,
+				isAndroidLocalShareUri
+			};
+		}, __vite__mapDeps([6,2,0,1,3,4,5]), import.meta.url);
+		let text = String(echo.text || "").trim();
 		const title = String(echo.title || echo.name || "").trim();
-		const url = String(echo.url || "").trim();
+		const name = String(echo.name || "").trim();
+		const mime = String(echo.mime || "").trim();
+		let url = String(echo.url || "").trim();
 		const files = [];
-		if (echo.hasFile) {
+		const local = isAndroidLocalShareUri(url) || isAndroidLocalShareUri(text);
+		const wantFile = Boolean(echo.hasFile) || local || looksLikeFileShare(echo);
+		const pullFile = async () => {
 			const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
 			const blob = read.echo || read;
-			if (blob?.data) {
-				const { dataUrlToFile } = await __vitePreload(async () => {
-					const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
-					return { dataUrlToFile };
-				}, __vite__mapDeps([6,1,2,0,3,4,5]), import.meta.url);
-				const file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
-				if (file) files.push(file);
+			if (!blob?.data) return;
+			const file = await dataUrlToFile(blob.data, String(blob.name || echo.name || filenameFromLocalShareUri(url || text) || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
+			if (file) files.push(file);
+		};
+		if (wantFile) await pullFile();
+		if (wantFile && !files.length) {
+			const status = await invokeCwsPlatformIPC({ channel: "storage:all-files-status" }).catch(() => null);
+			if (!Boolean((status?.echo)?.allFilesAccess)) {
+				await invokeCwsPlatformIPC({ channel: "storage:all-files-request" }).catch(() => null);
+				const { showToast } = await __vitePreload(async () => {
+					const { showToast } = await import("./toast.js").then((n) => n.n);
+					return { showToast };
+				}, __vite__mapDeps([7,1]), import.meta.url);
+				showToast({
+					message: "Allow all-files access, then share the file again",
+					kind: "warning"
+				});
+				return null;
 			}
+			await invokeCwsPlatformIPC({ channel: "launcher:restash-share-file" }).catch(() => null);
+			await pullFile();
 		}
-		await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
+		if (wantFile && !files.length) return null;
+		if (files.length || !local && (text || url)) await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
+		if (isAndroidLocalShareUri(url)) url = "";
+		if (isAndroidLocalShareUri(text)) text = "";
 		if (!text && !url && !files.length) return null;
 		return {
 			text,
 			title,
 			url,
+			name,
+			mime,
 			files
 		};
 	} catch {
@@ -111,14 +157,16 @@ var ingestParsedShare = async (input) => {
 	const { ingestSharePayload } = await __vitePreload(async () => {
 		const { ingestSharePayload } = await import("./sw-handling.js");
 		return { ingestSharePayload };
-	}, __vite__mapDeps([7,2,0,1,3,4,5,8,6,9]), import.meta.url);
+	}, __vite__mapDeps([8,2,0,1,3,4,5,9,6,10,11]), import.meta.url);
+	const filename = String(input.files?.[0]?.name || input.name || input.title || "").trim();
 	await ingestSharePayload({
-		title: input.title || void 0,
+		title: input.title || input.name || void 0,
 		text: input.text || void 0,
 		url: input.url || void 0,
 		files: input.files?.length ? input.files : void 0,
 		fileCount: input.files?.length || 0,
-		source: "share-target"
+		source: "share-target",
+		hint: filename ? { filename } : void 0
 	});
 };
 var installed = false;
@@ -129,14 +177,15 @@ var enqueueShareIngest = (job) => {
 var installCapacitorShareIntentBridge = () => {
 	if (!isCapacitorNative() || installed) return;
 	installed = true;
+	if (isTransferSku()) return;
 	const handler = (ev) => {
 		(async () => {
-			const { text, title, asset, pending } = parseSharePayload(ev.detail);
+			const { text, title, name, mime, asset, pending } = parseSharePayload(ev.detail);
 			try {
 				const [{ loadSettings }, ws, { classifyOpenKindFromPayload }, ingress] = await Promise.all([
 					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.tt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
 					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.c), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
-					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.Mt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.Nt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url),
 					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.gt), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url)
 				]);
 				const settings = await loadSettings();
@@ -144,9 +193,9 @@ var installCapacitorShareIntentBridge = () => {
 				const files = [];
 				if (asset?.data) {
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
+						const { dataUrlToFile } = await import("./sku-ingress.js");
 						return { dataUrlToFile };
-					}, __vite__mapDeps([6,1,2,0,3,4,5]), import.meta.url);
+					}, __vite__mapDeps([6,2,0,1,3,4,5]), import.meta.url);
 					const file = await dataUrlToFile(asset.data, String(asset.name || "shared.bin"), String(asset.mimeType || asset.type || "application/octet-stream"));
 					if (file) files.push(file);
 				}
@@ -154,17 +203,23 @@ var installCapacitorShareIntentBridge = () => {
 					text,
 					title,
 					files,
-					source: "share-target"
+					hint: { filename: name || title || files[0]?.name }
 				});
 				const row = ingress.resolveProcessIngressKind(settings, kind);
-				if (row.backgroundClipboard) {
+				if (row.mode === "process") {
 					const { ensureCapacitorBridgeDaemonStarted } = await __vitePreload(async () => {
 						const { ensureCapacitorBridgeDaemonStarted } = await import("./capacitor-settings-permissions.js").then((n) => n.t);
 						return { ensureCapacitorBridgeDaemonStarted };
-					}, __vite__mapDeps([10,1,11]), import.meta.url);
-					await ensureCapacitorBridgeDaemonStarted(settings);
+					}, __vite__mapDeps([12,1,13]), import.meta.url);
+					await ensureCapacitorBridgeDaemonStarted({
+						...settings || {},
+						shell: {
+							...settings?.shell || {},
+							bridgeDaemonEnabled: true
+						}
+					});
 				}
-				if (!(row.mode === "process" && row.copyToClipboard !== false)) {
+				if (!(row.mode === "process" || String(document.documentElement?.dataset?.cwspSku || "").trim() === "process")) {
 					const nodes = readDestinationNodes(settings);
 					ws.connectWS();
 					if (asset) ws.sendCoordinatorAct("clipboard:update", {
@@ -186,20 +241,23 @@ var installCapacitorShareIntentBridge = () => {
 							await ingestParsedShare(native);
 							return;
 						}
+						return;
 					}
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
+						const { dataUrlToFile } = await import("./sku-ingress.js");
 						return { dataUrlToFile };
-					}, __vite__mapDeps([6,1,2,0,3,4,5]), import.meta.url);
+					}, __vite__mapDeps([6,2,0,1,3,4,5]), import.meta.url);
 					const files = [];
 					if (asset?.data) {
-						const file = await dataUrlToFile(asset.data, String(asset.name || "shared.bin"), String(asset.mimeType || asset.type || "application/octet-stream"));
+						const file = await dataUrlToFile(asset.data, String(asset.name || name || "shared.bin"), String(asset.mimeType || asset.type || mime || "application/octet-stream"));
 						if (file) files.push(file);
 					}
 					if (!text && !files.length && !asset) return;
 					await ingestParsedShare({
 						text,
-						title: title || asset?.name,
+						title: title || name || asset?.name,
+						name,
+						mime,
 						files
 					});
 				} catch {}
@@ -223,7 +281,7 @@ var installCapacitorShareIntentBridge = () => {
 			window.addEventListener("cwsp:boot-ready", onReady);
 			window.setTimeout(done, 4e3);
 		});
-		if (isDocumentSku()) return;
+		if (isDocumentSku() || isTransferSku()) return;
 		const native = await consumeNativePendingShare().catch(() => null);
 		if (native) await ingestParsedShare(native);
 	});

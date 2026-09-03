@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","./launcher-bridge.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { c as isCwspNativeHost, d as isWebHubSurface, i as apkManifestForSku, l as isCwspSku, m as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { A as isAppearanceColorSource, At as mergeOpenPolicy, Ct as resolveEcosystemToken, It as resolveHostOpenPolicy, O as FALLBACK_BASE_COLOR, S as visibleHubSettingsSections, Sr as DEFAULT_INSTRUCTION_TEMPLATES, St as normalizeEcosystemToken, T as applyTheme, Ur as sendMessage, Ut as stampHostOpenPolicy, Yt as applyAirpadRuntimeFromAppSettings, _ as readSettingsAreaSection, at as loadSettings, b as resolveSettingsShellProfile, bt as BUILTIN_AI_MODELS, ct as PROCESS_INGRESS_KIND_LABELS, d as SIBLING_HUB_SETTINGS_SECTIONS, er as resolveCwspUrlFields, f as canonicalHubSettingsSection, g as pruneBuiltInSettingsTabs, h as hubSettingsSectionPath, it as getLastSettingsSaveReport, j as normalizeHexColor, k as defaultColorSource, m as hasBuiltInSettingsPanel, mt as mergeProcessIngress, nt as ensureCapacitorCwspSettingsSeeded, ot as noteSettingsControlSync, p as defaultSettingsTabForProfile, pr as isEnabledView, rt as ensureCrxCwspSettingsSeeded, st as saveSettings, t as navigateToView, v as rememberSettingsAreaSection, wt as OPEN_KINDS, x as skuForHubSettingsSection, y as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
+import { A as isAppearanceColorSource, Cr as DEFAULT_INSTRUCTION_TEMPLATES, Ct as normalizeEcosystemToken, Gr as sendMessage, Lt as resolveHostOpenPolicy, O as FALLBACK_BASE_COLOR, S as visibleHubSettingsSections, T as applyTheme, Tt as OPEN_KINDS, Wt as stampHostOpenPolicy, Xt as applyAirpadRuntimeFromAppSettings, _ as readSettingsAreaSection, at as loadSettings, b as resolveSettingsShellProfile, ct as PROCESS_INGRESS_KIND_LABELS, d as SIBLING_HUB_SETTINGS_SECTIONS, f as canonicalHubSettingsSection, g as pruneBuiltInSettingsTabs, h as hubSettingsSectionPath, it as getLastSettingsSaveReport, j as normalizeHexColor, jt as mergeOpenPolicy, k as defaultColorSource, m as hasBuiltInSettingsPanel, mr as isEnabledView, mt as mergeProcessIngress, nt as ensureCapacitorCwspSettingsSeeded, ot as noteSettingsControlSync, p as defaultSettingsTabForProfile, rt as ensureCrxCwspSettingsSeeded, st as saveSettings, t as navigateToView, tr as resolveCwspUrlFields, v as rememberSettingsAreaSection, wt as resolveEcosystemToken, x as skuForHubSettingsSection, xt as BUILTIN_AI_MODELS, y as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
 import { $t as StorageKeys, An as H, en as setString } from "../com/app.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 import { r as requestCapacitorSettingsPermissionsAfterSave } from "./capacitor-settings-permissions.js";
@@ -619,17 +619,6 @@ var createAiSection = () => H`<section class="card settings-tab-panel is-active"
           </label>
         </div>
       </details>
-      <label class="field">
-        <span>Share target mode</span>
-        <select class="form-select" data-field="ai.shareTargetMode">
-          <option value="recognize">Recognize and copy</option>
-          <option value="analyze">Analyze and store</option>
-        </select>
-      </label>
-      <label class="field checkbox form-checkbox">
-        <input type="checkbox" data-field="ai.autoProcessShared" />
-        <span>Auto AI on Share Target / File Open (and copy to clipboard)</span>
-      </label>
       <label class="field">
         <span>Response language</span>
         <select class="form-select" data-field="ai.responseLanguage"></select>
@@ -1668,9 +1657,19 @@ var fillInstructionSelects = (panel, settings) => {
 var kindBlock = (kind) => [
 	settingsHeading(PROCESS_INGRESS_KIND_LABELS[kind]),
 	settingsSelectField(`When ${PROCESS_INGRESS_KIND_LABELS[kind].toLowerCase()} arrives`, `ai.processIngress.kinds.${kind}.mode`, MODE_OPTIONS),
-	instructionSelect("Default instruction", `ai.processIngress.kinds.${kind}.instructionId`),
-	settingsCheckboxField("Copy AI result to clipboard", `ai.processIngress.kinds.${kind}.copyToClipboard`)
+	instructionSelect("Default instruction", `ai.processIngress.kinds.${kind}.instructionId`)
 ];
+var dropRetiredProcessFlags = (settings) => {
+	if (settings.ai) {
+		delete settings.ai.autoProcessShared;
+		delete settings.ai.shareTargetMode;
+	}
+	const views = settings.views?.workcenter;
+	if (views) {
+		delete views.autoRunPinned;
+		delete views.defaultInstructionId;
+	}
+};
 var registerWorkcenterSettingsContribution = () => registerSettingsContribution({
 	id: "workcenter",
 	label: "Process",
@@ -1678,20 +1677,14 @@ var registerWorkcenterSettingsContribution = () => registerSettingsContribution(
 	requiresView: "workcenter",
 	manualFields: true,
 	render: () => settingsPanel("workcenter", "Process", [
-		settingsCheckboxField("Auto-run pinned tasks", "views.workcenter.autoRunPinned"),
-		settingsTextField("Default instruction id", "views.workcenter.defaultInstructionId", "(none)"),
-		settingsHeading("File types and incoming actions"),
-		settingsHint("PWA/Web Share Target and Launch Queue open files here. On Android, Share and Open with follow these per-type actions. “Run AI and write to clipboard” can keep a background service so the result still lands after Share."),
-		settingsHint("Chat and AI actions POST to `/api/process`. PWA service worker and Capacitor Java run the same key-on-request fallback as Fastify; dedicated hosts stay same-origin, LAN still uses process.u2re.space."),
-		settingsCheckboxField("Allow automatic AI for incoming files", "ai.processIngress.autoProcess"),
-		settingsCheckboxField("Android: keep background service for clipboard-write", "ai.processIngress.backgroundClipboard"),
-		settingsSelectField("AI action", "ai.shareTargetMode", [["recognize", "Recognize"], ["analyze", "Analyze"]]),
+		settingsHint("Share Target, Android Share, Open with, and Launch Queue use one action per type. Attach puts the file in chat. Process runs AI in the background and writes the result to the clipboard."),
+		settingsHeading("Incoming file types"),
 		...OPEN_KINDS.flatMap((kind) => kindBlock(kind))
 	]),
 	load: (settings, panel) => {
 		settings.ai = settings.ai || {};
 		settings.ai.processIngress = mergeProcessIngress(settings.ai.processIngress);
-		if (settings.ai.autoProcessShared === false) settings.ai.processIngress.autoProcess = false;
+		dropRetiredProcessFlags(settings);
 		fillInstructionSelects(panel, settings);
 		bindContributionFields(panel, settings);
 	},
@@ -1699,7 +1692,15 @@ var registerWorkcenterSettingsContribution = () => registerSettingsContribution(
 		collectContributionFields(panel, settings);
 		settings.ai = settings.ai || {};
 		settings.ai.processIngress = mergeProcessIngress(settings.ai.processIngress);
-		settings.ai.autoProcessShared = settings.ai.processIngress.autoProcess !== false;
+		const ingress = settings.ai.processIngress;
+		let anyProcess = false;
+		for (const kind of OPEN_KINDS) {
+			const row = ingress.kinds[kind];
+			row.copyToClipboard = row.mode === "process";
+			if (row.mode === "process") anyProcess = true;
+		}
+		ingress.backgroundClipboard = anyProcess;
+		dropRetiredProcessFlags(settings);
 	}
 });
 //#endregion
@@ -2599,7 +2600,7 @@ var resolveCwspSettingsBeforeSave = async (settings) => {
 	const core = settings.core;
 	if (!core || typeof core !== "object") return;
 	const { sanitizeFleetSelfWireNodeId } = await __vitePreload(async () => {
-		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.jn);
+		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.Mn);
 		return { sanitizeFleetSelfWireNodeId };
 	}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 	const canonicalUserId = sanitizeFleetSelfWireNodeId(core.userId);
@@ -2852,7 +2853,6 @@ var createSettingsView = (opts) => {
 	const requestTimeoutMedium = field("[data-field=\"ai.requestTimeout.medium\"]");
 	const requestTimeoutHigh = field("[data-field=\"ai.requestTimeout.high\"]");
 	const maxRetries = field("[data-field=\"ai.maxRetries\"]");
-	const mode = field("[data-field=\"ai.shareTargetMode\"]");
 	const syncCustomModelVisibility = () => {
 		const isCustom = (model?.value || "").trim() === "custom";
 		if (customModelGroup) customModelGroup.hidden = !isCustom;
@@ -2877,7 +2877,6 @@ var createSettingsView = (opts) => {
 		model.value = "custom";
 		syncCustomModelVisibility();
 	});
-	const autoProcessShared = field("[data-field=\"ai.autoProcessShared\"]");
 	const responseLanguage = field("[data-field=\"ai.responseLanguage\"]");
 	const translateResults = field("[data-field=\"ai.translateResults\"]");
 	const generateSvgGraphics = field("[data-field=\"ai.generateSvgGraphics\"]");
@@ -3121,8 +3120,6 @@ var createSettingsView = (opts) => {
 		if (requestTimeoutMedium) requestTimeoutMedium.value = String(s?.ai?.requestTimeout?.medium ?? 3e5);
 		if (requestTimeoutHigh) requestTimeoutHigh.value = String(s?.ai?.requestTimeout?.high ?? 9e5);
 		if (maxRetries) maxRetries.value = String(s?.ai?.maxRetries ?? 2);
-		if (mode) mode.value = s?.ai?.shareTargetMode || "recognize";
-		if (autoProcessShared) autoProcessShared.checked = (s?.ai?.autoProcessShared ?? true) !== false;
 		if (responseLanguage) responseLanguage.value = s?.ai?.responseLanguage || "auto";
 		if (translateResults) translateResults.checked = Boolean(s?.ai?.translateResults);
 		if (generateSvgGraphics) generateSvgGraphics.checked = Boolean(s?.ai?.generateSvgGraphics);
@@ -3203,7 +3200,7 @@ var createSettingsView = (opts) => {
 		applyTheme(s);
 		applyContributions(root, s, contributionCtx);
 		opts.onTheme?.(s?.appearance?.theme || "auto");
-		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.wn).then(async (m) => {
+		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.Tn).then(async (m) => {
 			const hints = [...root.querySelectorAll("[data-apk-local-version]")];
 			if (!hints.length) return;
 			const { srcEl, endpointEl, tokenEl, insecureEl } = apkBridgeFields();
@@ -3447,7 +3444,7 @@ var createSettingsView = (opts) => {
 					if (userClicked) setNote(pairRegenBtn ? "Regenerating public token…" : "Refreshing pairing code…", { tone: "warn" });
 					try {
 						const { invokeCwsNative } = await __vitePreload(async () => {
-							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.wn);
+							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Tn);
 							return { invokeCwsNative };
 						}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 						const result = await invokeCwsNative(pairRegenBtn ? "control:public-token:regenerate" : "control:pairing:status", {});
@@ -3491,7 +3488,7 @@ var createSettingsView = (opts) => {
 			(async () => {
 				try {
 					const { invokeCwsNative } = await __vitePreload(async () => {
-						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.wn);
+						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Tn);
 						return { invokeCwsNative };
 					}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 					const s = await loadSettings();
@@ -3569,7 +3566,7 @@ var createSettingsView = (opts) => {
 					const token = (tokenEl?.value || "").trim() || resolveEcosystemToken(s);
 					const allowInsecureTls = insecureEl?.checked ?? Boolean(s.core?.allowInsecureTls);
 					const { invokeCwsNative } = await __vitePreload(async () => {
-						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.wn);
+						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Tn);
 						return { invokeCwsNative };
 					}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 					const clicked = apkInstallBtn || apkCheckBtn;
@@ -3642,33 +3639,38 @@ var createSettingsView = (opts) => {
 			}
 			const next = {
 				...current,
-				ai: hasPanel("ai") ? {
-					baseUrl: apiUrl?.value?.trim?.() || "",
-					apiKey: apiKey?.value?.trim?.() || "",
-					model: model?.value || "gpt-5.6-luna",
-					customModel: model?.value === "custom" ? customModel?.value?.trim?.() || "" : "",
-					defaultReasoningEffort: defaultReasoningEffort?.value || "medium",
-					defaultVerbosity: defaultVerbosity?.value || "medium",
-					maxOutputTokens: parseNumberOrDefault(maxOutputTokens?.value, 4e5),
-					contextTruncation: contextTruncation?.value || "disabled",
-					promptCacheRetention: promptCacheRetention?.value || "in-memory",
-					maxToolCalls: parseNumberOrDefault(maxToolCalls?.value, 8),
-					parallelToolCalls: (parallelToolCalls?.checked ?? true) !== false,
-					requestTimeout: {
-						low: parseNumberOrDefault(requestTimeoutLow?.value, 6e4),
-						medium: parseNumberOrDefault(requestTimeoutMedium?.value, 3e5),
-						high: parseNumberOrDefault(requestTimeoutHigh?.value, 9e5)
-					},
-					maxRetries: parseNumberOrDefault(maxRetries?.value, 2),
-					shareTargetMode: mode?.value || "recognize",
-					autoProcessShared: (autoProcessShared?.checked ?? true) !== false,
-					responseLanguage: responseLanguage?.value || "auto",
-					translateResults: Boolean(translateResults?.checked),
-					generateSvgGraphics: Boolean(generateSvgGraphics?.checked),
-					mcp: hasPanel("mcp") ? collectMcpConfigurations(mcpSection) : current.ai?.mcp || [],
-					customInstructions: current.ai?.customInstructions || [],
-					activeInstructionId: current.ai?.activeInstructionId || ""
-				} : current.ai || {},
+				ai: hasPanel("ai") ? (() => {
+					const nextAi = {
+						...current.ai || {},
+						baseUrl: apiUrl?.value?.trim?.() || "",
+						apiKey: apiKey?.value?.trim?.() || "",
+						model: model?.value || "gpt-5.6-luna",
+						customModel: model?.value === "custom" ? customModel?.value?.trim?.() || "" : "",
+						defaultReasoningEffort: defaultReasoningEffort?.value || "medium",
+						defaultVerbosity: defaultVerbosity?.value || "medium",
+						maxOutputTokens: parseNumberOrDefault(maxOutputTokens?.value, 4e5),
+						contextTruncation: contextTruncation?.value || "disabled",
+						promptCacheRetention: promptCacheRetention?.value || "in-memory",
+						maxToolCalls: parseNumberOrDefault(maxToolCalls?.value, 8),
+						parallelToolCalls: (parallelToolCalls?.checked ?? true) !== false,
+						requestTimeout: {
+							low: parseNumberOrDefault(requestTimeoutLow?.value, 6e4),
+							medium: parseNumberOrDefault(requestTimeoutMedium?.value, 3e5),
+							high: parseNumberOrDefault(requestTimeoutHigh?.value, 9e5)
+						},
+						maxRetries: parseNumberOrDefault(maxRetries?.value, 2),
+						responseLanguage: responseLanguage?.value || "auto",
+						translateResults: Boolean(translateResults?.checked),
+						generateSvgGraphics: Boolean(generateSvgGraphics?.checked),
+						mcp: hasPanel("mcp") ? collectMcpConfigurations(mcpSection) : current.ai?.mcp || [],
+						customInstructions: current.ai?.customInstructions || [],
+						activeInstructionId: current.ai?.activeInstructionId || "",
+						processIngress: current.ai?.processIngress
+					};
+					delete nextAi.shareTargetMode;
+					delete nextAi.autoProcessShared;
+					return nextAi;
+				})() : current.ai || {},
 				speech: hasPanel("ai") ? { language: speechLanguage?.value || "en-US" } : current.speech || {},
 				core: hasPanel("server") ? {
 					...current.core,
@@ -3867,7 +3869,7 @@ var createSettingsView = (opts) => {
 				if (typeof m.nativeShellOwnsExclusiveHubWebsocket === "function" && m.nativeShellOwnsExclusiveHubWebsocket()) {
 					try {
 						const { invokeCwsNative } = await __vitePreload(async () => {
-							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.wn);
+							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Tn);
 							return { invokeCwsNative };
 						}, __vite__mapDeps([4,2,5,1,6,7]), import.meta.url);
 						await invokeCwsNative("runtime:reload-settings", {});

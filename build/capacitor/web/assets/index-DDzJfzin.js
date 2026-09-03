@@ -1,5 +1,5 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import "../chunks/vite-preload-BsPm7yBB.js";
 import { _ as stashSkuHandoff, a as applyCwspSku } from "../shells/boot-history-base.js";
 
@@ -55,14 +55,15 @@ var bootExplorerSku = async (container, kind) => {
 			src: path
 		});
 	} catch {}
+	__vitePreload(() => import("../com/app.js").then((n) => n.jt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([0,1]), import.meta.url).catch(() => {});
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.ar);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.or);
 			return {
 				SystemBarType,
 				SystemBars
 			};
-		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
+		}, __vite__mapDeps([2,1,3,0,4,5]), import.meta.url);
 		await SystemBars.hide({ bar: SystemBarType.NavigationBar });
 	} catch {}
 	if (host === "neutralino") try {
