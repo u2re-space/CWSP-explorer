@@ -1,4 +1,4 @@
-import { An as H, Sn as registerTransientOverlay, St as __decorate, Tn as bindOutsideDismiss, bt as UIElement, kn as defineElement, yt as flyout_default } from "../com/app.js";
+import { Dn as bindOutsideDismiss, Mn as H, St as UIElement, jn as defineElement, wn as registerTransientOverlay, wt as __decorate, xt as flyout_default } from "../com/app.js";
 import { preloadStyle } from "/fest/style-lib.js";
 import { addEvent } from "/fest/dom.js";
 import "/fest/icon.js";
@@ -11,8 +11,16 @@ var flyoutAnchorSelectors = [
 	"[data-chrome-flyout-anchor]",
 	".env-shell-taskbar__clock",
 	".env-ui-statusbar__clock",
-	".env-device-tray"
+	".env-device-tray",
+	".speed-dial-chrome-rail",
+	".speed-dial-core-rail"
 ];
+var resolveFlyoutAlign = (anchor) => {
+	if (!anchor) return "end";
+	if (anchor.dataset.chromeFlyoutSide === "start") return "start";
+	if (anchor.closest?.(".speed-dial-chrome-rail, [data-chrome-flyout-side='start']")) return "start";
+	return "end";
+};
 var isDesktopChrome = () => {
 	if (typeof document !== "undefined") {
 		if (document.querySelector(".env-shell-chrome[data-desktop]")) return true;
@@ -50,18 +58,25 @@ var ensureOverlayRoot = (host) => {
 * Place flyout for desktop (bottom-right) or mobile (calendar center / QS top-center).
 * INVARIANT: panel itself must set `pointer-events: auto`.
 */
-var positionFlyout = (el, mode) => {
+var positionFlyout = (el, mode, opts) => {
 	const desktop = isDesktopChrome();
+	const align = opts?.align ?? resolveFlyoutAlign(opts?.anchor);
+	el.dataset.flyoutAlign = align;
 	el.style.position = "fixed";
 	el.style.zIndex = String(Number(CHROME_FLYOUT_Z) + 1);
 	el.style.pointerEvents = "auto";
 	el.style.margin = "0";
 	if (desktop) {
 		el.style.top = "auto";
-		el.style.left = "auto";
-		el.style.right = "0.75rem";
 		el.style.bottom = "4.5rem";
 		el.style.transform = "none";
+		if (align === "start") {
+			el.style.left = "0.75rem";
+			el.style.right = "auto";
+		} else {
+			el.style.left = "auto";
+			el.style.right = "0.75rem";
+		}
 		return;
 	}
 	if (mode === "calendar") {
@@ -380,7 +395,7 @@ function toggleCalendarFlyout(anchor) {
 			el.dataset.theme = pinned;
 			el.style.colorScheme = pinned;
 		}
-		positionFlyout(el, FLYOUT_KIND);
+		positionFlyout(el, FLYOUT_KIND, { anchor });
 		el.open();
 		return {
 			kind: FLYOUT_KIND,

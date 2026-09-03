@@ -1,6 +1,6 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { Cn as resolveOverlayHost, Sn as registerTransientOverlay, dn as placeOverlay, ln as registerDirectoryRoot } from "../com/app.js";
+import { Tn as resolveOverlayHost, dn as registerDirectoryRoot, pn as placeOverlay, wn as registerTransientOverlay } from "../com/app.js";
 import "/fest/core.js";
 import "/fest/dom.js";
 import "/fest/object.js";
@@ -686,7 +686,7 @@ var readHandleFile = async (root, path, scope) => {
 var bindFsBackendToProvide = (backend) => {
 	if (backend.root === "/bookmarks/" || backend.root === "/downloads/") return;
 	__vitePreload(async () => {
-		const { registerProvideBackend } = await import("../com/app.js").then((n) => n.jt);
+		const { registerProvideBackend } = await import("../com/app.js").then((n) => n.Nt);
 		return { registerProvideBackend };
 	}, __vite__mapDeps([0,1]), import.meta.url).then(({ registerProvideBackend }) => {
 		registerProvideBackend({
@@ -714,7 +714,7 @@ var loadIdbRoot = async () => {
 	if (typeof indexedDB === "undefined") return null;
 	try {
 		const { getIdbRoot } = await __vitePreload(async () => {
-			const { getIdbRoot } = await import("../com/app.js").then((n) => n.jt);
+			const { getIdbRoot } = await import("../com/app.js").then((n) => n.Nt);
 			return { getIdbRoot };
 		}, __vite__mapDeps([0,1]), import.meta.url);
 		return await getIdbRoot();
@@ -777,7 +777,7 @@ function ensureDefaultFsBackends() {
 	} else {
 		unregisterFsBackend("/idb/");
 		__vitePreload(async () => {
-			const { unregisterProvideBackend } = await import("../com/app.js").then((n) => n.jt);
+			const { unregisterProvideBackend } = await import("../com/app.js").then((n) => n.Nt);
 			return { unregisterProvideBackend };
 		}, __vite__mapDeps([0,1]), import.meta.url).then(({ unregisterProvideBackend }) => {
 			unregisterProvideBackend("/idb/");
@@ -789,7 +789,7 @@ function ensureDefaultFsBackends() {
 		async list(path) {
 			try {
 				const { tryRemoteMountedList } = await __vitePreload(async () => {
-					const { tryRemoteMountedList } = await import("../com/app.js").then((n) => n.jt);
+					const { tryRemoteMountedList } = await import("../com/app.js").then((n) => n.Nt);
 					return { tryRemoteMountedList };
 				}, __vite__mapDeps([0,1]), import.meta.url);
 				return await tryRemoteMountedList(path) ?? [];
@@ -802,7 +802,7 @@ function ensureDefaultFsBackends() {
 			if (!p || p.endsWith("/")) return null;
 			try {
 				const { tryRemoteMountedRead } = await __vitePreload(async () => {
-					const { tryRemoteMountedRead } = await import("../com/app.js").then((n) => n.jt);
+					const { tryRemoteMountedRead } = await import("../com/app.js").then((n) => n.Nt);
 					return { tryRemoteMountedRead };
 				}, __vite__mapDeps([0,1]), import.meta.url);
 				const remote = await tryRemoteMountedRead(p);
@@ -820,7 +820,7 @@ function ensureDefaultFsBackends() {
 		}
 	});
 	__vitePreload(async () => {
-		const { ensureRemoteMountedFs } = await import("../com/app.js").then((n) => n.jt);
+		const { ensureRemoteMountedFs } = await import("../com/app.js").then((n) => n.Nt);
 		return { ensureRemoteMountedFs };
 	}, __vite__mapDeps([0,1]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
 		ensureRemoteMountedFs();

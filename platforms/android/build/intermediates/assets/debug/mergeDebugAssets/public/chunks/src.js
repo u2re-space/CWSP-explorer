@@ -360,7 +360,7 @@ var writePersistedExplorerPath = (path) => {
 function loadLastPath(explorer, initialPath) {
 	try {
 		ensureDefaultFsBackends();
-		__vitePreload(() => import("../com/app.js").then((n) => n.jt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app.js").then((n) => n.Nt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
 	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();
@@ -628,7 +628,7 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		} catch {}
 		if (!item.file) try {
 			const { provide } = await __vitePreload(async () => {
-				const { provide } = await import("../com/app.js").then((n) => n.jt);
+				const { provide } = await import("../com/app.js").then((n) => n.Nt);
 				return { provide };
 			}, __vite__mapDeps([4,2]), import.meta.url);
 			item.file = await provide(sourcePath);

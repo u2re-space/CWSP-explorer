@@ -1,4 +1,4 @@
-import { An as H } from "../com/app.js";
+import { Mn as H } from "../com/app.js";
 import { y as HistoryChannelAction } from "../views/viewer.js";
 import { a as transferProgressRatio, dispatchHistoryAction, getTransferHistoryStore, historyImageSrc, i as isMutedHistoryStatus, n as formatTransferBytes, r as formatTransferSpeed, setTransferHistoryUiActive, startCapacitorTransferHistory, startNeutralinoTransferHistory, t as actionsForEntry } from "./transfer-history-runtime.js";
 import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";

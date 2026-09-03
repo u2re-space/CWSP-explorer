@@ -55,7 +55,7 @@ var bootExplorerSku = async (container, kind) => {
 			src: path
 		});
 	} catch {}
-	__vitePreload(() => import("../com/app.js").then((n) => n.jt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([0,1]), import.meta.url).catch(() => {});
+	__vitePreload(() => import("../com/app.js").then((n) => n.Nt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([0,1]), import.meta.url).catch(() => {});
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
 			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.or);

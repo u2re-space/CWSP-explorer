@@ -1,6 +1,6 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { Er as CORE_ENTITY_EXTRACTION_INSTRUCTION, at as loadSettings, et as canParseURL } from "../shells/boot-index.js";
-import { zn as JSOX } from "../com/app.js";
+import { Vn as JSOX } from "../com/app.js";
 import { t as encode } from "../vendor/@toon-format_toon.js";
 //#region ../CWSP-document/src/shared/service/model/GPT-Config.ts
 var typesForKind = {

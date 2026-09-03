@@ -26028,7 +26028,7 @@ function getSpeedDialViewOpener() {
 }
 //#endregion
 //#region ../../modules/projects/veela.css/src/scss/ui/components/quick-settings.scss?inline
-var quick_settings_default = ":host{box-sizing:border-box;color-scheme:inherit;contain:layout style;display:block;pointer-events:auto}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([open]){animation:a .14s cubic-bezier(.22,.8,.3,1)}:host([hidden]){display:none!important}@keyframes a{0%{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}@layer components{.qs-panel{--qs-primary:var(--color-primary);--qs-surface:var(--color-surface);--qs-on-surface:var(--color-on-surface);--qs-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);background:var(--qs-surface);border:1px solid var(--qs-outline);border-radius:14px;box-shadow:0 20px 48px -20px rgba(0,0,0,.4),0 2px 8px -2px rgba(0,0,0,.25);box-sizing:border-box;color:var(--qs-on-surface);display:grid;font:500 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;gap:.85rem;inline-size:min(360px,100vw - 1.5rem);max-inline-size:360px;min-inline-size:320px;padding:.9rem;pointer-events:auto}@supports (color:contrast-color(red)){.qs-panel{color:contrast-color(var(--qs-surface))}}.qs-tiles{display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}.qs-tile-icon{--icon-size:1.5rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile-icon{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)))}}.qs-tile{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:10px;color:inherit;cursor:pointer;display:flex;gap:.6rem;min-inline-size:0;padding:.55rem .65rem;text-align:start;transition:background-color .14s ease,color .14s ease}.qs-tile,.qs-tile:hover{color:contrast-color(inherit(background-color))}.qs-tile:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-tile:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);color:contrast-color(inherit(background-color))}.qs-tile:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-tile[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,var(--qs-primary)) 26%,transparent);color:var(--color-primary,var(--qs-primary))}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true]{color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:var(--color-primary,var(--qs-primary));--icon-color:currentColor}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 60%,var(--color-primary,var(--qs-primary)))}}.qs-tile-text{color:color-mix(in oklch,contrast-color(var(--qs-surface)) 40%,var(--color-primary,var(--qs-primary)));display:flex;flex-direction:column;gap:.05rem;min-inline-size:0;overflow:hidden}.qs-tile-label{font-size:.78rem;font-weight:600}.qs-tile-label,.qs-tile-sub{color:contrast-color(var(--qs-surface));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qs-tile-sub{font-size:.68rem;font-weight:500;opacity:.7}.qs-sliders{border-block-start:1px solid var(--qs-outline);color:contrast-color(var(--qs-surface));display:grid;gap:.6rem;padding-block-start:.7rem}.qs-slider-row{align-items:center;cursor:default;display:flex;gap:.65rem}.qs-slider-icon{--icon-size:1.35rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:contrast-color(var(--qs-surface));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-slider-col{display:flex;flex:1 1 auto;flex-direction:column;gap:.25rem;min-inline-size:0}.qs-slider-label{font-size:.68rem;font-weight:500;opacity:.75}.qs-slider{appearance:none;-webkit-appearance:none;background:transparent;block-size:1.1rem;color:contrast-color(inherit(background-color));cursor:pointer;inline-size:100%;margin:0}.qs-slider::-webkit-slider-runnable-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-moz-range-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px;color:contrast-color(inherit(background-color))}.qs-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem;margin-block-start:-6px}.qs-slider::-moz-range-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));inline-size:1rem}.qs-slider:focus-visible::-webkit-slider-thumb{background:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));color:color-mix(in oklch,contrast-color(var(--qs-surface,var(--color-surface))) 40%,var(--color-primary,var(--qs-primary)));outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer{align-items:center;border-block-start:1px solid var(--qs-outline);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.4rem;justify-content:flex-end;padding-block-start:.65rem}.qs-footer-btn{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:8px;color:contrast-color(var(--qs-surface));cursor:pointer;display:inline-flex;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;gap:.35rem;min-inline-size:0;padding:.28rem .55rem;transition:background-color .14s ease}.qs-footer-btn:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-footer-btn:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-footer-btn:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}}";
+var quick_settings_default = ":host{box-sizing:border-box;color-scheme:inherit;contain:layout style;display:block;pointer-events:auto}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([open]){animation:a .14s cubic-bezier(.22,.8,.3,1)}:host([hidden]){display:none!important}@keyframes a{0%{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}@layer components{.qs-panel{--qs-primary:var(--color-primary);--qs-surface:var(--color-surface);--qs-on-surface:var(--color-on-surface);--qs-outline:color-mix(in oklab,var(--color-outline-variant) 80%,transparent);background:var(--qs-surface);border:1px solid var(--qs-outline);border-radius:14px;box-shadow:0 20px 48px -20px rgba(0,0,0,.4),0 2px 8px -2px rgba(0,0,0,.25);box-sizing:border-box;color:var(--color-on-surface,var(--qs-on-surface));display:grid;font:500 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;gap:.85rem;inline-size:min(360px,100vw - 1.5rem);max-inline-size:360px;min-inline-size:320px;padding:.9rem;pointer-events:auto}.qs-tiles{display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}.qs-tile-icon{--icon-size:1.5rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:color-mix(in oklab,var(--color-on-surface,var(--qs-on-surface)) 55%,var(--color-primary,var(--qs-primary)));flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-tile{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:10px;color:inherit;color:var(--color-on-surface,var(--qs-on-surface));cursor:pointer;display:flex;gap:.6rem;min-inline-size:0;padding:.55rem .65rem;text-align:start;transition:background-color .14s ease,color .14s ease}.qs-tile:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-tile:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-tile:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-tile[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,var(--qs-primary)) 26%,transparent);color:var(--color-primary,var(--qs-primary))}.qs-tile[aria-pressed=true] .qs-tile-icon{--icon-color:currentColor}.qs-tile-text{color:var(--color-on-surface,var(--qs-on-surface));display:flex;flex-direction:column;gap:.05rem;min-inline-size:0;overflow:hidden}.qs-tile-label{font-size:.78rem;font-weight:600}.qs-tile-label,.qs-tile-sub{color:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qs-tile-sub{font-size:.68rem;font-weight:500;opacity:.7}.qs-sliders{border-block-start:1px solid var(--qs-outline);color:var(--color-on-surface,var(--qs-on-surface));display:grid;gap:.6rem;padding-block-start:.7rem}.qs-slider-row{align-items:center;cursor:default;display:flex;gap:.65rem}.qs-slider-icon{--icon-size:1.35rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);color:inherit;flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.qs-slider-col{display:flex;flex:1 1 auto;flex-direction:column;gap:.25rem;min-inline-size:0}.qs-slider-label{font-size:.68rem;font-weight:500;opacity:.75}.qs-slider{appearance:none;-webkit-appearance:none;background:transparent;block-size:1.1rem;color:var(--color-on-surface,var(--qs-on-surface));cursor:pointer;inline-size:100%;margin:0}.qs-slider::-webkit-slider-runnable-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px}.qs-slider::-moz-range-track{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent);block-size:4px;border-radius:999px}.qs-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;background:var(--color-primary,var(--qs-primary));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);inline-size:1rem;margin-block-start:-6px}.qs-slider::-moz-range-thumb{background:var(--color-primary,var(--qs-primary));block-size:1rem;border:none;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);inline-size:1rem}.qs-slider:focus-visible::-webkit-slider-thumb{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer{align-items:center;border-block-start:1px solid var(--qs-outline);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.4rem;justify-content:flex-end;padding-block-start:.65rem}.qs-footer-btn{align-items:center;background:color-mix(in oklab,var(--qs-on-surface) 8%,transparent);border:none;border-radius:8px;color:var(--color-on-surface,var(--qs-on-surface));cursor:pointer;display:inline-flex;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;gap:.35rem;min-inline-size:0;padding:.28rem .55rem;transition:background-color .14s ease}.qs-footer-btn:hover{background:color-mix(in oklab,var(--qs-on-surface) 14%,transparent)}.qs-footer-btn:active{background:color-mix(in oklab,var(--qs-on-surface) 18%,transparent)}.qs-footer-btn:focus-visible{outline:2px solid var(--color-primary,var(--qs-primary));outline-offset:2px}.qs-footer-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:currentColor;block-size:var(--icon-size);flex:0 0 auto;inline-size:var(--icon-size);line-height:0;min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}}";
 //#endregion
 //#region ../../modules/projects/veela.css/src/scss/ui/components/statusbar.scss?inline
 var statusbar_default = ":host(ui-statusbar){align-items:center;background:transparent;box-sizing:border-box;color:var(--env-status-fg,var(--wallpaper-contrast-color,CanvasText));display:flex;flex-direction:row;gap:.35rem;inline-size:100%;justify-content:space-between}:host(ui-statusbar) :is(.center,.left,.right){align-items:center;background:transparent;display:flex;min-inline-size:0;padding-block-start:.5rem}:host(ui-statusbar) .left{flex:0 1 auto;justify-content:flex-start;padding-inline-start:max(1rem,env(safe-area-inset-left,0))}:host(ui-statusbar) .center{flex:1 1 auto;justify-content:center}:host(ui-statusbar) .right{flex:0 1 auto;justify-content:flex-end;margin-inline-start:auto;padding-inline-end:max(1rem,env(safe-area-inset-right,0))}@media screen and (pointer:fine) and ((min-width:768px) or (hover:hover)){:host(ui-statusbar),ui-statusbar{display:none!important}}@layer components{.env-ui-statusbar{backdrop-filter:blur(10px);background:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);border-block-start:1px solid var(--wf-md-outline-variant,var(--color-outline-variant));color:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a9ec8),100));order:1;padding:.35rem .65rem calc(.35rem + env(safe-area-inset-bottom, 0))}.env-ui-statusbar__intro p{margin:.1rem 0;opacity:.92}.env-ui-statusbar__right{align-items:center;display:flex;justify-content:flex-end}.env-ui-statusbar__clock{border-radius:.35rem;color:inherit;cursor:pointer;font:600 .8125rem/1 ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.01em;padding:.15rem .25rem;pointer-events:auto;user-select:none}.env-ui-statusbar__clock:focus-visible,.env-ui-statusbar__clock:hover{background:color-mix(in oklch,currentColor 12%,transparent);color:contrast-color(inherit(background-color));outline:none}.env-device-tray--footer{border-radius:.35rem;cursor:pointer;pointer-events:auto}.env-device-tray--footer:focus-visible,.env-device-tray--footer:hover{background:color-mix(in oklch,currentColor 12%,transparent);color:contrast-color(inherit(background-color));outline:none}.env-status-bar__tray{align-items:center;display:flex;flex-wrap:nowrap;gap:.35rem}.env-status-bar__chip{align-items:center;background:color-mix(in oklch,var(--env-status-fg,var(--wf-md-on-surface,white)) 10%,transparent);border:1px solid color-mix(in oklch,var(--env-status-fg,var(--wf-md-on-surface,white)) 18%,transparent);border-radius:999px;color:inherit;color:contrast-color(inherit(background-color));display:inline-flex;gap:.25rem;line-height:1;padding:.12rem .35rem}.env-status-bar__chip,.env-status-bar__chip span{font-variant-numeric:tabular-nums}.env-status-bar__chip ui-icon{--icon-size:1.15rem;--icon-padding:0;--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color,currentColor));block-size:var(--icon-size);color:var(--icon-color);display:block;font-size:var(--icon-size);inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.env-status-bar__pct{font-variant-numeric:tabular-nums;opacity:.95}.env-status-bar__meta{font-size:11px;margin:0;opacity:.88}.env-shell-chrome[data-status-overlay] .env-ui-statusbar,.env-shell-root[data-status-overlay]>.env-shell-chrome .env-ui-statusbar{align-items:center;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));border:0!important;box-sizing:border-box;display:flex;inset-block-end:auto;inset-block-start:0;inset-inline:0;min-block-size:var(--env-status-inset-top,max(2rem,env(safe-area-inset-top,0px)));order:unset;padding:0 .75rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color));color:var(--env-status-fg,var(--wallpaper-contrast-color));pointer-events:none}.env-shell-chrome[data-status-overlay] :is(.env-status-bar__meta,.env-ui-statusbar__intro){display:none!important}.env-shell-chrome[data-status-overlay] .env-ui-statusbar__clock{color:var(--env-status-fg,var(--wallpaper-contrast-color));display:block;font-size:.875rem}.env-shell-chrome[data-status-overlay] :is(.env-device-tray--footer,.env-status-bar__chip){color:var(--env-status-fg,var(--wallpaper-contrast-color))}.env-shell-chrome[data-status-overlay] .env-status-bar__chip ui-icon{--icon-size:1.25rem;--icon-padding:0;--icon-color:var(--env-status-fg,var(--wallpaper-contrast-color));block-size:var(--icon-size);color:var(--icon-color);font-size:var(--icon-size);inline-size:var(--icon-size);min-block-size:var(--icon-size);min-inline-size:var(--icon-size)}.env-shell-chrome[data-status-overlay] .env-status-bar__pct{font-size:.8125rem}.env-shell-chrome[data-status-overlay] .env-device-tray--footer{display:flex!important}.env-shell-chrome[data-status-overlay] .env-status-bar__chip{background:transparent;border-color:transparent;padding-inline:.15rem}.env-shell-chrome[data-desktop]:not([data-status-overlay]) .env-ui-statusbar__clock,.env-shell-chrome[data-standalone] .env-ui-statusbar,.env-shell-root[data-standalone] .env-shell-chrome:not([data-desktop]) .env-ui-statusbar{display:none!important}.env-shell-root[data-env-native-task] .env-shell-chrome[data-desktop],env-shell-container[data-env-native-task] .env-shell-chrome[data-desktop]{opacity:0;pointer-events:none;visibility:hidden}}";
@@ -26155,10 +26155,93 @@ var loader = async (options) => {
 	await loadAsAdopted(ui_default)?.catch(() => void 0);
 	if (options?.includeGlobalNativeControls) await loadAsAdopted(native_controls_default)?.catch(() => void 0);
 };
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/navigation/flyout/ChromeFlyout.ts
+/** Same as environment-overlay ENV_OVERLAY_Z — above `$z-shell-chrome`. */
+var CHROME_FLYOUT_Z = "2147483600";
 var openControllers = /* @__PURE__ */ new Map();
 var sessions = /* @__PURE__ */ new Map();
+var overlayShellHost = null;
+var flyoutAnchorSelectors = [
+	"[data-chrome-flyout-anchor]",
+	".env-shell-taskbar__clock",
+	".env-ui-statusbar__clock",
+	".env-device-tray",
+	".speed-dial-chrome-rail",
+	".speed-dial-core-rail"
+];
+var resolveFlyoutAlign = (anchor) => {
+	if (!anchor) return "end";
+	if (anchor.dataset.chromeFlyoutSide === "start") return "start";
+	if (anchor.closest?.(".speed-dial-chrome-rail, [data-chrome-flyout-side='start']")) return "start";
+	return "end";
+};
+var isDesktopChrome = () => {
+	if (typeof document !== "undefined") {
+		if (document.querySelector(".env-shell-chrome[data-desktop]")) return true;
+		const layout = document.querySelector("[data-chrome-layout]");
+		if (layout?.dataset.chromeLayout === "desktop") return true;
+		if (layout?.dataset.chromeLayout === "mobile") return false;
+	}
+	return typeof matchMedia !== "undefined" && matchMedia("(min-width: 641px)").matches;
+};
+var ensureOverlayRoot = (host) => {
+	const ATTR = "data-env-shell-overlays";
+	const tryHost = host || overlayShellHost || document.querySelector(".env-shell-root") || document.querySelector("#app") || document.body;
+	const existing = tryHost.querySelector(`[${ATTR}]`);
+	if (existing) {
+		if (!existing.style.zIndex) existing.style.zIndex = CHROME_FLYOUT_Z;
+		return existing;
+	}
+	try {
+		const mod = globalThis.__ENV_OVERLAY_MOUNT__;
+		if (typeof mod === "function") return mod(tryHost);
+	} catch {}
+	const el = document.createElement("div");
+	el.setAttribute(ATTR, "");
+	el.className = "env-shell-overlays";
+	el.setAttribute("data-part", "env-overlays");
+	el.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:${CHROME_FLYOUT_Z};box-sizing:border-box;`;
+	tryHost.appendChild(el);
+	return el;
+};
+/**
+* Place flyout for desktop (bottom-right) or mobile (calendar center / QS top-center).
+* INVARIANT: panel itself must set `pointer-events: auto`.
+*/
+var positionFlyout = (el, mode, opts) => {
+	const desktop = isDesktopChrome();
+	const align = opts?.align ?? resolveFlyoutAlign(opts?.anchor);
+	el.dataset.flyoutAlign = align;
+	el.style.position = "fixed";
+	el.style.zIndex = String(Number(CHROME_FLYOUT_Z) + 1);
+	el.style.pointerEvents = "auto";
+	el.style.margin = "0";
+	if (desktop) {
+		el.style.top = "auto";
+		el.style.bottom = "4.5rem";
+		el.style.transform = "none";
+		if (align === "start") {
+			el.style.left = "0.75rem";
+			el.style.right = "auto";
+		} else {
+			el.style.left = "auto";
+			el.style.right = "0.75rem";
+		}
+		return;
+	}
+	if (mode === "calendar") {
+		el.style.top = "50%";
+		el.style.left = "50%";
+		el.style.right = "auto";
+		el.style.bottom = "auto";
+		el.style.transform = "translate(-50%, -50%)";
+		return;
+	}
+	el.style.top = "calc(env(safe-area-inset-top, 0px) + 0.75rem)";
+	el.style.left = "50%";
+	el.style.right = "auto";
+	el.style.bottom = "auto";
+	el.style.transform = "translateX(-50%)";
+};
 var closeChromeFlyout = (kind) => {
 	const ctrl = openControllers.get(kind);
 	if (!ctrl) return;
@@ -26177,9 +26260,59 @@ var closeChromeFlyout = (kind) => {
 		el.dispatchEvent(new CustomEvent("chrome-flyout-close", { bubbles: true }));
 	} catch {}
 };
+/**
+* Register an open flyout; closes the other kind (exclusive).
+* Caller must already append `el` into the overlay root and call `positionFlyout`.
+*/
+var registerOpenFlyout = (ctrl) => {
+	if (openControllers.has(ctrl.kind)) closeChromeFlyout(ctrl.kind);
+	for (const kind of [...openControllers.keys()]) {
+		if (kind === ctrl.kind) continue;
+		closeChromeFlyout(kind);
+	}
+	openControllers.set(ctrl.kind, {
+		...ctrl,
+		close: () => closeChromeFlyout(ctrl.kind)
+	});
+	ctrl.el.hidden = false;
+	ctrl.el.removeAttribute("hidden");
+	ctrl.el.setAttribute("open", "");
+	sessions.set(ctrl.kind, {
+		disposeDismiss: bindOutsideDismiss({
+			root: document,
+			inside: ctrl.el,
+			isInside: (event) => ctrl.contains(event.target),
+			exceptSelectors: flyoutAnchorSelectors,
+			onDismiss: () => closeChromeFlyout(ctrl.kind)
+		}),
+		unregisterBack: registerTransientOverlay({
+			id: `chrome-flyout-${ctrl.kind}`,
+			kind: "overlay",
+			element: ctrl.el,
+			isActive: () => openControllers.get(ctrl.kind)?.el === ctrl.el && ctrl.el.isConnected && !ctrl.el.hidden && ctrl.el.hasAttribute("open"),
+			close: () => {
+				closeChromeFlyout(ctrl.kind);
+				return true;
+			}
+		})
+	});
+};
+var isChromeFlyoutOpen = (kind) => openControllers.has(kind);
+/**
+* Toggle helper: if open → close; else open via `mountAndOpen`.
+*/
+var toggleChromeFlyout = (kind, mountAndOpen) => {
+	if (isChromeFlyoutOpen(kind)) {
+		closeChromeFlyout(kind);
+		return;
+	}
+	registerOpenFlyout(mountAndOpen());
+};
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/calendar/CalendarFlyout.ts
 var styled$6 = preloadStyle(flyout_default);
+/** Shared exclusivity/positioning kind — see `ChromeFlyout.ts`. */
+var FLYOUT_KIND$1 = "calendar";
 /** 1 Jan 2023 (UTC) is a Sunday — stable anchor for deriving weekday short-labels per locale. */
 var REFERENCE_SUNDAY_UTC = Date.UTC(2023, 0, 1);
 var DAY_MS = 864e5;
@@ -26388,6 +26521,42 @@ var CalendarFlyout = class CalendarFlyout extends UIElement {
 	}
 };
 CalendarFlyout = __decorate([defineElement("ui-calendar-flyout")], CalendarFlyout);
+var singleton$1 = null;
+/** Mount (once) the singleton `<ui-calendar-flyout>` into the shared overlay root. */
+function ensureCalendarFlyout() {
+	if (singleton$1?.isConnected) return singleton$1;
+	const overlayRoot = ensureOverlayRoot();
+	let el = overlayRoot.querySelector("ui-calendar-flyout");
+	if (!el) {
+		el = document.createElement("ui-calendar-flyout");
+		el.hidden = true;
+		overlayRoot.appendChild(el);
+	}
+	singleton$1 = el;
+	return el;
+}
+/** Toggle the shared calendar flyout, wired through `ChromeFlyout`'s exclusive-open contract. */
+function toggleCalendarFlyout(anchor) {
+	toggleChromeFlyout(FLYOUT_KIND$1, () => {
+		const el = ensureCalendarFlyout();
+		const pinned = document.documentElement.getAttribute("data-theme");
+		if (pinned === "light" || pinned === "dark") {
+			el.dataset.theme = pinned;
+			el.style.colorScheme = pinned;
+		}
+		positionFlyout(el, FLYOUT_KIND$1, { anchor });
+		el.open();
+		return {
+			kind: FLYOUT_KIND$1,
+			el,
+			close: () => {
+				el.close();
+				closeChromeFlyout(FLYOUT_KIND$1);
+			},
+			contains: (node) => node instanceof Node && el.contains(node)
+		};
+	});
+}
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/settings/QuickSettings.ts
 /**
@@ -26796,6 +26965,42 @@ var QuickSettings = class QuickSettings extends UIElement {
 	}
 };
 QuickSettings = __decorate([defineElement("ui-quick-settings")], QuickSettings);
+var singleton = null;
+/** Mount (once) the singleton `<ui-quick-settings>` into the shared overlay root. */
+function ensureQuickSettingsElement() {
+	if (singleton?.isConnected) return singleton;
+	const overlayRoot = ensureOverlayRoot();
+	let el = overlayRoot.querySelector("ui-quick-settings");
+	if (!el) {
+		el = document.createElement("ui-quick-settings");
+		el.hidden = true;
+		overlayRoot.appendChild(el);
+	}
+	singleton = el;
+	return el;
+}
+/** Toggle the shared Quick Settings flyout, wired through `ChromeFlyout`'s exclusive-open contract. */
+function toggleQuickSettingsFlyout(anchor) {
+	toggleChromeFlyout(FLYOUT_KIND, () => {
+		const el = ensureQuickSettingsElement();
+		const pinned = document.documentElement.getAttribute("data-theme");
+		if (pinned === "light" || pinned === "dark") {
+			el.dataset.theme = pinned;
+			el.style.colorScheme = pinned;
+		}
+		positionFlyout(el, FLYOUT_KIND, { anchor });
+		el.open();
+		return {
+			kind: FLYOUT_KIND,
+			el,
+			close: () => {
+				el.close();
+				closeChromeFlyout(FLYOUT_KIND);
+			},
+			contains: (node) => node instanceof Node && el.contains(node)
+		};
+	});
+}
 /** Close the Quick Settings flyout if open (no-op otherwise). */
 function closeQuickSettingsFlyout() {
 	closeChromeFlyout(FLYOUT_KIND);
@@ -69712,4 +69917,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 	}
 };
 //#endregion
-export { normalizeTileShape$1 as $, StorageKeys as $t, getCachedLauncherIconObjectUrl as A, H$1 as An, restoreWallpaperThemeCache as At, isClientPointOverSpeedDial as B, __vitePreload as Bn, pickAssetDirectory as Bt, writeAppMenuSort as C, resolveOverlayHost as Cn, src_exports$1 as Ct, applyLauncherIconToUiIcon as D, getBy as Dn, refreshAppWallpaperPaint as Dt, isBookmarksPath as E, makeTask as En, initializeAppCanvasLayer as Et, addSpeedDialItem as F, navigate as Fn, indexDirectoryFiles as Ft, resolveSpeedDialCellFromClientPoint as G, resolveFileUnderDirectory as Gt, normalizeItemIconBitmapScale as H, pickSidecarDirectoryFiles as Ht, applyIconScaleToPaintedNodes as I, E$1 as In, isMarkdownRelativeRef as It, TILE_SHAPE_OPTIONS as J, writeFileSmart as Jt, tileIconFetchSize as K, saveMarkdownBlob as Kt, applyItemIconScaleToElement as L, M$1 as Ln, mountPickedDirectory as Lt, tryLaunchSiblingView as M, closeHighestPriority as Mn, getCachedComponent as Mt, isAndroidIconRef as N, hasActiveCloseable as Nn, bindDirectoryForLaunchedFiles as Nt, ensureLauncherIconObjectUrl as O, navigationEnable as On, setAppWallpaperFromBlob as Ot, ICON_BITMAP_SCALE_OPTIONS as P, registerModal as Pn, findEntryRelPath as Pt, normalizeIconDisplay as Q, parseDataUrl as Qt, buildLauncherAppDragEnvelope as R, Q$1 as Rn, observeFileSystemHandle as Rt, sortLauncherApps as S, registerTransientOverlay as Sn, __decorate as St, openUnifiedContextMenu as T, bindOutsideDismiss as Tn, getWallpaperStoragePointer as Tt, parseSpeedDialItemFromJSON as U, provideBoundRelative as Ut, launcher_state_exports as V, pickMarkdownFile as Vt, pinLauncherAppEntry as W, relPathCandidates as Wt, defaultIconScaleForDisplay as X, isBase64Like as Xt, createTileUiIconElement as Y, decodeBase64ToBytes as Yt, inferIconDisplay as Z, normalizeDataAsset as Zt, APP_MENU_SORT_EVENT as _, decodeDesktopState as _n, quick_settings_default as _t, f as a, matchMappedRoot as an, storage_bridge_exports as at, hydrateAppColorKeys as b, initClipboardReceiver as bn, UIElement as bt, collectAttachmentCandidates as c, provide as cn, clearAppLaunchSpec as ct, overlay_back_exports as d, placeOverlay as dn, normalizeLauncherLaunchSpec as dt, setString as en, syncShapelessIconShadow as et, WORKSPACE_PAGE_EVENT as f, createTemplateManager as fn, resolveAppLaunchSpec as ft, app_menu_default as g, saveUIState as gn, statusbar_default as gt, switchWorkspacePage as h, makeUIState as hn, showSuccess as ht, src_exports as i, isVirtualFsPath as in, subscribeFsBackendRegister as it, resolveIconResourceUrl as j, vector2Ref as jn, src_exports$2 as jt, getCachedIconResourceObjectUrl as k, defineElement as kn, applyWallpaperPaperFromLuma as kt, taskbar_default as l, registerDirectoryRoot as ln, getAppLaunchSpec as lt, listWorkspacePages as m, getSpeechPrompt as mn, showError as mt, renderMathInElement as n, getDir as nn, listVirtualRootEntriesFromRouter as nt, marked_esm_exports as o, normalizePath$1 as on, resolveEntryIcon as ot, getActiveWorkspaceId as p, pointerAnchorRef as pn, setAppLaunchSpec as pt, ICON_DISPLAY_OPTIONS as q, createFileHandler as qt, src_default as r, handleIncomingEntries as rn, resolveFsBackend as rt, purify as s, openDirectory as sn, toExplorerStoragePath as st, renderSafeMarkdown as t, createContentAddressedStore as tn, ensureDefaultFsBackends as tt, installLauncherBackStack as u, dynamicTheme as un, isLauncherLaunchSpecEmpty as ut, APP_MENU_SORT_OPTIONS as v, loadDesktopRaw as vn, getSpeedDialViewOpener as vt, attachIconResourcePickButton as w, elementPointerMap as wn, WALLPAPER_IDB_MARKER as wt, peekAppMenuSort as x, writeText$1 as xn, UIElement_default as xt, defaultDirForAppSort as y, copy as yn, flyout_default as yt, findNextFreeSpeedDialCell as z, JSOX as zn, originalRelFromRef as zt };
+export { normalizeTileShape$1 as $, normalizeDataAsset as $t, getCachedLauncherIconObjectUrl as A, navigationEnable as An, setAppWallpaperFromBlob as At, isClientPointOverSpeedDial as B, Q$1 as Bn, observeFileSystemHandle as Bt, writeAppMenuSort as C, writeText$1 as Cn, UIElement_default as Ct, applyLauncherIconToUiIcon as D, bindOutsideDismiss as Dn, getWallpaperStoragePointer as Dt, isBookmarksPath as E, elementPointerMap as En, WALLPAPER_IDB_MARKER as Et, addSpeedDialItem as F, hasActiveCloseable as Fn, bindDirectoryForLaunchedFiles as Ft, resolveSpeedDialCellFromClientPoint as G, provideBoundRelative as Gt, normalizeItemIconBitmapScale as H, __vitePreload as Hn, pickAssetDirectory as Ht, applyIconScaleToPaintedNodes as I, registerModal as In, findEntryRelPath as It, TILE_SHAPE_OPTIONS as J, saveMarkdownBlob as Jt, tileIconFetchSize as K, relPathCandidates as Kt, applyItemIconScaleToElement as L, navigate as Ln, indexDirectoryFiles as Lt, tryLaunchSiblingView as M, H$1 as Mn, restoreWallpaperThemeCache as Mt, isAndroidIconRef as N, vector2Ref as Nn, src_exports$2 as Nt, ensureLauncherIconObjectUrl as O, makeTask as On, initializeAppCanvasLayer as Ot, ICON_BITMAP_SCALE_OPTIONS as P, closeHighestPriority as Pn, getCachedComponent as Pt, normalizeIconDisplay as Q, isBase64Like as Qt, buildLauncherAppDragEnvelope as R, E$1 as Rn, isMarkdownRelativeRef as Rt, sortLauncherApps as S, initClipboardReceiver as Sn, UIElement as St, openUnifiedContextMenu as T, resolveOverlayHost as Tn, src_exports$1 as Tt, parseSpeedDialItemFromJSON as U, pickMarkdownFile as Ut, launcher_state_exports as V, JSOX as Vn, originalRelFromRef as Vt, pinLauncherAppEntry as W, pickSidecarDirectoryFiles as Wt, defaultIconScaleForDisplay as X, writeFileSmart as Xt, createTileUiIconElement as Y, createFileHandler as Yt, inferIconDisplay as Z, decodeBase64ToBytes as Zt, APP_MENU_SORT_EVENT as _, makeUIState as _n, toggleCalendarFlyout as _t, f as a, handleIncomingEntries as an, storage_bridge_exports as at, hydrateAppColorKeys as b, loadDesktopRaw as bn, getSpeedDialViewOpener as bt, collectAttachmentCandidates as c, normalizePath$1 as cn, clearAppLaunchSpec as ct, overlay_back_exports as d, registerDirectoryRoot as dn, normalizeLauncherLaunchSpec as dt, parseDataUrl as en, syncShapelessIconShadow as et, WORKSPACE_PAGE_EVENT as f, dynamicTheme as fn, resolveAppLaunchSpec as ft, app_menu_default as g, getSpeechPrompt as gn, toggleQuickSettingsFlyout as gt, switchWorkspacePage as h, pointerAnchorRef as hn, showSuccess as ht, src_exports as i, getDir as in, subscribeFsBackendRegister as it, resolveIconResourceUrl as j, defineElement as jn, applyWallpaperPaperFromLuma as jt, getCachedIconResourceObjectUrl as k, getBy as kn, refreshAppWallpaperPaint as kt, taskbar_default as l, openDirectory as ln, getAppLaunchSpec as lt, listWorkspacePages as m, createTemplateManager as mn, showError as mt, renderMathInElement as n, setString as nn, listVirtualRootEntriesFromRouter as nt, marked_esm_exports as o, isVirtualFsPath as on, resolveEntryIcon as ot, getActiveWorkspaceId as p, placeOverlay as pn, setAppLaunchSpec as pt, ICON_DISPLAY_OPTIONS as q, resolveFileUnderDirectory as qt, src_default as r, createContentAddressedStore as rn, resolveFsBackend as rt, purify as s, matchMappedRoot as sn, toExplorerStoragePath as st, renderSafeMarkdown as t, StorageKeys as tn, ensureDefaultFsBackends as tt, installLauncherBackStack as u, provide as un, isLauncherLaunchSpecEmpty as ut, APP_MENU_SORT_OPTIONS as v, saveUIState as vn, statusbar_default as vt, attachIconResourcePickButton as w, registerTransientOverlay as wn, __decorate as wt, peekAppMenuSort as x, copy as xn, flyout_default as xt, defaultDirForAppSort as y, decodeDesktopState as yn, quick_settings_default as yt, findNextFreeSpeedDialCell as z, M$1 as zn, mountPickedDirectory as zt };

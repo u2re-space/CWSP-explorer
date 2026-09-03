@@ -8,8 +8,8 @@
 8-->
 9<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 10    package="space.u2re.explorer"
-11    android:versionCode="41"
-12    android:versionName="0.0.41" >
+11    android:versionCode="42"
+12    android:versionName="0.0.42" >
 13
 14    <uses-sdk
 15        android:minSdkVersion="24"

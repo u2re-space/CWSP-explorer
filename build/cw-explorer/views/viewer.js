@@ -3,7 +3,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/workcenter-c
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, p as publicHrefForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { At as looksLikePreviewableBinary, Br as createProtocolEnvelope, Bt as sinkToAction, Et as classifyOpenKind, Ft as rememberOpenPolicyFromSettings, Gt as surfaceForSku, Lt as resolveHostOpenPolicy, Ot as classifyOpenKindFromPayload, Pt as peekOpenPolicy, Vt as sinkToDestination, _r as ingressStampWasSuperseded, at as loadSettings, ht as peekProcessIngressSettings, kt as inferIngressChannels, qr as sendProtocolMessage, vt as resolveProcessIngressKind, zt as resolveOpenPolicy } from "../shells/boot-index.js";
-import { An as H, Bt as pickAssetDirectory, Ft as indexDirectoryFiles, Gt as resolveFileUnderDirectory, Ht as pickSidecarDirectoryFiles, It as isMarkdownRelativeRef, Kt as saveMarkdownBlob, Lt as mountPickedDirectory, Pt as findEntryRelPath, Qt as parseDataUrl, Rt as observeFileSystemHandle, Ut as provideBoundRelative, Vt as pickMarkdownFile, Wt as relPathCandidates, Xt as isBase64Like, Yt as decodeBase64ToBytes, Zt as normalizeDataAsset, an as matchMappedRoot, cn as provide, in as isVirtualFsPath, nn as getDir, on as normalizePath, s as purify, sn as openDirectory, zt as originalRelFromRef } from "../com/app.js";
+import { $t as normalizeDataAsset, Bt as observeFileSystemHandle, Gt as provideBoundRelative, Ht as pickAssetDirectory, It as findEntryRelPath, Jt as saveMarkdownBlob, Kt as relPathCandidates, Lt as indexDirectoryFiles, Mn as H, Qt as isBase64Like, Rt as isMarkdownRelativeRef, Ut as pickMarkdownFile, Vt as originalRelFromRef, Wt as pickSidecarDirectoryFiles, Zt as decodeBase64ToBytes, cn as normalizePath, en as parseDataUrl, in as getDir, ln as openDirectory, on as isVirtualFsPath, qt as resolveFileUnderDirectory, s as purify, sn as matchMappedRoot, un as provide, zt as mountPickedDirectory } from "../com/app.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 import { VIEWER_CSS_LAYER_ORDER, cssLayerBlock, cssLayerOrder, loadAsAdopted, normalizeCssForLayer, removeAdopted, scheduleBakeScreenColors, unbakeScreenColors } from "/fest/style-lib.js";
 import { affected, ref } from "/fest/object.js";
@@ -565,7 +565,7 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.Ct);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.Tt);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
@@ -645,7 +645,7 @@ var openShellImageInViewer = async (file) => {
 var applyShellWallpaper = async (file) => {
 	if (!await isWallpaperCompatible(file)) return false;
 	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.Ct);
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.Tt);
 		return {
 			setAppWallpaperFromBlob,
 			getWallpaperStoragePointer,

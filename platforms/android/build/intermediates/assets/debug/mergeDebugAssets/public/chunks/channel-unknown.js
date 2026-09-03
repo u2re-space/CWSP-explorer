@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../views/viewer.js","./rolldown-runtime.js","../shells/boot-history-base.js","../shells/boot-index.js","../com/app.js","../com/service.js","../fest/veela.js","./MarkdownEditor.js","./QuillEditor.js","../vendor/quill.js","../vendor/lodash-es.js","../vendor/parchment.js","../vendor/fast-diff.js","../vendor/lodash.clonedeep.js","../vendor/lodash.isequal.js","../vendor/eventemitter3.js","./WorkCenter.js","./log-sanitizer.js","./ShareTargetGateway.js","./utils.js","./CustomInstructions.js","./entities.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./src8.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./src.js","./DocxExport.js"])))=>i.map(i=>d[i]);
 import { $r as getBroadcastChannelForDestination, Gr as registerComponent, Hr as hasPendingMessages, Jr as unifiedMessaging, Lr as settleIngressPaintForMinimalShell, Ur as initializeComponent, Vr as enqueuePendingMessage, Wr as processInitialContent, Zr as BROADCAST_CHANNELS, at as loadSettings, zr as createMessageWithOverrides } from "../shells/boot-index.js";
-import { An as H, Mt as getCachedComponent, fn as createTemplateManager, mn as getSpeechPrompt, qt as createFileHandler } from "../com/app.js";
+import { Mn as H, Pt as getCachedComponent, Yt as createFileHandler, gn as getSpeechPrompt, mn as createTemplateManager } from "../com/app.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, r as validateIngressBeforeViewHandle, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 import { r as fetchSwCachedEntries } from "./ShareTargetGateway.js";
 import { loadAsAdopted } from "/fest/style-lib.js";
@@ -984,7 +984,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.jt), __vite__mapDeps([4,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
+			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../com/app.js").then((n) => n.Nt), __vite__mapDeps([4,1]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
 			if (state.history.length === 0) state.history = historyManager.getAllEntries();
 			const historyElement = historyManager.createHistoryView((entry) => {
 				if (state.view === "workcenter") getCachedComponent("workcenter", () => __vitePreload(() => import("./WorkCenter.js").then((n) => n.n).then((m) => m.WorkCenterManager), __vite__mapDeps([16,1,2,3,4,5,6,0,17,18,19,20,21,22,23,24,25]), import.meta.url), { componentName: "WorkCenter" }).then(() => {
