@@ -1,4 +1,4 @@
-import { h as shouldHandoffViewToSibling, p as publicHrefForView } from "../shells/boot-history-base.js";
+import { g as shouldHandoffViewToSibling, m as publicHrefForView } from "../shells/boot-history-base.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
 import { C as scheduleViewModulePrefetch, D as syncBrowserChromeTheme, E as resyncThemeAfterAdoptedViewSheet, M as getTransitionDirection, N as withViewTransition, T as applyTheme, Yr as serviceChannels, at as loadSettings, f as canonicalHubSettingsSection, h as hubSettingsSectionPath, lr as ViewRegistry, mr as isEnabledView, st as saveSettings, y as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
 import { un as dynamicTheme } from "../com/app.js";

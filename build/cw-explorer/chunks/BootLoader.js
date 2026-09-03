@@ -1964,6 +1964,7 @@ var BootLoader = class BootLoader {
 			if (isCapacitorCwsNativeShell()) {
 				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([8,7,2]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.at).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([4,2]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
@@ -1998,7 +1999,7 @@ var BootLoader = class BootLoader {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("./sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([10,3,1,2,4,5,6,11,12,13,14]), import.meta.url);
+				}, __vite__mapDeps([10,3,2,1,4,5,6,11,12,13,14]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

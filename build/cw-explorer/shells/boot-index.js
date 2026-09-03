@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/toast.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../chunks/log-sanitizer.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../chunks/capacitor-share-intent2.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js","../chunks/workcenter-command-wire.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
+import { c as inferCwspSkuFromLocation$1, d as isViewLocalToSurface$1, g as shouldHandoffViewToSibling, h as readCwspSku$1, l as isCwspNativeHost$1, m as publicHrefForView, n as SKU_HUB_PATHS$1 } from "./boot-history-base.js";
 import { Et as initializeAppCanvasLayer, Jt as writeFileSmart, Rn as Q, St as __decorate, bt as UIElement, gn as saveUIState, hn as makeUIState, kn as defineElement, zn as JSOX } from "../com/app.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { i as core_default, r as scss_default } from "../fest/veela.js";
@@ -3493,19 +3493,19 @@ function registerDefaultShells() {
 		id: "window",
 		name: "Window",
 		description: "Window-capable shell (multi-view)",
-		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([10,11,5,4,1,2,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([10,11,5,4,2,1,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "tabbed",
 		name: "Tabbed",
 		description: "Tabbed window shell",
-		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([21,10,11,5,4,1,2,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([21,10,11,5,4,2,1,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "environment",
 		name: "Environment",
 		description: "Desktop/launcher shell: wallpaper, Speed Dial, taskbar, ui-window",
-		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([22,11,5,4,1,2,3,6,7,12,13,14,15,16,17,18,19,20]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([22,11,5,4,2,1,3,6,7,12,13,14,15,16,17,18,19,20]), import.meta.url)
 	});
 }
 /** Register the built-in views that are enabled by current feature flags. */
@@ -3514,19 +3514,19 @@ function registerDefaultViews() {
 		id: "viewer",
 		name: "Viewer",
 		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,1,2,24,25]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,2,1,24,25]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "workcenter",
 		name: "Work Center",
 		icon: "lightning",
-		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([26,4,1,2,25,24,27,28,29,30,31,32,33,34,35,36]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([26,4,2,1,25,24,27,28,29,30,31,32,33,34,35,36]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "settings",
 		name: "Settings",
 		icon: "gear",
-		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([37,4,1,2,38,39,25,24,40,31,30]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([37,4,2,1,38,39,25,24,40,31,30]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "network",
@@ -3544,13 +3544,13 @@ function registerDefaultViews() {
 		id: "explorer",
 		name: "Explorer",
 		icon: "folder",
-		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([45,4,1,2,25,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([45,4,2,1,25,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "editor",
 		name: "Editor",
 		icon: "pencil",
-		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([46,4,1,2,25,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([46,4,2,1,25,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "home",
@@ -3562,7 +3562,7 @@ function registerDefaultViews() {
 		id: "print",
 		name: "Print",
 		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,1,2,24,25]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,2,1,24,25]), import.meta.url)
 	});
 }
 var defaultTheme = {
@@ -17396,6 +17396,7 @@ var STYLE_CONFIGS = {
 			if (isCapacitorCwsNativeShell$1()) {
 				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([54,1,2]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), [], import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.at).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([1,2]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
@@ -17430,7 +17431,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([55,4,1,2,25,24,28,56,57]), import.meta.url);
+				}, __vite__mapDeps([55,4,2,1,25,24,28,56,57]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

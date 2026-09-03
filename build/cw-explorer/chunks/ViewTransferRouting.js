@@ -1,6 +1,6 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
+import { _ as siblingSkuForView, c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, h as readCwspSku, l as isCwspNativeHost, p as publicHrefForSku, r as androidPackageForSku, s as ensureCwspSkuFromLocation, t as ECOSYSTEM_SKUS, v as stashSkuHandoff } from "../shells/boot-history-base.js";
 import { Gt as surfaceForSku, Mt as normalizeOpenSink, Ot as classifyOpenKindFromPayload, Pt as peekOpenPolicy, Ut as skuForOpenSink, Vr as enqueuePendingMessage, Vt as sinkToDestination, ei as normalizeDestination, ht as peekProcessIngressSettings, kt as inferIngressChannels, qr as sendProtocolMessage, ti as viewBroadcastChannelName, zt as resolveOpenPolicy } from "../shells/boot-index.js";
 
 import { m as skuIngressHint, o as holdIngressFiles } from "../views/viewer.js";

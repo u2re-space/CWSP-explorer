@@ -127,6 +127,17 @@ var consumeNativePendingShare = async () => {
 			if (file) files.push(file);
 		};
 		if (wantFile) await pullFile();
+		if (!files.length) {
+			const virtual = String(url || text || "").trim().replace(/^file:\/\/(?:localhost)?/i, "").replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+			if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(virtual)) try {
+				const { readNativeStorageFile } = await __vitePreload(async () => {
+					const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.at);
+					return { readNativeStorageFile };
+				}, __vite__mapDeps([3,1]), import.meta.url);
+				const file = await readNativeStorageFile(virtual);
+				if (file) files.push(file);
+			} catch {}
+		}
 		if (wantFile && !files.length) {
 			const status = await invokeCwsPlatformIPC({ channel: "storage:all-files-status" }).catch(() => null);
 			if (!Boolean((status?.echo)?.allFilesAccess)) {
@@ -168,7 +179,7 @@ var ingestParsedShare = async (input) => {
 	const { ingestSharePayload } = await __vitePreload(async () => {
 		const { ingestSharePayload } = await import("./sw-handling.js");
 		return { ingestSharePayload };
-	}, __vite__mapDeps([8,2,0,1,3,4,5,6,9,10,11]), import.meta.url);
+	}, __vite__mapDeps([8,2,1,0,3,4,5,6,9,10,11]), import.meta.url);
 	const filename = String(input.files?.[0]?.name || input.name || input.title || "").trim();
 	await ingestSharePayload({
 		title: input.title || input.name || void 0,

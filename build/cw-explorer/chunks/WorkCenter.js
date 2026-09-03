@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
-import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
+import { g as shouldHandoffViewToSibling, v as stashSkuHandoff } from "../shells/boot-history-base.js";
 import { Ar as readProcessApiResultText, Cr as unwrapSwInteropMessage, Dr as isProcessApiUnavailable, Kr as sendMessage, Or as postProcessApi, Qr as ROUTE_HASHES, Zr as BROADCAST_CHANNELS, at as loadSettings, br as registerComponent, kr as processApiAuthFromSettings, ti as viewBroadcastChannelName, xr as replayQueuedMessagesForDestination, yr as initializeComponent } from "../shells/boot-index.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";

@@ -870,7 +870,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const editor = (await getCachedComponent("markdown-editor", () => __vitePreload(() => import("./MarkdownEditor.js"), __vite__mapDeps([7,2,3,1,4,5,6,0]), import.meta.url), { componentName: "MarkdownEditor" })).component.createMarkdownEditor({
+			const editor = (await getCachedComponent("markdown-editor", () => __vitePreload(() => import("./MarkdownEditor.js"), __vite__mapDeps([7,2,1,3,4,5,6,0]), import.meta.url), { componentName: "MarkdownEditor" })).component.createMarkdownEditor({
 				initialContent: state.markdown || "",
 				onContentChange: (content) => {
 					state.markdown = content;
@@ -1275,7 +1275,7 @@ var mountShellApp = (mountElement, options = {}) => {
 			const renderer = {
 				"settings": async () => {
 					content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading Settings...</span></div>";
-					const settingsEl = (await loadComponent("settings", () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([26,2,3,1,4,5,6,27,28,0,29,20,19]), import.meta.url), { componentName: "Settings" })).component.createSettingsView({
+					const settingsEl = (await loadComponent("settings", () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([26,2,1,3,4,5,6,27,28,0,29,20,19]), import.meta.url), { componentName: "Settings" })).component.createSettingsView({
 						isExtension: isLikelyExtension(),
 						onTheme: (t) => applyTheme(root, t)
 					});
@@ -1293,7 +1293,7 @@ var mountShellApp = (mountElement, options = {}) => {
 				},
 				"file-explorer": async () => {
 					content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading File Explorer...</span></div>";
-					await loadComponent("file-explorer", () => __vitePreload(() => import("./src.js"), __vite__mapDeps([30,2,3,1,4,5,6,0]), import.meta.url), { componentName: "FileManager" });
+					await loadComponent("file-explorer", () => __vitePreload(() => import("./src.js"), __vite__mapDeps([30,2,1,3,4,5,6,0]), import.meta.url), { componentName: "FileManager" });
 					const explorerEl = document.createElement("ui-file-manager");
 					explorerEl.addEventListener("open-item", async (e) => {
 						const { item } = e.detail;
