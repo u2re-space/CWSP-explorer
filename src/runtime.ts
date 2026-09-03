@@ -104,6 +104,12 @@ const openFileWithSystem = async (file: File, sourcePath: string, chooser: boole
             if (uri && (await launcherOpenUri(uri, { chooser, mimeType: mime, title: "Open with" }))) {
                 return true;
             }
+            if (isNativeStorageVirtualPath(href)) {
+                const { openNativeStorageFile } = await import("fl-ui/explorer/storage-bridge");
+                if (await openNativeStorageFile(href, { chooser, mimeType: mime, title: "Open with" })) {
+                    return true;
+                }
+            }
         }
     } catch {
         /* web / no bridge */
