@@ -1,6 +1,6 @@
 import { v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { St as __decorate, bt as UIElement, kn as defineElement } from "../com/app.js";
-import { flushHeldIngressToWorkCenter, peekHeldIngressFiles } from "./sku-ingress.js";
+import { flushHeldIngressToWorkCenter, peekHeldIngressFiles, registerWorkCenterFlushHost } from "./sku-ingress.js";
 import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "./WorkCenter.js";
 import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";
 //#region ../../modules/views/workcenter-view/src/scss/_index.scss?inline
@@ -54,6 +54,7 @@ var WorkCenterView = class WorkCenterView extends UIElement {
 	pendingMessages = [];
 	/** True after this instance acquired a refcount on the shared workcenter document stylesheet. */
 	leasedDocumentStyles = false;
+	unbindFlushHost = null;
 	lifecycle = {
 		onMount: () => this.onMount(),
 		onUnmount: () => this.onUnmount(),
@@ -104,7 +105,8 @@ var WorkCenterView = class WorkCenterView extends UIElement {
 	}
 	/** Shell passes `ViewOptions`; GLitElement passes a `WeakRef` — ignore the latter for option merging. */
 	render = (weakOrOptions) => {
-		const options = this.isGlitterWeakRef(weakOrOptions) ? void 0 : weakOrOptions;
+		const fromGlit = this.isGlitterWeakRef(weakOrOptions);
+		const options = fromGlit ? void 0 : weakOrOptions;
 		if (options) {
 			this.options = {
 				...this.options,
@@ -117,6 +119,7 @@ var WorkCenterView = class WorkCenterView extends UIElement {
 			this.applyInitialOptions();
 			this.initializedFromOptions = true;
 		}
+		this.unbindFlushHost ??= registerWorkCenterFlushHost(this);
 		this.leaseWorkCenterDocumentStyles();
 		const live = this.connectedChat() ?? this.element;
 		if (live?.querySelector("[data-workcenter-composer]")) {
@@ -126,19 +129,30 @@ var WorkCenterView = class WorkCenterView extends UIElement {
 			this.syncPromptInputFromState();
 			this.setupProcessResultObserver();
 			this.emitFilesChanged();
-			return live;
+			return this.hostForShell(fromGlit);
 		}
 		this.element = this.manager.renderWorkCenterView();
 		this.syncPromptInputFromState();
 		this.setupProcessResultObserver();
 		this.emitFilesChanged();
 		/**
-		* Defer ingress to `onShow`/rAF — not `queueMicrotask` before shell attach — so `requestRender`
-		* handlers see a connected root. WHY: flushing here triggered `replaceChild` upgrades while `ShellBase`
-		* still caches the pre-replacement node, breaking reopen/navigation (`loadedViews.element` stale).
+		* Return the CE to the shell. GLit gets a `<slot>` so the chat stays in light DOM.
+		* WHY: share/flush/`querySelector("cw-workcenter-view")` missed the disconnected host
+		* while the visible tree was only `.workcenter-chat`.
 		*/
-		return this.element;
+		return this.hostForShell(fromGlit);
 	};
+	/** Shell mounts this host; GLit projects light-DOM chat through a shadow slot. */
+	hostForShell(fromGlit) {
+		this.style.display = "flex";
+		this.style.flexDirection = "column";
+		this.style.flex = "1";
+		this.style.minHeight = "0";
+		this.style.height = "100%";
+		if (this.element && this.element.parentNode !== this) this.replaceChildren(this.element);
+		if (fromGlit) return document.createElement("slot");
+		return this;
+	}
 	getToolbar() {
 		return null;
 	}
@@ -400,6 +414,8 @@ var WorkCenterView = class WorkCenterView extends UIElement {
 	}
 	onUnmount() {
 		window.removeEventListener("cwsp:process-open", this.onProcessOpen);
+		this.unbindFlushHost?.();
+		this.unbindFlushHost = null;
 		this.resultObserver?.disconnect();
 		this.resultObserver = null;
 		this.manager?.destroy();

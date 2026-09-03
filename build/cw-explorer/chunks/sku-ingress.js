@@ -45,18 +45,28 @@ var dropHeldIngressFiles = (files) => {
 	if (!drop.size) return;
 	for (let i = heldIngressFiles.length - 1; i >= 0; i--) if (drop.has(ingressFileKey(heldIngressFiles[i]))) heldIngressFiles.splice(i, 1);
 };
+/** In-memory host — Process mounts the inner chat div, so `querySelector("cw-workcenter-view")` is empty. */
+var registeredWorkCenterFlushHost = null;
+var registerWorkCenterFlushHost = (host) => {
+	registeredWorkCenterFlushHost = host;
+	return () => {
+		if (registeredWorkCenterFlushHost === host) registeredWorkCenterFlushHost = null;
+	};
+};
 var collectWorkCenterFlushHosts = () => {
-	if (typeof document === "undefined") return [];
 	const hosts = [];
 	const seen = /* @__PURE__ */ new Set();
-	const add = (node) => {
-		if (!node || seen.has(node)) return;
-		seen.add(node);
-		hosts.push(node);
+	const add = (host) => {
+		if (!host || seen.has(host)) return;
+		seen.add(host);
+		hosts.push(host);
 	};
-	document.querySelectorAll("cw-workcenter-view").forEach(add);
+	add(registeredWorkCenterFlushHost);
+	if (typeof document === "undefined") return hosts;
+	const addEl = (node) => add(node);
+	document.querySelectorAll("cw-workcenter-view").forEach(addEl);
 	document.querySelectorAll("[data-shell], cw-shell-minimal, cw-shell-immersive, cw-shell-content, cw-shell-environment").forEach((shell) => {
-		shell.shadowRoot?.querySelectorAll("cw-workcenter-view").forEach(add);
+		shell.shadowRoot?.querySelectorAll("cw-workcenter-view").forEach(addEl);
 	});
 	return hosts;
 };
@@ -227,7 +237,7 @@ var skuIngressHint = (payload, opts) => {
 			const hinted = payload.hint?.action;
 			return {
 				destination,
-				action: hinted === "attach" || hinted === "process" ? hinted : opts?.autoProcessShared === false ? "attach" : row.mode,
+				action: hinted === "attach" || hinted === "process" ? hinted : row.mode,
 				filename,
 				source: path || payload.hint?.source,
 				contentType: kind,
@@ -258,7 +268,7 @@ var skuIngressHint = (payload, opts) => {
 		const hinted = payload.hint?.action;
 		return {
 			destination: "workcenter",
-			action: hinted === "attach" || hinted === "process" ? hinted : opts?.autoProcessShared === false ? "attach" : row.mode,
+			action: hinted === "attach" || hinted === "process" ? hinted : row.mode,
 			filename,
 			contentType: kind,
 			instructionId: row.instructionId,
@@ -510,4 +520,4 @@ var installShellImageOpenListener = () => {
 	});
 };
 //#endregion
-export { applyLauncherIngress, dataUrlToFile, dropHeldIngressFiles, flushHeldIngressToWorkCenter, holdIngressFiles, installShellImageOpenListener, onHeldIngressFiles, peekHeldIngressFiles, refineLauncherImageIngress, skuIngressHint, takeHeldIngressFiles };
+export { applyLauncherIngress, dataUrlToFile, dropHeldIngressFiles, flushHeldIngressToWorkCenter, holdIngressFiles, installShellImageOpenListener, onHeldIngressFiles, peekHeldIngressFiles, refineLauncherImageIngress, registerWorkCenterFlushHost, skuIngressHint, takeHeldIngressFiles };

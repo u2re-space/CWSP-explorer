@@ -1682,11 +1682,7 @@ var hydrateTextPayloadFromFiles = async (shareData) => {
 var shouldForceWorkCenterAttachment = async (shareData) => {
 	const contentType = inferShareContentType(shareData);
 	if (typeof shareData.aiEnabled === "boolean") return shareData.aiEnabled === false && !(contentType === "text" || contentType === "markdown");
-	try {
-		return ((await loadSettings().catch(() => null))?.ai?.autoProcessShared ?? true) === false && !(contentType === "text" || contentType === "markdown");
-	} catch {
-		return false;
-	}
+	return false;
 };
 var extractTransferHint = (shareData) => {
 	const hint = shareData?.hint;
@@ -1804,24 +1800,19 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		imageCountReported: preparedData.imageCount,
 		timestamp: preparedData.timestamp
 	}));
-	let autoProcessShared = true;
 	let loadedSettings = null;
 	try {
 		loadedSettings = await loadSettings().catch(() => null);
 		rememberProcessIngressSettings(loadedSettings);
-		autoProcessShared = (loadedSettings?.ai?.autoProcessShared ?? true) !== false;
 		const { rememberOpenPolicyFromSettings } = await __vitePreload(async () => {
 			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.Mt);
 			return { rememberOpenPolicyFromSettings };
 		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		rememberOpenPolicyFromSettings(loadedSettings);
-	} catch {
-		autoProcessShared = true;
-	}
+	} catch {}
 	const sku = inferCwspSkuFromLocation();
 	const skuHint = await refineLauncherImageIngress(skuIngressHint(preparedData, {
 		sku,
-		autoProcessShared,
 		settings: loadedSettings
 	}), files);
 	const forceAttachToWorkCenter = !skuHint && await shouldForceWorkCenterAttachment(preparedData);
@@ -2270,7 +2261,7 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 			contentType = "text";
 			console.log("[ShareTarget] Processing text content, length:", content.length);
 		} else throw new Error("No processable content found");
-		const analyze = settings?.ai?.shareTargetMode === "analyze";
+		const analyze = ingress.kind === "text" || ingress.kind === "markdown" || ingress.kind === "document" || ingress.kind === "url";
 		console.log("[ShareTarget] Calling unified processing API");
 		const posted = await postProcessApi("processing", {
 			content: processingContent,

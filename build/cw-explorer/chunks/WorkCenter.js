@@ -1311,6 +1311,8 @@ var isDirectDocument = (attachment) => [
 	"docx",
 	"xlsx"
 ].includes(attachment.kind) && !attachment.error && attachment.original.size <= 10485760;
+/** INVARIANT: Responses API rejects `input_text` on assistant messages. */
+var textTypeForRole = (role) => role === "assistant" ? "output_text" : "input_text";
 var fallbackParts = (attachment) => {
 	const text = attachment.fallbackText?.trim();
 	if (text) return [{
@@ -1333,7 +1335,7 @@ var buildWorkCenterTurnInput = async (request, options = {}) => {
 		type: "message",
 		role: message.role,
 		content: [{
-			type: "input_text",
+			type: textTypeForRole(message.role),
 			text: message.content
 		}]
 	}));
@@ -3907,16 +3909,26 @@ var WorkCenterSession = class {
 	persistTail = Promise.resolve();
 	lastPersistedEpoch = 0;
 	lastPersistedMessageCount = 0;
+	hydrated = false;
 	constructor(persistence) {
 		this.persistence = persistence;
 	}
 	async hydrate() {
 		const restored = await this.persistence.load();
-		if (this.state.messages.length > 0) return this.snapshot();
+		if (this.state.messages.length > 0) {
+			this.markHydrated();
+			return this.snapshot();
+		}
 		this.state = isSnapshot$1(restored) ? cloneSnapshot(restored) : emptySnapshot();
+		this.markHydrated();
+		if (this.state.messages.length > 0) await this.persist();
+		return this.snapshot();
+	}
+	markHydrated() {
+		this.hydrated = true;
 		this.lastPersistedEpoch = this.state.epoch;
 		this.lastPersistedMessageCount = this.state.messages.length;
-		return this.snapshot();
+		this.persistGeneration += 1;
 	}
 	snapshot() {
 		return cloneSnapshot(this.state);
@@ -4070,6 +4082,7 @@ var WorkCenterSession = class {
 		await this.persist({ allowEmpty: true });
 	}
 	persist(opts) {
+		if (!this.hydrated && !opts?.allowEmpty) return this.persistTail;
 		const generation = ++this.persistGeneration;
 		const snapshot = this.snapshot();
 		this.persistTail = this.persistTail.catch(() => void 0).then(async () => {
@@ -4331,10 +4344,14 @@ var writeIdbSnapshot = async (snapshot) => {
 		tx.onerror = () => reject(tx.error);
 	});
 };
+var withTimeout = (task, ms, fallback) => Promise.race([task, new Promise((resolve) => {
+	setTimeout(() => resolve(fallback), ms);
+})]);
 var createWorkCenterSessionPersistence = (store = createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE)) => ({
 	load: async () => {
-		const [opfs, idb] = await Promise.all([store.readJson(MANIFEST_PATH).catch(() => null), readIdbSnapshot()]);
-		return pickRichestSessionSnapshot(opfs, idb, readLocalSnapshot());
+		const local = readLocalSnapshot();
+		const quick = pickRichestSessionSnapshot(await withTimeout(readIdbSnapshot(), 200, null), local);
+		return pickRichestSessionSnapshot(await withTimeout(store.readJson(MANIFEST_PATH).catch(() => null), quick ? 150 : 400, null), quick);
 	},
 	save: async (snapshot) => {
 		writeLocalSnapshot(snapshot);
@@ -4594,6 +4611,11 @@ var queryLiveWorkCenterChats = () => {
 	document.querySelectorAll("[data-shell], cw-shell-minimal, cw-shell-immersive, cw-shell-content, cw-shell-environment").forEach((shell) => {
 		const sr = shell.shadowRoot;
 		if (!sr) return;
+		sr.querySelectorAll("cw-workcenter-view").forEach((ce) => {
+			add(ce);
+			add(ce.querySelector(".workcenter-chat"));
+			add(ce.shadowRoot?.querySelector(".workcenter-chat") ?? null);
+		});
 		sr.querySelectorAll(".workcenter-chat, [data-workcenter-composer]").forEach((node) => {
 			const chat = node.closest?.(".workcenter-chat") || node;
 			add(chat);
@@ -4751,11 +4773,32 @@ var WorkCenterManager = class {
 		this.state.currentPrompt = snapshot.draft.content;
 		this.state.sessionEpoch = snapshot.epoch;
 		this.state.sessionHydrated = true;
+		const last = [...snapshot.messages].reverse().find((message) => message.role === "assistant" && message.status === "complete" && message.content.trim());
+		if (last) {
+			this.state.lastRawResult = last.rawResult ?? last.content;
+			this.state.recognizedData = {
+				content: last.content,
+				timestamp: last.createdAt,
+				source: last.attachments.length ? "files" : "text",
+				recognizedAs: "markdown",
+				responseId: (() => {
+					const raw = last.rawResult;
+					if (!raw || typeof raw !== "object") return void 0;
+					const id = raw.responseId;
+					return typeof id === "string" ? id : void 0;
+				})()
+			};
+		}
 		this.deps.onFilesChanged?.();
 		if (render) this.paintLiveConversation();
 	}
+	async whenSessionReady(ms = 400) {
+		await Promise.race([this.sessionReady, new Promise((resolve) => {
+			setTimeout(resolve, ms);
+		})]);
+	}
 	async addFiles(files) {
-		await this.sessionReady;
+		await this.whenSessionReady();
 		await this.attachmentIngress.addFiles(files);
 	}
 	async setPrompt(prompt) {
@@ -4865,7 +4908,7 @@ var WorkCenterManager = class {
 	}
 	/** Normalize all channel/share payloads into the active conversation draft. */
 	async handleIncomingContent(data, contentType) {
-		await this.sessionReady;
+		await this.whenSessionReady();
 		try {
 			const files = [];
 			if (Array.isArray(data?.files)) {
