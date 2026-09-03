@@ -1,11 +1,11 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","./launcher-bridge.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { c as isCwspNativeHost, d as isWebHubSurface, i as apkManifestForSku, l as isCwspSku, m as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { A as isAppearanceColorSource, Cr as DEFAULT_INSTRUCTION_TEMPLATES, Ct as normalizeEcosystemToken, Gr as sendMessage, Lt as resolveHostOpenPolicy, O as FALLBACK_BASE_COLOR, S as visibleHubSettingsSections, T as applyTheme, Tt as OPEN_KINDS, Wt as stampHostOpenPolicy, Xt as applyAirpadRuntimeFromAppSettings, _ as readSettingsAreaSection, at as loadSettings, b as resolveSettingsShellProfile, ct as PROCESS_INGRESS_KIND_LABELS, d as SIBLING_HUB_SETTINGS_SECTIONS, f as canonicalHubSettingsSection, g as pruneBuiltInSettingsTabs, h as hubSettingsSectionPath, it as getLastSettingsSaveReport, j as normalizeHexColor, jt as mergeOpenPolicy, k as defaultColorSource, m as hasBuiltInSettingsPanel, mr as isEnabledView, mt as mergeProcessIngress, nt as ensureCapacitorCwspSettingsSeeded, ot as noteSettingsControlSync, p as defaultSettingsTabForProfile, rt as ensureCrxCwspSettingsSeeded, st as saveSettings, t as navigateToView, tr as resolveCwspUrlFields, v as rememberSettingsAreaSection, wt as resolveEcosystemToken, x as skuForHubSettingsSection, xt as BUILTIN_AI_MODELS, y as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
+import { c as inferCwspSkuFromLocation, f as isWebHubSurface, h as readCwspSku, i as apkManifestForSku, l as isCwspNativeHost, r as androidPackageForSku, u as isCwspSku } from "../shells/boot-history-base.js";
+import { A as isAppearanceColorSource, Ct as normalizeEcosystemToken, Kr as sendMessage, Lt as resolveHostOpenPolicy, O as FALLBACK_BASE_COLOR, S as visibleHubSettingsSections, T as applyTheme, Tt as OPEN_KINDS, Wt as stampHostOpenPolicy, Xt as applyAirpadRuntimeFromAppSettings, _ as readSettingsAreaSection, at as loadSettings, b as resolveSettingsShellProfile, ct as PROCESS_INGRESS_KIND_LABELS, d as SIBLING_HUB_SETTINGS_SECTIONS, f as canonicalHubSettingsSection, g as pruneBuiltInSettingsTabs, h as hubSettingsSectionPath, it as getLastSettingsSaveReport, j as normalizeHexColor, jt as mergeOpenPolicy, k as defaultColorSource, m as hasBuiltInSettingsPanel, mr as isEnabledView, mt as mergeProcessIngress, nt as ensureCapacitorCwspSettingsSeeded, ot as noteSettingsControlSync, p as defaultSettingsTabForProfile, rt as ensureCrxCwspSettingsSeeded, st as saveSettings, t as navigateToView, tr as resolveCwspUrlFields, v as rememberSettingsAreaSection, wr as DEFAULT_INSTRUCTION_TEMPLATES, wt as resolveEcosystemToken, x as skuForHubSettingsSection, xt as BUILTIN_AI_MODELS, y as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
 import { $t as StorageKeys, An as H, en as setString } from "../com/app.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 import { r as requestCapacitorSettingsPermissionsAfterSave } from "./capacitor-settings-permissions.js";
-import { o as SettingsChannelAction } from "../views/viewer.js";
+import { x as SettingsChannelAction } from "../views/viewer.js";
 import { n as openAdminDoorFromCore, r as resolveAdminDoorUrls } from "./admin-doors.js";
 import { c as updateInstruction, i as deleteInstruction, n as addInstruction, o as getInstructionRegistry, r as addInstructions, s as setActiveInstruction } from "./CustomInstructions.js";
 import { removeAdopted, scheduleBakeScreenColors, unbakeScreenColors, unwrapCssLayer } from "/fest/style-lib.js";
@@ -1503,6 +1503,14 @@ var SINK_OPTIONS = [
 	["external", "New tab / browser"],
 	["system", "Android / system chooser"]
 ];
+/** Document PWA has no Work Center / Explorer host — those sinks swallow drop/paste. */
+var DOCUMENT_VIEWER_SINK_OPTIONS = [
+	["ask", "Follow default / this app"],
+	["display", "Display here"],
+	["viewer", "Markdown (in this app)"],
+	["document", "Stay in this app"],
+	["external", "New tab / browser"]
+];
 var PLACEMENT_OPTIONS = [
 	["inline", "Inline window (same tab)"],
 	["native-window", "Separate window"],
@@ -1554,16 +1562,20 @@ var registerOpenFilesSettingsContribution = () => registerSettingsContribution({
 	order: 22,
 	render: (ctx) => {
 		const blocks = [settingsHint("Where files go when you open, share, or launch them. “Follow default” keeps the current app’s behavior.")];
-		if (showSurface(ctx, "viewer")) blocks.push(...section("Markdown / document", "Opened, pasted, dropped, or shared into the viewer.", [
-			settingsSelectField("When a file opens", "openPolicy.viewer.channels.open", SINK_OPTIONS),
-			settingsSelectField("Share target", "openPolicy.viewer.channels.share-target", SINK_OPTIONS),
-			settingsSelectField("Launch queue", "openPolicy.viewer.channels.launch-queue", SINK_OPTIONS),
-			settingsSelectField("Markdown", "openPolicy.viewer.kinds.markdown", SINK_OPTIONS),
-			settingsSelectField("Text", "openPolicy.viewer.kinds.text", SINK_OPTIONS),
-			settingsSelectField("Documents (PDF, Office)", "openPolicy.viewer.kinds.document", SINK_OPTIONS),
-			settingsSelectField("Images", "openPolicy.viewer.kinds.image", SINK_OPTIONS),
-			settingsSelectField("Other files", "openPolicy.viewer.kinds.other", SINK_OPTIONS)
-		]));
+		if (showSurface(ctx, "viewer")) {
+			const documentSku = ctx.sku === "document" || ctx.hubSection === "document" || ctx.surface === "markdown";
+			const viewerSinks = documentSku ? DOCUMENT_VIEWER_SINK_OPTIONS : SINK_OPTIONS;
+			blocks.push(...section("Markdown / document", documentSku ? "Drop, paste, share, and open always paint in this viewer. Sibling-app sinks are not available here." : "Opened, pasted, dropped, or shared into the viewer.", [
+				settingsSelectField("When a file opens", "openPolicy.viewer.channels.open", viewerSinks),
+				settingsSelectField("Share target", "openPolicy.viewer.channels.share-target", viewerSinks),
+				settingsSelectField("Launch queue", "openPolicy.viewer.channels.launch-queue", viewerSinks),
+				settingsSelectField("Markdown", "openPolicy.viewer.kinds.markdown", viewerSinks),
+				settingsSelectField("Text", "openPolicy.viewer.kinds.text", viewerSinks),
+				settingsSelectField("Documents (PDF, Office)", "openPolicy.viewer.kinds.document", viewerSinks),
+				settingsSelectField("Images", "openPolicy.viewer.kinds.image", viewerSinks),
+				settingsSelectField("Other files", "openPolicy.viewer.kinds.other", viewerSinks)
+			]));
+		}
 		if (showSurface(ctx, "explorer")) {
 			const android = ctx.surface === "capacitor" || ctx.surface === "native" || isCwspNativeHost();
 			blocks.push(...section("Explorer", android ? "These rows are Android-only. They do not change the site / PWA / CRX. Open / click is CWSP-document or Ask Android; a file-type row overrides it only when it is not “Follow Open / click”." : "These rows are site / PWA / CRX only. They do not change the Android Explorer APK. Markdown and images open in an inline window unless you pick a separate window or a new tab.", android ? [

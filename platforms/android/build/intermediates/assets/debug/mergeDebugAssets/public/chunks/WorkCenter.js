@@ -1,12 +1,12 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll, s as __toESM } from "./rolldown-runtime.js";
-import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Dr as postProcessApi, Er as isProcessApiUnavailable, Gr as sendMessage, Or as processApiAuthFromSettings, Sr as unwrapSwInteropMessage, Xr as BROADCAST_CHANNELS, Zr as ROUTE_HASHES, at as loadSettings, br as replayQueuedMessagesForDestination, ei as viewBroadcastChannelName, kr as readProcessApiResultText, vr as initializeComponent, yr as registerComponent } from "../shells/boot-index.js";
+import { g as shouldHandoffViewToSibling, v as stashSkuHandoff } from "../shells/boot-history-base.js";
+import { Ar as readProcessApiResultText, Cr as unwrapSwInteropMessage, Dr as isProcessApiUnavailable, Kr as sendMessage, Or as postProcessApi, Qr as ROUTE_HASHES, Zr as BROADCAST_CHANNELS, at as loadSettings, br as registerComponent, kr as processApiAuthFromSettings, ti as viewBroadcastChannelName, xr as replayQueuedMessagesForDestination, yr as initializeComponent } from "../shells/boot-index.js";
 import { An as H, Qt as parseDataUrl, Xt as isBase64Like, Zt as normalizeDataAsset, a as f, c as collectAttachmentCandidates, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as createContentAddressedStore, xn as writeText } from "../com/app.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
+import { g as takeHeldIngressFiles, i as dropHeldIngressFiles, l as isAndroidLocalShareUri, u as onHeldIngressFiles } from "../views/viewer.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
-import { dropHeldIngressFiles, isAndroidLocalShareUri, onHeldIngressFiles, takeHeldIngressFiles } from "./sku-ingress.js";
 import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
@@ -1039,7 +1039,7 @@ var WorkCenterTemplates = class {
 	/** Get default instruction templates (for seeding). Dynamic import avoids TDZ when workcenter loads before `com/app` finishes. */
 	async getDefaultTemplates() {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
-			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.wr);
+			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Tr);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
 		}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 		return DEFAULT_INSTRUCTION_TEMPLATES;
@@ -1820,7 +1820,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Lr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Rr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1881,7 +1881,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Lr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Rr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -4155,7 +4155,18 @@ var WorkCenterAttachmentIngress = class {
 				continue;
 			}
 			const hash = await localHash(file);
-			if (this.filesByHash.has(hash) || this.options.state.draft.attachments.some((item) => item.hash === hash)) continue;
+			const existing = this.options.state.draft.attachments.find((item) => item.hash === hash);
+			if (existing || this.filesByHash.has(hash)) {
+				added.push(existing || {
+					hash,
+					path: "",
+					name: file.name || "attachment",
+					type: file.type || "application/octet-stream",
+					size: file.size,
+					lastModified: file.lastModified || Date.now()
+				});
+				continue;
+			}
 			const ref = {
 				hash,
 				path: "",

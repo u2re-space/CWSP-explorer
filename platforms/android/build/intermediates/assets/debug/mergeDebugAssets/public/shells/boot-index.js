@@ -1,7 +1,7 @@
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/toast.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../views/viewer.js","../chunks/src10.js","../chunks/sku-ingress.js","../chunks/WorkCenter.js","../chunks/log-sanitizer.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../chunks/capacitor-share-intent2.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js","../chunks/workcenter-command-wire.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/toast.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../com/service.js","../views/viewer.js","../chunks/src10.js","../chunks/WorkCenter.js","../chunks/log-sanitizer.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../chunks/capacitor-share-intent2.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js","../chunks/workcenter-command-wire.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
+import { c as inferCwspSkuFromLocation$1, d as isViewLocalToSurface$1, g as shouldHandoffViewToSibling, h as readCwspSku$1, l as isCwspNativeHost$1, m as publicHrefForView, n as SKU_HUB_PATHS$1 } from "./boot-history-base.js";
 import { Et as initializeAppCanvasLayer, Jt as writeFileSmart, Rn as Q, St as __decorate, bt as UIElement, gn as saveUIState, hn as makeUIState, kn as defineElement, zn as JSOX } from "../com/app.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { i as core_default, r as scss_default } from "../fest/veela.js";
@@ -1010,7 +1010,7 @@ var toUnifiedInteropMessage$1 = (input) => {
 * Unified Messaging System for CWSP-shell
 * Extends fest/uniform messaging with app-specific configuration
 */
-var UnifiedMessaging_exports = /* @__PURE__ */ __exportAll({
+var UnifiedMessaging_exports$1 = /* @__PURE__ */ __exportAll({
 	createMessageWithOverrides: () => createMessageWithOverrides,
 	createProtocolEnvelope: () => createProtocolEnvelope$2,
 	enqueuePendingMessage: () => enqueuePendingMessage,
@@ -2781,6 +2781,15 @@ var toUnifiedInteropMessage = (input) => {
 * Unified Messaging System for CWSP-shell
 * Extends fest/uniform messaging with app-specific configuration
 */
+var UnifiedMessaging_exports = /* @__PURE__ */ __exportAll({
+	getUnifiedMessaging: () => getUnifiedMessaging$1,
+	initializeComponent: () => initializeComponent,
+	registerComponent: () => registerComponent,
+	registerHandler: () => registerHandler,
+	replayQueuedMessagesForDestination: () => replayQueuedMessagesForDestination,
+	unifiedMessaging: () => unifiedMessaging,
+	unregisterHandler: () => unregisterHandler
+});
 var APP_CHANNEL_MAPPINGS = {
 	...createDestinationChannelMappings(),
 	[DESTINATIONS.WORKCENTER]: BROADCAST_CHANNELS.WORK_CENTER,
@@ -3484,19 +3493,19 @@ function registerDefaultShells() {
 		id: "window",
 		name: "Window",
 		description: "Window-capable shell (multi-view)",
-		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([10,11,5,4,1,2,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([10,11,5,4,2,1,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "tabbed",
 		name: "Tabbed",
 		description: "Tabbed window shell",
-		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([21,10,11,5,4,1,2,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([21,10,11,5,4,2,1,3,6,7,12,13,14,15,16,17,18,19,20,8]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "environment",
 		name: "Environment",
 		description: "Desktop/launcher shell: wallpaper, Speed Dial, taskbar, ui-window",
-		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([22,11,5,4,1,2,3,6,7,12,13,14,15,16,17,18,19,20]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([22,11,5,4,2,1,3,6,7,12,13,14,15,16,17,18,19,20]), import.meta.url)
 	});
 }
 /** Register the built-in views that are enabled by current feature flags. */
@@ -3505,55 +3514,55 @@ function registerDefaultViews() {
 		id: "viewer",
 		name: "Viewer",
 		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,1,2,24,25]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,2,1,24,25]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "workcenter",
 		name: "Work Center",
 		icon: "lightning",
-		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([26,4,1,2,27,28,24,29,30,31,32,33,34,35,36,37]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([26,4,2,1,25,24,27,28,29,30,31,32,33,34,35,36]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "settings",
 		name: "Settings",
 		icon: "gear",
-		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([38,4,1,2,39,40,25,24,41,32,31]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([37,4,2,1,38,39,25,24,40,31,30]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "network",
 		name: "Network",
 		icon: "wifi-high",
-		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([42,1,2,43]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([41,1,2,42]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "history",
 		name: "History",
 		icon: "clock-counter-clockwise",
-		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([44,1,2,25,4,24,45]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([43,1,2,25,4,24,44]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "explorer",
 		name: "Explorer",
 		icon: "folder",
-		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([46,4,1,2,25,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([45,4,2,1,25,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "editor",
 		name: "Editor",
 		icon: "pencil",
-		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([47,4,1,2,25,24]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([46,4,2,1,25,24]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "home",
 		name: "Home",
 		icon: "house",
-		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([48,1,2,49,25,4,24,50]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([47,1,2,48,25,4,24,49]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "print",
 		name: "Print",
 		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,1,2,24,25]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([23,4,2,1,24,25]), import.meta.url)
 	});
 }
 var defaultTheme = {
@@ -8052,7 +8061,7 @@ var readControlSessionToken$1 = () => {
 var readCrxControlSessionTokenAsync$1 = async () => {
 	if (!isChromeExtensionPage$1()) return "";
 	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session2.js"), __vite__mapDeps([51,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
+		return await (await __vitePreload(() => import("../chunks/crx-control-session2.js"), __vite__mapDeps([50,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
 	} catch {
 		return "";
 	}
@@ -8121,7 +8130,7 @@ var webnativeControl$1 = async (path, init) => {
 			const g = globalThis;
 			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
 			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session2.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([51,1,2]), import.meta.url).catch(() => void 0);
+			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session2.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([50,1,2]), import.meta.url).catch(() => void 0);
 			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
 				status: res.status,
 				path
@@ -10353,7 +10362,7 @@ var holdCapacitorIngressJob = async (settings) => {
 		const { ensureCapacitorBridgeDaemonStarted } = await __vitePreload(async () => {
 			const { ensureCapacitorBridgeDaemonStarted } = await import("../chunks/capacitor-settings-permissions2.js");
 			return { ensureCapacitorBridgeDaemonStarted };
-		}, __vite__mapDeps([52,53]), import.meta.url);
+		}, __vite__mapDeps([51,52]), import.meta.url);
 		await ensureCapacitorBridgeDaemonStarted({
 			...settings || {},
 			shell: {
@@ -10618,7 +10627,7 @@ var readControlSessionToken = () => {
 var readCrxControlSessionTokenAsync = async () => {
 	if (!isChromeExtensionPage()) return "";
 	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([54,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
+		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([53,1,2]), import.meta.url)).getCrxControlSessionToken() || "";
 	} catch {
 		return "";
 	}
@@ -10687,7 +10696,7 @@ var webnativeControl = async (path, init) => {
 			const g = globalThis;
 			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
 			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([54,1,2]), import.meta.url).catch(() => void 0);
+			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([53,1,2]), import.meta.url).catch(() => void 0);
 			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
 				status: res.status,
 				path
@@ -17385,8 +17394,9 @@ var STYLE_CONFIGS = {
 			initializeLayers();
 			initCwsNativeBridge$1().catch(() => {});
 			if (isCapacitorCwsNativeShell$1()) {
-				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([55,1,2]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([54,1,2]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), [], import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.at).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([1,2]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
@@ -17421,7 +17431,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([56,4,1,2,29,27,57,58]), import.meta.url);
+				}, __vite__mapDeps([55,4,2,1,25,24,28,56,57]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);
@@ -17782,4 +17792,4 @@ function navigateToView(view, params) {
 	});
 }
 //#endregion
-export { speedDialItems as $, parseConnectHostInput as $n, normalizeDestination as $r, getAirPadDirectTargetUrl as $t, isAppearanceColorSource as A, DEFAULT_DESK_WIRE_NODE_ID as An, buildShareDataFromCachedPayload as Ar, looksLikePreviewableBinary as At, annotatePacketWireTime64 as B, isOnHomeFleetLanPageHost as Bn, enqueuePendingMessage as Br, sinkToAction as Bt, scheduleViewModulePrefetch as C, ecosystem_skus_exports as Cn, DEFAULT_INSTRUCTION_TEMPLATES as Cr, normalizeEcosystemToken as Ct, syncBrowserChromeTheme as D, invokeCwsNative$1 as Dn, postProcessApi as Dr, classifyOpenKindFromName as Dt, resyncThemeAfterAdoptedViewSheet as E, initCwsNativeBridge$1 as En, isProcessApiUnavailable as Er, classifyOpenKind as Et, annotatePacketWireHash as F, isFleetGatewayWireNodeId as Fn, safeCachePut as Fr, rememberOpenPolicyFromSettings as Ft, writeClipboardTextToDevice as G, shouldFleetDeskGatewayProbeFallbacks as Gn, sendMessage as Gr, surfaceForSku as Gt, isCapacitorNativeShell as H, sanitizeFleetRouteTarget as Hn, initializeComponent$1 as Hr, sinkToOpenLinkTarget as Ht, inferWireDedupeCategory as I, isGatewayHttpsOrigin as In, settleIngressPaintForMinimalShell as Ir, resolveExplorerOpenSink as It, addSpeedDialItem as J, CWSP_DEFAULT_HTTP_PORTS as Jn, serviceChannels as Jr, loadSettings$1 as Jt, loadStyleSystem as K, shouldPreferWanGatewayForAirpad as Kn, sendProtocolMessage as Kr, viewIdForOpenSink as Kt, packetWireDedupeGuard as L, isGuestPrivateLanIpv4 as Ln, UnifiedMessaging_exports as Lr, resolveHostOpenPolicy as Lt, getTransitionDirection as M, airpad_cwsp_client_parity_exports as Mn, storeShareTargetPayloadToCache as Mr, normalizeOpenSink as Mt, withViewTransition as N, isAssociableFleetWireNodeId as Nn, safeCacheMatch as Nr, open_policy_exports as Nt, FALLBACK_BASE_COLOR as O, invokeCwsPlatformIPC$1 as On, processApiAuthFromSettings as Or, classifyOpenKindFromPayload as Ot, ensureAppLayers as P, isFleetDeskWireNodeId as Pn, safeCacheOpen as Pr, peekOpenPolicy as Pt, persistSpeedDialMeta as Q, collectEndpointProbeCandidates as Qn, getBroadcastChannelForDestination as Qr, getAirPadClientId as Qt, annotateCoordinatorPayload as R, isHomeFleetLanHost as Rn, createMessageWithOverrides as Rr, resolveOpenPlacement as Rt, visibleHubSettingsSections as S, DEFAULT_SETTINGS$1 as Sn, unwrapSwInteropMessage as Sr, DEFAULT_SETTINGS as St, applyTheme as T, cws_bridge_exports$1 as Tn, CORE_ENTITY_EXTRACTION_INSTRUCTION as Tr, OPEN_KINDS as Tt, readClipboardTextFromDevice as U, sanitizeFleetSelfWireNodeId as Un, processInitialContent as Ur, skuForOpenSink as Ut, clipboard_device_exports as V, normalizeWireNodeIdForWire as Vn, hasPendingMessages as Vr, sinkToDestination as Vt, writeClipboardImageToDevice as W, shouldConnectViaFleetGateway as Wn, registerComponent$1 as Wr, stampHostOpenPolicy as Wt, ensureSpeedDialMeta as X, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as Xn, BROADCAST_CHANNELS as Xr, applyAirpadRuntimeFromAppSettings as Xt, createEmptySpeedDialItem as Y, CWSP_FLEET_LAN_GATEWAY_HOST as Yn, API_ENDPOINTS as Yr, shouldDeferCrxHubSocketBootstrap$1 as Yt, persistSpeedDialItems as Z, buildEndpointOriginCandidates as Zn, ROUTE_HASHES as Zr, getAccessToken as Zt, readSettingsAreaSection as _, isNeutralinoNodeClipboardHubOwned as _n, ingressStampWasSuperseded as _r, rememberProcessIngressSettings as _t, initWebSocket as a, getAirPadTransportSecret as an, Capacitor as ar, loadSettings as at, resolveSettingsShellProfile as b, isShellRemoteClipboardBridgeEnabled as bn, replayQueuedMessagesForDestination as br, writeProcessIngressClipboard as bt, websocket_exports as c, getClipboardBroadcastWireTargets as cn, ShellRegistry as cr, PROCESS_INGRESS_KIND_LABELS as ct, SIBLING_HUB_SETTINGS_SECTIONS$1 as d, getRemoteProtocol as dn, defaultTheme as dr, formatProcessIngressResult as dt, viewBroadcastChannelName as ei, getAirPadEndpointUrl as en, probeEndpointOriginReport as er, canParseURL as et, canonicalHubSettingsSection$1 as f, getRemoteRouteTarget as fn, initializeRegistries as fr, holdCapacitorIngressJob as ft, pruneBuiltInSettingsTabs as g, isMaintainHubSocketConnectionEnabled as gn, startImplicitViewMessagingBridge as gr, process_ingress_exports as gt, hubSettingsSectionPath$1 as h, isClipboardSenderAllowedForInbound as hn, pickEnabledView as hr, peekProcessIngressSettings as ht, disconnectWS as i, getAirPadTransportMode as in, splitMultiValueList as ir, getLastSettingsSaveReport as it, normalizeHexColor as j, FLEET_GATEWAY_WIRE_NODE_ID as jn, consumeCachedShareTargetPayload as jr, mergeOpenPolicy as jt, defaultColorSource as k, isCapacitorCwsNativeShell$1 as kn, readProcessApiResultText as kr, inferIngressChannels as kt, capacitor_settings_permissions_exports as l, getClipboardPushIntervalMs as ln, ViewRegistry as lr, allowProcessWebLaunchQueue as lt, hasBuiltInSettingsPanel as m, isClipboardHubBootstrapEnabled as mn, isEnabledView as mr, mergeProcessIngress as mt, hub_socket_boot_exports as n, getAirPadHandshakeConnectionType as nn, resolveFleetWanGatewayHost as nr, ensureCapacitorCwspSettingsSeeded as nt, isWSConnected as o, getAssociatedClientToken as on, dist_exports as or, noteSettingsControlSync as ot, defaultSettingsTabForProfile as p, isApplyRemoteClipboardToDeviceEnabled as pn, lightTheme as pr, instructionTextForIngress as pt, applyTheme$1 as q, CWSP_DEFAULT_HTTPS_PORTS as qn, unifiedMessaging$1 as qr, ensureCapacitorCwspSettingsSeeded$1 as qt, connectWS as r, getAirPadPeerInstanceId as rn, splitConnectHostList as rr, ensureCrxCwspSettingsSeeded as rt, onWSConnectionChange as s, getClientAccessToken as sn, initializeLayers as sr, saveSettings as st, navigateToView as t, getAirPadHandshakeArchetype as tn, resolveCwspUrlFields as tr, Settings_exports as tt, isCapacitorNative as u, getRemoteHost as un, darkTheme as ur, allowProcessWebShareLaunch as ut, rememberSettingsAreaSection as v, isPreferNativeWebsocketEnabled as vn, initializeComponent as vr, resolveProcessIngressKind as vt, Theme_exports as w, CwsBridge$1 as wn, templates_exports as wr, resolveEcosystemToken as wt, skuForHubSettingsSection as x, setAirpadCredentialInvalidator as xn, unifiedMessaging as xr, BUILTIN_AI_MODELS as xt, resolveEffectiveHubSettingsSection as y, isPushLocalClipboardToLanEnabled as yn, registerComponent as yr, shouldAttachProcessIngress as yt, shouldAnnotateCoordinatorPayload as z, isOffHomeFleetNetwork as zn, createProtocolEnvelope$2 as zr, resolveOpenPolicy as zt };
+export { speedDialItems as $, parseConnectHostInput as $n, getBroadcastChannelForDestination as $r, getAirPadDirectTargetUrl as $t, isAppearanceColorSource as A, DEFAULT_DESK_WIRE_NODE_ID as An, readProcessApiResultText as Ar, looksLikePreviewableBinary as At, annotatePacketWireTime64 as B, isOnHomeFleetLanPageHost as Bn, createProtocolEnvelope$2 as Br, sinkToAction as Bt, scheduleViewModulePrefetch as C, ecosystem_skus_exports as Cn, unwrapSwInteropMessage as Cr, normalizeEcosystemToken as Ct, syncBrowserChromeTheme as D, invokeCwsNative$1 as Dn, isProcessApiUnavailable as Dr, classifyOpenKindFromName as Dt, resyncThemeAfterAdoptedViewSheet as E, initCwsNativeBridge$1 as En, CORE_ENTITY_EXTRACTION_INSTRUCTION as Er, classifyOpenKind as Et, annotatePacketWireHash as F, isFleetGatewayWireNodeId as Fn, safeCacheOpen as Fr, rememberOpenPolicyFromSettings as Ft, writeClipboardTextToDevice as G, shouldFleetDeskGatewayProbeFallbacks as Gn, registerComponent$1 as Gr, surfaceForSku as Gt, isCapacitorNativeShell as H, sanitizeFleetRouteTarget as Hn, hasPendingMessages as Hr, sinkToOpenLinkTarget as Ht, inferWireDedupeCategory as I, isGatewayHttpsOrigin as In, safeCachePut as Ir, resolveExplorerOpenSink as It, addSpeedDialItem as J, CWSP_DEFAULT_HTTP_PORTS as Jn, unifiedMessaging$1 as Jr, loadSettings$1 as Jt, loadStyleSystem as K, shouldPreferWanGatewayForAirpad as Kn, sendMessage as Kr, viewIdForOpenSink as Kt, packetWireDedupeGuard as L, isGuestPrivateLanIpv4 as Ln, settleIngressPaintForMinimalShell as Lr, resolveHostOpenPolicy as Lt, getTransitionDirection as M, airpad_cwsp_client_parity_exports as Mn, consumeCachedShareTargetPayload as Mr, normalizeOpenSink as Mt, withViewTransition as N, isAssociableFleetWireNodeId as Nn, storeShareTargetPayloadToCache as Nr, open_policy_exports as Nt, FALLBACK_BASE_COLOR as O, invokeCwsPlatformIPC$1 as On, postProcessApi as Or, classifyOpenKindFromPayload as Ot, ensureAppLayers as P, isFleetDeskWireNodeId as Pn, safeCacheMatch as Pr, peekOpenPolicy as Pt, persistSpeedDialMeta as Q, collectEndpointProbeCandidates as Qn, ROUTE_HASHES as Qr, getAirPadClientId as Qt, annotateCoordinatorPayload as R, isHomeFleetLanHost as Rn, UnifiedMessaging_exports$1 as Rr, resolveOpenPlacement as Rt, visibleHubSettingsSections as S, DEFAULT_SETTINGS$1 as Sn, unifiedMessaging as Sr, DEFAULT_SETTINGS as St, applyTheme as T, cws_bridge_exports$1 as Tn, templates_exports as Tr, OPEN_KINDS as Tt, readClipboardTextFromDevice as U, sanitizeFleetSelfWireNodeId as Un, initializeComponent$1 as Ur, skuForOpenSink as Ut, clipboard_device_exports as V, normalizeWireNodeIdForWire as Vn, enqueuePendingMessage as Vr, sinkToDestination as Vt, writeClipboardImageToDevice as W, shouldConnectViaFleetGateway as Wn, processInitialContent as Wr, stampHostOpenPolicy as Wt, ensureSpeedDialMeta as X, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as Xn, API_ENDPOINTS as Xr, applyAirpadRuntimeFromAppSettings as Xt, createEmptySpeedDialItem as Y, CWSP_FLEET_LAN_GATEWAY_HOST as Yn, serviceChannels as Yr, shouldDeferCrxHubSocketBootstrap$1 as Yt, persistSpeedDialItems as Z, buildEndpointOriginCandidates as Zn, BROADCAST_CHANNELS as Zr, getAccessToken as Zt, readSettingsAreaSection as _, isNeutralinoNodeClipboardHubOwned as _n, ingressStampWasSuperseded as _r, rememberProcessIngressSettings as _t, initWebSocket as a, getAirPadTransportSecret as an, Capacitor as ar, loadSettings as at, resolveSettingsShellProfile as b, isShellRemoteClipboardBridgeEnabled as bn, registerComponent as br, writeProcessIngressClipboard as bt, websocket_exports as c, getClipboardBroadcastWireTargets as cn, ShellRegistry as cr, PROCESS_INGRESS_KIND_LABELS as ct, SIBLING_HUB_SETTINGS_SECTIONS$1 as d, getRemoteProtocol as dn, defaultTheme as dr, formatProcessIngressResult as dt, normalizeDestination as ei, getAirPadEndpointUrl as en, probeEndpointOriginReport as er, canParseURL as et, canonicalHubSettingsSection$1 as f, getRemoteRouteTarget as fn, initializeRegistries as fr, holdCapacitorIngressJob as ft, pruneBuiltInSettingsTabs as g, isMaintainHubSocketConnectionEnabled as gn, startImplicitViewMessagingBridge as gr, process_ingress_exports as gt, hubSettingsSectionPath$1 as h, isClipboardSenderAllowedForInbound as hn, pickEnabledView as hr, peekProcessIngressSettings as ht, disconnectWS as i, getAirPadTransportMode as in, splitMultiValueList as ir, getLastSettingsSaveReport as it, normalizeHexColor as j, FLEET_GATEWAY_WIRE_NODE_ID as jn, buildShareDataFromCachedPayload as jr, mergeOpenPolicy as jt, defaultColorSource as k, isCapacitorCwsNativeShell$1 as kn, processApiAuthFromSettings as kr, inferIngressChannels as kt, capacitor_settings_permissions_exports as l, getClipboardPushIntervalMs as ln, ViewRegistry as lr, allowProcessWebLaunchQueue as lt, hasBuiltInSettingsPanel as m, isClipboardHubBootstrapEnabled as mn, isEnabledView as mr, mergeProcessIngress as mt, hub_socket_boot_exports as n, getAirPadHandshakeConnectionType as nn, resolveFleetWanGatewayHost as nr, ensureCapacitorCwspSettingsSeeded as nt, isWSConnected as o, getAssociatedClientToken as on, dist_exports as or, noteSettingsControlSync as ot, defaultSettingsTabForProfile as p, isApplyRemoteClipboardToDeviceEnabled as pn, lightTheme as pr, instructionTextForIngress as pt, applyTheme$1 as q, CWSP_DEFAULT_HTTPS_PORTS as qn, sendProtocolMessage as qr, ensureCapacitorCwspSettingsSeeded$1 as qt, connectWS as r, getAirPadPeerInstanceId as rn, splitConnectHostList as rr, ensureCrxCwspSettingsSeeded as rt, onWSConnectionChange as s, getClientAccessToken as sn, initializeLayers as sr, saveSettings as st, navigateToView as t, viewBroadcastChannelName as ti, getAirPadHandshakeArchetype as tn, resolveCwspUrlFields as tr, Settings_exports as tt, isCapacitorNative as u, getRemoteHost as un, darkTheme as ur, allowProcessWebShareLaunch as ut, rememberSettingsAreaSection as v, isPreferNativeWebsocketEnabled as vn, UnifiedMessaging_exports as vr, resolveProcessIngressKind as vt, Theme_exports as w, CwsBridge$1 as wn, DEFAULT_INSTRUCTION_TEMPLATES as wr, resolveEcosystemToken as wt, skuForHubSettingsSection as x, setAirpadCredentialInvalidator as xn, replayQueuedMessagesForDestination as xr, BUILTIN_AI_MODELS as xt, resolveEffectiveHubSettingsSection as y, isPushLocalClipboardToLanEnabled as yn, initializeComponent as yr, shouldAttachProcessIngress as yt, shouldAnnotateCoordinatorPayload as z, isOffHomeFleetNetwork as zn, createMessageWithOverrides as zr, resolveOpenPolicy as zt };
