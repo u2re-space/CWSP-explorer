@@ -1,9 +1,11 @@
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { _ as siblingSkuForView, c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, h as readCwspSku, l as isCwspNativeHost, p as publicHrefForSku, r as androidPackageForSku, s as ensureCwspSkuFromLocation, t as ECOSYSTEM_SKUS, v as stashSkuHandoff } from "../shells/boot-history-base.js";
-import { Gt as surfaceForSku, Mt as normalizeOpenSink, Ot as classifyOpenKindFromPayload, Pt as peekOpenPolicy, Ut as skuForOpenSink, Vr as enqueuePendingMessage, Vt as sinkToDestination, ei as normalizeDestination, ht as peekProcessIngressSettings, kt as inferIngressChannels, qr as sendProtocolMessage, ti as viewBroadcastChannelName, zt as resolveOpenPolicy } from "../shells/boot-index.js";
-
-import { m as skuIngressHint, o as holdIngressFiles } from "../views/viewer.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../vendor/@capacitor_core.js","./rolldown-runtime.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js"])))=>i.map(i=>d[i]);
+import { _ as siblingSkuForView, c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, h as readCwspSku, l as isCwspNativeHost, p as publicHrefForSku, r as androidPackageForSku, s as ensureCwspSkuFromLocation, t as ECOSYSTEM_SKUS, v as stashSkuHandoff } from "./ecosystem-skus.js";
+import { d as normalizeDestination, p as viewBroadcastChannelName } from "./names.js";
+import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
+import { d as sendProtocolMessage, i as enqueuePendingMessage } from "./UnifiedMessaging.js";
+import { C as surfaceForSku, _ as resolveOpenPolicy, a as classifyOpenKindFromPayload, f as peekOpenPolicy, o as inferIngressChannels, u as normalizeOpenSink, x as skuForOpenSink, y as sinkToDestination } from "./open-policy.js";
+import { c as peekProcessIngressSettings } from "./process-ingress.js";
+import { a as holdIngressFiles, p as skuIngressHint } from "./sku-ingress.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
 //#region ../CWSP-document/src/shared/routing/channel/ViewTransferRouting.ts
 /**
@@ -179,8 +181,7 @@ var mirrorTransferToViewChannel = (resolved, message) => {
 	}
 };
 var payloadSink = (payload, resolved) => {
-	const hinted = payload.hint?.sink ?? (resolved.metadata?.hint)?.sink;
-	return normalizeOpenSink(hinted, "ask");
+	return normalizeOpenSink(payload.hint?.sink ?? (resolved.metadata?.hint)?.sink, "ask");
 };
 var openResolvedWithSystem = async (payload, chooser) => {
 	const file = Array.isArray(payload.files) ? payload.files[0] : void 0;

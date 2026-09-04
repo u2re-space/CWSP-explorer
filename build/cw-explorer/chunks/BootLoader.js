@@ -1,9 +1,14 @@
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js","./capacitor-permissions.js","./capacitor-clipboard-asset.js","./frontend-debug-capture.js","./sw-handling.js","../views/viewer.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","./vite-preload-DHlaQ_oz.js","./multi-value-list.js","./capacitor-permissions.js","./rolldown-runtime.js","./capacitor-clipboard-asset.js","../com/app4.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./sw-handling.js","./ecosystem-skus.js","./UnifiedMessaging.js","./UniformInterop.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./core.js","./templates.js","./sw-unwrap.js","../vendor/jsox.js","../com/app.js","../vendor/jsox2.js","./remote-connection-runtime.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as LS_BOOT_SHELL_LAST_ACTIVE } from "../shells/preference.js";
-import { $t as getAirPadDirectTargetUrl, An as DEFAULT_DESK_WIRE_NODE_ID, B as annotatePacketWireTime64, Bn as isOnHomeFleetLanPageHost, Dn as invokeCwsNative, En as initCwsNativeBridge, F as annotatePacketWireHash, Fn as isFleetGatewayWireNodeId, G as writeClipboardTextToDevice, Gn as shouldFleetDeskGatewayProbeFallbacks, H as isCapacitorNativeShell, Hn as sanitizeFleetRouteTarget, I as inferWireDedupeCategory, In as isGatewayHttpsOrigin, Jn as CWSP_DEFAULT_HTTP_PORTS, Jt as loadSettings, K as loadStyleSystem, Kn as shouldPreferWanGatewayForAirpad, L as packetWireDedupeGuard, Ln as isGuestPrivateLanIpv4, Nn as isAssociableFleetWireNodeId, P as ensureAppLayers, Pn as isFleetDeskWireNodeId, Qt as getAirPadClientId, R as annotateCoordinatorPayload, Rn as isHomeFleetLanHost, Sn as DEFAULT_SETTINGS, U as readClipboardTextFromDevice, Un as sanitizeFleetSelfWireNodeId, Vn as normalizeWireNodeIdForWire, W as writeClipboardImageToDevice, Wn as shouldConnectViaFleetGateway, Xt as applyAirpadRuntimeFromAppSettings, Yr as serviceChannels, Yt as shouldDeferCrxHubSocketBootstrap, Zt as getAccessToken, _n as isNeutralinoNodeClipboardHubOwned, an as getAirPadTransportSecret, bn as isShellRemoteClipboardBridgeEnabled, cn as getClipboardBroadcastWireTargets, cr as ShellRegistry, dn as getRemoteProtocol, dr as defaultTheme, en as getAirPadEndpointUrl, fn as getRemoteRouteTarget, fr as initializeRegistries, gn as isMaintainHubSocketConnectionEnabled, gr as startImplicitViewMessagingBridge, hn as isClipboardSenderAllowedForInbound, hr as pickEnabledView, in as getAirPadTransportMode, kn as isCapacitorCwsNativeShell, ln as getClipboardPushIntervalMs, mn as isClipboardHubBootstrapEnabled, mr as isEnabledView, nn as getAirPadHandshakeConnectionType, on as getAssociatedClientToken, pn as isApplyRemoteClipboardToDeviceEnabled, pr as lightTheme, q as applyTheme, qn as CWSP_DEFAULT_HTTPS_PORTS, qt as ensureCapacitorCwspSettingsSeeded, rn as getAirPadPeerInstanceId, rr as splitConnectHostList, sn as getClientAccessToken, sr as initializeLayers, tn as getAirPadHandshakeArchetype, un as getRemoteHost, ur as darkTheme, vn as isPreferNativeWebsocketEnabled, xn as setAirpadCredentialInvalidator, yn as isPushLocalClipboardToLanEnabled, z as shouldAnnotateCoordinatorPayload, zn as isOffHomeFleetNetwork } from "../shells/boot-index.js";
-
+import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
+import { a as initializeRegistries, d as startImplicitViewMessagingBridge, i as defaultTheme, l as isEnabledView, m as serviceChannels, o as lightTheme, r as darkTheme, t as ShellRegistry, u as pickEnabledView } from "./registry.js";
+import { i as initializeLayers, n as loadStyleSystem, r as applyTheme, t as ensureAppLayers } from "../fest/veela.js";
+import { a as invokeCwsNative, i as initCwsNativeBridge, s as isCapacitorCwsNativeShell } from "../vendor/@capacitor_core.js";
+import { C as sanitizeFleetRouteTarget, D as shouldPreferWanGatewayForAirpad, E as shouldFleetDeskGatewayProbeFallbacks, K as splitConnectHostList, M as CWSP_DEFAULT_HTTPS_PORTS, N as CWSP_DEFAULT_HTTP_PORTS, T as shouldConnectViaFleetGateway, _ as isOnHomeFleetLanPageHost, d as isFleetDeskWireNodeId, f as isFleetGatewayWireNodeId, g as isOffHomeFleetNetwork, h as isHomeFleetLanHost, m as isGuestPrivateLanIpv4, p as isGatewayHttpsOrigin, r as DEFAULT_DESK_WIRE_NODE_ID, u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId } from "./airpad-cwsp-client-parity.js";
+import { a as shouldAnnotateCoordinatorPayload, c as loadSettings, d as DEFAULT_SETTINGS, i as annotateCoordinatorPayload, l as shouldDeferCrxHubSocketBootstrap, n as inferWireDedupeCategory, o as annotatePacketWireTime64, r as packetWireDedupeGuard, s as ensureCapacitorCwspSettingsSeeded, t as annotatePacketWireHash, u as setAirpadCredentialInvalidator } from "./packet-wire-hash.js";
+import { C as isPreferNativeWebsocketEnabled, S as isNeutralinoNodeClipboardHubOwned, T as isShellRemoteClipboardBridgeEnabled, _ as getRemoteRouteTarget, a as getAirPadEndpointUrl, b as isClipboardSenderAllowedForInbound, c as getAirPadPeerInstanceId, d as getAssociatedClientToken, f as getClientAccessToken, g as getRemoteProtocol, h as getRemoteHost, i as getAirPadDirectTargetUrl, l as getAirPadTransportMode, m as getClipboardPushIntervalMs, n as getAccessToken, o as getAirPadHandshakeArchetype, p as getClipboardBroadcastWireTargets, r as getAirPadClientId, s as getAirPadHandshakeConnectionType, t as applyAirpadRuntimeFromAppSettings, u as getAirPadTransportSecret, v as isApplyRemoteClipboardToDeviceEnabled, w as isPushLocalClipboardToLanEnabled, x as isMaintainHubSocketConnectionEnabled, y as isClipboardHubBootstrapEnabled } from "./remote-connection-runtime.js";
+import { a as writeClipboardTextToDevice, i as writeClipboardImageToDevice, n as isCapacitorNativeShell, r as readClipboardTextFromDevice } from "./clipboard-device.js";
 import { n as ensureCapacitorBridgeDaemonStarted } from "./capacitor-settings-permissions.js";
 import { loadAsAdopted } from "/fest/style-lib.js";
 import { withTimeout } from "/fest/core.js";
@@ -1131,10 +1136,9 @@ function connectWS() {
 		const wanGatewayIpv4 = [];
 		const publicIpv4 = [];
 		const guestPrivateIpv4 = [];
-		for (const e of entries) if (!isIpv4Literal(e.host)) {
-			if (e.source === "page") dnsPage.push(e);
-			else dnsRemote.push(e);
-		} else if (isFleetLanGatewayHost(e.host)) lanGatewayIpv4.push(e);
+		for (const e of entries) if (!isIpv4Literal(e.host)) if (e.source === "page") dnsPage.push(e);
+		else dnsRemote.push(e);
+		else if (isFleetLanGatewayHost(e.host)) lanGatewayIpv4.push(e);
 		else if (isFleetWanGatewayHost(e.host)) wanGatewayIpv4.push(e);
 		else if (isHomeFleetPrivateIpv4(e.host) || e.host === "127.0.0.1") homeFleetIpv4.push(e);
 		else if (isPrivateIp(e.host)) guestPrivateIpv4.push(e);
@@ -1521,8 +1525,7 @@ function connectWS() {
 		});
 		socket.on("clipboard:update", async (msg) => {
 			const decoded = await unwrapIncomingPayload(msg);
-			const sender = getCoordinatorPacketSenderId(decoded);
-			if (!isClipboardSenderAllowedForInbound(sender)) return;
+			if (!isClipboardSenderAllowedForInbound(getCoordinatorPacketSenderId(decoded))) return;
 			const asset = extractClipboardAssetFromPacket(decoded);
 			if (asset) {
 				applyIncomingClipboardImage(asset, { source: decoded?.source });
@@ -1962,15 +1965,15 @@ var BootLoader = class BootLoader {
 			initializeLayers();
 			initCwsNativeBridge().catch(() => {});
 			if (isCapacitorCwsNativeShell()) {
-				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).catch(() => void 0);
-				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([8,7,2]), import.meta.url).catch(() => void 0);
-				__vitePreload(() => import("../com/app.js").then((n) => n.at).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([4,2]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([5,3,4]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app4.js").then((n) => n.m).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([6,4,1]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
 					const { initFrontendDebugCapture } = await import("./frontend-debug-capture.js").then((n) => n.t);
 					return { initFrontendDebugCapture };
-				}, __vite__mapDeps([9,2,1,3,4,5,6]), import.meta.url);
+				}, __vite__mapDeps([7,4,8,9,10,11,2]), import.meta.url);
 				initFrontendDebugCapture();
 			} catch {}
 			const persistedSettings = await loadSettings().catch((error) => {
@@ -1991,7 +1994,9 @@ var BootLoader = class BootLoader {
 				try {
 					const g = globalThis;
 					const surface = typeof document !== "undefined" ? String(document.documentElement?.dataset?.cwspSurface || "") : "";
-					return Boolean(g.__CWS_SKIP_PWA__ || g.__CWS_NEUTRALINO_BOOT__ || g.__CWS_WEBNATIVE_BOOT__ || g.Neutralino || typeof g.NL_OS === "string" || surface === "cwsp-control" || surface === "gateway");
+					const protocol = String(globalThis.location?.protocol || "");
+					const nativeShell = typeof document !== "undefined" ? String(document.documentElement?.dataset?.cwspNativeShell || "") : "";
+					return Boolean(g.__CWS_SKIP_PWA__ || g.__CWS_NEUTRALINO_BOOT__ || g.__CWS_WEBNATIVE_BOOT__ || g.Neutralino || typeof g.NL_OS === "string" || protocol === "chrome-extension:" || nativeShell === "crx" || surface.includes("crx") || surface === "cwsp-control" || surface === "gateway");
 				} catch {
 					return false;
 				}
@@ -1999,7 +2004,7 @@ var BootLoader = class BootLoader {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("./sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([10,3,2,1,4,5,6,11,12,13,14]), import.meta.url);
+				}, __vite__mapDeps([12,13,4,10,1,14,15,16,17,18,19,9,20,21,22,23,8,11,2,24,25,26,27,28,29,30,31]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

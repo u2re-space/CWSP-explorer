@@ -1,6 +1,8 @@
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Vn as JSOX, _n as makeUIState, bn as loadDesktopRaw, it as subscribeFsBackendRegister, ot as resolveEntryIcon, rt as resolveFsBackend, vn as saveUIState, yn as decodeDesktopState } from "../com/app.js";
+import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
+import { F as saveUIState, I as decodeDesktopState, L as loadDesktopRaw, P as makeUIState, ft as JSOX } from "../vendor/jsox.js";
+import { y as resolveEntryIcon } from "../com/app4.js";
+import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app5.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
@@ -1413,7 +1415,7 @@ var createStatefulItem = (config) => {
 };
 var createInitialState = () => observe(DEFAULT_SPEED_DIAL_RECORDS.map(createStatefulItem));
 var unpackState = (raw) => {
-	const records = (Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
+	return observe((Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
 		const { meta, ...record } = entry;
 		if (meta) legacyMetaBuffer.push([entry.id, {
 			action: entry.action,
@@ -1421,8 +1423,7 @@ var unpackState = (raw) => {
 		}]);
 		else legacyMetaBuffer.push([entry.id, { action: entry.action }]);
 		return record;
-	});
-	return observe(records.map(createStatefulItem));
+	}).map(createStatefulItem));
 };
 var packState = (collection) => collection.filter((item) => {
 	try {
@@ -1491,10 +1492,8 @@ function setSpeedDialMirrorPath(path) {
 	markUserEditedBeforeHydrate();
 	mirrorPathState.value = normalized;
 	try {
-		if (typeof localStorage !== "undefined") {
-			if (normalized) localStorage.setItem(MIRROR_PATH_LS_KEY, normalized);
-			else localStorage.removeItem(MIRROR_PATH_LS_KEY);
-		}
+		if (typeof localStorage !== "undefined") if (normalized) localStorage.setItem(MIRROR_PATH_LS_KEY, normalized);
+		else localStorage.removeItem(MIRROR_PATH_LS_KEY);
 	} catch {}
 	persistSpeedDialMeta();
 	refreshSpeedDialMirror();
