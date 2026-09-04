@@ -1,4 +1,4 @@
-import { $ as H } from "../vendor/jsox.js";
+import { Z as H } from "../vendor/jsox.js";
 import { n as HistoryChannelAction } from "./channel-actions.js";
 import { a as transferProgressRatio, dispatchHistoryAction, getTransferHistoryStore, historyImageSrc, i as isMutedHistoryStatus, n as formatTransferBytes, r as formatTransferSpeed, setTransferHistoryUiActive, startCapacitorTransferHistory, startNeutralinoTransferHistory, t as actionsForEntry } from "./transfer-history-runtime.js";
 import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";

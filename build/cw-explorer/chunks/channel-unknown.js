@@ -4,7 +4,7 @@ import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 import { a as hasPendingMessages, c as registerComponent, f as unifiedMessaging, i as enqueuePendingMessage, n as createMessageWithOverrides, o as initializeComponent, s as processInitialContent } from "./UnifiedMessaging.js";
 import { n as settleIngressPaintForMinimalShell } from "../views/inbound-timing.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, r as validateIngressBeforeViewHandle, t as pickAuthoritativeTransferFiles } from "../views/ingress-validation.js";
-import { $ as H, N as getSpeechPrompt, _ as createFileHandler, j as createTemplateManager, n as getCachedComponent } from "../vendor/jsox.js";
+import { Z as H, h as createFileHandler, j as getSpeechPrompt, k as createTemplateManager, n as getCachedComponent } from "../vendor/jsox.js";
 import { a as loadSettings } from "../vendor/jsox2.js";
 import { r as fetchSwCachedEntries } from "./ShareTargetGateway2.js";
 import { loadAsAdopted } from "/fest/style-lib.js";

@@ -1,4 +1,4 @@
-import { F as saveUIState, P as makeUIState } from "../vendor/jsox.js";
+import { M as makeUIState, N as saveUIState } from "../vendor/jsox.js";
 import { c as JSOX } from "../vendor/jsox2.js";
 import "./Clipboard.js";
 import { n as scheduleFrame } from "./Runtime.js";

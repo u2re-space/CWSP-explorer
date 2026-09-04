@@ -1,5 +1,5 @@
 import { d as sendProtocolMessage, r as createProtocolEnvelope } from "./UnifiedMessaging.js";
-import { x as normalizeDataAsset } from "../vendor/jsox.js";
+import { y as normalizeDataAsset } from "../vendor/jsox.js";
 //#region ../../modules/projects/subsystem/registry.ts
 var ViewBase = class extends HTMLElement {
 	id = "view";

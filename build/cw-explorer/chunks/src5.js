@@ -1,6 +1,6 @@
 import { a as invokeCwsNative, o as invokeCwsPlatformIPC, s as isCapacitorCwsNativeShell, t as CwsBridge } from "../vendor/@capacitor_core.js";
 import { G as resolveFleetWanGatewayHost, H as probeEndpointOriginReport, I as buildEndpointOriginCandidates, K as splitConnectHostList, L as collectEndpointProbeCandidates, V as parseConnectHostInput } from "./airpad-cwsp-client-parity.js";
-import { $ as H } from "../vendor/jsox.js";
+import { Z as H } from "../vendor/jsox.js";
 import { C as isPreferNativeWebsocketEnabled, S as isNeutralinoNodeClipboardHubOwned, x as isMaintainHubSocketConnectionEnabled } from "./remote-connection-runtime.js";
 import { a as loadSettings } from "../vendor/jsox2.js";
 import { i as resolveEcosystemToken } from "./SettingsTypes.js";

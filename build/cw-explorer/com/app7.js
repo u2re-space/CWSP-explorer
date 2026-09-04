@@ -8,7 +8,7 @@ import { i as validateReadableFileForIngress } from "../views/ingress-validation
 import { a as replayQueuedMessagesForDestination, c as isProcessApiUnavailable, l as postProcessApi, n as initializeComponent, r as registerComponent, u as processApiAuthFromSettings } from "../chunks/UnifiedMessaging2.js";
 import { n as readProcessApiResultText, t as unwrapSwInteropMessage } from "../chunks/sw-unwrap.js";
 import "../chunks/UniformInterop2.js";
-import { $ as H, S as parseDataUrl, T as createContentAddressedStore, V as writeText, b as isBase64Like, x as normalizeDataAsset } from "../vendor/jsox.js";
+import { C as createContentAddressedStore, Z as H, b as parseDataUrl, v as isBase64Like, y as normalizeDataAsset, z as writeText } from "../vendor/jsox.js";
 import { a as loadSettings } from "../vendor/jsox2.js";
 import "../chunks/Clipboard.js";
 import { i as renderSafeMarkdown, n as configureMarkdownRendering } from "../vendor/dompurify.js";

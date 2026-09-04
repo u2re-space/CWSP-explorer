@@ -1,5 +1,5 @@
 import { y as takeSkuHandoff } from "./ecosystem-skus.js";
-import { Z as defineElement } from "../vendor/jsox.js";
+import { Y as defineElement } from "../vendor/jsox.js";
 import { x as __decorate, y as UIElement } from "../com/app2.js";
 import "../fest/veela3.js";
 import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "../com/app7.js";

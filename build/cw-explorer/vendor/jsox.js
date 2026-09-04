@@ -22694,10 +22694,17 @@ var pickFilesViaInput = (options) => new Promise((resolve) => {
 	input.addEventListener("cancel", () => finish([]), { once: true });
 	input.click();
 });
+var isExtensionPage = () => {
+	try {
+		return globalThis.location?.protocol === "chrome-extension:";
+	} catch {
+		return false;
+	}
+};
 /** FSA when present; Capacitor / CRX / Firefox fall back to `<input type=file>`. */
 var pickMarkdownFile = async () => {
 	const pickFile = globalThis.showOpenFilePicker;
-	if (typeof pickFile === "function") try {
+	if (!isExtensionPage() && typeof pickFile === "function") try {
 		const [handle] = await pickFile({
 			multiple: false,
 			types: [{
@@ -23481,4 +23488,4 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	writeText: () => writeText
 });
 //#endregion
-export { H as $, placeOverlay as A, initGlobalClipboard as B, StorageKeys as C, parse as D, oklch as E, saveUIState as F, elementPointerMap as G, registerTransientOverlay as H, decodeDesktopState as I, getBy as J, bindOutsideDismiss as K, loadDesktopRaw as L, pointerAnchorRef as M, getSpeechPrompt as N, converter as O, makeUIState as P, property as Q, copy as R, parseDataUrl as S, createContentAddressedStore as T, resolveOverlayHost as U, writeText as V, numberRef$1 as W, GLitElement as X, navigationEnable as Y, defineElement as Z, createFileHandler as _, indexDirectoryFiles as a, registerCloseable as at, isBase64Like as b, observeFileSystemHandle as c, E as ct, pickMarkdownFile as d, bindWith as dt, vector2Ref as et, pickSidecarDirectoryFiles as f, JSOX as ft, saveMarkdownBlob as g, resolveFileUnderDirectory as h, findEntryRelPath as i, initBackNavigation as it, createTemplateManager as j, dynamicTheme as k, originalRelFromRef as l, M$1 as lt, relPathCandidates as m, getCachedComponent as n, closeHighestPriority as nt, isMarkdownRelativeRef as o, registerModal as ot, provideBoundRelative as p, makeTask as q, bindDirectoryForLaunchedFiles as r, hasActiveCloseable as rt, mountPickedDirectory as s, navigate as st, src_exports as t, ClosePriority as tt, pickAssetDirectory as u, Q as ut, writeFileSmart as v, setString as w, normalizeDataAsset as x, decodeBase64ToBytes as y, initClipboardReceiver as z };
+export { ClosePriority as $, pointerAnchorRef as A, registerTransientOverlay as B, createContentAddressedStore as C, dynamicTheme as D, converter as E, loadDesktopRaw as F, makeTask as G, numberRef$1 as H, copy as I, GLitElement as J, getBy as K, initClipboardReceiver as L, makeUIState as M, saveUIState as N, placeOverlay as O, decodeDesktopState as P, vector2Ref as Q, initGlobalClipboard as R, setString as S, parse as T, elementPointerMap as U, resolveOverlayHost as V, bindOutsideDismiss as W, property as X, defineElement as Y, H as Z, decodeBase64ToBytes as _, isMarkdownRelativeRef as a, navigate as at, parseDataUrl as b, originalRelFromRef as c, Q as ct, provideBoundRelative as d, closeHighestPriority as et, relPathCandidates as f, writeFileSmart as g, createFileHandler as h, indexDirectoryFiles as i, registerModal as it, getSpeechPrompt as j, createTemplateManager as k, pickMarkdownFile as l, bindWith as lt, saveMarkdownBlob as m, getCachedComponent as n, initBackNavigation as nt, mountPickedDirectory as o, E as ot, resolveFileUnderDirectory as p, navigationEnable as q, bindDirectoryForLaunchedFiles as r, registerCloseable as rt, observeFileSystemHandle as s, M$1 as st, src_exports as t, hasActiveCloseable as tt, pickSidecarDirectoryFiles as u, JSOX as ut, isBase64Like as v, oklch as w, StorageKeys as x, normalizeDataAsset as y, writeText as z };

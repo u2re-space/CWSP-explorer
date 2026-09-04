@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/culori.js","../vendor/jsox.js","../chunks/vite-preload-DHlaQ_oz.js","../com/app.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
-import { ut as Q } from "../vendor/jsox.js";
+import { ct as Q } from "../vendor/jsox.js";
 import { i as initializeAppCanvasLayer } from "../vendor/culori.js";
 import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
 import { n as applyGridSettings } from "../chunks/StateStorage.js";

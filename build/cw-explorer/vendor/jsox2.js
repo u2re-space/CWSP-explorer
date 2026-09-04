@@ -3,7 +3,7 @@ import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
 import { c as isCwsNativeIpcAvailable, i as initCwsNativeBridge, l as patchNativeUnifiedSettingsDetailed, r as getNativeUnifiedSettings } from "./@capacitor_core.js";
 import { u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId, z as migrateLegacyCwspPublicPort } from "../chunks/airpad-cwsp-client-parity.js";
-import { v as writeFileSmart } from "./jsox.js";
+import { g as writeFileSmart } from "./jsox.js";
 import { E as syncAirpadRemoteConfigFromAppSettings, t as applyAirpadRuntimeFromAppSettings } from "../chunks/remote-connection-runtime.js";
 import { T as detectSettingsHost, c as mergeOpenPolicy, h as resolveHostOpenPolicy, l as mergeOpenPolicyByHost, p as rememberOpenPolicyFromSettings } from "../chunks/open-policy.js";
 import { n as DEFAULT_SETTINGS, r as normalizeEcosystemToken } from "../chunks/SettingsTypes.js";

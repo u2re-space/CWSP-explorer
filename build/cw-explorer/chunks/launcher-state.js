@@ -1,6 +1,6 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
-import { F as saveUIState, I as decodeDesktopState, L as loadDesktopRaw, P as makeUIState, ft as JSOX } from "../vendor/jsox.js";
+import { F as loadDesktopRaw, M as makeUIState, N as saveUIState, P as decodeDesktopState, ut as JSOX } from "../vendor/jsox.js";
 import { y as resolveEntryIcon } from "../com/app4.js";
 import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app5.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";

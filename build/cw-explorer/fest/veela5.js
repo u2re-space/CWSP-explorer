@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/ecosystem-skus.js","../com/app4.js","../chunks/vite-preload-DHlaQ_oz.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
-import { $ as H, G as elementPointerMap, M as pointerAnchorRef, et as vector2Ref, lt as M, ot as registerModal, st as navigate } from "../vendor/jsox.js";
+import { A as pointerAnchorRef, Q as vector2Ref, U as elementPointerMap, Z as H, at as navigate, it as registerModal, st as M } from "../vendor/jsox.js";
 import { o as setAppWallpaperFromBlob, r as getWallpaperStoragePointer } from "../vendor/culori.js";
 import { E as handleIncomingEntries } from "../com/app.js";
 import { c as openUnifiedContextMenu } from "../com/app2.js";

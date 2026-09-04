@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../com/app4.js","../chunks/vite-preload-DHlaQ_oz.js","../vendor/jsox.js","../com/app.js","../com/app6.js","../com/app2.js","../com/app3.js","../com/app5.js"])))=>i.map(i=>d[i]);
 import { g as shouldHandoffViewToSibling, l as isCwspNativeHost, m as publicHrefForView, p as publicHrefForSku, r as androidPackageForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../chunks/ecosystem-skus.js";
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
-import { $ as H, B as initGlobalClipboard, Q as property, Z as defineElement, dt as bindWith } from "../vendor/jsox.js";
+import { R as initGlobalClipboard, X as property, Y as defineElement, Z as H, lt as bindWith } from "../vendor/jsox.js";
 import { g as getDir } from "../com/app.js";
 import { a as loadSettings } from "../vendor/jsox2.js";
 import { b as sinkToOpenLinkTarget, f as peekOpenPolicy, g as resolveOpenPlacement, h as resolveHostOpenPolicy, i as classifyOpenKindFromName, m as resolveExplorerOpenSink, p as rememberOpenPolicyFromSettings, r as classifyOpenKind, s as looksLikePreviewableBinary, w as viewIdForOpenSink, x as skuForOpenSink } from "../chunks/open-policy.js";

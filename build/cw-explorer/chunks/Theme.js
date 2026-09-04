@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/@capacitor_core.js","./rolldown-runtime.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/culori.js","../vendor/jsox.js","./vite-preload-DHlaQ_oz.js","../com/app.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
-import { ut as Q } from "../vendor/jsox.js";
+import { ct as Q } from "../vendor/jsox.js";
 import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
 import { n as applyGridSettings } from "./StateStorage.js";
 //#region ../CWSP-document/src/shared/other/utils/appearance-base-color.ts

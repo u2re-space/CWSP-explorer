@@ -1,5 +1,5 @@
 import { v as stashSkuHandoff, y as takeSkuHandoff } from "./ecosystem-skus.js";
-import { $ as H, d as pickMarkdownFile, g as saveMarkdownBlob } from "../vendor/jsox.js";
+import { Z as H, l as pickMarkdownFile, m as saveMarkdownBlob } from "../vendor/jsox.js";
 import { t as createViewState } from "./types.js";
 import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";
 import { ref } from "/fest/object.js";

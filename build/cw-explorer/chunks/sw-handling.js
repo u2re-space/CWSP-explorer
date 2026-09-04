@@ -7,7 +7,7 @@ import { a as safeCacheOpen, i as safeCacheMatch, n as consumeCachedShareTargetP
 import { l as postProcessApi, o as unifiedMessaging$1, u as processApiAuthFromSettings } from "./UnifiedMessaging2.js";
 import { n as readProcessApiResultText, t as unwrapSwInteropMessage } from "./sw-unwrap.js";
 import "./UniformInterop2.js";
-import { R as copy, S as parseDataUrl, b as isBase64Like, r as bindDirectoryForLaunchedFiles, z as initClipboardReceiver } from "../vendor/jsox.js";
+import { I as copy, L as initClipboardReceiver, b as parseDataUrl, r as bindDirectoryForLaunchedFiles, v as isBase64Like } from "../vendor/jsox.js";
 import { a as loadSettings } from "../vendor/jsox2.js";
 import { a as classifyOpenKindFromPayload } from "./open-policy.js";
 import { a as holdCapacitorIngressJob, c as peekProcessIngressSettings, d as resolveProcessIngressKind, f as shouldAttachProcessIngress, i as formatProcessIngressResult, n as allowProcessWebLaunchQueue, o as instructionTextForIngress, p as writeProcessIngressClipboard, r as allowProcessWebShareLaunch, u as rememberProcessIngressSettings } from "./process-ingress.js";

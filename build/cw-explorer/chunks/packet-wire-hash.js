@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","./UniformInterop.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core2.js","./crx-control-session2.js","./vite-preload-DHlaQ_oz.js","../vendor/jsox.js","../com/app.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 import { u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId, z as migrateLegacyCwspPublicPort } from "./airpad-cwsp-client-parity.js";
-import { ft as JSOX, v as writeFileSmart } from "../vendor/jsox.js";
+import { g as writeFileSmart, ut as JSOX } from "../vendor/jsox.js";
 import { n as isCwspNativeHost } from "./ecosystem-skus2.js";
 import { a as patchNativeUnifiedSettingsDetailed, i as isCwsNativeIpcAvailable, n as getNativeUnifiedSettings, r as initCwsNativeBridge } from "./cws-bridge.js";
 import { E as syncAirpadRemoteConfigFromAppSettings, t as applyAirpadRuntimeFromAppSettings } from "./remote-connection-runtime.js";
