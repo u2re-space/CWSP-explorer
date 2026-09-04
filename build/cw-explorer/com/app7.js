@@ -14,7 +14,7 @@ import "../chunks/Clipboard.js";
 import { i as renderSafeMarkdown, n as configureMarkdownRendering } from "../vendor/dompurify.js";
 import { t as f } from "../vendor/marked2.js";
 import { c as isAndroidLocalShareUri, h as takeHeldIngressFiles, l as onHeldIngressFiles, r as dropHeldIngressFiles } from "../chunks/sku-ingress.js";
-import { t as highlightCodeTree } from "./app8.js";
+import { n as highlightCodeTree } from "./app8.js";
 import { t as summarizeForLog } from "../chunks/log-sanitizer.js";
 import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "../chunks/ShareTargetGateway2.js";
 import { i as buildInstructionPrompt } from "../chunks/utils.js";
