@@ -1,6 +1,5 @@
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/@capacitor_core.js","./rolldown-runtime.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js"])))=>i.map(i=>d[i]);
+import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 /**
 * Recent-history window for collapsing identical clipboard bodies that lack a
 * stable contentKey (or had mismatched keys across Cap/Neu emits).
@@ -107,9 +106,9 @@ function looksLikeHttpUrl(s) {
 function formatTransferBytes(bytes) {
 	if (bytes == null || !Number.isFinite(bytes) || bytes < 0) return "";
 	if (bytes < 1024) return `${Math.round(bytes)} B`;
-	if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
-	return `${(bytes / 1073741824).toFixed(2)} GB`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 /** True when a History thumb looks like an inline image data URL. */
 function isHistoryImageDataUrl(value) {
@@ -635,7 +634,7 @@ function startCapacitorTransferHistory() {
 	window.addEventListener("cws:transferHistory", onCapWindowEvent);
 	document.addEventListener("cws:transferHistory", onCapWindowEvent);
 	__vitePreload(async () => {
-		const { CwsBridge } = await import("../shells/boot-index.js").then((n) => n.Tn);
+		const { CwsBridge } = await import("../vendor/@capacitor_core.js").then((n) => n.n);
 		return { CwsBridge };
 	}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).then(async ({ CwsBridge }) => {
 		try {
@@ -794,7 +793,7 @@ async function dispatchHistoryAction(entry, action) {
 			localFilePath: entry.localFilePath || ""
 		};
 		const { invokeCwsNative } = await __vitePreload(async () => {
-			const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Tn);
+			const { invokeCwsNative } = await import("../vendor/@capacitor_core.js").then((n) => n.n);
 			return { invokeCwsNative };
 		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
 		if ((await invokeCwsNative({

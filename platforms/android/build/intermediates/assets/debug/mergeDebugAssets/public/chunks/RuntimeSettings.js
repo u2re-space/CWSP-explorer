@@ -1,8 +1,7 @@
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/jsox2.js","./rolldown-runtime.js","./vite-preload-DHlaQ_oz.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./remote-connection-runtime.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { St as DEFAULT_SETTINGS } from "../shells/boot-index.js";
-
+import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
+import { n as DEFAULT_SETTINGS } from "./SettingsTypes.js";
 //#region ../CWSP-document/src/shared/other/config/RuntimeSettings.ts
 var RuntimeSettings_exports = /* @__PURE__ */ __exportAll({ getRuntimeSettings: () => getRuntimeSettings });
 var provider;
@@ -11,9 +10,9 @@ var defaultProvider = null;
 async function getDefaultProvider() {
 	if (defaultProvider) return defaultProvider;
 	const { loadSettings } = await __vitePreload(async () => {
-		const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.tt);
+		const { loadSettings } = await import("../vendor/jsox2.js").then((n) => n.t);
 		return { loadSettings };
-	}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
+	}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12]), import.meta.url);
 	defaultProvider = loadSettings;
 	return defaultProvider;
 }

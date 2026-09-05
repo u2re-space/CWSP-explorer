@@ -1,8 +1,8 @@
 import { g as shouldHandoffViewToSibling, m as publicHrefForView } from "./ecosystem-skus.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
 import { l as isEnabledView, m as serviceChannels, n as ViewRegistry } from "./registry.js";
-import { D as dynamicTheme } from "../vendor/jsox.js";
 import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
+import { O as dynamicTheme } from "../com/app.js";
 import { i as syncBrowserChromeTheme, n as applyTheme, r as resyncThemeAfterAdoptedViewSheet } from "./Theme.js";
 import { a as hubSettingsSectionPath, l as resolveEffectiveHubSettingsSection, n as canonicalHubSettingsSection, p as scheduleViewModulePrefetch } from "./settings-shell-profile.js";
 import { t as showToast } from "./toast.js";

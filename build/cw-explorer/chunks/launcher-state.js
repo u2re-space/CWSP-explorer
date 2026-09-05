@@ -1,8 +1,9 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
-import { F as loadDesktopRaw, M as makeUIState, N as saveUIState, P as decodeDesktopState, ut as JSOX } from "../vendor/jsox.js";
-import { y as resolveEntryIcon } from "../com/app4.js";
-import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app5.js";
+import { t as JSOX } from "../vendor/jsox.js";
+import { F as decodeDesktopState, I as loadDesktopRaw, N as makeUIState, P as saveUIState } from "../com/app.js";
+import { w as resolveEntryIcon } from "../com/app5.js";
+import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app6.js";
 import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];

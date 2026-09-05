@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/jsox2.js","./rolldown-runtime.js","./vite-preload-DHlaQ_oz.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/jsox.js","../com/app.js","./remote-connection-runtime.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/jsox2.js","./rolldown-runtime.js","./vite-preload-DHlaQ_oz.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./remote-connection-runtime.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./admin-doors.js","./transfer-history-runtime.js","../com/app.js","../vendor/jsox.js","../com/app2.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 import { l as isEnabledView } from "./registry.js";
-import { Z as H } from "../vendor/jsox.js";
+import { Q as H } from "../com/app.js";
 import { n as SHELL_SLOT, t as ShellBase } from "./shells.js";
 import { affected } from "/fest/object.js";
 import "/fest/icon.js";
@@ -164,10 +164,10 @@ var MinimalShell = class extends ShellBase {
 			__vitePreload(async () => {
 				const { loadSettings } = await import("../vendor/jsox2.js").then((n) => n.t);
 				return { loadSettings };
-			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]), import.meta.url).then(({ loadSettings }) => loadSettings()).then((s) => __vitePreload(async () => {
+			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12]), import.meta.url).then(({ loadSettings }) => loadSettings()).then((s) => __vitePreload(async () => {
 				const { openAdminDoorFromCore } = await import("./admin-doors.js").then((n) => n.t);
 				return { openAdminDoorFromCore };
-			}, __vite__mapDeps([15,1]), import.meta.url).then(({ openAdminDoorFromCore }) => {
+			}, __vite__mapDeps([13,1]), import.meta.url).then(({ openAdminDoorFromCore }) => {
 				openAdminDoorFromCore(s.core, "https");
 			})).catch((e) => console.warn("[MinimalShell] admin door:", e));
 		});
@@ -229,7 +229,7 @@ var MinimalShell = class extends ShellBase {
 			prev.element.hidden = true;
 			if (this.rootElement.contains(prev.element)) prev.element.remove();
 			if (previousId === "history" && this.currentView.value !== "history") try {
-				if (globalThis.__CWSP_TRANSFER_HISTORY_UI_ACTIVE__) __vitePreload(() => import("./transfer-history-runtime.js").then((m) => m.setTransferHistoryUiActive(false)), __vite__mapDeps([16,2]), import.meta.url).catch(() => void 0);
+				if (globalThis.__CWSP_TRANSFER_HISTORY_UI_ACTIVE__) __vitePreload(() => import("./transfer-history-runtime.js").then((m) => m.setTransferHistoryUiActive(false)), __vite__mapDeps([14,2]), import.meta.url).catch(() => void 0);
 			} catch {}
 		}
 		element.setAttribute("data-view", this.currentView.value);
@@ -248,9 +248,9 @@ var MinimalShell = class extends ShellBase {
 		requestAnimationFrame(() => {
 			element.style.removeProperty("translate");
 		});
-		__vitePreload(() => import("../vendor/jsox.js").then((n) => n.t).then((m) => {
+		__vitePreload(() => import("../com/app.js").then((n) => n.t).then((m) => {
 			m.rehydrateAdoptedStyleSheets?.(element);
-		}), __vite__mapDeps([8,1,2,9]), import.meta.url).catch(() => {});
+		}), __vite__mapDeps([15,1,2,16,17]), import.meta.url).catch(() => {});
 	}
 	applyTheme(theme) {
 		const inner = this.rootElement?.shadowRoot?.querySelector(".app-shell");
@@ -260,9 +260,9 @@ var MinimalShell = class extends ShellBase {
 	async mount(container) {
 		await super.mount(container);
 		this.setupPopstateNavigation();
-		__vitePreload(() => import("./capacitor-permissions.js").then((n) => n.t).then((m) => m.ensureCapacitorPermissions()), __vite__mapDeps([17,1]), import.meta.url).catch(() => {});
-		__vitePreload(() => import("./capacitor-share-intent.js").then((m) => m.installCapacitorShareIntentBridge()), __vite__mapDeps([18,2,7,17,1]), import.meta.url).catch(() => {});
-		__vitePreload(() => import("./capacitor-clipboard-asset.js").then((m) => m.installCapacitorClipboardAssetBridge()), __vite__mapDeps([19,17,1]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("./capacitor-permissions.js").then((n) => n.t).then((m) => m.ensureCapacitorPermissions()), __vite__mapDeps([18,1]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("./capacitor-share-intent.js").then((m) => m.installCapacitorShareIntentBridge()), __vite__mapDeps([19,2,7,18,1]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("./capacitor-clipboard-asset.js").then((m) => m.installCapacitorClipboardAssetBridge()), __vite__mapDeps([20,18,1]), import.meta.url).catch(() => {});
 	}
 };
 /**

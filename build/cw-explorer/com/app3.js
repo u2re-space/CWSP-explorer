@@ -1,3290 +1,3146 @@
-import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
-import { F as loadDesktopRaw, M as makeUIState, N as saveUIState, P as decodeDesktopState, ut as JSOX } from "../vendor/jsox.js";
-import { y as resolveEntryIcon } from "./app4.js";
-import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "./app5.js";
-import { makeObjectAssignable, observe, safe, stringRef } from "/fest/object.js";
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/layout.ts
-var DEFAULT_LAYOUT = [4, 8];
-var clamp = (value, min, max) => {
-	return Math.max(min, Math.min(max, value));
-};
-var positiveInteger = (value, fallback) => {
-	const number = Number(value);
-	return Number.isFinite(number) && number > 0 ? Math.max(1, Math.floor(number)) : fallback;
-};
-var normalizeLayout = (layout) => {
-	return [positiveInteger(layout?.[0], DEFAULT_LAYOUT[0]), positiveInteger(layout?.[1], DEFAULT_LAYOUT[1])];
-};
-/**
-* Normalize numeric orientation values without allowing invalid strings to
-* silently select a different layout.
-*/
-var normalizeOrient = (value) => {
-	if (typeof value === "string" && !/^-?\d+(?:\.\d+)?$/.test(value.trim())) return 0;
-	const number = Number(value);
-	if (!Number.isFinite(number)) return 0;
-	return (Math.trunc(number) % 4 + 4) % 4;
-};
-/** Return the visible `[columns, rows]` for a logical grid and orientation. */
-var visualLayout = (layout, orient) => {
-	const [columns, rows] = normalizeLayout(layout);
-	return normalizeOrient(orient) % 2 ? [rows, columns] : [columns, rows];
-};
-var clampVisualCell = (cell, layout, orient) => {
-	const [columns, rows] = visualLayout(layout, orient);
-	return [clamp(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
-};
-/** Convert visible CSS-grid coordinates back to persisted logical coordinates. */
-var visualToLogicalCell = (cell, layout, orient) => {
-	const [columns, rows] = normalizeLayout(layout);
-	const normalizedOrient = normalizeOrient(orient);
-	const [x, y] = clampVisualCell(cell, [columns, rows], normalizedOrient);
-	switch (normalizedOrient) {
-		case 1: return [columns - 1 - y, x];
-		case 2: return [columns - 1 - x, rows - 1 - y];
-		case 3: return [y, rows - 1 - x];
-		default: return [x, y];
-	}
-};
-/**
-* Resolve a local point in the visible grid content box to a logical cell.
-* The caller is responsible for subtracting CSS padding from the point and
-* passing the content-box size.
-*/
-var pointToLogicalCell = (point, size, layout, orient, mode = "floor") => {
-	const visible = visualLayout(layout, orient);
-	const width = Math.max(1, Number(size?.[0]) || 1);
-	const height = Math.max(1, Number(size?.[1]) || 1);
-	const xRatio = clamp((Number(point?.[0]) || 0) / width, 0, 1);
-	const yRatio = clamp((Number(point?.[1]) || 0) / height, 0, 1);
-	const project = (ratio, count) => {
-		const value = ratio * count;
-		return mode === "round" ? Math.round(value - .5) : Math.floor(value);
-	};
-	return visualToLogicalCell([clamp(project(xRatio, visible[0]), 0, visible[0] - 1), clamp(project(yRatio, visible[1]), 0, visible[1] - 1)], layout, orient);
-};
-var cellKey = (cell) => `${cell[0]}:${cell[1]}`;
-var normalizeSpan = (span) => [Math.max(1, Math.min(8, Math.floor(Number(span?.[0]) || 1))), Math.max(1, Math.min(8, Math.floor(Number(span?.[1]) || 1)))];
-var cellsForSpan = (origin, span) => {
-	const [sx, sy] = normalizeSpan(span);
-	const x0 = Math.floor(Number(origin?.[0]) || 0);
-	const y0 = Math.floor(Number(origin?.[1]) || 0);
-	const cells = [];
-	for (let y = 0; y < sy; y += 1) for (let x = 0; x < sx; x += 1) cells.push([x0 + x, y0 + y]);
-	return cells;
-};
-var markOccupiedSpan = (occupied, origin, span) => {
-	for (const cell of cellsForSpan(origin, span)) occupied.add(cellKey(cell));
-};
-var spanFits = (origin, span, layout) => {
-	const [columns, rows] = normalizeLayout(layout);
-	const [sx, sy] = normalizeSpan(span);
-	const x = Math.floor(Number(origin?.[0]) || 0);
-	const y = Math.floor(Number(origin?.[1]) || 0);
-	return x >= 0 && y >= 0 && x + sx <= columns && y + sy <= rows;
-};
-var rectConflicts = (origin, span, occupied) => cellsForSpan(origin, span).some((cell) => occupied.has(cellKey(cell)));
-/**
-* Nearest logical origin where `span` fits and none of its cells are occupied.
-* INVARIANT: origin is the top-left of the rectangle in logical space.
-*/
-var findNearestFreeRect = (preferred, span, occupied, layout, maxSearchRadius) => {
-	const normalizedLayout = normalizeLayout(layout);
-	const [sx, sy] = normalizeSpan(span);
-	const [columns, rows] = normalizedLayout;
-	const maxX = Math.max(0, columns - sx);
-	const maxY = Math.max(0, rows - sy);
-	const start = [clamp(Math.floor(Number(preferred?.[0]) || 0), 0, maxX), clamp(Math.floor(Number(preferred?.[1]) || 0), 0, maxY)];
-	if (spanFits(start, [sx, sy], normalizedLayout) && !rectConflicts(start, [sx, sy], occupied)) return start;
-	const maxRadius = Math.min(Math.max(columns, rows), Number.isFinite(Number(maxSearchRadius)) ? Math.max(0, Math.floor(Number(maxSearchRadius))) : Math.max(columns, rows));
-	for (let radius = 1; radius <= maxRadius; radius += 1) for (let y = Math.max(0, start[1] - radius); y <= Math.min(maxY, start[1] + radius); y += 1) for (let x = Math.max(0, start[0] - radius); x <= Math.min(maxX, start[0] + radius); x += 1) {
-		if (Math.abs(x - start[0]) !== radius && Math.abs(y - start[1]) !== radius) continue;
-		const candidate = [x, y];
-		if (spanFits(candidate, [sx, sy], normalizedLayout) && !rectConflicts(candidate, [sx, sy], occupied)) return candidate;
-	}
-	return start;
-};
-/** Clamp a logical cell to the supplied grid. */
-var clampLogicalCell = (cell, layout) => {
-	const [columns, rows] = normalizeLayout(layout);
-	return [clamp(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
-};
-var readCell = (item) => [Math.floor(Number(item?.cell?.[0]) || 0), Math.floor(Number(item?.cell?.[1]) || 0)];
-var writeCell = (item, cell) => {
-	const prev = readCell(item);
-	if (prev[0] === cell[0] && prev[1] === cell[1]) return false;
-	if (!item.cell) return false;
-	item.cell[0] = cell[0];
-	item.cell[1] = cell[1];
-	return true;
-};
-/**
-* Keep tiles inside a new `[columns, rows]` without stacking everyone on the
-* last track. In-bounds items keep their cells (collisions resolved); overflow
-* items take the nearest free cell.
-*/
-var relocateItemsToLayout = (items, layout, getSpan) => {
-	const normalized = normalizeLayout(layout);
-	const [columns, rows] = normalized;
-	const inBounds = [];
-	const overflow = [];
-	for (const item of items) {
-		if (!item?.cell) continue;
-		const [x, y] = readCell(item);
-		const span = normalizeSpan(getSpan?.(item));
-		if (x >= 0 && y >= 0 && x + span[0] <= columns && y + span[1] <= rows) inBounds.push(item);
-		else overflow.push(item);
-	}
-	const occupied = /* @__PURE__ */ new Set();
-	let changed = false;
-	const place = (item, preferred) => {
-		const span = normalizeSpan(getSpan?.(item));
-		const cell = findNearestFreeRect(preferred, span, occupied, normalized);
-		markOccupiedSpan(occupied, cell, span);
-		if (writeCell(item, cell)) changed = true;
-	};
-	for (const item of inBounds) place(item, readCell(item));
-	for (const item of overflow) place(item, clampLogicalCell(readCell(item), normalized));
-	return changed;
-};
+import { H as resolveOverlayHost, Q as H, V as registerTransientOverlay, X as defineElement, Y as GLitElement, Z as property, k as placeOverlay } from "./app.js";
+import { $ as uploadFile, C as getMimeTypeByFilename, Ct as setOpfsSupportEnabled, E as handleIncomingEntries, G as remove, I as openDirectory, U as refreshMappedStorageRoots, V as readFile, Y as resolveRootHandle, _ as getDirectoryHandle, bt as isOpfsCapabilityAvailable, d as downloadFile, i as copyFromOneHandlerToAnother, nt as asProvidedFile, tt as writeFile, xt as isOpfsSupportEnabled, y as getFileHandle, z as provide } from "./app2.js";
+import "./app4.js";
+import { C as normalizeVirtualPath, S as buildExplorerDragPayload, d as readNativeStorageFile, g as shareNativeStorageFile, h as resolveNativeStorageUri, i as getAllFilesStatus, l as pickBrowserDirectory, m as resolveNativeStorageRealPath, n as copyNativeStorageImage, o as isNativeStorageAvailable, p as requestAllFilesAccess, t as canShowDirectoryPicker, u as pickSafTree, y as writeNativeClipboardImage } from "./app5.js";
+import { a as unregisterFsBackend, c as removeDirectoryMount, n as listVirtualRootEntriesFromRouter, o as addDirectoryMount, r as resolveFsBackend, s as listExplorerMounts, t as ensureDefaultFsBackends } from "./app6.js";
+import { preloadStyle, scheduleEnsureHostStyles } from "/fest/style-lib.js";
+import { isIdbScopePath, isUserScopePath } from "/fest/core.js";
+import { affected, observe, ref } from "/fest/object.js";
+import { MOCElement, addEvent } from "/fest/dom.js";
+import { ensureStyleSheet } from "/fest/icon.js";
+//#region \0@oxc-project+runtime@0.139.0/helpers/esm/decorate.js
+function __decorate(decorators, target, key, desc) {
+	var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	return c > 3 && r && Object.defineProperty(target, key, r), r;
+}
 //#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/link-store.ts
-/**
-* Virtual directory holding curated speed-dial files. Matches the PathRouter
-* `/user/` OpfsBackend root so Explorer can browse the same tree.
-*/
-var LINKS_DIR = "/user/links/";
-/** Legacy aggregate file — still read on boot, then split into per-item JSON. */
-var LINKS_JSON = "/user/links/links.json";
-var META_JSON = "/user/links/meta.json";
-var RESERVED_LINK_FILES = /* @__PURE__ */ new Set(["links.json", "meta.json"]);
-/**
-* Safe leaf name for a curated item. Ids are UUID / `shortcut-*` / `sd-*`;
-* strip path separators so Explorer + OPFS can treat each tile as one file.
-*/
-function itemFileName(id) {
-	return `${String(id || "").trim().replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^\.+/, "_") || "item"}.json`;
-}
-function itemJsonPath(id) {
-	return `${LINKS_DIR}${itemFileName(id)}`;
-}
-var isItemJsonPath = (path) => {
-	const name = String(path || "").split("/").filter(Boolean).pop() || "";
-	if (!name.endsWith(".json")) return false;
-	return !RESERVED_LINK_FILES.has(name);
+//#region ../../modules/projects/fl.ui/src/ui/base/UIElement.ts
+var UIElement = class UIElement extends GLitElement() {
+	theme = "default";
+	render(_weak) {
+		return H`<slot></slot>`;
+	}
+	constructor() {
+		super();
+	}
+	onRender() {
+		return super.onRender();
+	}
+	connectedCallback() {
+		const self = super.connectedCallback?.() ?? this;
+		self.loadStyleLibrary(ensureStyleSheet());
+		scheduleEnsureHostStyles(self);
+		return self;
+	}
+	onInitialize() {
+		const self = super.onInitialize() ?? this;
+		self.loadStyleLibrary(ensureStyleSheet());
+		return self;
+	}
 };
+__decorate([property({ source: "attr" })], UIElement.prototype, "theme", void 0);
+UIElement = __decorate([defineElement("ui-element")], UIElement);
+var UIElement_default = UIElement;
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/toast.ts
 /**
-* localStorage keys mirror `launcher-state.ts` so a one-time migration can copy
-* the existing grid into OPFS without a schema change.
+* Lightweight toasts for home-view / SpeedDial (no CWSP-shell core).
+* Shells may listen for `view:toast` on `window` and render FL-UI / status UI.
 */
-var LS_ITEMS_KEY = "cw::workspace::speed-dial";
-var LS_META_KEY = "cw::workspace::speed-dial::meta";
-/**
-* Marker written to LS after a successful migration so we never re-import and
-* overwrite user edits. Kept in LS (not OPFS) so it survives OPFS wipe.
-*/
-var LS_MIGRATED_KEY = "cw::workspace::speed-dial::migrated-opfs-v1";
-/**
-* Accept JSOX (unquoted keys, what `launcher-state.ts` writes today) or JSON on read.
-* WHY: `makeUIState` packs via `JSOX.stringify`; existing LS payloads are JSOX. OPFS
-* files we write are JSON, so this stays forward-compatible too.
-*/
-var parseLoose = (raw) => {
-	if (raw == null || !String(raw).trim()) return null;
+function showSuccess(message) {
+	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
+		type: "success",
+		message: String(message || "")
+	} }));
+}
+function showError(message) {
+	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
+		type: "error",
+		message: String(message || "")
+	} }));
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/bookmarks-menu.ts
+/** Local copy — avoid relative `../../explorer/fs-backend` (breaks when this file is hardlinked under home-view). */
+function faviconForHref(href, size = 64) {
+	const raw = String(href || "").trim();
+	if (!raw || !/^https?:\/\//i.test(raw)) return "";
 	try {
-		return JSON.parse(raw);
+		const host = new URL(raw).hostname;
+		if (!host) return "";
+		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
 	} catch {
+		return "";
+	}
+}
+/** Accept http(s) and other schemes; bare hosts become `https://…`. */
+function normalizeBookmarkHref(raw) {
+	const text = String(raw || "").trim();
+	if (!text) return "";
+	if (/^[a-z][a-z0-9+.-]*:/i.test(text)) return text;
+	return `https://${text}`;
+}
+var registeredBookmarksApi = null;
+var chromeErr = () => {
+	try {
+		const err = globalThis.chrome?.runtime?.lastError;
+		return err ? new Error(String(err.message || err)) : null;
+	} catch {
+		return null;
+	}
+};
+var callChrome = (api, method, ...args) => {
+	const fn = api[method];
+	if (typeof fn !== "function") return Promise.reject(/* @__PURE__ */ new Error(`chrome.bookmarks.${String(method)} missing`));
+	try {
+		const result = fn.apply(api, args);
+		if (result != null && typeof result.then === "function") return result;
+	} catch (e) {
+		return Promise.reject(e);
+	}
+	return new Promise((resolve, reject) => {
 		try {
-			return JSOX.parse(raw);
-		} catch {
-			return null;
+			fn.apply(api, [...args, (res) => {
+				const err = chromeErr();
+				if (err) reject(err);
+				else resolve(res);
+			}]);
+		} catch (e) {
+			reject(e);
 		}
-	}
-};
-/** Unwrap observe/stringRef proxies into plain values for OPFS serialization. */
-var unwrapRef$1 = (value, fallback) => {
-	if (value && typeof value === "object" && "value" in value) return String(value.value ?? fallback ?? "");
-	return String(value ?? fallback ?? "");
-};
-/**
-* Pack existing `SpeedDialPersistedItem`-shaped items (cell may be `[x,y]` or an
-* observe proxy; meta may live on the item or in a side registry) into plain
-* `LinkStoreItem` POJOs for OPFS.
-*
-* WHY: keeps the OPFS file free of reactive proxies (which break roundtrips and
-* hand-editing) while preserving `href`/`path`/`iconAsset` for open-link/path tiles.
-*/
-function packLinksFromSpeedDial(items) {
-	if (!Array.isArray(items)) return [];
-	return items.map((entry) => {
-		const cell = entry?.cell;
-		const meta = entry?.meta && typeof entry.meta === "object" ? entry.meta : null;
-		const item = {
-			id: String(entry?.id || ""),
-			label: unwrapRef$1(entry?.label, "Shortcut"),
-			action: String(entry?.action || "open-view"),
-			icon: unwrapRef$1(entry?.icon, "sparkle")
-		};
-		if (cell != null) item.cell = [Number(Array.isArray(cell) ? cell[0] : cell?.[0]) || 0, Number(Array.isArray(cell) ? cell[1] : cell?.[1]) || 0];
-		const href = unwrapRef$1(meta?.href ?? entry?.href, "") || (meta?.href ?? entry?.href);
-		if (href) item.href = String(href);
-		const path = unwrapRef$1(meta?.path ?? entry?.path, "") || (meta?.path ?? entry?.path);
-		if (path) item.path = String(path);
-		const iconAsset = meta?.iconAsset ?? entry?.iconAsset;
-		if (iconAsset) item.iconAsset = String(iconAsset);
-		return item;
 	});
-}
-var emptyMeta = () => ({
-	version: 1,
-	mirrorPath: null,
-	items: {}
-});
-/**
-* One-time migration of legacy localStorage speed-dial into OPFS.
-*
-* Returns:
-* - `"migrated"` — LS had data and OPFS was empty; we copied it.
-* - `"skipped"`  — OPFS already had curated item JSON (or legacy `links.json`);
-*   we just ensure the LS marker so we never re-import even if LS still holds
-*   the old payload.
-* - `"already"`  — LS marker already set; nothing to do.
-*
-* WHY: idempotent — running twice never overwrites OPFS edits. We never delete LS
-* (one-release backup window); we only set `LS_MIGRATED_KEY = "1"`.
-*/
-async function migrateLocalStorageToOpfsIfNeeded(io, ls) {
-	const lsReader = toLsReader(ls);
-	if (lsReader.getItem("cw::workspace::speed-dial::migrated-opfs-v1")) return "already";
-	if (await hasCuratedOpfsData(io)) {
-		safeSet(ls, LS_MIGRATED_KEY, "1");
-		return "skipped";
-	}
-	const rawItems = lsReader.getItem(LS_ITEMS_KEY);
-	const rawMeta = lsReader.getItem(LS_META_KEY);
-	if (!rawItems && !rawMeta) {
-		safeSet(ls, LS_MIGRATED_KEY, "1");
-		return "skipped";
-	}
-	const items = normalizeLegacyItems(parseLoose(rawItems));
-	await writeLinkStore(io, items, normalizeLegacyMeta(parseLoose(rawMeta), items));
-	safeSet(ls, LS_MIGRATED_KEY, "1");
-	return "migrated";
-}
-var toLsReader = (ls) => {
-	if (ls instanceof Map) return {
-		getItem(key) {
-			return ls.has(key) ? ls.get(key) : null;
-		},
-		setItem(key, value) {
-			ls.set(key, value);
-		}
-	};
-	return ls;
 };
-var safeSet = (ls, key, value) => {
-	try {
-		if (ls instanceof Map) ls.set(key, value);
-		else ls.setItem(key, value);
-	} catch {}
-};
-var normalizeLegacyItems = (raw) => {
-	if (!Array.isArray(raw)) return [];
-	return raw.map((entry) => {
-		const item = {
-			id: String(entry?.id || ""),
-			label: unwrapRef$1(entry?.label, "Shortcut"),
-			action: String(entry?.action || "open-view"),
-			icon: unwrapRef$1(entry?.icon, "sparkle")
-		};
-		if (entry?.href) item.href = String(entry.href);
-		if (entry?.path) item.path = String(entry.path);
-		if (entry?.iconAsset) item.iconAsset = String(entry.iconAsset);
-		if (Array.isArray(entry?.cell)) item.cell = [Number(entry.cell[0]) || 0, Number(entry.cell[1]) || 0];
-		return item;
-	}).filter((item) => item.id);
-};
-var normalizeLegacyMeta = (raw, items) => {
-	const meta = emptyMeta();
-	const knownTopKeys = /* @__PURE__ */ new Set([
-		"version",
-		"mirrorPath",
-		"grid",
-		"items",
-		"curatedEmpty"
-	]);
-	if (raw && typeof raw === "object") {
-		if (raw.mirrorPath != null) meta.mirrorPath = String(raw.mirrorPath);
-		if (raw.grid != null) meta.grid = raw.grid;
-		if (raw.curatedEmpty === true) meta.curatedEmpty = true;
-		const itemsMap = raw.items;
-		let entries;
-		if (itemsMap instanceof Map) entries = Array.from(itemsMap.entries());
-		else if (Array.isArray(itemsMap)) entries = itemsMap.map((e) => e && typeof e === "object" && "id" in e ? [e.id, e.meta || e] : null).filter((e) => e !== null);
-		else if (itemsMap && typeof itemsMap === "object") entries = Object.entries(itemsMap);
-		else entries = Object.entries(raw).filter(([k]) => !knownTopKeys.has(k));
-		for (const [id, m] of entries) {
-			if (!id || !m || typeof m !== "object") continue;
-			const entry = { ...m };
-			if (Array.isArray(m.cell)) entry.cell = [Number(m.cell[0]) || 0, Number(m.cell[1]) || 0];
-			meta.items[String(id)] = entry;
-		}
-	}
-	for (const item of items) {
-		const slot = meta.items[item.id] || {};
-		if (item.cell && !Array.isArray(slot.cell)) slot.cell = item.cell;
-		meta.items[item.id] = slot;
-	}
-	return meta;
-};
-var listItemJsonPaths = async (io) => {
-	if (typeof io.list !== "function") return [];
-	try {
-		return (await io.list("/user/links/") || []).filter(isItemJsonPath);
-	} catch {
-		return [];
-	}
-};
-var hasCuratedOpfsData = async (io) => {
-	if (await io.exists("/user/links/links.json")) return true;
-	return (await listItemJsonPaths(io)).length > 0;
-};
-var parseItemFile = (raw, fallbackId) => {
-	const parsed = parseLoose(raw);
-	if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return null;
-	const id = String(parsed.id || fallbackId || "").trim();
-	if (!id) return null;
-	const [item] = normalizeLegacyItems([{
-		...parsed,
-		id
-	}]);
-	return item || null;
-};
-/**
-* Read curated items + meta from OPFS. Prefers per-item `/user/links/<id>.json`.
-* Falls back to legacy `links.json` (array) when no item files exist.
-* Returns `null` when neither is present (caller should fall back to defaults / LS).
-* `meta.json` missing is non-fatal — we return an empty meta shell so callers can
-* overlay cells later.
-*/
-async function readLinkStore(io) {
-	const itemPaths = await listItemJsonPaths(io);
-	let items = [];
-	if (itemPaths.length) {
-		const loaded = [];
-		for (const path of itemPaths) {
-			const item = parseItemFile(await io.readText(path), (path.split("/").filter(Boolean).pop() || "").replace(/\.json$/i, ""));
-			if (item) loaded.push(item);
-		}
-		items = loaded;
-	}
-	if (!items.length) {
-		const itemsRaw = await io.readText(LINKS_JSON);
-		if (itemsRaw != null && String(itemsRaw).trim()) {
-			const parsed = parseLoose(itemsRaw);
-			if (Array.isArray(parsed)) items = normalizeLegacyItems(parsed);
-		}
-	}
-	const metaParsed = parseLoose(await io.readText(META_JSON));
-	if (metaParsed && typeof metaParsed === "object" && metaParsed.curatedEmpty === true) {
-		const meta = normalizeLegacyMeta({
-			...metaParsed,
-			items: {}
-		}, []);
-		meta.curatedEmpty = true;
-		return {
-			items: [],
-			meta
-		};
-	}
-	if (!items.length) {
-		const recovered = itemsFromMetaSlots(metaParsed);
-		if (!recovered.length) return null;
-		return {
-			items: recovered,
-			meta: normalizeLegacyMeta(metaParsed, recovered)
-		};
-	}
-	const meta = normalizeLegacyMeta(metaParsed, items);
+var nodeToEntry = (node) => {
+	const url = typeof node.url === "string" && node.url ? node.url : void 0;
 	return {
-		items,
-		meta
+		id: String(node.id),
+		title: String(node.title || node.url || node.id || "Bookmark"),
+		url,
+		folder: !url,
+		parentId: node.parentId
 	};
-}
-var itemsFromMetaSlots = (raw) => {
-	if (!raw || typeof raw !== "object") return [];
-	const map = raw.items && typeof raw.items === "object" && !Array.isArray(raw.items) ? raw.items : raw;
-	const knownTop = /* @__PURE__ */ new Set([
-		"version",
-		"mirrorPath",
-		"grid",
-		"items",
-		"curatedEmpty"
-	]);
-	const out = [];
-	for (const [id, slot] of Object.entries(map || {})) {
-		if (!id || knownTop.has(id) || id.startsWith("mirror:")) continue;
-		if (!slot || typeof slot !== "object") continue;
-		const rec = slot;
-		const href = rec.href != null ? String(rec.href) : "";
-		const view = rec.view != null ? String(rec.view) : "";
-		const path = rec.path != null ? String(rec.path) : "";
-		const action = String(rec.action || (href ? "open-link" : view || path ? "open-view" : "") || "");
-		if (!action && !href && !view && !path) continue;
-		const item = {
-			id,
-			label: String(rec.label || id),
-			action: action || "open-view",
-			icon: String(rec.icon || (href ? "link" : "sparkle"))
-		};
-		if (href) item.href = href;
-		if (path) item.path = path;
-		if (Array.isArray(rec.cell)) item.cell = [Number(rec.cell[0]) || 0, Number(rec.cell[1]) || 0];
-		out.push(item);
-	}
-	return out;
 };
-/**
-* Default column count for auto-placing mirror tiles below the curated grid.
-* WHY: matches `gridLayoutState.columns` default (4). Auto-placement only kicks
-* in when meta has no per-id `cell` override; an explicit override always wins.
-*/
-var MIRROR_AUTO_PLACE_COLUMNS = 4;
-/**
-* Build speed-dial display items from a PathRouter directory listing merged
-* with per-id meta overrides (`cell`, `hidden`, `shape`, …).
-*
-* WHY: in mirror mode the speed-dial grid is driven by a virtual directory
-* (OPFS folder or CRX `/bookmarks/…`) instead of curated `links.json`. The
-* meta registry still holds per-id overrides so users can pin a mirror tile to
-* a specific cell or hide it without mutating the source tree.
-*
-* INVARIANT: ids are `mirror:${path}` so they never collide with curated ids.
-* Directories and `.md`/`.markdown`/`.txt`/image files map to `open-path`
-* (Explorer / viewer). Entries carrying an `href` (e.g. Chrome bookmark URLs)
-* map to `open-link`. Anything else falls back to `open-path` so the Explorer
-* can decide how to render it.
-*
-* Task 3 fix — auto-placement: when meta has no `cell` override for a mirror
-* item, the item is auto-placed on the next free cell below the curated grid's
-* max Y (so mirror tiles never overlap curated tiles at `[0,0]` anymore).
-* Meta `cell` overrides are always honored. `curatedItems` is optional; when
-* omitted, `maxY` is treated as -1 so the first auto-placed tile lands at
-* `[0,0]` (preserves the old default for callers that don't pass curated state).
-*
-* COMPAT: `meta.items[id].hidden === true` drops the entry.
-*/
-function buildMirrorSpeedDialItems(listing, meta, _mirrorPath, curatedItems) {
-	if (!Array.isArray(listing)) return [];
-	const metaItems = meta?.items || {};
-	let maxCuratedY = -1;
-	if (Array.isArray(curatedItems)) for (const entry of curatedItems) {
-		const cell = entry?.cell;
-		if (!Array.isArray(cell) || cell.length < 2) continue;
-		const y = Number(cell[1]) || 0;
-		if (y > maxCuratedY) maxCuratedY = y;
-	}
-	const startY = maxCuratedY + 1;
-	const occupied = /* @__PURE__ */ new Set();
-	if (Array.isArray(curatedItems)) for (const entry of curatedItems) {
-		const cell = entry?.cell;
-		if (!Array.isArray(cell) || cell.length < 2) continue;
-		occupied.add(`${Number(cell[0]) || 0}:${Number(cell[1]) || 0}`);
-	}
-	const pending = [];
-	for (const entry of listing) {
-		if (!entry || !entry.name) continue;
-		const path = String(entry.path || "");
-		const id = `mirror:${path}`;
-		const perId = metaItems[id] || {};
-		if (perId.hidden === true) continue;
-		const isDirectory = entry.kind === "directory" || path.endsWith("/");
-		const href = entry.href ? String(entry.href) : "";
-		const mimeType = String(entry.type || "").toLowerCase();
-		const isMarkdown = /\.(md|markdown|txt)$/i.test(path) || mimeType.startsWith("text/");
-		const isImage = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i.test(path) || mimeType.startsWith("image/");
-		let action;
-		let icon;
-		if (href) {
-			action = "open-link";
-			icon = "link";
-		} else if (isDirectory) {
-			action = "open-path";
-			icon = "folder";
-		} else if (isMarkdown) {
-			action = "open-path";
-			icon = "article";
-		} else if (isImage) {
-			action = "open-path";
-			icon = "image";
-		} else {
-			action = "open-path";
-			icon = "file-text";
-		}
-		const item = {
-			id,
-			label: String(entry.name),
-			action,
-			icon,
-			cell: [0, 0]
-		};
-		if (path) item.path = path;
-		if (href) {
-			item.href = href;
-			const fav = resolveEntryIcon(entry);
-			if (fav) item.iconUrl = fav;
-		}
-		const hasOverride = Array.isArray(perId.cell);
-		if (hasOverride) {
-			const overrideCell = perId.cell;
-			const x = Number(overrideCell[0]) || 0;
-			const y = Number(overrideCell[1]) || 0;
-			item.cell = [x, y];
-			occupied.add(`${x}:${y}`);
-		}
-		pending.push({
-			item,
-			hasOverride
-		});
-	}
-	let cursorX = 0;
-	let cursorY = startY;
-	const nextFreeCell = () => {
-		for (;;) {
-			const key = `${cursorX}:${cursorY}`;
-			if (!occupied.has(key)) {
-				occupied.add(key);
-				return [cursorX, cursorY];
+/** Build BookmarksMenuApi from `chrome.bookmarks` (CRX extension pages). */
+function createChromeBookmarksMenuApi(raw) {
+	const api = raw || (globalThis.chrome?.bookmarks ?? null);
+	if (!api?.getTree || !api?.getChildren) return null;
+	const resolveIconUrl = (href, size = 128) => {
+		const page = String(href || "").trim();
+		if (!/^https?:\/\//i.test(page)) return "";
+		const s2 = faviconForHref(page, size);
+		if (s2) return s2;
+		try {
+			const chromeRt = globalThis.chrome?.runtime;
+			if (typeof chromeRt?.getURL === "function") {
+				const u = new URL(chromeRt.getURL("/_favicon/"));
+				u.searchParams.set("pageUrl", page);
+				u.searchParams.set("size", String(size));
+				return u.toString();
 			}
-			cursorX += 1;
-			if (cursorX >= MIRROR_AUTO_PLACE_COLUMNS) {
-				cursorX = 0;
-				cursorY += 1;
-			}
-		}
-	};
-	const items = [];
-	for (const { item, hasOverride } of pending) {
-		if (!hasOverride) item.cell = nextFreeCell();
-		items.push(item);
-	}
-	return items;
-}
-/**
-* Write curated items + meta to OPFS as JSON. Each item is `/user/links/<id>.json`;
-* `meta.json` holds grid overlays. Stale item files and legacy `links.json` are
-* removed after a successful write so Explorer shows one file per tile.
-*/
-async function writeLinkStore(io, items, meta, options) {
-	const list = Array.isArray(items) ? items.filter((item) => item?.id) : [];
-	if (!list.length && !options?.allowEmpty) {
-		if (await hasCuratedOpfsData(io)) {
-			console.warn("[link-store] skip empty write; keeping existing curated OPFS files");
-			return;
-		}
-	}
-	const keep = /* @__PURE__ */ new Set();
-	for (const item of list) {
-		const path = itemJsonPath(item.id);
-		keep.add(path);
-		await io.writeText(path, JSON.stringify(item, null, 2));
-	}
-	const metaFile = {
-		version: 1,
-		mirrorPath: meta?.mirrorPath ?? null,
-		items: list.length ? meta?.items ?? {} : {},
-		grid: meta?.grid,
-		...list.length ? {} : { curatedEmpty: true }
-	};
-	await io.writeText(META_JSON, JSON.stringify(metaFile, null, 2));
-	const existing = await listItemJsonPaths(io);
-	if (typeof io.remove === "function") {
-		for (const path of existing) if (!keep.has(path)) try {
-			await io.remove(path);
 		} catch {}
-		if (await io.exists("/user/links/links.json")) try {
-			await io.remove(LINKS_JSON);
-		} catch {}
-	}
-}
-/**
-* Browser-only OPFS IO helper. Walks/creates `/user/links/` via
-* `navigator.storage.getDirectory()` and reads/writes leaf files.
-*
-* WHY: throws on failure — `launcher-state.ts` catches and falls back to LS with
-* `console.warn("[link-store] OPFS unavailable; using localStorage")`.
-*
-* NOTE: virtual paths (`/user/links/<id>.json`) are mapped to OPFS by stripping
-* the `/user/` prefix — the PathRouter `/user/` OpfsBackend uses the same root.
-*/
-async function createOpfsLinkStoreIo() {
-	if (typeof navigator === "undefined" || !navigator.storage?.getDirectory) throw new Error("[link-store] OPFS not available");
-	const root = await navigator.storage.getDirectory();
-	const segmentsFor = (path) => {
-		const vpath = String(path || "").replace(/^\/+/, "");
-		if (vpath.startsWith("user/")) return vpath.slice(5).split("/").filter(Boolean);
-		return vpath.split("/").filter(Boolean);
-	};
-	const resolveDir = async (dirPath, create) => {
-		const segments = segmentsFor(dirPath);
-		let dir = root;
-		for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create });
-		return dir;
-	};
-	const resolveHandle = async (path, create) => {
-		const segments = segmentsFor(path);
-		if (!segments.length) throw new Error(`[link-store] invalid path: ${path}`);
-		let dir = root;
-		for (let i = 0; i < segments.length - 1; i += 1) dir = await dir.getDirectoryHandle(segments[i], { create });
-		return dir.getFileHandle(segments[segments.length - 1], { create });
-	};
-	const toVirtualPath = (dirPath, name) => {
-		return `${String(dirPath || "/").replace(/\/+$/, "") || ""}/${name}`;
+		return "";
 	};
 	return {
-		async readText(path) {
-			try {
-				return (await (await resolveHandle(path, false)).getFile()).text();
-			} catch (e) {
-				if (e?.name === "NotFoundError" || e?.name === "TypeMismatchError") return null;
-				throw e;
+		resolveIconUrl,
+		async listChildren(folderId) {
+			if (folderId) return (await callChrome(api, "getChildren", folderId) || []).map(nodeToEntry);
+			const roots = await callChrome(api, "getTree") || [];
+			const out = [];
+			for (const root of roots) for (const child of root.children || []) out.push(nodeToEntry(child));
+			return out;
+		},
+		async search(query) {
+			const q = String(query || "").trim();
+			if (!q) return this.listChildren();
+			if (typeof api.search !== "function") {
+				const all = await this.listChildren();
+				const lower = q.toLowerCase();
+				return all.filter((e) => e.title.toLowerCase().includes(lower) || String(e.url || "").toLowerCase().includes(lower));
 			}
+			return (await callChrome(api, "search", q) || []).map(nodeToEntry);
 		},
-		async writeText(path, text) {
-			const writable = await (await resolveHandle(path, true)).createWritable();
-			await writable.write(text);
-			await writable.close();
-		},
-		async exists(path) {
+		async open(entry) {
+			if (entry.folder) return;
+			const href = String(entry.url || "").trim();
+			if (!href) return;
 			try {
-				await resolveHandle(path, false);
+				const tabs = globalThis.chrome?.tabs;
+				if (typeof tabs?.create === "function") {
+					await Promise.resolve(tabs.create({ url: href }));
+					return;
+				}
+			} catch {}
+			globalThis.open?.(href, "_blank", "noopener,noreferrer");
+		},
+		async remove(entry) {
+			const id = String(entry?.id || "").trim();
+			if (!id) return false;
+			try {
+				if (entry.folder) {
+					if (typeof api.removeTree !== "function") return false;
+					await callChrome(api, "removeTree", id);
+				} else {
+					if (typeof api.remove !== "function") return false;
+					await callChrome(api, "remove", id);
+				}
 				return true;
 			} catch {
 				return false;
 			}
 		},
-		async list(dirPath) {
+		async update(id, patch) {
+			const key = String(id || "").trim();
+			if (!key || typeof api.update !== "function") return null;
+			const body = {};
+			if (patch.title != null) body.title = String(patch.title || "").trim();
+			if (patch.url != null) {
+				const href = normalizeBookmarkHref(patch.url);
+				if (href) body.url = href;
+			}
 			try {
-				const dir = await resolveDir(dirPath, false);
-				const out = [];
-				for await (const [name, handle] of dir.entries()) {
-					if (handle?.kind === "directory") continue;
-					out.push(toVirtualPath(dirPath, name));
-				}
-				return out;
-			} catch (e) {
-				if (e?.name === "NotFoundError") return [];
-				throw e;
+				const node = await callChrome(api, "update", key, body);
+				return node ? nodeToEntry(node) : null;
+			} catch {
+				return null;
 			}
 		},
-		async remove(path) {
-			const segments = segmentsFor(path);
-			if (segments.length < 1) return;
-			let dir = root;
-			for (let i = 0; i < segments.length - 1; i += 1) dir = await dir.getDirectoryHandle(segments[i], { create: false });
-			await dir.removeEntry(segments[segments.length - 1]);
+		async create(parentId, spec) {
+			if (typeof api.create !== "function") return null;
+			const title = String(spec.title || "").trim();
+			if (!title) return null;
+			const body = {
+				parentId: String(parentId || "0"),
+				title
+			};
+			if (spec.url != null) {
+				const href = normalizeBookmarkHref(spec.url);
+				if (!href) return null;
+				body.url = href;
+			}
+			const attempt = async (pid) => {
+				const node = await callChrome(api, "create", {
+					...body,
+					parentId: pid
+				});
+				return node ? nodeToEntry(node) : null;
+			};
+			try {
+				return await attempt(body.parentId);
+			} catch {
+				if (body.parentId === "0") try {
+					return await attempt("1");
+				} catch {
+					return null;
+				}
+				return null;
+			}
 		}
 	};
 }
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/tile-icon.ts
-var ICON_DISPLAY_OPTIONS = [
-	{
-		value: "glyph",
-		label: "Glyph (Phosphor)"
-	},
-	{
-		value: "masked",
-		label: "Masked"
-	},
-	{
-		value: "masked-inverse",
-		label: "Masked inverse"
-	},
-	{
-		value: "colored",
-		label: "Colored"
-	}
-];
-var TILE_SHAPE_OPTIONS = [
-	{
-		value: "circle",
-		label: "Circle"
-	},
-	{
-		value: "squircle",
-		label: "Squircle"
-	},
-	{
-		value: "square",
-		label: "Rounded square"
-	},
-	{
-		value: "wavy",
-		label: "Wavy"
-	},
-	{
-		value: "shapeless",
-		label: "Shapeless"
-	}
-];
-var isTileShapeValue = (raw) => {
-	const v = String(raw || "").trim().toLowerCase();
-	return v === "circle" || v === "squircle" || v === "square" || v === "wavy" || v === "shapeless";
-};
-function isShapelessTileShape(raw) {
-	return String(raw || "").trim().toLowerCase() === "shapeless";
+function resolveBookmarksMenuApi() {
+	if (registeredBookmarksApi) return registeredBookmarksApi;
+	return createChromeBookmarksMenuApi();
 }
-/**
-* WHY: shapeless has no plate — a black blurred clone of the bitmap/glyph
-* sits under the real icon so the shadow follows the icon silhouette.
-*/
-function syncShapelessIconShadow(host) {
-	if (!host) return;
-	host.querySelectorAll(".sd-icon-silhouette").forEach((node) => node.remove());
-	if (!isShapelessTileShape(host.getAttribute("data-shape"))) return;
-	const img = host.querySelector("img:not(.sd-icon-silhouette)");
-	if (img) {
-		if (img.src) {
-			const clone = img.cloneNode(true);
-			clone.className = "sd-icon-silhouette";
-			clone.removeAttribute("data-launcher-icon");
-			clone.removeAttribute("data-bookmark-favicon");
-			clone.removeAttribute("data-icon-pending");
-			clone.removeAttribute("data-icon-pack");
-			clone.alt = "";
-			clone.setAttribute("aria-hidden", "true");
-			img.before(clone);
-		}
-		if (!img.complete) img.addEventListener("load", () => syncShapelessIconShadow(host), { once: true });
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/app-actions.ts
+var esc = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+var openEditorDialog = (inner) => {
+	const modal = document.createElement("dialog");
+	modal.className = "speed-dial-editor env-shell-app-menu__chrome-editor";
+	modal.innerHTML = inner;
+	const close = () => {
+		try {
+			if (modal.open) modal.close();
+		} catch {}
+		modal.remove();
+	};
+	modal.addEventListener("cancel", (ev) => {
+		ev.preventDefault();
+		close();
+	});
+	modal.__cwspClose = close;
+	document.body.append(modal);
+	try {
+		modal.showModal();
+	} catch {
+		modal.setAttribute("open", "");
+	}
+	return modal;
+};
+function openBookmarkFieldsDialog(opts) {
+	const showUrl = opts.showUrl !== false;
+	return new Promise((resolve) => {
+		let settled = false;
+		const modal = openEditorDialog(`
+        <form class="speed-dial-editor__form" autocomplete="off">
+            <header class="modal-header">
+                <h2 class="modal-title">${esc(opts.heading)}</h2>
+                ${opts.description ? `<p class="modal-description">${esc(opts.description)}</p>` : ""}
+            </header>
+            <div class="modal-fields">
+                <div class="modal-field">
+                    <label for="am-bm-title">Title</label>
+                    <input id="am-bm-title" name="title" type="text" value="${esc(opts.initialTitle || "")}" />
+                </div>
+                ${showUrl ? `<div class="modal-field">
+                    <label for="am-bm-url">URL</label>
+                    <input id="am-bm-url" name="url" type="url" value="${esc(opts.initialUrl || "")}" placeholder="https://" />
+                </div>` : ""}
+            </div>
+            <div class="modal-actions" role="group">
+                <span></span>
+                <button type="button" data-action="cancel" class="btn secondary">Cancel</button>
+                <button type="submit" class="btn save">${esc(opts.submitLabel || "Save")}</button>
+            </div>
+        </form>
+    `);
+		const close = modal.__cwspClose;
+		const finish = (value) => {
+			if (settled) return;
+			settled = true;
+			close?.();
+			resolve(value);
+		};
+		const form = modal.querySelector("form");
+		form?.addEventListener("click", (ev) => {
+			if (ev.target?.closest?.("[data-action]")?.getAttribute("data-action") === "cancel") {
+				ev.preventDefault();
+				finish(null);
+			}
+		});
+		modal.addEventListener("cancel", () => finish(null));
+		form?.addEventListener("submit", (ev) => {
+			ev.preventDefault();
+			const title = String(modal.querySelector("[name=\"title\"]")?.value || "").trim();
+			if (!title) {
+				showError("Title is required");
+				return;
+			}
+			if (!showUrl) {
+				finish({ title });
+				return;
+			}
+			const href = normalizeBookmarkHref(modal.querySelector("[name=\"url\"]")?.value || "");
+			if (!href) {
+				showError("URL is required");
+				return;
+			}
+			finish({
+				title,
+				url: href
+			});
+		});
+	});
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/share-copy.ts
+var TEXT_EXT = /* @__PURE__ */ new Set([
+	"txt",
+	"md",
+	"markdown",
+	"csv",
+	"tsv",
+	"json",
+	"xml",
+	"html",
+	"htm",
+	"css",
+	"scss",
+	"js",
+	"mjs",
+	"cjs",
+	"ts",
+	"tsx",
+	"jsx",
+	"svg",
+	"yml",
+	"yaml",
+	"ini",
+	"log",
+	"sh",
+	"bat",
+	"ps1",
+	"py",
+	"rb",
+	"go",
+	"rs",
+	"java",
+	"kt",
+	"c",
+	"h",
+	"cpp",
+	"hpp",
+	"toml"
+]);
+var IMAGE_EXT = /* @__PURE__ */ new Set([
+	"png",
+	"jpg",
+	"jpeg",
+	"gif",
+	"webp",
+	"bmp",
+	"avif",
+	"svg",
+	"ico",
+	"tif",
+	"tiff"
+]);
+var blobUrlKeep = [];
+var extOf$1 = (name) => {
+	const base = String(name || "").split(/[\\/]/).pop() || "";
+	const i = base.lastIndexOf(".");
+	return i >= 0 ? base.slice(i + 1).toLowerCase() : "";
+};
+var isTextLikeEntry = (item, path = "") => {
+	const mime = String(item?.type || item?.file?.type || "").toLowerCase();
+	if (mime.startsWith("text/") || mime === "application/json" || mime === "application/xml" || mime === "image/svg+xml") return true;
+	return TEXT_EXT.has(extOf$1(item?.name || path));
+};
+var isImageLikeEntry = (item, path = "") => {
+	if (String(item?.type || item?.file?.type || "").toLowerCase().startsWith("image/")) return true;
+	return IMAGE_EXT.has(extOf$1(item?.name || path));
+};
+var explorerItemPath = (item, currentPath = "/") => {
+	const own = String(item?.path || "").trim();
+	if (own) return own;
+	const name = String(item?.name || "").trim();
+	if (!name) return String(currentPath || "/");
+	const base = String(currentPath || "/");
+	return base.endsWith("/") ? `${base}${name}` : `${base}/${name}`;
+};
+var isNativeVirtual = (path) => /^\/(?:sdcard|saf)(?:\/|$)/i.test(String(path || "").trim());
+var mapSdcardRealPath = (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (raw === "/sdcard" || raw === "/sdcard/") return "/storage/emulated/0";
+	if (raw.startsWith("/sdcard/")) return `/storage/emulated/0/${raw.slice(8)}`;
+	return "";
+};
+var waitClipboard = () => new Promise((resolve) => {
+	if (typeof requestAnimationFrame === "function") {
+		requestAnimationFrame(() => resolve());
 		return;
 	}
-	const icon = host.querySelector("ui-icon:not(.sd-icon-silhouette)");
-	if (!icon) return;
-	const clone = icon.cloneNode(true);
-	clone.classList.add("sd-icon-silhouette");
-	clone.setAttribute("aria-hidden", "true");
-	icon.before(clone);
-}
-function normalizeIconDisplay(raw) {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "glyph" || v === "phosphor" || v === "name") return "glyph";
-	if (v === "masked" || v === "mask") return "masked";
-	if (v === "masked-inverse" || v === "mask-invert" || v === "invert") return "masked-inverse";
-	if (v === "colored" || v === "color" || v === "bitmap" || v === "resource") return "colored";
-	return "";
-}
-function normalizeTileShape$1(raw, fallback = "squircle") {
-	const v = String(raw || "").trim().toLowerCase();
-	if (isTileShapeValue(v)) return v;
-	return fallback;
-}
-/** Bitmap CSS mode for `ui-icon` (glyph has no bitmap mode). */
-function iconDisplayToBitmapMode(display) {
-	if (display === "glyph") return null;
-	return display;
-}
-/** Build a `ui-icon` host for a tile; applies resource + locked bitmap mode when needed. */
-function createTileUiIconElement(opts) {
-	const host = document.createElement("ui-icon");
-	const glyph = String(opts.glyph || "sparkle").trim() || "sparkle";
-	const resource = String(opts.resourceUrl || "").trim();
-	const display = normalizeIconDisplay(opts.display) || (resource ? "colored" : "glyph");
-	const className = String(opts.className || "ui-ws-item-icon-native").trim();
-	if (className) host.className = className;
-	host.setAttribute("aria-hidden", "true");
-	host.setAttribute("icon-style", "duotone");
-	if (opts.launcher || display !== "glyph") {
-		host.toggleAttribute("data-launcher-icon", true);
-		host.setAttribute("icon-padding", "0");
-		host.style.setProperty("--icon-padding", "0px");
-		host.style.setProperty("--icon-size", "100%");
-	}
-	if (display === "glyph") {
-		host.setAttribute("icon", glyph);
-		host.setAttribute("icon-source", "phosphor");
-		host.removeAttribute("resource");
-		host.removeAttribute("data-icon-bitmap");
-		host.removeAttribute("data-icon-bitmap-mode");
-		host.removeAttribute("data-icon-bitmap-locked");
-		host.removeAttribute("data-icon-pending");
-		return host;
-	}
-	if (!resource) {
-		host.removeAttribute("icon");
-		host.setAttribute("icon-source", "resource");
-		host.removeAttribute("resource");
-		host.toggleAttribute("data-icon-pending", true);
-		host.removeAttribute("data-icon-bitmap");
-		host.removeAttribute("data-icon-bitmap-mode");
-		host.removeAttribute("data-icon-bitmap-locked");
-		return host;
-	}
-	host.removeAttribute("icon");
-	host.setAttribute("icon-source", "resource");
-	const bitmapMode = iconDisplayToBitmapMode(display) || "colored";
-	host.setAttribute("data-icon-bitmap-mode", bitmapMode);
-	host.toggleAttribute("data-icon-bitmap-locked", true);
-	host.setAttribute("resource", resource);
-	const apply = () => {
-		const icon = host;
-		if (typeof icon.setResourceIcon === "function") {
-			icon.setResourceIcon(resource, bitmapMode);
-			icon.setBitmapPresentationMode?.(bitmapMode, true);
-		}
-	};
-	apply();
-	customElements.whenDefined("ui-icon").then(() => {
-		if (!host.isConnected) {
-			queueMicrotask(() => {
-				if (host.isConnected) apply();
-			});
-			return;
-		}
-		apply();
-	});
-	return host;
-}
-/** Auto-attached on URL paste — not a user-chosen bitmap. */
-function isAutoLinkFaviconUrl(raw) {
-	return String(raw || "").trim().toLowerCase().includes("google.com/s2/favicons");
-}
-/**
-* Glyph tiles appear at compact (0.78). Explicit per-tile scale always wins;
-* bitmaps keep `auto` → workspace fill.
-*/
-function defaultIconScaleForDisplay(display, rawItemScale) {
-	const raw = String(rawItemScale || "").trim().toLowerCase();
-	if (raw && raw !== "auto" && raw !== "default" && raw !== "inherit") return String(rawItemScale || raw).trim();
-	return normalizeIconDisplay(display) === "glyph" ? "compact" : raw || "auto";
-}
-/** Infer default display when meta.iconDisplay is unset. */
-function inferIconDisplay(input) {
-	const explicit = normalizeIconDisplay(input.iconDisplay);
-	if (explicit) return explicit;
-	if (input.isLauncherApp) return "colored";
-	if (input.isBookmarkFavicon) return "colored";
-	const url = String(input.iconUrl || "").trim();
-	if (url && !isAutoLinkFaviconUrl(url)) return "colored";
-	return "glyph";
-}
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/launcher-state.ts
-var launcher_state_exports = /* @__PURE__ */ __exportAll({
-	ICON_BITMAP_SCALE_OPTIONS: () => ICON_BITMAP_SCALE_OPTIONS,
-	NAVIGATION_SHORTCUTS: () => NAVIGATION_SHORTCUTS,
-	SPEED_DIAL_CLIP_KIND: () => SPEED_DIAL_CLIP_KIND,
-	SPEED_DIAL_MUTATION_EVENT: () => SPEED_DIAL_MUTATION_EVENT,
-	addClonedSpeedDialItem: () => addClonedSpeedDialItem,
-	addSpeedDialItem: () => addSpeedDialItem,
-	androidShortcutDismissedAt: () => androidShortcutDismissedAt,
-	applyGridSettings: () => applyGridSettings,
-	applyIconBitmapScaleCss: () => applyIconBitmapScaleCss,
-	applyIconScaleToPaintedNodes: () => applyIconScaleToPaintedNodes,
-	applyItemIconScaleToElement: () => applyItemIconScaleToElement,
-	applySpeedDialSnapshot: () => applySpeedDialSnapshot,
-	buildLauncherAppDragEnvelope: () => buildLauncherAppDragEnvelope,
-	buildSpeedDialViewPathHref: () => buildSpeedDialViewPathHref,
-	canUseNativeOpenUri: () => canUseNativeOpenUri,
-	captureSpeedDialSnapshot: () => captureSpeedDialSnapshot,
-	cloneSpeedDialItemPacked: () => cloneSpeedDialItemPacked,
-	copySpeedDialItemToClipboard: () => copySpeedDialItemToClipboard,
-	createEmptySpeedDialItem: () => createEmptySpeedDialItem,
-	createSpeedDialItemFromClipboard: () => createSpeedDialItemFromClipboard,
-	createWidgetSpeedDialItem: () => createWidgetSpeedDialItem,
-	defaultOpenLinkTargetForHref: () => defaultOpenLinkTargetForHref,
-	defaultWidgetSpan: () => defaultWidgetSpan,
-	emitSpeedDialMutation: () => emitSpeedDialMutation,
-	ensureSpeedDialMeta: () => ensureSpeedDialMeta,
-	findNextFreeCellInSnapshot: () => findNextFreeCellInSnapshot,
-	findNextFreeSpeedDialCell: () => findNextFreeSpeedDialCell,
-	findSpeedDialItem: () => findSpeedDialItem,
-	findSpeedDialShortcutItem: () => findSpeedDialShortcutItem,
-	flushSpeedDialLinkStore: () => flushSpeedDialLinkStore,
-	forgetDismissedAndroidShortcut: () => forgetDismissedAndroidShortcut,
-	forgetSpeedDialIconBlob: () => forgetSpeedDialIconBlob,
-	getDefaultOpenLinkTarget: () => getDefaultOpenLinkTarget,
-	getDefaultSpeedDialAction: () => getDefaultSpeedDialAction,
-	getDefaultTileShape: () => getDefaultTileShape,
-	getIconBitmapScale: () => getIconBitmapScale,
-	getItemSpan: () => getItemSpan,
-	getSpeedDialMeta: () => getSpeedDialMeta,
-	getSpeedDialMirrorPath: () => getSpeedDialMirrorPath,
-	gridLayoutState: () => gridLayoutState,
-	hasCopiedSpeedDialItem: () => hasCopiedSpeedDialItem,
-	hasSpeedDialItemId: () => hasSpeedDialItemId,
-	iconBitmapScaleCss: () => iconBitmapScaleCss,
-	isAndroidShortcutDismissed: () => isAndroidShortcutDismissed,
-	isClientPointOverSpeedDial: () => isClientPointOverSpeedDial,
-	isCoreRailGridTile: () => isCoreRailGridTile,
-	isExternalWebHref: () => isExternalWebHref,
-	isInstalledPwaDisplayContext: () => isInstalledPwaDisplayContext,
-	isMirrorMode: () => isMirrorMode,
-	isSpeedDialVirtualPath: () => isSpeedDialVirtualPath,
-	linkStoreReady: () => linkStoreReady,
-	looksLikeSpeedDialShortcutJson: () => looksLikeSpeedDialShortcutJson,
-	markSpeedDialUserEditBeforeHydrate: () => markSpeedDialUserEditBeforeHydrate,
-	mirrorPathState: () => mirrorPathState,
-	mirrorSpeedDialItems: () => mirrorSpeedDialItems,
-	normalizeExternalWebHref: () => normalizeExternalWebHref,
-	normalizeIconBitmapScale: () => normalizeIconBitmapScale,
-	normalizeItemIconBitmapScale: () => normalizeItemIconBitmapScale,
-	normalizeOpenLinkTarget: () => normalizeOpenLinkTarget,
-	normalizeTileShape: () => normalizeTileShape,
-	openInDetachedBrowserWindow: () => openInDetachedBrowserWindow,
-	openInNewBrowserTab: () => openInNewBrowserTab,
-	openInNewBrowserWindow: () => openInNewBrowserWindow,
-	packIconBitmapScaleCss: () => packIconBitmapScaleCss,
-	packSpeedDialItem: () => packSpeedDialItem,
-	packSpeedDialMetaPlain: () => packSpeedDialMetaPlain,
-	parseSpeedDialItemFromJSON: () => parseSpeedDialItemFromJSON,
-	parseSpeedDialItemFromSmartText: () => parseSpeedDialItemFromSmartText,
-	parseSpeedDialItemFromURL: () => parseSpeedDialItemFromURL,
-	parseSpeedDialItemFromVirtualPath: () => parseSpeedDialItemFromVirtualPath,
-	parseSpeedDialViewFromHref: () => parseSpeedDialViewFromHref,
-	persistGridLayout: () => persistGridLayout,
-	persistSpeedDialIconBlob: () => persistSpeedDialIconBlob,
-	persistSpeedDialItems: () => persistSpeedDialItems,
-	persistSpeedDialMeta: () => persistSpeedDialMeta,
-	persistWallpaper: () => persistWallpaper,
-	pinLauncherAppEntry: () => pinLauncherAppEntry,
-	pinSpeedDialLinkFromIntent: () => pinSpeedDialLinkFromIntent,
-	refreshSpeedDialMirror: () => refreshSpeedDialMirror,
-	rememberDismissedAndroidShortcut: () => rememberDismissedAndroidShortcut,
-	removeSpeedDialItem: () => removeSpeedDialItem,
-	removeSpeedDialMeta: () => removeSpeedDialMeta,
-	resolveIconScaleFactor: () => resolveIconScaleFactor,
-	resolveItemOpenLinkTarget: () => resolveItemOpenLinkTarget,
-	resolveSpeedDialCellFromClientPoint: () => resolveSpeedDialCellFromClientPoint,
-	resolveSpeedDialIconUrl: () => resolveSpeedDialIconUrl,
-	resolveSpeedDialItemHref: () => resolveSpeedDialItemHref,
-	setDefaultOpenLinkTarget: () => setDefaultOpenLinkTarget,
-	setDefaultSpeedDialAction: () => setDefaultSpeedDialAction,
-	setDefaultTileShape: () => setDefaultTileShape,
-	setIconBitmapScale: () => setIconBitmapScale,
-	setItemSpan: () => setItemSpan,
-	setSpeedDialMirrorPath: () => setSpeedDialMirrorPath,
-	setSpeedDialViewEnabledCheck: () => setSpeedDialViewEnabledCheck,
-	snapshotSpeedDialItem: () => snapshotSpeedDialItem,
-	speedDialItems: () => speedDialItems,
-	speedDialMeta: () => speedDialMeta,
-	stripCoreRailTilesFromGrid: () => stripCoreRailTilesFromGrid,
-	tileIconFetchSize: () => tileIconFetchSize,
-	upsertSpeedDialItem: () => upsertSpeedDialItem,
-	wallpaperState: () => wallpaperState,
-	wasSpeedDialUserEdited: () => wasSpeedDialUserEdited
+	setTimeout(resolve, 0);
 });
-var viewEnabledCheck = null;
-/** Hosts (CWSP/CrossWord) may register build-time view enablement. Default: allow all. */
-function setSpeedDialViewEnabledCheck(fn) {
-	viewEnabledCheck = typeof fn === "function" ? fn : null;
-}
-var isEnabledView = (view) => viewEnabledCheck ? viewEnabledCheck(String(view || "").trim()) : true;
-var OPEN_LINK_TARGET_KEY = "rs-open-link-target";
-var normalizeOpenLinkTarget = (raw) => {
-	const v = String(raw || "").trim().toLowerCase();
-	if (!v) return "inline";
-	if (v === "inline" || v === "in-shell" || v === "env" || v === "shell") return "inline";
-	if (v === "new-tab" || v === "newtab" || v === "tab" || v === "browser" || v === "browser-tab" || v === "external-tab") return "new-tab";
-	if (v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" || v === "intent") return "external-app";
-	if (v === "viewer" || v === "markdown") return "viewer";
-	if (v === "document" || v === "cwsp-document") return "document";
-	if (v === "explorer" || v === "files") return "explorer";
-	if (v === "workcenter" || v === "process" || v === "cwsp-process") return "workcenter";
-	if (v === "transfer" || v === "cwsp" || v === "cwsp-transfer" || v === "network") return "transfer";
-	if (v === "native-window" || v === "native" || v === "window" || v === "app-window") return "native-window";
-	return "inline";
+var writeText = async (text) => {
+	const value = String(text || "");
+	if (!value) return false;
+	await waitClipboard();
+	try {
+		await navigator.clipboard?.writeText?.(value);
+		return true;
+	} catch {
+		return false;
+	}
 };
-/** True for http(s), protocol-relative, or bare `www.` hosts (not app view paths). */
-var isExternalWebHref = (raw) => {
-	const s = String(raw || "").trim();
-	if (!s || /^(mailto:|blob:|data:|javascript:)/i.test(s)) return false;
-	if (/^https?:\/\//i.test(s) || /^\/\//.test(s)) return true;
-	if (/^www\./i.test(s)) return true;
-	if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/:?#]|$)/i.test(s) && !s.startsWith("/") && !s.startsWith("#")) return true;
+var isCapacitorNative = () => {
+	try {
+		const c = globalThis.Capacitor;
+		return typeof c?.isNativePlatform === "function" && c.isNativePlatform();
+	} catch {
+		return false;
+	}
+};
+var blobToPngFile = async (file) => {
+	const mime = String(file.type || "").toLowerCase();
+	if (mime === "image/png") return file;
+	if (mime === "image/svg+xml") return file;
+	try {
+		if (typeof createImageBitmap === "function") {
+			const bitmap = await createImageBitmap(file);
+			const canvas = document.createElement("canvas");
+			canvas.width = bitmap.width;
+			canvas.height = bitmap.height;
+			const ctx = canvas.getContext("2d");
+			if (!ctx) return file;
+			ctx.drawImage(bitmap, 0, 0);
+			bitmap.close?.();
+			const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+			if (blob) return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".png", { type: "image/png" });
+		}
+	} catch {}
+	return file;
+};
+var writeImage = async (file, virtualPath = "") => {
+	if (isCapacitorNative() && isNativeVirtual(virtualPath)) {
+		if (await copyNativeStorageImage(virtualPath)) return true;
+	}
+	const png = await blobToPngFile(file);
+	if (isCapacitorNative()) {
+		try {
+			if (await writeNativeClipboardImage(await fileToBase64Url(png), png.type || "image/png", png.name)) return true;
+		} catch {}
+		return false;
+	}
+	await waitClipboard();
+	try {
+		if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+			await navigator.clipboard.write([new ClipboardItem({ [png.type || "image/png"]: png })]);
+			return true;
+		}
+	} catch {}
 	return false;
 };
-/** Normalize `www…` / `//…` / bare host into an absolute http(s) URL. */
-var normalizeExternalWebHref = (raw) => {
-	const s = String(raw || "").trim();
-	if (!s) return "";
-	try {
-		if (/^https?:\/\//i.test(s)) return new URL(s).href;
-		if (/^\/\//.test(s)) return new URL(`https:${s}`).href;
-		if (/^www\./i.test(s) || /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/:?#]|$)/i.test(s)) return new URL(`https://${s.replace(/^\/+/, "")}`).href;
-	} catch {
-		return "";
-	}
-	return "";
-};
-/** Global default (Settings / localStorage); per-tile meta.openLinkTarget wins. */
-var getDefaultOpenLinkTarget = () => {
-	try {
-		const stored = localStorage.getItem(OPEN_LINK_TARGET_KEY);
-		if (stored == null || !String(stored).trim()) return prefersExternalAppOpenLink() ? "external-app" : "inline";
-		return normalizeOpenLinkTarget(stored);
-	} catch {
-		return prefersExternalAppOpenLink() ? "external-app" : "inline";
-	}
-};
-/** http(s) tiles open in a new tab (or Cap chooser). App views stay inline unless set. */
-var defaultOpenLinkTargetForHref = (href) => {
-	if (prefersExternalAppOpenLink()) return "external-app";
-	if (isExternalWebHref(href)) return "new-tab";
-	return getDefaultOpenLinkTarget();
-};
-/** Capacitor / coarse launcher — Open in app (chooser) beats inline iframe. */
-var prefersExternalAppOpenLink = () => {
-	try {
-		const c = globalThis.Capacitor;
-		if (typeof c?.isNativePlatform === "function" && c.isNativePlatform()) return true;
-	} catch {}
-	try {
-		if (!(document.documentElement.dataset.cwspShellRole === "launcher" || globalThis.__RS_SHELL_ROLE__ === "launcher")) return false;
-		return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-	} catch {
-		return false;
-	}
-};
-var setDefaultOpenLinkTarget = (target) => {
-	try {
-		localStorage.setItem(OPEN_LINK_TARGET_KEY, normalizeOpenLinkTarget(target));
-	} catch {}
-};
-var resolveItemOpenLinkTarget = (meta) => {
-	const raw = meta?.openLinkTarget != null ? String(meta.openLinkTarget).trim() : "";
-	if (raw) return normalizeOpenLinkTarget(raw);
-	return defaultOpenLinkTargetForHref(meta?.href);
-};
-/** True only on Capacitor native — web must not await the bridge before window.open. */
-var canUseNativeOpenUri = () => {
-	try {
-		const c = globalThis.Capacitor;
-		return typeof c?.isNativePlatform === "function" && !!c.isNativePlatform();
-	} catch {
-		return false;
-	}
-};
-/** WHY: document PWA disables Network at build time — hide it from add-shortcut menus too. */
-var NAVIGATION_SHORTCUTS = [
-	{
-		view: "home",
-		label: "Home",
-		icon: "house-line"
-	},
-	{
-		view: "network",
-		label: "Network",
-		icon: "wifi-high"
-	},
-	{
-		view: "viewer",
-		label: "Markdown",
-		icon: "books"
-	},
-	{
-		view: "explorer",
-		label: "Explorer",
-		icon: "folder"
-	},
-	{
-		view: "workcenter",
-		label: "Work Center",
-		icon: "briefcase"
-	},
-	{
-		view: "history",
-		label: "History",
-		icon: "clock-counter-clockwise"
-	},
-	{
-		view: "settings",
-		label: "Settings",
-		icon: "gear-six"
-	},
-	{
-		view: "apps",
-		label: "Apps",
-		icon: "squares-four"
-	}
-].filter((shortcut) => isEnabledView(shortcut.view));
-var STORAGE_KEY = "cw::workspace::speed-dial";
-var META_STORAGE_KEY = `${STORAGE_KEY}::meta`;
-/** User mutations use this to keep the active workspace snapshot authoritative. */
-var SPEED_DIAL_MUTATION_EVENT = "cwsp:speed-dial-mutation";
-var emitSpeedDialMutation = (kind, id) => {
-	try {
-		window.dispatchEvent(new CustomEvent(SPEED_DIAL_MUTATION_EVENT, { detail: {
-			kind,
-			id
-		} }));
-	} catch {}
-};
-var fallbackClone = (value) => {
-	if (typeof structuredClone === "function") try {
-		return structuredClone(safe(value));
-	} catch {}
-	try {
-		return JSON.parse(JSON.stringify(safe(value)));
-	} catch {
-		return value;
-	}
-};
-var ICON_BLOB_LS = "cw::speed-dial::icon-blob::";
-var ICON_PTR = "sd-icon:";
-var APPEARANCE_META_KEYS = [
-	"shape",
-	"iconDisplay",
-	"iconUrl",
-	"iconScale",
-	"iconCacheKey"
-];
-var isInlineIconUrl = (url) => /^data:/i.test(url);
-var isEphemeralIconUrl = (url) => /^blob:/i.test(url);
-/** Plain meta for persist/snapshots — observe proxies must not leak into LS/catalog. */
-var packSpeedDialMetaPlain = (meta) => {
-	const src = (meta ? safe(meta) : {}) || {};
-	const out = {};
-	for (const [key, raw] of Object.entries(src)) {
-		if (raw == null || raw === "") continue;
-		let value = raw;
-		if (typeof raw === "object" && raw && "value" in raw) {
-			value = raw.value;
-			if (value == null || value === "") continue;
+var loadExplorerFile = async (item, path) => {
+	if (item?.file instanceof File) return item.file;
+	const href = String(item?.href || "").trim();
+	if (href && /^https?:\/\//i.test(href) && !item?.file) return null;
+	if (isNativeVirtual(path) && isNativeStorageAvailable()) {
+		const native = await readNativeStorageFile(path).catch(() => null);
+		if (native) {
+			if (item) item.file = native;
+			return native;
 		}
-		out[key] = value;
-	}
-	if (isEphemeralIconUrl(String(out.iconUrl || ""))) delete out.iconUrl;
-	return out;
-};
-var persistSpeedDialIconBlob = (id, iconUrl) => {
-	const itemId = String(id || "").trim();
-	const url = String(iconUrl || "").trim();
-	if (!itemId || !isInlineIconUrl(url)) return url;
-	try {
-		localStorage.setItem(ICON_BLOB_LS + itemId, url);
-		return ICON_PTR + itemId;
-	} catch {
-		return ICON_PTR + itemId;
-	}
-};
-var resolveSpeedDialIconUrl = (id, iconUrl) => {
-	const url = String(iconUrl || "").trim();
-	const itemId = (url.startsWith(ICON_PTR) ? url.slice(8) : String(id || "")).trim();
-	if (url.startsWith(ICON_PTR) || !url && itemId) try {
-		const stored = localStorage.getItem(ICON_BLOB_LS + itemId);
-		if (stored) return stored;
-	} catch {}
-	return url;
-};
-var forgetSpeedDialIconBlob = (id) => {
-	const itemId = String(id || "").trim();
-	if (!itemId) return;
-	try {
-		localStorage.removeItem(ICON_BLOB_LS + itemId);
-	} catch {}
-};
-var mergeMetaKeepingAppearance = (existing, incoming) => {
-	const prev = packSpeedDialMetaPlain(existing);
-	const next = packSpeedDialMetaPlain(incoming);
-	const out = {
-		...prev,
-		...next
-	};
-	for (const key of APPEARANCE_META_KEYS) {
-		const keep = String(prev[key] || "").trim();
-		if (!String(next[key] || "").trim() && keep) out[key] = keep;
-	}
-	const prevUrl = String(prev.iconUrl || "");
-	const nextUrl = String(next.iconUrl || "");
-	if (prevUrl && (!nextUrl || nextUrl.startsWith(ICON_PTR)) && !nextUrl.startsWith("android-icon:")) {
-		if (isInlineIconUrl(prevUrl) || prevUrl.startsWith(ICON_PTR)) out.iconUrl = prevUrl;
-	}
-	return out;
-};
-var durableMetaForPersist = (id, meta) => {
-	const packed = packSpeedDialMetaPlain(meta);
-	const url = String(packed.iconUrl || "");
-	if (isInlineIconUrl(url)) packed.iconUrl = persistSpeedDialIconBlob(id, url);
-	return packed;
-};
-var generateItemId = () => {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-	return `sd-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e3)}`;
-};
-var EXTERNAL_SHORTCUTS = [];
-var DEFAULT_SPEED_DIAL_DATA_ALL = [...EXTERNAL_SHORTCUTS];
-/** Drop view shortcuts that this host build disabled (e.g. Network on CWSP-document). */
-var isSpeedDialViewAllowed = (meta, id) => {
-	if (id === "shortcut-network" && !isEnabledView("network")) return false;
-	const view = String(meta?.view || "").trim();
-	if (!view) return true;
-	return isEnabledView(view);
-};
-var DEFAULT_SPEED_DIAL_DATA = DEFAULT_SPEED_DIAL_DATA_ALL.filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id));
-var splitDefaultEntries = (entries) => {
-	const records = [];
-	const metaEntries = [];
-	entries.forEach((entry) => {
-		const { meta, ...record } = entry;
-		records.push(record);
-		const normalizedMeta = {
-			action: entry.action,
-			...meta || {}
-		};
-		metaEntries.push([entry.id, normalizedMeta]);
-	});
-	return {
-		records,
-		metaEntries
-	};
-};
-var { records: DEFAULT_SPEED_DIAL_RECORDS, metaEntries: DEFAULT_META_ENTRIES } = splitDefaultEntries(DEFAULT_SPEED_DIAL_DATA);
-var legacyMetaBuffer = [];
-/** Ids historically injected onto the Speed Dial grid (now Core Rail only). */
-var CORE_RAIL_GRID_IDS = /* @__PURE__ */ new Set([
-	"shortcut-explorer",
-	"shortcut-settings",
-	"shortcut-viewer",
-	"shortcut-markdown",
-	"shortcut-apps",
-	"apps",
-	"explorer",
-	"settings",
-	"viewer",
-	"markdown"
-]);
-var CORE_RAIL_GRID_VIEWS = /* @__PURE__ */ new Set([
-	"apps",
-	"explorer",
-	"settings",
-	"viewer",
-	"markdown",
-	"reader"
-]);
-var CORE_RAIL_GRID_LABELS = /* @__PURE__ */ new Set([
-	"apps",
-	"explorer",
-	"settings",
-	"markdown",
-	"viewer"
-]);
-var unwrapPersistedLabel = (label) => {
-	if (label && typeof label === "object" && "value" in label) return String(label.value || "").trim().toLowerCase();
-	return String(label || "").trim().toLowerCase();
-};
-/**
-* True when a curated / persisted tile belongs on the Core Rail only
-* (Explorer / Settings / Markdown) — never on the freeform Speed Dial grid.
-*/
-var isCoreRailGridTile = (item, meta) => {
-	if (!item?.id) return false;
-	const id = String(item.id || "").trim().toLowerCase();
-	if (CORE_RAIL_GRID_IDS.has(id)) return true;
-	const action = String(meta?.action || item.action || "open-view").trim().toLowerCase();
-	if (action && action !== "open-view") return false;
-	const view = String(meta?.view || "").trim().toLowerCase();
-	if (view && CORE_RAIL_GRID_VIEWS.has(view)) return true;
-	const label = unwrapPersistedLabel(item.label);
-	return Boolean(label) && CORE_RAIL_GRID_LABELS.has(label);
-};
-var isCoreRailPersistedEntry = (entry) => isCoreRailGridTile({
-	id: entry.id,
-	action: entry.action,
-	label: entry.label
-}, {
-	action: entry.action,
-	...entry.meta || {}
-});
-var ensureCell = (cell) => {
-	if (cell && Array.isArray(cell) && cell.length >= 2) return observe([Number(cell[0]) || 0, Number(cell[1]) || 0]);
-	return observe([0, 0]);
-};
-var createMetaState = (meta = {}) => {
-	const kind = String(meta.widgetKind || "").toLowerCase();
-	const inferredAction = String(meta.action || "").trim() || (kind === "search" || kind === "android" ? "widget" : "open-view");
-	return makeObjectAssignable(observe({
-		view: meta.view || "",
-		href: meta.href || "",
-		description: meta.description || "",
-		entityType: meta.entityType || "",
-		tags: Array.isArray(meta.tags) ? [...meta.tags] : [],
-		...meta,
-		action: inferredAction
-	}));
-};
-var registryFromEntries = (entries) => {
-	const registry = /* @__PURE__ */ new Map();
-	for (const [id, meta] of entries) registry.set(id, createMetaState(meta));
-	return registry;
-};
-var normalizeMetaEntries = (raw) => {
-	if (!raw) return [];
-	if (raw instanceof Map) return Array.from(raw.entries());
-	if (Array.isArray(raw)) return raw.map((entry) => {
-		if (entry && typeof entry === "object" && "id" in entry) return [entry.id, entry.meta || entry];
-		return null;
-	}).filter(Boolean);
-	if (typeof raw === "object") return Object.entries(raw);
-	return [];
-};
-var packMetaRegistry = (registry) => {
-	const payload = {};
-	registry?.forEach((meta, id) => {
-		payload[id] = durableMetaForPersist(id, meta);
-	});
-	return payload;
-};
-var createInitialMetaRegistry = () => registryFromEntries(DEFAULT_META_ENTRIES);
-var unpackMetaRegistry = (raw) => {
-	const entries = normalizeMetaEntries(raw);
-	return registryFromEntries(entries.length ? entries : DEFAULT_META_ENTRIES);
-};
-var unwrapRef = (value, fallback) => {
-	if (value && typeof value === "object" && "value" in value) return value.value ?? fallback;
-	return value ?? fallback;
-};
-var serializeItemState = (item) => {
-	return {
-		id: item.id,
-		cell: [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
-		icon: unwrapRef(item.icon, "sparkle"),
-		label: unwrapRef(item.label, "Shortcut"),
-		action: item.action
-	};
-};
-var createStatefulItem = (config) => {
-	return observe({
-		id: config.id || generateItemId(),
-		cell: observe(ensureCell(config.cell)),
-		icon: stringRef(config.icon || "sparkle"),
-		label: stringRef(config.label || "Shortcut"),
-		action: config.action || "open-view"
-	});
-};
-var createInitialState = () => observe(DEFAULT_SPEED_DIAL_RECORDS.map(createStatefulItem));
-var unpackState = (raw) => {
-	return observe((Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
-		const { meta, ...record } = entry;
-		if (meta) legacyMetaBuffer.push([entry.id, {
-			action: entry.action,
-			...meta
-		}]);
-		else legacyMetaBuffer.push([entry.id, { action: entry.action }]);
-		return record;
-	}).map(createStatefulItem));
-};
-var packState = (collection) => collection.filter((item) => {
-	try {
-		return !isCoreRailGridTile(item, speedDialMeta?.get?.(item.id) ?? null);
-	} catch {
-		return !isCoreRailGridTile(item, null);
-	}
-}).map(serializeItemState);
-/**
-* WHY: Vite `preserveSymlinks` can load this file via fl.ui and home-view paths as
-* two module graphs. Without a process singleton, idle-save from the stale copy
-* overwrites user shortcuts with defaults after refresh.
-*/
-var SPEED_DIAL_ITEMS_BOOT = "__CWSP_SPEED_DIAL_ITEMS_V1__";
-var SPEED_DIAL_META_BOOT = "__CWSP_SPEED_DIAL_META_V1__";
-var bootSpeedDialMeta = () => {
-	const g = globalThis;
-	if (g[SPEED_DIAL_META_BOOT]) return g[SPEED_DIAL_META_BOOT];
-	const state = makeUIState(META_STORAGE_KEY, createInitialMetaRegistry, unpackMetaRegistry, packMetaRegistry);
-	g[SPEED_DIAL_META_BOOT] = state;
-	return state;
-};
-var bootSpeedDialItems = () => {
-	const g = globalThis;
-	if (g[SPEED_DIAL_ITEMS_BOOT]) return g[SPEED_DIAL_ITEMS_BOOT];
-	const state = makeUIState(STORAGE_KEY, createInitialState, unpackState, packState);
-	g[SPEED_DIAL_ITEMS_BOOT] = state;
-	return state;
-};
-var speedDialMeta = bootSpeedDialMeta();
-var speedDialItems = bootSpeedDialItems();
-var LINK_STORE_BOOT = "__CWSP_LINK_STORE_BOOT_V1__";
-var linkStoreBoot = () => {
-	const g = globalThis;
-	if (!g[LINK_STORE_BOOT]) g[LINK_STORE_BOOT] = {
-		opfsIo: null,
-		opfsReady: null,
-		opfsFlushTimer: null,
-		opfsHydrated: false,
-		userEditedBeforeHydrate: false,
-		editGen: 0,
-		allowEmptyOpfsWrite: false
-	};
-	return g[LINK_STORE_BOOT];
-};
-var markIntentionalEmptyGrid = () => {
-	const boot = linkStoreBoot();
-	boot.allowEmptyOpfsWrite = true;
-};
-var MIRROR_PATH_LS_KEY = "cw::workspace::speed-dial::mirror-path";
-var mirrorPathState = stringRef("");
-var mirrorSpeedDialItems = observe([]);
-var isMirrorMode = () => Boolean(String(mirrorPathState.value || "").trim());
-function getSpeedDialMirrorPath() {
-	const v = String(mirrorPathState.value || "").trim();
-	return v ? v : null;
-}
-/**
-* Persist `mirrorPath` into OPFS `meta.json` (canonical) and an LS backup key.
-* WHY: OPFS is async + durable; LS keeps the value when OPFS is unavailable
-* (private mode / quota) so the mode survives reloads on hosts without OPFS.
-*/
-function setSpeedDialMirrorPath(path) {
-	const normalized = path ? String(path).trim() : "";
-	if (normalized === String(mirrorPathState.value || "").trim()) return;
-	markUserEditedBeforeHydrate();
-	mirrorPathState.value = normalized;
-	try {
-		if (typeof localStorage !== "undefined") if (normalized) localStorage.setItem(MIRROR_PATH_LS_KEY, normalized);
-		else localStorage.removeItem(MIRROR_PATH_LS_KEY);
-	} catch {}
-	persistSpeedDialMeta();
-	refreshSpeedDialMirror();
-}
-/**
-* Rebuild `mirrorSpeedDialItems` from the current `mirrorPath` via PathRouter.
-*
-* WHY: SpeedDial calls this on mount and whenever the mirror path changes. If
-* no backend is registered for the path (e.g. tests without OPFS/Chrome), we
-* surface a soft warning and keep an empty listing so the grid stays usable.
-*
-* Task 3 fix: pass curated `speedDialItems` cells to `buildMirrorSpeedDialItems`
-* so mirror tiles auto-place below the curated grid's max Y instead of
-* stacking at `[0,0]`. Meta per-id `cell` overrides still win.
-*/
-async function refreshSpeedDialMirror() {
-	const path = getSpeedDialMirrorPath();
-	if (!path) {
-		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-		return;
 	}
 	try {
 		const backend = resolveFsBackend(path);
-		if (!backend) {
-			console.warn(`[link-store] no fs backend for mirror path: ${path}`);
-			mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-			return;
+		if (typeof backend?.readFile === "function") {
+			const file = await backend.readFile(path);
+			if (file) {
+				if (item) item.file = file;
+				return file;
+			}
 		}
-		const items = buildMirrorSpeedDialItems(await backend.list(path), packMetaFileFromState(), path, (speedDialItems || []).map((item) => ({ cell: Array.isArray(item?.cell) ? item.cell : void 0 })));
-		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-		for (const item of items) mirrorSpeedDialItems.push(item);
-	} catch (e) {
-		console.warn(`[link-store] mirror list failed for ${path}`, e);
-		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-	}
-}
-if (typeof globalThis !== "undefined") subscribeFsBackendRegister((root) => {
-	const path = getSpeedDialMirrorPath();
-	if (!path) return;
-	if (path === root || path.startsWith(root === "/" ? "/" : root)) refreshSpeedDialMirror();
-});
-/**
-* WHY: always stamp dirty — even after hydrate flipped true mid-hydrate.
-* Pin/Share can land between the dirty re-check and the `splice`. Dirty is on
-* globalThis so dual Vite module graphs share the same signal.
-*/
-var markUserEditedBeforeHydrate = () => {
-	const boot = linkStoreBoot();
-	boot.userEditedBeforeHydrate = true;
-	boot.editGen = (boot.editGen || 0) + 1;
-};
-/** True when pin/share/edit landed this session — Side snapshots must not splice over it. */
-var wasSpeedDialUserEdited = () => {
-	const boot = linkStoreBoot();
-	return boot.userEditedBeforeHydrate === true || (boot.editGen || 0) > 0;
-};
-var getLsLike = () => {
-	try {
-		if (typeof localStorage === "undefined") return null;
-		return localStorage;
-	} catch {
-		return null;
-	}
-};
-/**
-* Pack the current in-memory state into a `LinkStoreMetaFile` for OPFS.
-* WHY: cells live in `speedDialItems` (state) while href/view/shape live in
-* `speedDialMeta` (registry); OPFS `meta.json` merges both per id.
-*/
-var packMetaFileFromState = () => {
-	const perId = {};
-	speedDialMeta?.forEach((meta, id) => {
-		perId[id] = durableMetaForPersist(id, meta);
-	});
-	(speedDialItems || []).forEach((item) => {
-		const id = String(item?.id || "");
-		if (!id) return;
-		const cell = item?.cell;
-		const x = Number(Array.isArray(cell) ? cell[0] : cell?.[0]) || 0;
-		const y = Number(Array.isArray(cell) ? cell[1] : cell?.[1]) || 0;
-		perId[id] = {
-			...perId[id] || {},
-			cell: [x, y]
-		};
-	});
-	return {
-		version: 1,
-		mirrorPath: getSpeedDialMirrorPath(),
-		items: perId
-	};
-};
-var flushLinkStoreToOpfs = async () => {
-	const boot = linkStoreBoot();
-	if (!boot.opfsIo) return;
-	try {
-		await boot.opfsReady;
-	} catch {
-		return;
-	}
-	if (!boot.opfsIo) return;
-	try {
-		const items = packLinksFromSpeedDial(speedDialItems);
-		for (const item of items) {
-			const meta = speedDialMeta?.get?.(item.id);
-			if (!meta) continue;
-			if (!item.href && meta.href) item.href = String(meta.href);
-			if (!item.path && meta.path) item.path = String(meta.path);
-			if (!item.action && meta.action) item.action = String(meta.action);
-		}
-		const meta = packMetaFileFromState();
-		const allowEmpty = boot.allowEmptyOpfsWrite === true && !speedDialItems?.length;
-		await writeLinkStore(boot.opfsIo, items, meta, { allowEmpty });
-		if (allowEmpty) boot.allowEmptyOpfsWrite = false;
-	} catch (e) {
-		console.warn("[link-store] OPFS write failed; localStorage remains primary", e);
-	}
-};
-var scheduleOpfsFlush = () => {
-	const boot = linkStoreBoot();
-	if (boot.opfsFlushTimer) clearTimeout(boot.opfsFlushTimer);
-	boot.opfsFlushTimer = setTimeout(() => {
-		boot.opfsFlushTimer = null;
-		flushLinkStoreToOpfs();
-	}, 150);
-};
-/**
-* Hydrate the in-memory state from OPFS after migration. Only runs when no
-* user edit has fired yet (module-load race window) and OPFS has data.
-*
-* WHY: if `persistSpeedDialItems` / `persistSpeedDialMeta` already ran before
-* hydrate completed, the in-memory state is newer than the just-migrated OPFS
-* snapshot. Splicing OPFS back in would clobber the edit, so we mark hydrated
-* and bail — the pending OPFS flush (awaiting `opfsReady`) will persist the
-* newer state instead.
-*/
-var hydrateFromOpfs = async (io) => {
-	const boot = linkStoreBoot();
-	if (boot.opfsHydrated) return;
-	if (boot.userEditedBeforeHydrate) {
-		boot.opfsHydrated = true;
-		return;
-	}
-	const editGenAtStart = boot.editGen || 0;
-	try {
-		const got = await readLinkStore(io);
-		if (!got || !got.items.length) {
-			boot.opfsHydrated = true;
-			return;
-		}
-		if (boot.userEditedBeforeHydrate || boot.editGen !== editGenAtStart) {
-			boot.opfsHydrated = true;
-			return;
-		}
-		const nextItems = [];
-		const nextMeta = /* @__PURE__ */ new Map();
-		for (const raw of got.items) {
-			const metaEntry = got.meta.items[raw.id] || {};
-			const cell = Array.isArray(metaEntry.cell) ? [metaEntry.cell[0], metaEntry.cell[1]] : Array.isArray(raw.cell) ? [raw.cell[0], raw.cell[1]] : [0, 0];
-			const item = createStatefulItem({
-				id: raw.id,
-				cell: observe([Number(cell[0]) || 0, Number(cell[1]) || 0]),
-				icon: raw.icon || "sparkle",
-				label: raw.label || "Shortcut",
-				action: raw.action || "open-view"
-			});
-			const meta = {
-				action: raw.action || "open-view",
-				...metaEntry,
-				...raw.href ? { href: raw.href } : {},
-				...raw.path ? { path: raw.path } : {}
-			};
-			if (isCoreRailGridTile(item, meta)) continue;
-			nextItems.push(observe(item));
-			nextMeta.set(item.id, meta);
-		}
-		if (!nextItems.length) {
-			boot.opfsHydrated = true;
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			return;
-		}
-		if (boot.userEditedBeforeHydrate || boot.editGen !== editGenAtStart) {
-			boot.opfsHydrated = true;
-			return;
-		}
-		boot.opfsHydrated = true;
-		if (got.meta.mirrorPath != null) mirrorPathState.value = String(got.meta.mirrorPath || "");
-		if (speedDialItems?.length) {
-			for (const [id, meta] of nextMeta) if (!getSpeedDialMeta(id)) ensureSpeedDialMeta(id, packSpeedDialMetaPlain(meta));
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			return;
-		}
-		speedDialItems.splice(0, speedDialItems.length, ...nextItems);
-		for (const [id, meta] of nextMeta) ensureSpeedDialMeta(id, mergeMetaKeepingAppearance(getSpeedDialMeta(id), meta));
-		stripCoreRailTilesFromGrid({ markDirty: true });
-	} catch (e) {
-		console.warn("[link-store] OPFS hydration failed; using localStorage boot state", e);
-		linkStoreBoot().opfsHydrated = true;
-		stripCoreRailTilesFromGrid({ markDirty: true });
-	}
-};
-var skipLinkStoreOpfs = () => {
-	try {
-		if (String(document.documentElement?.dataset?.cwspSku || "").toLowerCase() === "document") return true;
-		const host = String(location.hostname || "").toLowerCase();
-		if (/(^|\.)md\.u2re\.space$/.test(host)) return true;
 	} catch {}
-	return false;
-};
-var initLinkStore = () => {
-	const boot = linkStoreBoot();
-	if (boot.opfsReady) return boot.opfsReady;
-	boot.opfsReady = (async () => {
-		const ls = getLsLike();
-		if (skipLinkStoreOpfs()) {
-			boot.opfsIo = null;
-			boot.opfsHydrated = true;
-			return;
-		}
-		try {
-			boot.opfsIo = await Promise.race([createOpfsLinkStoreIo(), new Promise((_, reject) => {
-				setTimeout(() => reject(/* @__PURE__ */ new Error("[link-store] OPFS getDirectory timeout")), 800);
-			})]);
-		} catch (e) {
-			console.warn("[link-store] OPFS unavailable; using localStorage", e);
-			boot.opfsIo = null;
-			boot.opfsHydrated = true;
-			return;
-		}
-		if (!boot.opfsIo) return;
-		try {
-			if (ls) await migrateLocalStorageToOpfsIfNeeded(boot.opfsIo, ls);
-			await hydrateFromOpfs(boot.opfsIo);
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			if (boot.userEditedBeforeHydrate) await flushLinkStoreToOpfs();
-		} catch (e) {
-			console.warn("[link-store] OPFS init failed; using localStorage boot state", e);
-			boot.opfsHydrated = true;
-		}
-	})();
-	return boot.opfsReady;
-};
-/**
-* Hosts may await this to know when OPFS migration/hydration is done. The grid
-* renders immediately from LS; this resolves after the async OPFS step.
-*/
-var linkStoreReady = () => initLinkStore();
-/** Force durable OPFS write (Cap pin / Share) — do not wait for the 150ms debounce. */
-var flushSpeedDialLinkStore = () => flushLinkStoreToOpfs();
-/** True when `id` is still in the shared Speed Dial array (post-hydrate race check). */
-var hasSpeedDialItemId = (id) => Boolean(id && speedDialItems?.some?.((item) => String(item?.id) === id));
-/** Live tile that already represents this Android pinned shortcut. */
-var findSpeedDialShortcutItem = (pkg, shortcutId) => {
-	const packageName = String(pkg || "").trim();
-	const id = String(shortcutId || "").trim();
-	if (!packageName || !id) return null;
-	for (const item of speedDialItems || []) {
-		const meta = getSpeedDialMeta(item.id);
-		if (String(meta?.packageName || "").trim() === packageName && String(meta?.shortcutId || "").trim() === id) return item;
+	const provided = await provide(path).catch(() => null);
+	if (provided instanceof File) {
+		if (item) item.file = provided;
+		return provided;
 	}
 	return null;
 };
-var DISMISSED_PINS_KEY = "cw::launcher::dismissed-pins";
-var DISMISSED_PINS_BOOT = "__CWSP_DISMISSED_PINS_V1__";
-var dismissedPinKey = (pkg, sid) => `${String(pkg || "").trim()}::${String(sid || "").trim()}`;
-var dismissedPinsSlot = () => {
-	const g = globalThis;
-	if (g[DISMISSED_PINS_BOOT]) return g[DISMISSED_PINS_BOOT];
-	const at = /* @__PURE__ */ new Map();
+var fileToBase64Url = async (file) => {
+	const mime = file.type || getMimeTypeByFilename(file.name) || "application/octet-stream";
+	const buf = await file.arrayBuffer();
+	const bytes = new Uint8Array(buf);
+	const chunk = 32768;
+	let bin = "";
+	for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+	return `data:${mime};base64,${btoa(bin)}`;
+};
+var webShare = async (data) => {
+	const nav = navigator;
+	if (typeof nav.share !== "function") return false;
 	try {
-		const raw = localStorage.getItem(DISMISSED_PINS_KEY);
-		const parsed = raw ? JSON.parse(raw) : [];
-		if (Array.isArray(parsed)) for (const row of parsed) {
-			if (typeof row === "string") {
-				const k = row.trim();
-				if (k && k !== "::") at.set(k, 1);
-				continue;
-			}
-			const k = String(row?.k || "").trim();
-			const t = Number(row?.t || 0);
-			if (k && k !== "::") at.set(k, t || 1);
-		}
-	} catch {}
-	g[DISMISSED_PINS_BOOT] = { at };
-	return g[DISMISSED_PINS_BOOT];
-};
-var persistDismissedPins = () => {
-	try {
-		const rows = [...dismissedPinsSlot().at.entries()].map(([k, t]) => ({
-			k,
-			t
-		}));
-		localStorage.setItem(DISMISSED_PINS_KEY, JSON.stringify(rows));
-	} catch {}
-};
-var isAndroidShortcutDismissed = (pkg, sid) => androidShortcutDismissedAt(pkg, sid) > 0;
-var androidShortcutDismissedAt = (pkg, sid) => {
-	const key = dismissedPinKey(pkg, sid);
-	if (key === "::") return 0;
-	return Number(dismissedPinsSlot().at.get(key) || 0);
-};
-var rememberDismissedAndroidShortcut = (pkg, sid) => {
-	const key = dismissedPinKey(pkg, sid);
-	if (key === "::") return;
-	dismissedPinsSlot().at.set(key, Date.now());
-	persistDismissedPins();
-	globalThis.__CWSP_ACK_PIN_AFTER_REMOVE__ = true;
-};
-var forgetDismissedAndroidShortcut = (pkg, sid) => {
-	const key = dismissedPinKey(pkg, sid);
-	if (key === "::") return;
-	if (!dismissedPinsSlot().at.delete(key)) return;
-	persistDismissedPins();
-};
-if (typeof globalThis !== "undefined") {
-	try {
-		if (typeof localStorage !== "undefined") {
-			const lsMirror = localStorage.getItem(MIRROR_PATH_LS_KEY);
-			if (lsMirror && !mirrorPathState.value) mirrorPathState.value = lsMirror;
-		}
-	} catch {}
-	initLinkStore().then(() => {
-		refreshSpeedDialMirror();
-	});
-}
-var persistSpeedDialItems = () => {
-	scheduleOpfsFlush();
-	try {
-		saveUIState(STORAGE_KEY);
-		return;
-	} catch {}
-	try {
-		if (typeof localStorage === "undefined") return;
-		localStorage.setItem(STORAGE_KEY, JSOX.stringify(packState(speedDialItems)));
-	} catch {}
-};
-var persistSpeedDialMeta = () => {
-	scheduleOpfsFlush();
-	try {
-		saveUIState(META_STORAGE_KEY);
-		return;
-	} catch {}
-	try {
-		if (typeof localStorage === "undefined") return;
-		localStorage.setItem(META_STORAGE_KEY, JSOX.stringify(packMetaRegistry(speedDialMeta)));
-	} catch {}
-};
-var packSpeedDialItem = (item) => {
-	const packed = serializeItemState(item);
-	const meta = getSpeedDialMeta(item.id);
-	return {
-		...packed,
-		...meta ? { meta: durableMetaForPersist(item.id, meta) } : {}
-	};
-};
-var captureSpeedDialSnapshot = () => ({ items: (speedDialItems || []).map((item) => packSpeedDialItem(item)) });
-var applySpeedDialSnapshot = (snapshot) => {
-	markUserEditedBeforeHydrate();
-	const rows = Array.isArray(snapshot?.items) ? snapshot.items : [];
-	const nextItems = [];
-	for (const raw of rows) {
-		if (!raw?.id) continue;
-		const item = createStatefulItem({
-			id: raw.id,
-			cell: observe([Number(raw.cell?.[0]) || 0, Number(raw.cell?.[1]) || 0]),
-			icon: raw.icon || "sparkle",
-			label: raw.label || "Shortcut",
-			action: raw.action || "open-link"
-		});
-		nextItems.push(observe(item));
-	}
-	speedDialItems.splice(0, speedDialItems.length, ...nextItems);
-	if (!nextItems.length) markIntentionalEmptyGrid();
-	for (const raw of rows) {
-		if (!raw?.id) continue;
-		const incoming = {
-			action: raw.action,
-			...packSpeedDialMetaPlain(raw.meta)
-		};
-		incoming.iconUrl = persistSpeedDialIconBlob(raw.id, String(incoming.iconUrl || ""));
-		const merged = mergeMetaKeepingAppearance(getSpeedDialMeta(raw.id), incoming);
-		ensureSpeedDialMeta(raw.id, merged);
-	}
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-};
-var metaNumber = (value, fallback) => {
-	let cur = value;
-	if (cur && typeof cur === "object" && "value" in cur) cur = cur.value;
-	const n = Number(cur);
-	return Number.isFinite(n) && n >= 1 ? n : fallback;
-};
-var defaultWidgetSpan = (kind) => {
-	const id = String(kind || "").toLowerCase();
-	if (id === "search") return [2, 1];
-	if (id === "clock") return [2, 1];
-	if (id === "android") return [2, 2];
-	return [1, 1];
-};
-var getItemSpan = (id) => {
-	const meta = id ? getSpeedDialMeta(id) : null;
-	const item = id ? (speedDialItems || []).find((it) => it?.id === id) : null;
-	const isWidget = String(item?.action || "").toLowerCase() === "widget" || String(meta?.action || "").toLowerCase() === "widget";
-	const kind = isWidget ? String(meta?.widgetKind || "").toLowerCase() : "";
-	const fallback = kind ? defaultWidgetSpan(kind) : isWidget ? defaultWidgetSpan("clock") : [1, 1];
-	return normalizeSpan([metaNumber(meta?.spanCols, fallback[0]), metaNumber(meta?.spanRows, fallback[1])]);
-};
-var setItemSpan = (id, span) => {
-	const next = normalizeSpan(span);
-	const meta = ensureSpeedDialMeta(id);
-	meta.spanCols = next[0];
-	meta.spanRows = next[1];
-	persistSpeedDialMeta();
-	emitSpeedDialMutation("update", id);
-	return next;
-};
-var createWidgetSpeedDialItem = (kind, cell, extra) => {
-	const span = normalizeSpan([extra?.spanCols ?? defaultWidgetSpan(kind)[0], extra?.spanRows ?? defaultWidgetSpan(kind)[1]]);
-	const item = createStatefulItem({
-		id: generateItemId(),
-		cell: cell || findNextFreeSpeedDialCell(span),
-		icon: kind === "clock" ? "clock" : kind === "search" ? "magnifying-glass" : "squares-four",
-		label: String(extra?.description || "").trim() || (kind === "clock" ? "Clock" : kind === "search" ? "Search" : "Widget"),
-		action: "widget"
-	});
-	ensureSpeedDialMeta(item.id, {
-		action: "widget",
-		widgetKind: kind,
-		shape: getDefaultTileShape(),
-		spanCols: span[0],
-		spanRows: span[1],
-		...extra || {}
-	});
-	return item;
-};
-var getSpeedDialMeta = (id) => {
-	if (!id) return null;
-	return speedDialMeta?.get?.(id) ?? null;
-};
-var ensureSpeedDialMeta = (id, defaults = {}) => {
-	let meta = speedDialMeta?.get?.(id);
-	if (!meta) {
-		meta = createMetaState(defaults);
-		speedDialMeta?.set?.(id, meta);
-		persistSpeedDialMeta();
-		return meta;
-	}
-	let changed = false;
-	for (const [key, value] of Object.entries(defaults)) {
-		if (value == null || value === "") continue;
-		if (key === "action" && String(meta.action || "").toLowerCase() === "widget" && String(value || "").toLowerCase() !== "widget") continue;
-		if (meta[key] !== value) {
-			meta[key] = value;
-			changed = true;
-		}
-	}
-	if (changed) persistSpeedDialMeta();
-	return meta;
-};
-var removeSpeedDialMeta = (id) => {
-	const removed = speedDialMeta?.delete?.(id);
-	if (removed) {
-		forgetSpeedDialIconBlob(id);
-		persistSpeedDialMeta();
-	}
-	return removed;
-};
-var syncMetaActionFromItem = (item) => {
-	if (!item) return false;
-	const desiredAction = item.action || "open-view";
-	const meta = ensureSpeedDialMeta(item.id, { action: desiredAction });
-	if (meta.action !== desiredAction) {
-		meta.action = desiredAction;
+		if (typeof nav.canShare === "function" && !nav.canShare(data)) return false;
+		await nav.share(data);
 		return true;
-	}
-	return false;
-};
-var syncMetaActionsForAllItems = () => {
-	let changed = false;
-	speedDialItems?.forEach?.((item) => {
-		if (syncMetaActionFromItem(item)) changed = true;
-	});
-	if (changed) persistSpeedDialMeta();
-};
-var flushLegacyMetaBuffer = () => {
-	if (!legacyMetaBuffer.length) return;
-	legacyMetaBuffer.forEach(([id, meta]) => {
-		const target = ensureSpeedDialMeta(id, meta);
-		Object.assign(target, meta);
-	});
-	legacyMetaBuffer.length = 0;
-	persistSpeedDialMeta();
-};
-flushLegacyMetaBuffer();
-syncMetaActionsForAllItems();
-var ensureExternalShortcuts = () => {
-	let changed = false;
-	EXTERNAL_SHORTCUTS.forEach((shortcut) => {
-		if (!speedDialItems?.find?.((item) => item?.id === shortcut.id)) {
-			const item = createStatefulItem(shortcut);
-			if (shortcut.label && item.label && typeof item.label === "object" && "value" in item.label) item.label.value = shortcut.label;
-			if (shortcut.icon && item.icon && typeof item.icon === "object" && "value" in item.icon) item.icon.value = shortcut.icon;
-			speedDialItems.push(observe(item));
-			ensureSpeedDialMeta(item.id, shortcut.meta);
-			changed = true;
-		} else {
-			const currentMeta = getSpeedDialMeta(shortcut.id);
-			if (shortcut.meta && currentMeta) {
-				const nextHref = String(shortcut.meta.href ?? "");
-				if (nextHref !== String(currentMeta.href ?? "")) {
-					currentMeta.href = nextHref;
-					changed = true;
-				}
-				const nextDesc = String(shortcut.meta.description ?? "");
-				if (nextDesc !== String(currentMeta.description ?? "")) {
-					currentMeta.description = nextDesc;
-					changed = true;
-				}
-			} else if (shortcut.meta && !currentMeta) {
-				ensureSpeedDialMeta(shortcut.id, shortcut.meta);
-				changed = true;
-			}
-		}
-	});
-	if (changed) {
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-	}
-};
-ensureExternalShortcuts();
-/**
-* WHY: Explorer / Settings / Markdown live on the Core Rail only.
-* Strip them from the curated grid and persist — including after OPFS hydrate,
-* which otherwise re-injects the legacy OPFS snapshot.
-*/
-var stripCoreRailTilesFromGrid = (opts) => {
-	try {
-		let changed = false;
-		const matches = (speedDialItems || []).filter((item) => isCoreRailGridTile(item, getSpeedDialMeta(item?.id)));
-		for (const item of matches) {
-			const idx = speedDialItems.findIndex((it) => it?.id === item.id);
-			if (idx >= 0) {
-				speedDialItems.splice(idx, 1);
-				removeSpeedDialMeta(item.id);
-				changed = true;
-			}
-		}
-		if (changed) {
-			if (opts?.markDirty !== false) markUserEditedBeforeHydrate();
-			persistSpeedDialItems();
-			persistSpeedDialMeta();
-		}
-		return changed;
-	} catch (e) {
-		console.warn("[speed-dial] core rail strip failed", e);
+	} catch (err) {
+		if ((err instanceof DOMException ? err.name : "") === "AbortError") return true;
 		return false;
 	}
 };
-/** Boot: remove legacy Core Rail tiles from LS-backed grid before/around hydrate. */
-var ensureCoreViewShortcuts = () => {
-	stripCoreRailTilesFromGrid({ markDirty: true });
-};
-ensureCoreViewShortcuts();
-try {
-	if (typeof chrome !== "undefined" && !!chrome?.storage?.local) {
-		const rewrite = () => {
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			persistSpeedDialItems();
-			persistSpeedDialMeta();
-		};
-		queueMicrotask(rewrite);
-		setTimeout(rewrite, 0);
-		setTimeout(rewrite, 300);
-		setTimeout(rewrite, 1200);
-	}
-} catch {}
-/**
-* WHY: Past merges left both legacy `settings` and `shortcut-settings` (same view) on disk.
-* Keep the preferred default id when present; otherwise keep the first match.
-*/
-var dedupeCoreOpenViewTiles = () => {
-	let changed = false;
-	const core = DEFAULT_SPEED_DIAL_DATA_ALL.filter((entry) => entry.action === "open-view" && isSpeedDialViewAllowed(entry.meta, entry.id));
-	const getItemLabel = (item) => {
-		const raw = item?.label;
-		if (raw && typeof raw === "object" && "value" in raw) return String(raw.value || "").trim().toLowerCase();
-		return String(raw || "").trim().toLowerCase();
-	};
-	for (const shortcut of core) {
-		const view = String(shortcut.meta?.view || "").trim().toLowerCase();
-		const label = String(shortcut.label || "").trim().toLowerCase();
-		if (!view && !label) continue;
-		const matches = (speedDialItems || []).filter((item) => {
-			const metaView = String(getSpeedDialMeta(item.id)?.view || "").trim().toLowerCase();
-			if (String(getSpeedDialMeta(item.id)?.action || item?.action || "open-view").toLowerCase() !== "open-view") return false;
-			if (view && metaView === view) return true;
-			return Boolean(label) && getItemLabel(item) === label;
+var capacitorShare = async (opts) => {
+	try {
+		const Share = globalThis.Capacitor?.Plugins?.Share;
+		if (typeof Share?.share !== "function") return false;
+		await Share.share({
+			title: opts.title,
+			text: opts.text,
+			url: opts.url,
+			dialogTitle: "Share"
 		});
-		if (matches.length <= 1) continue;
-		const keep = matches.find((item) => item.id === shortcut.id) || matches[0];
-		for (const item of matches) {
-			if (item === keep) continue;
-			const idx = speedDialItems.findIndex((row) => row?.id === item.id);
-			if (idx >= 0) {
-				speedDialItems.splice(idx, 1);
-				changed = true;
-			}
-		}
-	}
-	if (changed) {
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-	}
-};
-dedupeCoreOpenViewTiles();
-/** Router mount prefix (`/cwsp`, `/markdown`, …) when present on `<html>`. */
-var getSpeedDialRouterBase = () => {
-	try {
-		return String(document.documentElement?.dataset?.cwspRouterBase || "").trim().replace(/\/+$/, "");
-	} catch {
-		return "";
-	}
-};
-/**
-* Entry URL for a view deep link: `/settings?shell=environment[&native=1]&view=settings`
-* WHY: address-bar readable path; environment keeps `/${view}` (not root `/?view=`).
-* INVARIANT: open with this path; `preserveNativeDeepLink` must not strip it to `/`.
-*/
-var buildSpeedDialViewPathHref = (viewId, absolute = false, opts) => {
-	const id = String(viewId || "").trim().replace(/^#/, "").replace(/^\/+/, "").split(/[/?#]/)[0].toLowerCase();
-	if (!id) return "";
-	const useNative = opts?.native === true;
-	const path = `${getSpeedDialRouterBase().replace(/\/+$/, "") || ""}/${id}`.replace(/\/{2,}/g, "/") || `/${id}`;
-	const normalized = path.startsWith("/") ? path : `/${path}`;
-	const withQuery = useNative ? `${normalized}?shell=environment&native=1&view=${encodeURIComponent(id)}` : `${normalized}?shell=environment&view=${encodeURIComponent(id)}`;
-	if (!absolute || typeof location === "undefined") return withQuery;
-	try {
-		const url = new URL(location.href);
-		url.pathname = normalized;
-		url.hash = "";
-		url.search = "";
-		url.searchParams.set("shell", "environment");
-		url.searchParams.set("view", id);
-		if (useNative) url.searchParams.set("native", "1");
-		else url.searchParams.delete("native");
-		return url.href;
-	} catch {
-		return withQuery;
-	}
-};
-/**
-* Open `href` in a **new browser tab** without navigating the current tab.
-* WHY: `window.open(url, "_blank", "noopener")` returns `null` by spec even when the
-* window opened — our old `if (!opened) location.assign(href)` hijacked the desktop.
-* INVARIANT: never `location.assign` / `location.href =` from native/open-link paths.
-*/
-var openInNewBrowserTab = (href) => {
-	const url = String(href || "").trim();
-	if (!url || typeof window === "undefined") return false;
-	try {
-		let target = "_blank";
-		try {
-			if (typeof window.fence === "object") target = "_unfencedTop";
-		} catch {
-			target = "_blank";
-		}
-		window.open(url, target, "noreferrer,noopener");
 		return true;
-	} catch (e) {
-		console.warn("[home-view] openInNewBrowserTab failed", e);
-		return false;
-	}
-};
-/** @deprecated alias — prefer {@link openInNewBrowserTab} or {@link openInDetachedBrowserWindow}. */
-var openInNewBrowserWindow = openInNewBrowserTab;
-/** True when this browsing context is an installed-like PWA (WCO / standalone / …). */
-var isInstalledPwaDisplayContext = () => {
-	if (typeof globalThis === "undefined") return false;
-	try {
-		if (globalThis.navigator?.windowControlsOverlay?.visible) return true;
-	} catch {}
-	if (typeof globalThis.matchMedia !== "function") return false;
-	try {
-		for (const q of [
-			"(display-mode: window-controls-overlay)",
-			"(display-mode: standalone)",
-			"(display-mode: fullscreen)",
-			"(display-mode: minimal-ui)"
-		]) if (globalThis.matchMedia(q).matches) return true;
-	} catch {}
-	return false;
-};
-/**
-* Open a **detached window** for native-window mode (never a browser tab).
-*
-* INVARIANT:
-* - Do **not** use bare `window.open(url, "_blank")` — Chromium/Edge treat that as a **tab**.
-* - Do **not** fall back to {@link openInNewBrowserTab} (that is the `new-tab` mode).
-* - Do **not** request `menubar`/`toolbar`/`location` — those force full browser chrome
-*   and break PWA/WCO when the window is captured as an app window.
-* - Use a unique window name + `popup=yes,width,height` so each Native open is a
-*   separate window. From an installed PWA, size features still open another app window.
-*
-* Never hijack the opener via `location.assign`.
-*/
-var windowOpenThrottled = Date.now();
-var openInDetachedBrowserWindow = (href) => {
-	const url = String(href || "").trim();
-	if (!url || typeof window === "undefined") return false;
-	try {
-		const name = `cwsp-native-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-		const opened = Date.now() - windowOpenThrottled > 200 ? window.open(url, name, "popup,menubar=false,toolbar=false,location=false,width=1280,height=800") : null;
-		windowOpenThrottled = Date.now();
-		if (opened) {
-			try {
-				opened.opener = null;
-			} catch {}
-			return true;
-		}
-	} catch (e) {
-		console.warn("[home-view] openInDetachedBrowserWindow failed", e);
-	}
-	return false;
-};
-/** True when href is (or resolves to) a same-origin app view path / bare view token. */
-var parseSpeedDialViewFromHref = (raw) => {
-	const input = String(raw || "").trim();
-	if (!input || /^(mailto:|blob:|data:)/i.test(input)) return "";
-	try {
-		if (/^https?:\/\//i.test(input)) {
-			const u = new URL(input);
-			if (typeof location !== "undefined" && u.origin !== location.origin) return "";
-			const id = (u.pathname.replace(/\/+$/, "").split("/").filter(Boolean).pop() || "").toLowerCase();
-			if (!id || id === "home") return "";
-			return id === "markdown" ? "viewer" : id;
-		}
-	} catch {
-		return "";
-	}
-	if (input.startsWith("/")) {
-		const seg = input.replace(/^\//, "").split(/[/?#]/)[0].toLowerCase();
-		if (!seg || seg === "home") return "";
-		return seg === "markdown" ? "viewer" : seg;
-	}
-	const token = input.replace(/^#/, "").split(/[/?#]/)[0].trim().toLowerCase();
-	if (!token || token === "home" || /[.:]/.test(token)) return "";
-	return token === "markdown" ? "viewer" : token;
-};
-/**
-* Prefer explicit `meta.href`; for view tiles synthesize path deep links
-* (`/settings`, `/workcenter`, …) for Open link → new tab / native window.
-*/
-var resolveSpeedDialItemHref = (item) => {
-	if (!item?.id) return "";
-	const meta = getSpeedDialMeta(item.id);
-	const explicit = String(meta?.href || item?.href || "").trim();
-	if (explicit) return explicit;
-	const view = String(meta?.view || "").trim().replace(/^#/, "");
-	if (!view) return "";
-	return buildSpeedDialViewPathHref(view, true);
-};
-var findSpeedDialItem = (id) => {
-	if (!id) return null;
-	return speedDialItems?.find?.((item) => item?.id === id) || null;
-};
-var createEmptySpeedDialItem = (cell = observe([0, 0])) => {
-	const action = getDefaultSpeedDialAction();
-	const item = createStatefulItem({
-		id: generateItemId(),
-		cell,
-		icon: "sparkle",
-		label: "New shortcut",
-		action
-	});
-	ensureSpeedDialMeta(item.id, {
-		action,
-		href: "",
-		description: "",
-		shape: getDefaultTileShape(),
-		iconDisplay: "glyph",
-		iconScale: "compact",
-		openLinkTarget: getDefaultOpenLinkTarget()
-	});
-	return item;
-};
-var addSpeedDialItem = (item) => {
-	markUserEditedBeforeHydrate();
-	speedDialItems?.push?.(observe(item));
-	syncMetaActionFromItem(item);
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-	emitSpeedDialMutation("add", item.id);
-	return item;
-};
-/** JSON drag envelope for AppMenu → SpeedDial (launcher design spec). */
-function buildLauncherAppDragEnvelope(app) {
-	return JSON.stringify({
-		state: {
-			icon: "device-mobile",
-			label: app.label
-		},
-		desc: {
-			action: "launch-app",
-			meta: {
-				packageName: app.packageName,
-				componentName: app.componentName,
-				entityType: "android-app",
-				iconCacheKey: app.iconCacheKey || app.packageName
-			}
-		}
-	});
-}
-/** First unoccupied logical origin that fits `span`. */
-function findNextFreeSpeedDialCell(span = [1, 1]) {
-	const columns = Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4));
-	const rows = Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8));
-	const occupied = /* @__PURE__ */ new Set();
-	for (const item of speedDialItems || []) {
-		if (!item?.id) continue;
-		markOccupiedSpan(occupied, [Number(item?.cell?.[0]) || 0, Number(item?.cell?.[1]) || 0], getItemSpan(item.id));
-	}
-	return findNearestFreeRect([0, 0], span, occupied, [columns, rows]);
-}
-/** First free cell inside a packed workspace snapshot (Side B/C while A is live). */
-function findNextFreeCellInSnapshot(snapshot, prefer, span = [1, 1]) {
-	const columns = Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4));
-	const rows = Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8));
-	const occupied = /* @__PURE__ */ new Set();
-	for (const raw of snapshot?.items || []) {
-		if (!raw) continue;
-		markOccupiedSpan(occupied, [Number(raw.cell?.[0]) || 0, Number(raw.cell?.[1]) || 0], normalizeSpan([Number(raw.meta?.spanCols) || 1, Number(raw.meta?.spanRows) || 1]));
-	}
-	return findNearestFreeRect(prefer || [0, 0], span, occupied, [columns, rows]);
-}
-var querySpeedDialGridElement = () => document.querySelector("#home .speed-dial-grid[data-grid-layer=\"icons\"]") || document.querySelector("#home .speed-dial-grid:last-of-type") || document.querySelector("#home .speed-dial-grid");
-var readSpeedDialGridLayout = () => [Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4)), Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8))];
-/** Map viewport coordinates to a logical SpeedDial cell (null when grid is absent). */
-function resolveSpeedDialCellFromClientPoint(clientX, clientY) {
-	const grid = querySpeedDialGridElement();
-	if (!grid) return null;
-	const rect = grid.getBoundingClientRect();
-	const styles = getComputedStyle(grid);
-	const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
-	const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
-	const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
-	const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
-	const size = [Math.max(1, rect.width - paddingLeft - paddingRight), Math.max(1, rect.height - paddingTop - paddingBottom)];
-	const point = [clientX - rect.left - paddingLeft, clientY - rect.top - paddingTop];
-	const root = grid.closest(".speed-dial-root") || document.getElementById("home");
-	const orientRaw = root?.getAttribute?.("data-orient") ?? root?.dataset?.orient ?? "0";
-	return pointToLogicalCell(point, size, readSpeedDialGridLayout(), normalizeOrient(orientRaw));
-}
-function isClientPointOverSpeedDial(clientX, clientY) {
-	return !!document.elementFromPoint(clientX, clientY)?.closest?.("#home, .speed-dial-root");
-}
-/** Create a persisted `launch-app` tile from an AppMenu entry. */
-function pinLauncherAppEntry(app, cell) {
-	const targetCell = cell ?? findNextFreeSpeedDialCell();
-	const item = parseSpeedDialItemFromJSON(buildLauncherAppDragEnvelope(app), targetCell);
-	if (!item) return null;
-	addSpeedDialItem(item);
-	return item;
-}
-var upsertSpeedDialItem = (item) => {
-	markUserEditedBeforeHydrate();
-	const existingIndex = speedDialItems?.findIndex?.((entry) => entry?.id === item?.id) ?? -1;
-	if (existingIndex === -1) speedDialItems?.push?.(observe(item));
-	else if (speedDialItems[existingIndex] !== item) speedDialItems.splice(existingIndex, 1, observe(item));
-	syncMetaActionFromItem(item);
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-	emitSpeedDialMutation("update", item.id);
-	return item;
-};
-var removeSpeedDialItem = (id) => {
-	markUserEditedBeforeHydrate();
-	const index = speedDialItems?.findIndex?.((entry) => entry?.id === id) ?? -1;
-	if (index === -1) return false;
-	const meta = getSpeedDialMeta(id);
-	const dismissPkg = String(meta?.packageName || "").trim();
-	const dismissSid = String(meta?.shortcutId || "").trim();
-	const dismissAction = String(meta?.action || speedDialItems[index]?.action || "").trim();
-	speedDialItems.splice(index, 1);
-	if (!speedDialItems.length) markIntentionalEmptyGrid();
-	if ((dismissAction === "launch-shortcut" || Boolean(dismissSid)) && dismissPkg && dismissSid) rememberDismissedAndroidShortcut(dismissPkg, dismissSid);
-	removeSpeedDialMeta(id);
-	persistSpeedDialItems();
-	emitSpeedDialMutation("remove", id);
-	return true;
-};
-/** WHY: cell drag in SpeedDial calls `persistSpeedDialItems` directly — mark the hydrate race. */
-var markSpeedDialUserEditBeforeHydrate = markUserEditedBeforeHydrate;
-var snapshotSpeedDialItem = (item) => {
-	const meta = getSpeedDialMeta(item.id);
-	const resolvedAction = meta?.action || item.action;
-	const metaSnapshot = packSpeedDialMetaPlain(meta ?? {});
-	if (!metaSnapshot.action) metaSnapshot.action = resolvedAction;
-	return {
-		state: {
-			id: item.id,
-			cell: [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
-			icon: unwrapRef(item.icon, ""),
-			label: unwrapRef(item.label, "")
-		},
-		desc: {
-			action: resolvedAction,
-			meta: metaSnapshot
-		}
-	};
-};
-/** Clone a tile without keeping the source id (paste / Side B/C must not collide). */
-var cloneSpeedDialItemPacked = (item, cell) => {
-	const snap = snapshotSpeedDialItem(item);
-	const meta = packSpeedDialMetaPlain(snap.desc?.meta || {});
-	const action = String(snap.desc?.action || item.action || "open-view");
-	meta.action = action;
-	const nextId = generateItemId();
-	const resolved = resolveSpeedDialIconUrl(item.id, String(meta.iconUrl || ""));
-	if (isInlineIconUrl(resolved)) meta.iconUrl = persistSpeedDialIconBlob(nextId, resolved);
-	return {
-		id: nextId,
-		cell: cell ? [Number(cell[0]) || 0, Number(cell[1]) || 0] : [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
-		icon: String(snap.state?.icon || unwrapRef(item.icon, "sparkle") || "sparkle"),
-		label: String(snap.state?.label || unwrapRef(item.label, "Shortcut") || "Shortcut"),
-		action,
-		meta
-	};
-};
-var addClonedSpeedDialItem = (source, cell) => {
-	const packed = cloneSpeedDialItemPacked(source, cell);
-	const item = createStatefulItem(packed);
-	ensureSpeedDialMeta(item.id, {
-		action: packed.action,
-		...packed.meta || {}
-	});
-	if (!cell) {
-		const free = findNextFreeSpeedDialCell(getItemSpan(item.id));
-		item.cell[0] = free[0];
-		item.cell[1] = free[1];
-	}
-	addSpeedDialItem(item);
-	return item;
-};
-var wallpaperState = makeUIState("cw::workspace::wallpaper", () => observe({
-	src: "/assets/wallpaper.jpg",
-	opacity: 1,
-	blur: 0
-}), (raw) => observe(raw || {
-	src: "/assets/wallpaper.jpg",
-	opacity: 1,
-	blur: 0
-}), (state) => ({ ...state }));
-var persistWallpaper = () => wallpaperState?.$save?.();
-var ICON_SCALE_VALUES = {
-	compact: "0.78",
-	fit: "1",
-	fill: "1.28",
-	zoom: "1.5",
-	max: "1.75"
-};
-var ICON_BITMAP_SCALE_OPTIONS = [
-	{
-		value: "auto",
-		label: "Auto (workspace default)"
-	},
-	{
-		value: "compact",
-		label: "Compact (0.78)"
-	},
-	{
-		value: "fit",
-		label: "Fit (1.0 — no zoom)"
-	},
-	{
-		value: "fill",
-		label: "Fill (1.28 — adaptive)"
-	},
-	{
-		value: "zoom",
-		label: "Zoom (1.5)"
-	},
-	{
-		value: "max",
-		label: "Max (1.75)"
-	}
-];
-function normalizeIconBitmapScale(raw, fallback = "fill") {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "compact" || v === "small" || v === "0.78") return "compact";
-	if (v === "fit" || v === "1" || v === "contain") return "fit";
-	if (v === "fill" || v === "adaptive" || v === "1.28") return "fill";
-	if (v === "zoom" || v === "1.5") return "zoom";
-	if (v === "max" || v === "large" || v === "1.75") return "max";
-	return fallback;
-}
-/** Empty / auto → inherit workspace; otherwise a concrete scale. */
-function normalizeItemIconBitmapScale(raw) {
-	const v = String(raw || "").trim().toLowerCase();
-	if (!v || v === "auto" || v === "default" || v === "inherit") return "auto";
-	return normalizeIconBitmapScale(v, "fill");
-}
-function iconBitmapScaleCss(raw) {
-	return ICON_SCALE_VALUES[normalizeIconBitmapScale(raw)];
-}
-function packIconBitmapScaleCss(raw) {
-	return iconBitmapScaleCss(raw);
-}
-/** Resolve item (`auto`) → concrete workspace/id scale factor string. */
-function resolveIconScaleFactor(rawItemScale) {
-	const item = normalizeItemIconBitmapScale(rawItemScale);
-	return ICON_SCALE_VALUES[item === "auto" ? normalizeIconBitmapScale(gridLayoutState?.iconScale, "fill") : item];
-}
-/**
-* Set scale CSS vars on the plate AND inline `transform` on painted icon nodes.
-* WHY: Cap WebView often ignores `transform: scale(var(--x))` — inline scale is reliable.
-*/
-function applyItemIconScaleToElement(el, raw) {
-	if (!el) return;
-	const item = normalizeItemIconBitmapScale(raw);
-	const factor = resolveIconScaleFactor(raw);
-	el.dataset.iconScale = item === "auto" ? "auto" : item;
-	el.style.setProperty("--sd-item-icon-scale", factor);
-	el.style.setProperty("--sd-item-pack-icon-scale", factor);
-}
-/** Inline transform on current icon children (call again after replacing img/ui-icon). */
-function applyIconScaleToPaintedNodes(el, factor) {
-	if (!el) return;
-	const t = `scale(${String(factor || el.style.getPropertyValue("--sd-item-icon-scale") || "").trim() || "1.28"})`;
-	el.querySelectorAll("img.ui-ws-item-icon-img, img[data-launcher-icon], img[data-bookmark-favicon], ui-icon, .ui-ws-item-icon-mask").forEach((node) => {
-		node.style.setProperty("transform", t, "important");
-		node.style.setProperty("transform-origin", "center center", "important");
-	});
-}
-/**
-* Native decode size so CSS zoom (scale × DPR) does not upscale a tiny bitmap.
-* WHY: tiles used to always fetch 96px then scale(1.5–1.75) → pixelation on retina.
-*/
-function tileIconFetchSize(rawItemScale, layoutCssPx = 96) {
-	const factor = Number(resolveIconScaleFactor(rawItemScale)) || 1.28;
-	let dpr = 1;
-	try {
-		dpr = Math.min(3, Math.max(1, Number(globalThis.devicePixelRatio) || 1));
-	} catch {
-		dpr = 1;
-	}
-	const base = Math.max(64, Math.round(Number(layoutCssPx) || 96));
-	return Math.max(128, Math.min(512, Math.round(base * factor * dpr)));
-}
-var GRID_LAYOUT_KEY = "cw::workspace::grid-layout";
-var WORKSPACE_GRID_EVENT = "cwsp:workspace-grid";
-var TILE_SHAPES = /* @__PURE__ */ new Set([
-	"square",
-	"squircle",
-	"circle",
-	"rounded",
-	"hexagon",
-	"diamond",
-	"wavy",
-	"shapeless"
-]);
-var normalizeTileShape = (raw, fallback = "squircle") => {
-	const v = String(raw || "").trim().toLowerCase();
-	return TILE_SHAPES.has(v) ? v : fallback;
-};
-var gridLayoutState = makeUIState(GRID_LAYOUT_KEY, () => observe({
-	columns: 4,
-	rows: 8,
-	shape: "squircle",
-	defaultAction: "open-link",
-	iconScale: "fill"
-}), (raw) => observe(raw || {
-	columns: 4,
-	rows: 8,
-	shape: "squircle",
-	defaultAction: "open-link",
-	iconScale: "fill"
-}), (state) => ({ ...state }));
-var persistGridLayout = () => gridLayoutState?.$save?.();
-function getDefaultTileShape() {
-	return normalizeTileShape(gridLayoutState?.shape, "squircle");
-}
-function setDefaultTileShape(shape) {
-	gridLayoutState.shape = normalizeTileShape(shape, "squircle");
-	persistGridLayout();
-}
-function normalizeDefaultAction(raw, fallback = "open-link") {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "open-view" || v === "view") return "open-view";
-	if (v === "open-link" || v === "link") return "open-link";
-	return fallback;
-}
-/** Default action id for newly created shortcuts (Settings → Workspace). */
-function getDefaultSpeedDialAction() {
-	return normalizeDefaultAction(gridLayoutState?.defaultAction, "open-link");
-}
-function setDefaultSpeedDialAction(action) {
-	gridLayoutState.defaultAction = normalizeDefaultAction(action, "open-link");
-	persistGridLayout();
-}
-function getIconBitmapScale() {
-	return normalizeIconBitmapScale(gridLayoutState?.iconScale, "fill");
-}
-function setIconBitmapScale(scale) {
-	gridLayoutState.iconScale = normalizeIconBitmapScale(scale, "fill");
-	persistGridLayout();
-	applyIconBitmapScaleCss(gridLayoutState.iconScale);
-}
-function applyIconBitmapScaleCss(scale) {
-	if (typeof document === "undefined") return;
-	const id = normalizeIconBitmapScale(scale ?? gridLayoutState?.iconScale, "fill");
-	const factor = iconBitmapScaleCss(id);
-	document.documentElement.dataset.iconScale = id;
-	document.documentElement.style.setProperty("--sd-launcher-icon-scale", factor);
-	document.documentElement.style.setProperty("--sd-pack-icon-scale", factor);
-}
-var hasStoredValue = (key) => {
-	try {
-		return typeof localStorage !== "undefined" && localStorage.getItem(key) !== null;
 	} catch {
 		return false;
 	}
 };
-/**
-* Import the former orient-layer storage once. The renderer now has one state
-* model, but old users must not lose shortcuts when the new entrypoint mounts.
-*/
-var migrateLegacyDesktopState = () => {
-	const legacy = loadDesktopRaw();
-	const decoded = legacy ? decodeDesktopState(legacy) : null;
-	if (!decoded?.items?.length) return;
-	if (hasStoredValue(STORAGE_KEY)) return;
-	const columns = Math.max(1, Math.min(32, Number(decoded.columns) || 4));
-	const rows = Math.max(1, Math.min(32, Number(decoded.rows) || 8));
-	const nextItems = [];
-	speedDialItems.splice(0, speedDialItems.length);
-	speedDialMeta.clear();
-	for (const raw of decoded.items) {
-		const action = raw?.action === "open-link" ? "open-link" : "open-view";
-		const item = createStatefulItem({
-			id: String(raw?.id || generateItemId()),
-			cell: observe([Number(raw?.cell?.[0]) || 0, Number(raw?.cell?.[1]) || 0]),
-			icon: String(raw?.icon || (action === "open-link" ? "link" : "sparkle")),
-			label: String(raw?.label || "Shortcut"),
-			action
-		});
-		const meta = {
-			action,
-			view: action === "open-view" ? String(raw?.viewId || "") : "",
-			href: action === "open-link" ? String(raw?.href || "") : "",
-			description: String(raw?.description || ""),
-			shape: String(raw?.shape || "squircle"),
-			iconSrc: String(raw?.iconSrc || "")
-		};
-		speedDialItems.push(item);
-		ensureSpeedDialMeta(item.id, meta);
-		nextItems.push(item);
-	}
-	if (!nextItems.length) return;
-	gridLayoutState.columns = columns;
-	gridLayoutState.rows = rows;
-	gridLayoutState.shape = "square";
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-	persistGridLayout();
-};
-migrateLegacyDesktopState();
-var applyGridSettings = (settings, opts) => {
-	const gridConfig = settings?.grid || gridLayoutState;
-	const columns = Math.max(1, Math.min(16, Number(gridConfig?.columns) || gridLayoutState.columns || 4));
-	const rows = Math.max(1, Math.min(16, Number(gridConfig?.rows) || gridLayoutState.rows || 8));
-	const shape = normalizeTileShape(gridConfig?.shape ?? gridLayoutState.shape, "squircle");
-	const defaultAction = normalizeDefaultAction(gridConfig?.defaultAction ?? gridLayoutState.defaultAction, "open-link");
-	const iconScale = normalizeIconBitmapScale(gridConfig?.iconScale ?? gridLayoutState.iconScale, "fill");
-	if ((opts?.relocate === true || opts?.relocate !== false && Boolean(settings?.grid)) && relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
-	if (gridLayoutState) {
-		gridLayoutState.columns = columns;
-		gridLayoutState.rows = rows;
-		gridLayoutState.shape = shape;
-		gridLayoutState.defaultAction = defaultAction;
-		gridLayoutState.iconScale = iconScale;
-		persistGridLayout();
-	}
-	const openTarget = gridConfig?.defaultOpenLinkTarget;
-	if (openTarget != null && String(openTarget).trim()) setDefaultOpenLinkTarget(normalizeOpenLinkTarget(openTarget));
-	if (typeof document === "undefined") return;
-	document.documentElement.dataset.gridColumns = String(columns);
-	document.documentElement.dataset.gridRows = String(rows);
-	document.documentElement.dataset.gridShape = shape;
-	applyIconBitmapScaleCss(iconScale);
-	try {
-		document.querySelectorAll(".speed-dial-grid [data-speed-dial-item][data-layer='icons']").forEach((tile) => {
-			const id = tile.getAttribute("data-id") || "";
-			const meta = id ? getSpeedDialMeta(id) : null;
-			applyItemIconScaleToElement(tile, defaultIconScaleForDisplay(tile.getAttribute("data-icon-display"), meta?.iconScale));
-			applyIconScaleToPaintedNodes(tile);
-			tile.dispatchEvent(new CustomEvent("cwsp:icon-bitmap-refresh"));
-		});
-	} catch {}
-};
-if (typeof window !== "undefined") window.addEventListener(WORKSPACE_GRID_EVENT, (ev) => {
-	const detail = ev.detail;
-	if (!detail) return;
-	if (detail.query && typeof detail.receive === "function") {
-		detail.receive({
-			columns: gridLayoutState.columns,
-			rows: gridLayoutState.rows,
-			shape: gridLayoutState.shape,
-			defaultAction: getDefaultSpeedDialAction(),
-			iconScale: getIconBitmapScale(),
-			defaultOpenLinkTarget: getDefaultOpenLinkTarget()
-		});
-		return;
-	}
-	applyGridSettings({ grid: detail }, { relocate: true });
-	detail.ack?.();
-});
-if (typeof globalThis !== "undefined" && typeof document !== "undefined") {
-	const run = () => applyGridSettings(void 0, { relocate: false });
-	if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
-	else queueMicrotask(run);
-}
-var looksLikeJsonObject = (raw) => {
-	const t = String(raw || "").trim();
-	return t.startsWith("{") && t.endsWith("}") || t.startsWith("[") && t.endsWith("]");
-};
-var SPEED_DIAL_CLIP_KIND = "cwsp.speed-dial.shortcut";
-/** Pretty or compact shortcut JSON — not a single `{` line from stringify(..., 2). */
-var looksLikeSpeedDialShortcutJson = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t.startsWith("{") || !t.endsWith("}")) return false;
-	return /"kind"\s*:\s*"cwsp\.speed-dial\.shortcut"/.test(t) || /"state"\s*:/.test(t) || /"desc"\s*:/.test(t);
-};
-/**
-* Explorer virtual paths (`/bookmarks/…`, `/user/…`, `/assets/…`).
-* WHY: drag from Explorer used to put these in `text/plain`; they are not JSON.
-*/
-var isSpeedDialVirtualPath = (raw) => {
-	const p = String(raw || "").trim();
-	if (!p.startsWith("/") || p.includes("://") || /\s/.test(p)) return false;
-	return p === "/" || p === "/bookmarks" || p.startsWith("/bookmarks/") || p === "/user" || p.startsWith("/user/") || p === "/assets" || p.startsWith("/assets/");
-};
-var parseSpeedDialItemFromVirtualPath = (pathText, suggestedCell, extras) => {
-	const path = String(pathText || "").trim();
-	if (!isSpeedDialVirtualPath(path)) return null;
-	const href = String(extras?.href || "").trim();
-	const isUrl = /^https?:\/\//i.test(href);
-	const isDir = path.endsWith("/") || extras?.kind === "directory";
-	const labelFromPath = path.split("/").filter(Boolean).pop() || path;
-	const item = createStatefulItem({
-		id: generateItemId(),
-		cell: suggestedCell || [0, 0],
-		icon: isUrl ? "link" : isDir ? "folder" : "file",
-		label: String(extras?.label || "").trim() || labelFromPath,
-		action: isUrl ? "open-link" : "open-path"
-	});
-	const meta = {
-		action: isUrl ? "open-link" : "open-path",
-		path,
-		...isUrl ? { href } : {},
-		kind: extras?.kind || (isDir ? "directory" : "file"),
-		iconDisplay: "glyph",
-		iconScale: "compact"
-	};
-	ensureSpeedDialMeta(item.id, meta);
-	return item;
-};
-var parseSpeedDialItemFromJSON = (jsonText, suggestedCell) => {
-	const raw = String(jsonText || "").trim();
-	if (!raw) return null;
-	if (isSpeedDialVirtualPath(raw)) return parseSpeedDialItemFromVirtualPath(raw, suggestedCell);
-	if (!looksLikeJsonObject(raw)) return null;
-	try {
-		const parsedRaw = JSON.parse(raw);
-		if (!parsedRaw || typeof parsedRaw !== "object") return null;
-		const parsed = parsedRaw.kind === "cwsp.speed-dial.shortcut" && parsedRaw.snapshot ? parsedRaw.snapshot : parsedRaw;
-		const state = parsed.state || parsed;
-		const desc = parsed.desc || parsed.meta || {};
-		if (!state || typeof state !== "object") return null;
-		const cellValue = suggestedCell ? [Number(suggestedCell[0]) || 0, Number(suggestedCell[1]) || 0] : state.cell && Array.isArray(state.cell) && state.cell.length >= 2 ? [Number(state.cell[0]) || 0, Number(state.cell[1]) || 0] : [0, 0];
-		const href = String(desc.href || desc.meta?.href || state.href || "").trim();
-		const path = String(desc.path || desc.meta?.path || state.path || "").trim();
-		const action = desc.action || state.action || (href ? "open-link" : path ? "open-path" : "open-view");
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: cellValue,
-			icon: state.icon || desc.icon || (action === "launch-app" ? "device-mobile" : href ? "link" : path ? "folder" : "sparkle"),
-			label: state.label || desc.label || "Shortcut",
-			action
-		});
-		const meta = {
-			action,
-			...desc.meta || desc || {},
-			...state.meta || {},
-			...href ? { href } : {},
-			...path ? { path } : {}
-		};
-		meta.action = action;
-		ensureSpeedDialMeta(item.id, meta);
-		return item;
-	} catch (e) {
-		console.warn("Failed to parse JSON for speed dial item:", e);
-		return null;
-	}
-};
-/** Digits-only length for phone heuristics (E.164-ish). */
-var PHONE_DIGIT_MIN = 7;
-var PHONE_DIGIT_MAX = 15;
-var digitsOnly = (s) => String(s || "").replace(/\D+/g, "");
-var looksLikePhoneNumber = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t || /\s{3,}/.test(t)) return false;
-	if (/^tel:/i.test(t)) return true;
-	if (/[@/]|https?:/i.test(t) && !/^tel:/i.test(t)) return false;
-	const digits = digitsOnly(t);
-	if (digits.length < PHONE_DIGIT_MIN || digits.length > PHONE_DIGIT_MAX) return false;
-	return /^[+]?[\d\s().-]{7,24}$/.test(t);
-};
-var looksLikeEmail = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return false;
-	if (/^mailto:/i.test(t)) return true;
-	if (/\s/.test(t)) return false;
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(t);
-};
-var looksLikeTelegramHandle = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return false;
-	if (/^(tg:|telegram:)/i.test(t)) return true;
-	if (/^(https?:\/\/)?(t\.me|telegram\.me)\//i.test(t)) return true;
-	return /^@[a-zA-Z][a-zA-Z0-9_]{3,31}$/.test(t);
-};
-/**
-* Parse common calendar-ish fragments → Android calendar time URI when possible.
-* WHY: Cap openUri(ACTION_VIEW) on content://com.android.calendar/time/<ms> opens the day.
-*/
-var parseCalendarHref = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return null;
-	if (/^content:\/\/com\.android\.calendar\//i.test(t)) return {
-		href: t,
-		label: "Calendar"
-	};
-	const iso = t.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s](\d{1,2}:\d{2}(?::\d{2})?))?(?:Z|[+-]\d{2}:?\d{2})?$/);
-	if (iso) {
-		const d = /* @__PURE__ */ new Date(iso[2] ? `${iso[1]}T${iso[2]}` : `${iso[1]}T12:00:00`);
-		if (!Number.isNaN(d.getTime())) return {
-			href: `content://com.android.calendar/time/${d.getTime()}`,
-			label: iso[1]
-		};
-	}
-	const dmy = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
-	if (dmy) {
-		const day = Number(dmy[1]);
-		const month = Number(dmy[2]) - 1;
-		const year = Number(dmy[3]);
-		const hh = dmy[4] != null ? Number(dmy[4]) : 12;
-		const mm = dmy[5] != null ? Number(dmy[5]) : 0;
-		const d = new Date(year, month, day, hh, mm, 0, 0);
-		if (!Number.isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month) return {
-			href: `content://com.android.calendar/time/${d.getTime()}`,
-			label: `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}.${year}`
-		};
-	}
-	return null;
-};
-var normalizeTelegramHref = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return null;
-	if (/^tg:/i.test(t) || /^telegram:/i.test(t)) return {
-		href: t,
-		label: "Telegram"
-	};
-	const at = t.match(/^@([a-zA-Z][a-zA-Z0-9_]{3,31})$/);
-	if (at) return {
-		href: `https://t.me/${at[1]}`,
-		label: `@${at[1]}`
-	};
-	try {
-		const u = new URL(t.startsWith("http") ? t : `https://${t.replace(/^\/+/, "")}`);
-		if (/^(t\.me|telegram\.me)$/i.test(u.hostname.replace(/^www\./, ""))) {
-			const user = u.pathname.replace(/^\/+/, "").split("/")[0] || "Telegram";
-			return {
-				href: u.href,
-				label: user.startsWith("+") ? user : `@${user}`
-			};
-		}
-	} catch {}
-	return null;
-};
-/**
-* Build a Speed Dial open-link tile for tel / mailto / telegram / calendar / smart text.
-* Prefer this before plain http(s) parsing when the clipboard is not a web URL.
-*/
-var parseSpeedDialItemFromSmartText = (rawText, suggestedCell) => {
-	const text = String(rawText || "").trim();
-	if (!text) return null;
-	let candidate = text.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#")) || text;
-	if (candidate.startsWith("<") && candidate.endsWith(">")) candidate = candidate.slice(1, -1).trim();
-	const makeLinkItem = (opts) => {
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: suggestedCell || [0, 0],
-			icon: opts.icon,
-			label: opts.label,
-			action: "open-link"
-		});
-		ensureSpeedDialMeta(item.id, {
-			action: "open-link",
-			href: opts.href,
-			description: opts.description || opts.label,
-			iconDisplay: "glyph",
-			iconScale: "compact",
-			openLinkTarget: defaultOpenLinkTargetForHref(opts.href)
-		});
-		return item;
-	};
-	try {
-		const u = new URL(candidate);
-		const proto = (u.protocol || "").toLowerCase();
-		if (proto === "tel:") {
-			const num = decodeURIComponent(u.pathname || u.href.replace(/^tel:/i, "")).trim() || candidate;
-			return makeLinkItem({
-				href: `tel:${digitsOnly(num) ? num.startsWith("+") ? `+${digitsOnly(num)}` : digitsOnly(num) : num}`,
-				label: num,
-				icon: "phone",
-				description: `Call ${num}`
-			});
-		}
-		if (proto === "mailto:") {
-			const addr = decodeURIComponent(u.pathname || u.username || "").trim() || candidate.replace(/^mailto:/i, "");
-			return makeLinkItem({
-				href: `mailto:${addr}`,
-				label: addr,
-				icon: "at",
-				description: `Email ${addr}`
-			});
-		}
-		if (proto === "tg:" || proto === "telegram:") return makeLinkItem({
-			href: u.href,
-			label: "Telegram",
-			icon: "telegram-logo",
-			description: u.href
-		});
-		if (proto === "content:" && /calendar/i.test(u.href)) return makeLinkItem({
-			href: u.href,
-			label: "Calendar",
-			icon: "calendar",
-			description: u.href
-		});
-	} catch {}
-	if (looksLikePhoneNumber(candidate)) {
-		const digits = digitsOnly(candidate);
-		return makeLinkItem({
-			href: `tel:${candidate.trim().startsWith("+") ? `+${digits}` : digits}`,
-			label: candidate.trim(),
-			icon: "phone",
-			description: `Call ${candidate.trim()}`
-		});
-	}
-	if (looksLikeEmail(candidate)) {
-		const addr = candidate.replace(/^mailto:/i, "").trim();
-		return makeLinkItem({
-			href: `mailto:${addr}`,
-			label: addr,
-			icon: "at",
-			description: `Email ${addr}`
-		});
-	}
-	if (looksLikeTelegramHandle(candidate)) {
-		const tg = normalizeTelegramHref(candidate);
-		if (tg) return makeLinkItem({
-			href: tg.href,
-			label: tg.label,
-			icon: "telegram-logo",
-			description: `Telegram ${tg.label}`
-		});
-	}
-	const cal = parseCalendarHref(candidate);
-	if (cal) return makeLinkItem({
-		href: cal.href,
-		label: cal.label,
-		icon: "calendar",
-		description: `Calendar ${cal.label}`
-	});
-	return null;
-};
-var parseSpeedDialItemFromURL = (urlText, suggestedCell) => {
-	try {
-		const trimmed = urlText.trim();
-		if (!trimmed) return null;
-		const smart = parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-		if (smart) {
-			try {
-				const u = new URL(trimmed);
-				if (/^https?:$/i.test(u.protocol) && !looksLikeTelegramHandle(trimmed)) {} else return smart;
-			} catch {
-				return smart;
-			}
-			if (looksLikeTelegramHandle(trimmed)) return smart;
-		}
-		let url;
-		try {
-			url = new URL(trimmed);
-		} catch {
-			try {
-				url = new URL(trimmed, globalThis?.location?.href);
-			} catch {
-				return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-			}
-		}
-		if (!/^https?:$/i.test(url.protocol)) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-		if (/^(t\.me|telegram\.me)$/i.test(url.hostname.replace(/^www\./, ""))) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-		const hostname = url.hostname || "";
-		const domain = hostname.replace(/^www\./, "");
-		const pathname = url.pathname || "";
-		const label = domain || url.host || "Link";
-		let favicon = "";
-		try {
-			if (hostname) favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=256`;
-		} catch {
-			favicon = "";
-		}
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: suggestedCell || [0, 0],
-			icon: "link",
-			label,
-			action: "open-link"
-		});
-		const meta = {
-			action: "open-link",
-			href: url.href,
-			description: `${label}${pathname ? ` - ${pathname}` : ""}`,
-			iconDisplay: "glyph",
-			iconScale: "compact",
-			openLinkTarget: defaultOpenLinkTargetForHref(url.href),
-			...favicon ? { iconUrl: favicon } : {}
-		};
-		ensureSpeedDialMeta(item.id, meta);
-		return item;
-	} catch (e) {
-		console.warn("Failed to parse URL for speed dial item:", e);
-		return null;
-	}
-};
-/** Pin an http(s) / content / file / app shortcut from Android Share / pin-shortcut. */
-function pinSpeedDialLinkFromIntent(raw, cell) {
-	const targetCell = cell ?? findNextFreeSpeedDialCell();
-	const label = String(raw?.label || "").trim();
-	const pkg = String(raw?.packageName || "").trim();
-	const component = String(raw?.componentName || "").trim();
-	const intentUri = String(raw?.intentUri || "").trim();
-	const href = String(raw?.url || raw?.href || intentUri || "").trim();
-	const actionHint = String(raw?.action || "").trim().toLowerCase();
-	const shortcutId = String(raw?.shortcutId || "").trim();
-	const mimeType = String(raw?.mimeType || "").trim() || guessMimeFromLabelOrHref(label, href);
-	const rawIconUrl = String(raw?.iconUrl || "").trim();
-	const iconUrl = rawIconUrl && !/^(data:|blob:)/i.test(rawIconUrl) ? rawIconUrl : "";
-	const iconDisplay = String(raw?.iconDisplay || "").trim() || (rawIconUrl || iconUrl ? "colored" : "");
-	if (actionHint === "launch-shortcut" || shortcutId && pkg && actionHint !== "launch-app") {
-		if (!pkg || !shortcutId) return null;
-		const existing = findSpeedDialShortcutItem(pkg, shortcutId);
-		if (existing) return existing;
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: targetCell,
-			icon: "folder",
-			label: label || shortcutId,
-			action: "launch-shortcut"
-		});
-		ensureSpeedDialMeta(item.id, {
-			action: "launch-shortcut",
-			packageName: pkg,
-			shortcutId,
-			entityType: "android-shortcut",
-			description: label || shortcutId,
-			iconDisplay: iconDisplay || "colored",
-			...mimeType ? { mimeType } : {},
-			...iconUrl ? { iconUrl } : {}
-		});
-		addSpeedDialItem(item);
-		return item;
-	}
-	if (actionHint === "launch-app" || pkg && !href && !shortcutId) {
-		if (!pkg) return null;
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: targetCell,
-			icon: "device-mobile",
-			label: label || pkg,
-			action: "launch-app"
-		});
-		ensureSpeedDialMeta(item.id, {
-			action: "launch-app",
-			packageName: pkg,
-			componentName: component || void 0,
-			entityType: "android-app",
-			iconCacheKey: pkg,
-			description: label || pkg
-		});
-		addSpeedDialItem(item);
-		return item;
-	}
-	if (!href) return null;
-	if (isSpeedDialVirtualPath(href)) {
-		const item = parseSpeedDialItemFromVirtualPath(href, targetCell, { label: label || void 0 });
-		if (!item) return null;
-		addSpeedDialItem(item);
-		return item;
-	}
-	if (/^https?:\/\//i.test(href) || /^www\./i.test(href)) {
-		const item = parseSpeedDialItemFromURL(href, targetCell);
-		if (!item) return null;
-		if (label) {
-			try {
-				item.label.value = label;
-			} catch {}
-			const meta = ensureSpeedDialMeta(item.id);
-			if (meta) meta.description = label;
-		}
-		addSpeedDialItem(item);
-		return item;
-	}
-	const dataHref = href;
-	const openHref = /^(content:|file:|https?:)/i.test(dataHref) ? dataHref : intentUri || dataHref;
-	const item = createStatefulItem({
-		id: generateItemId(),
-		cell: targetCell,
-		icon: /^content:|^file:/i.test(href) ? "folder" : "link",
-		label: label || href.replace(/^[a-z][a-z0-9+.-]*:/i, "").split("/").filter(Boolean).pop() || "Shortcut",
-		action: "open-link"
-	});
-	ensureSpeedDialMeta(item.id, {
-		action: "open-link",
-		href: openHref,
-		description: label || href,
-		openLinkTarget: "external-app",
-		...intentUri && intentUri !== openHref ? { intentUri } : {},
-		...mimeType ? { mimeType } : {},
-		...shortcutId ? { shortcutId } : {},
-		...pkg ? { publisherPackage: pkg } : {},
-		...iconDisplay ? { iconDisplay } : {},
-		...iconUrl ? { iconUrl } : {}
-	});
-	addSpeedDialItem(item);
-	return item;
-}
-var guessMimeFromLabelOrHref = (label, href) => {
-	const name = `${label} ${href}`.toLowerCase();
-	if (/\.txt(\b|$)/i.test(name) || /\.log(\b|$)/i.test(name) || /\.csv(\b|$)/i.test(name)) return "text/plain";
-	if (/\.md(\b|$)/i.test(name) || /\.markdown(\b|$)/i.test(name)) return "text/markdown";
-	if (/\.pdf(\b|$)/i.test(name)) return "application/pdf";
-	if (/\.png(\b|$)/i.test(name)) return "image/png";
-	if (/\.jpe?g(\b|$)/i.test(name)) return "image/jpeg";
-	if (/\.gif(\b|$)/i.test(name)) return "image/gif";
-	if (/\.webp(\b|$)/i.test(name)) return "image/webp";
-	if (/\.mp4(\b|$)/i.test(name)) return "video/mp4";
-	if (/\.mp3(\b|$)/i.test(name)) return "audio/mpeg";
-	if (/\.html?(\b|$)/i.test(name)) return "text/html";
-	if (/\.json(\b|$)/i.test(name)) return "application/json";
-	if (/\.zip(\b|$)/i.test(name)) return "application/zip";
-	return "";
-};
-var CLIPBOARD_READ_HOOK = "__CWSP_READ_CLIPBOARD_TEXT__";
-var CLIPBOARD_WRITE_HOOK = "__CWSP_WRITE_CLIPBOARD_TEXT__";
-var CAP_CLIPBOARD_PKGS = ["@capacitor/clipboard", "@supernotes/capacitor-clipboard"];
-var CLIP_TEXT_MAX = 8e4;
-var lastCopiedSpeedDial = null;
-var isCapacitorNativeHost = () => {
-	try {
-		const c = globalThis.Capacitor;
-		return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-	} catch {
-		return false;
-	}
-};
-/** Cap WebView: navigator.clipboard is unreliable; prefer host hook / @capacitor/clipboard. */
-var readClipboardTextNative = async () => {
-	const hook = globalThis[CLIPBOARD_READ_HOOK];
-	if (typeof hook === "function") try {
-		const value = await hook();
-		if (typeof value === "string" && value.trim()) return value;
-	} catch {}
-	if (!isCapacitorNativeHost()) return "";
-	for (const pkg of CAP_CLIPBOARD_PKGS) try {
-		const mod = await __vitePreload(() => import(
-			/* @vite-ignore */
-			pkg
-), [], import.meta.url);
-		if (!mod?.Clipboard?.read) continue;
-		const value = (await mod.Clipboard.read())?.value;
-		if (typeof value === "string" && value.trim()) return value;
-	} catch {}
-	return "";
-};
-var writeClipboardTextNative = async (text) => {
-	const hook = globalThis[CLIPBOARD_WRITE_HOOK];
-	if (typeof hook === "function") try {
-		await hook(text);
-		return true;
-	} catch {}
-	if (!isCapacitorNativeHost()) return false;
-	for (const pkg of CAP_CLIPBOARD_PKGS) try {
-		const mod = await __vitePreload(() => import(
-			/* @vite-ignore */
-			pkg
-), [], import.meta.url);
-		if (!mod?.Clipboard?.write) continue;
-		await mod.Clipboard.write({ string: text });
-		return true;
-	} catch {}
-	return false;
-};
-var writeClipboardTextBrowser = async (text) => {
-	if (await writeClipboardTextNative(text)) return;
-	if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-		await navigator.clipboard.writeText(text);
-		return;
-	}
-	if (typeof document === "undefined") throw new Error("clipboard write unavailable");
-	const ta = document.createElement("textarea");
-	ta.value = text;
-	ta.style.position = "fixed";
-	ta.style.left = "-9999px";
-	document.body.appendChild(ta);
-	ta.select();
-	document.execCommand("copy");
-	ta.remove();
-};
-var copySpeedDialItemToClipboard = async (item) => {
-	const snapshot = snapshotSpeedDialItem(item);
-	if (!snapshot) throw new Error("empty");
-	const envelope = {
-		kind: SPEED_DIAL_CLIP_KIND,
-		v: 1,
-		snapshot
-	};
-	lastCopiedSpeedDial = envelope;
-	let text = JSON.stringify(envelope);
-	if (text.length > CLIP_TEXT_MAX) {
-		const slim = fallbackClone(envelope);
-		const meta = slim.snapshot?.desc?.meta;
-		if (meta && typeof meta.iconUrl === "string" && /^(data:|blob:)/i.test(meta.iconUrl)) delete meta.iconUrl;
-		text = JSON.stringify(slim);
-	}
-	try {
-		await writeClipboardTextBrowser(text);
-	} catch (e) {
-		console.warn("OS clipboard write failed; in-session paste still works", e);
-	}
-};
-var hasCopiedSpeedDialItem = () => lastCopiedSpeedDial != null;
-var materializeCopiedSpeedDial = (suggestedCell) => {
-	if (!lastCopiedSpeedDial) return null;
-	return parseSpeedDialItemFromJSON(JSON.stringify(lastCopiedSpeedDial), suggestedCell);
-};
-var readClipboardTextBrowser = async () => {
-	try {
-		const native = await readClipboardTextNative();
-		if (native.trim()) return {
+var shareExplorerItem = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	const name = String(item?.name || path.split("/").filter(Boolean).pop() || "file");
+	const href = String(item?.href || "").trim();
+	if (isNativeVirtual(path) && isNativeStorageAvailable() && item?.kind !== "directory") {
+		if (await shareNativeStorageFile(path, {
+			mimeType: item?.type || getMimeTypeByFilename(name),
+			title: name
+		})) return {
 			ok: true,
-			data: native
+			message: `Shared ${name}`
 		};
-		if (!navigator.clipboard?.readText) return {
-			ok: false,
-			error: "clipboard.readText unavailable"
-		};
-		const data = await navigator.clipboard.readText();
-		return {
+	}
+	if (href && /^https?:\/\//i.test(href)) {
+		if (await webShare({
+			title: name,
+			text: name,
+			url: href
+		})) return {
 			ok: true,
-			data: String(data ?? "")
+			message: `Shared ${name}`
 		};
-	} catch (e) {
+		if (await capacitorShare({
+			title: name,
+			text: name,
+			url: href
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await writeText(href)) return {
+			ok: true,
+			message: "Copied link (share unavailable)"
+		};
 		return {
 			ok: false,
-			error: String(e?.message || e)
+			message: "Share is unavailable"
+		};
+	}
+	if (item?.kind === "directory") {
+		const text = await resolveExplorerRealPath(item, currentPath) || path;
+		if (await webShare({
+			title: name,
+			text
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await capacitorShare({
+			title: name,
+			text
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await writeText(text)) return {
+			ok: true,
+			message: "Copied path (share unavailable)"
+		};
+		return {
+			ok: false,
+			message: "Share is unavailable"
+		};
+	}
+	const file = await loadExplorerFile(item, path);
+	if (file) {
+		if (await webShare({
+			title: name,
+			text: name,
+			files: [file]
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		const uri = isNativeVirtual(path) ? await resolveNativeStorageUri(path).catch(() => "") : "";
+		if (uri && await capacitorShare({
+			title: name,
+			url: uri
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await webShare({
+			title: name,
+			text: name
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		if (await capacitorShare({
+			title: name,
+			text: name
+		})) return {
+			ok: true,
+			message: `Shared ${name}`
+		};
+		return {
+			ok: false,
+			message: "Share is unavailable for this file"
+		};
+	}
+	if (await webShare({
+		title: name,
+		text: path
+	})) return {
+		ok: true,
+		message: `Shared ${name}`
+	};
+	if (await capacitorShare({
+		title: name,
+		text: path
+	})) return {
+		ok: true,
+		message: `Shared ${name}`
+	};
+	return {
+		ok: false,
+		message: "Nothing to share"
+	};
+};
+var resolveExplorerRealPath = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	const href = String(item?.href || "").trim();
+	if (href && /^(https?|file|content):/i.test(href)) return href;
+	if (isNativeVirtual(path) && isNativeStorageAvailable()) {
+		const native = await resolveNativeStorageRealPath(path).catch(() => "");
+		if (native) return native;
+		const uri = await resolveNativeStorageUri(path).catch(() => "");
+		if (uri) return uri;
+	}
+	return mapSdcardRealPath(path);
+};
+var copyExplorerBase64Url = async (item, currentPath = "/") => {
+	const file = await loadExplorerFile(item, explorerItemPath(item, currentPath));
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	try {
+		const ok = await writeText(await fileToBase64Url(file));
+		return {
+			ok,
+			message: ok ? "Copied Base64 URL" : "Clipboard write failed"
+		};
+	} catch {
+		return {
+			ok: false,
+			message: "File is too large for Base64"
 		};
 	}
 };
-var createSpeedDialItemFromClipboard = async (suggestedCell) => {
-	const clipboardResult = await readClipboardTextBrowser();
-	const clipboardText = clipboardResult.ok ? String(clipboardResult.data ?? "") : "";
-	try {
-		if (looksLikeSpeedDialShortcutJson(clipboardText)) {
-			const parsed = parseSpeedDialItemFromJSON(clipboardText, suggestedCell);
-			if (parsed) return parsed;
-		}
-		if (!clipboardResult.ok) {
-			const fromMemory = materializeCopiedSpeedDial(suggestedCell);
-			if (fromMemory) return fromMemory;
-			console.warn("Failed to read clipboard text:", clipboardResult.error);
-			throw new Error(clipboardResult.error || "clipboard read failed");
-		}
-		if (!clipboardText.trim()) {
-			const fromMemory = materializeCopiedSpeedDial(suggestedCell);
-			if (fromMemory) return fromMemory;
-			throw new Error("clipboard empty");
-		}
-		let trimmed = clipboardText.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#")) || clipboardText.trim();
-		if (trimmed.startsWith("<") && trimmed.endsWith(">")) trimmed = trimmed.slice(1, -1).trim();
-		const smart = parseSpeedDialItemFromSmartText(clipboardText, suggestedCell);
-		if (smart) return smart;
-		const absolute = extractHttpUrlFromClipboardText(clipboardText);
-		if (absolute) return parseSpeedDialItemFromURL(absolute, suggestedCell);
-		if (isSpeedDialVirtualPath(trimmed)) return parseSpeedDialItemFromVirtualPath(trimmed, suggestedCell);
-		if (looksLikeJsonObject(clipboardText.trim()) || looksLikeJsonObject(trimmed)) {
-			const parsed = parseSpeedDialItemFromJSON(looksLikeJsonObject(clipboardText.trim()) ? clipboardText : trimmed, suggestedCell);
-			if (parsed) return parsed;
-		}
-		return materializeCopiedSpeedDial(suggestedCell);
-	} catch (e) {
-		console.warn("Failed to create speed dial item from clipboard:", e);
-		if (/empty|failed|unavailable|denied|permission/i.test(String(e?.message || e || ""))) throw e;
-		return materializeCopiedSpeedDial(suggestedCell);
-	}
+var copyExplorerInlineText = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	if (!isTextLikeEntry(item, path)) return {
+		ok: false,
+		message: "Not a text file"
+	};
+	const file = await loadExplorerFile(item, path);
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	const ok = await writeText(await file.text());
+	return {
+		ok,
+		message: ok ? "Copied text" : "Clipboard write failed"
+	};
 };
-/** Mobile Chrome/Samsung often paste title+URL, HTML, or URI-list — find first usable http(s). */
-var extractHttpUrlFromClipboardText = (raw) => {
-	const text = String(raw || "");
-	if (!text.trim()) return null;
-	const hrefMatch = text.match(/href\s*=\s*["'](https?:\/\/[^"']+)["']/i);
-	if (hrefMatch?.[1]) {
-		const n = normalizeExternalWebHref(hrefMatch[1]);
-		if (n) return n;
+var copyExplorerImage = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	if (!isImageLikeEntry(item, path)) return {
+		ok: false,
+		message: "Not an image"
+	};
+	if (isNativeVirtual(path) && isNativeStorageAvailable()) {
+		if (await copyNativeStorageImage(path)) return {
+			ok: true,
+			message: "Copied image"
+		};
 	}
-	for (const line of text.split(/\r?\n/)) {
-		let trimmed = line.trim();
-		if (!trimmed || trimmed.startsWith("#")) continue;
-		if (trimmed.startsWith("<") && trimmed.endsWith(">")) trimmed = trimmed.slice(1, -1).trim();
-		const asUrl = normalizeExternalWebHref(trimmed);
-		if (asUrl) return asUrl;
-		try {
-			const parsed = new URL(trimmed);
-			if (/^https?:$/i.test(parsed.protocol)) return parsed.href;
-		} catch {}
+	const file = await loadExplorerFile(item, path);
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	const ok = await writeImage(file, path);
+	return {
+		ok,
+		message: ok ? "Copied image" : "Clipboard write failed"
+	};
+};
+var copyExplorerRealPath = async (item, currentPath = "/") => {
+	const path = explorerItemPath(item, currentPath);
+	const real = await resolveExplorerRealPath(item, currentPath);
+	if (real) {
+		const ok = await writeText(real);
+		return {
+			ok,
+			message: ok ? "Copied real path" : "Clipboard write failed"
+		};
 	}
-	const embedded = text.match(/https?:\/\/[^\s<>"')\]]+/i);
-	if (embedded?.[0]) {
-		const n = normalizeExternalWebHref(embedded[0].replace(/[.,;:]+$/u, ""));
-		if (n) return n;
-	}
-	return null;
+	const ok = await writeText(path);
+	return {
+		ok,
+		message: ok ? "Copied Explorer path (no OS path)" : "Clipboard write failed"
+	};
+};
+var copyExplorerBlobUrl = async (item, currentPath = "/") => {
+	const file = await loadExplorerFile(item, explorerItemPath(item, currentPath));
+	if (!file) return {
+		ok: false,
+		message: "Could not read this file"
+	};
+	const url = URL.createObjectURL(file);
+	blobUrlKeep.push(url);
+	const ok = await writeText(url);
+	return {
+		ok,
+		message: ok ? "Copied Blob URL (this session)" : "Clipboard write failed"
+	};
 };
 //#endregion
-export { defaultIconScaleForDisplay as C, syncShapelessIconShadow as D, normalizeTileShape$1 as E, createTileUiIconElement as S, normalizeIconDisplay as T, resolveSpeedDialCellFromClientPoint as _, applyItemIconScaleToElement as a, ICON_DISPLAY_OPTIONS as b, captureSpeedDialSnapshot as c, isClientPointOverSpeedDial as d, launcher_state_exports as f, pinLauncherAppEntry as g, persistSpeedDialIconBlob as h, applyIconScaleToPaintedNodes as i, findNextFreeSpeedDialCell as l, parseSpeedDialItemFromJSON as m, SPEED_DIAL_MUTATION_EVENT as n, applySpeedDialSnapshot as o, normalizeItemIconBitmapScale as p, addSpeedDialItem as r, buildLauncherAppDragEnvelope as s, ICON_BITMAP_SCALE_OPTIONS as t, getSpeedDialMeta as u, speedDialItems as v, inferIconDisplay as w, TILE_SHAPE_OPTIONS as x, tileIconFetchSize as y };
+//#region ../../modules/projects/fl.ui/src/ui/explorer/Operative.ts
+var handleCache = /* @__PURE__ */ new WeakMap();
+var waitForClipboardFrame = () => new Promise((resolve) => {
+	if (typeof requestAnimationFrame === "function") {
+		requestAnimationFrame(() => resolve());
+		return;
+	}
+	if (typeof MessageChannel !== "undefined") {
+		const channel = new MessageChannel();
+		channel.port1.onmessage = () => resolve();
+		channel.port2.postMessage(void 0);
+		return;
+	}
+	if (typeof setTimeout === "function") {
+		setTimeout(() => resolve(), 16);
+		return;
+	}
+	if (typeof queueMicrotask === "function") {
+		queueMicrotask(() => resolve());
+		return;
+	}
+	resolve();
+});
+/**
+* Accept File objects from the page, an iframe, or a WebView realm.
+* `instanceof File` is not reliable across those realms.
+*/
+var isFileLike = (value) => Boolean(value && typeof value === "object" && typeof value.name === "string" && typeof value.size === "number" && (typeof value.arrayBuffer === "function" || typeof value.stream === "function"));
+var ASSETS_ROOT = "/assets/";
+var ASSET_SEED_PATHS = [
+	"/assets/crossword.css",
+	"/assets/icons/",
+	"/assets/imgs/",
+	"/assets/wallpapers/"
+];
+var ASSET_ICON_STYLES = [
+	"thin",
+	"light",
+	"regular",
+	"bold",
+	"fill",
+	"duotone"
+];
+var ASSET_ICON_FALLBACK_NAMES = [
+	"copy",
+	"clipboard",
+	"trash",
+	"folder",
+	"folder-open",
+	"download",
+	"upload",
+	"arrow-up",
+	"arrow-clockwise",
+	"code",
+	"eye",
+	"gear",
+	"printer",
+	"file-doc",
+	"file-text",
+	"lightning",
+	"pencil",
+	"clock-counter-clockwise"
+];
+var normalizeDirectoryPath = (input) => normalizeVirtualPath(input ?? "/", true);
+var isAssetsPath = (path) => normalizeDirectoryPath(path).startsWith(ASSETS_ROOT);
+var isVirtualRootPath = (path) => normalizeDirectoryPath(path) === "/";
+var isReadonlyPath = (path) => isAssetsPath(path) || isVirtualRootPath(path);
+var isIconsPath = (path) => normalizeDirectoryPath(path).startsWith("/assets/icons/");
+var isUserPath = (path) => isUserScopePath(normalizeDirectoryPath(path));
+var isIdbPath = (path) => isIdbScopePath(normalizeDirectoryPath(path));
+var isWorkspacePath = (path) => isUserPath(path) || isIdbPath(path);
+var BOOKMARKS_ROOT = "/bookmarks/";
+var isBookmarksPath = (path) => normalizeDirectoryPath(path).startsWith(BOOKMARKS_ROOT);
+/**
+* External ingress may target the virtual root, which is redirected to `/user/`.
+* Keep this predicate shared with the context-menu layer so Paste visibility
+* cannot drift from the actual drop/paste acceptance rules.
+*/
+var canReceiveIncomingPath = (path) => {
+	const normalized = normalizeDirectoryPath(path);
+	return isVirtualRootPath(normalized) || isWorkspacePath(normalized) || isBookmarksPath(normalized);
+};
+var buildVirtualAssetPaths = (path) => {
+	const target = normalizeDirectoryPath(path);
+	const paths = /* @__PURE__ */ new Set();
+	if (!isIconsPath(target)) return [];
+	paths.add("/assets/icons/");
+	paths.add("/assets/icons/phosphor/");
+	paths.add("/assets/icons/duotone/");
+	for (const style of ASSET_ICON_STYLES) {
+		paths.add(`/assets/icons/phosphor/${style}/`);
+		paths.add(`/assets/icons/${style}/`);
+	}
+	const addIconFiles = (base) => {
+		for (const iconName of ASSET_ICON_FALLBACK_NAMES) paths.add(`${base}${iconName}.svg`);
+	};
+	if (target === "/assets/icons/" || target === "/assets/icons/duotone/") addIconFiles("/assets/icons/duotone/");
+	if (target.startsWith("/assets/icons/phosphor/")) {
+		const parts = target.split("/").filter(Boolean);
+		if (parts.length >= 4) {
+			const style = parts[3];
+			if (ASSET_ICON_STYLES.includes(style)) addIconFiles(`/assets/icons/phosphor/${style}/`);
+		}
+	}
+	if (target.startsWith("/assets/icons/")) {
+		const parts = target.split("/").filter(Boolean);
+		if (parts.length >= 3) {
+			const style = parts[2];
+			if (ASSET_ICON_STYLES.includes(style)) addIconFiles(`/assets/icons/${style}/`);
+		}
+	}
+	return Array.from(paths);
+};
+var FileOperative = class {
+	#entries = ref([]);
+	#loading = ref(false);
+	#error = ref("");
+	#fsRoot = null;
+	#dirProxy = null;
+	#loadLock = false;
+	/** Coalesce overlapping loadPath calls onto the latest requested path. */
+	#pendingLoadPath = null;
+	#loadWaiters = [];
+	#clipboard = null;
+	#subscribed = null;
+	#bookmarksInvalidationOff = null;
+	#loaderDebounceTimer = null;
+	#readonly = ref(false);
+	host = null;
+	pathRef = ref("/");
+	get path() {
+		return this.pathRef?.value || "/";
+	}
+	set path(value) {
+		if (this.pathRef) this.pathRef.value = value || "/";
+	}
+	get entries() {
+		return this.#entries;
+	}
+	get readonly() {
+		return this.#readonly?.value === true;
+	}
+	constructor() {
+		this.#entries = ref([]);
+		this.pathRef ??= ref("/");
+		affected(this.pathRef, (path) => {
+			this.#readonly.value = isReadonlyPath(path || "/");
+			this.loadPath(path || "/");
+		});
+		resolveRootHandle("/user/").then((h) => {
+			this.#fsRoot = h;
+			this.refreshList(this.path || "/");
+		});
+	}
+	async listAssetEntries(path) {
+		const target = normalizeDirectoryPath(path);
+		const knownPaths = new Set(ASSET_SEED_PATHS);
+		for (const virtualPath of buildVirtualAssetPaths(target)) knownPaths.add(virtualPath);
+		try {
+			const cacheNames = await caches.keys();
+			for (const cacheName of cacheNames) try {
+				const requests = await (await caches.open(cacheName)).keys();
+				for (const req of requests) {
+					const pathname = new URL(req.url).pathname;
+					if (pathname.startsWith(ASSETS_ROOT)) knownPaths.add(pathname);
+				}
+			} catch {}
+		} catch {}
+		const dirs = /* @__PURE__ */ new Set();
+		const files = [];
+		for (const full of knownPaths) {
+			const normalized = full.startsWith("/") ? full : `/${full}`;
+			if (!normalized.startsWith(target)) continue;
+			const remainder = normalized.slice(target.length);
+			if (!remainder) continue;
+			const [firstSegment, ...rest] = remainder.split("/").filter(Boolean);
+			if (!firstSegment) continue;
+			if (rest.length > 0 || normalized.endsWith("/")) dirs.add(firstSegment);
+			else files.push(firstSegment);
+		}
+		const directoryEntries = Array.from(dirs).sort((a, b) => a.localeCompare(b)).map((name) => observe({
+			name,
+			kind: "directory"
+		}));
+		const fileEntries = Array.from(new Set(files)).filter((name) => !dirs.has(name)).sort((a, b) => a.localeCompare(b)).map((name) => {
+			const item = observe({
+				name,
+				kind: "file"
+			});
+			item.type = getMimeTypeByFilename?.(name);
+			return item;
+		});
+		return [...directoryEntries, ...fileEntries];
+	}
+	listVirtualRootEntries() {
+		return listVirtualRootEntriesFromRouter().map((e) => observe({
+			name: e.name,
+			kind: e.kind,
+			path: e.path || `/${e.name}/`
+		}));
+	}
+	detachDirectoryObservers() {
+		if (this.#loaderDebounceTimer) {
+			clearTimeout(this.#loaderDebounceTimer);
+			this.#loaderDebounceTimer = null;
+		}
+		if (typeof this.#subscribed === "function") {
+			this.#subscribed();
+			this.#subscribed = null;
+		}
+		if (this.#bookmarksInvalidationOff) {
+			this.#bookmarksInvalidationOff();
+			this.#bookmarksInvalidationOff = null;
+		}
+		if (this.#dirProxy?.dispose) this.#dirProxy.dispose();
+		this.#dirProxy = null;
+	}
+	async collectDirectoryEntries() {
+		const source = await this.#dirProxy?.entries?.();
+		let pairs = [];
+		if (Array.isArray(source)) pairs = source;
+		else if (source && typeof source[Symbol.iterator] === "function") pairs = Array.from(source);
+		else if (source && typeof source[Symbol.asyncIterator] === "function") for await (const pair of source) pairs.push(pair);
+		return (await Promise.all((pairs || []).map(async ($pair) => {
+			try {
+				const [name, handle] = $pair;
+				if (!name || !handle) return null;
+				const build = async () => {
+					const kind = handle?.kind || (name?.endsWith?.("/") ? "directory" : "file");
+					const item = observe({
+						name,
+						kind,
+						handle
+					});
+					if (kind === "file") {
+						item.type = getMimeTypeByFilename?.(name);
+						try {
+							const f = await handle?.getFile?.();
+							item.file = f;
+							item.size = f?.size;
+							item.lastModified = f?.lastModified;
+							item.type = f?.type || item.type;
+						} catch {}
+					}
+					return item;
+				};
+				if (typeof handleCache?.getOrInsertComputed === "function") return await handleCache.getOrInsertComputed(handle, build);
+				return await build();
+			} catch (error) {
+				console.warn(error);
+				return null;
+			}
+		})))?.filter?.(($item) => $item != null) || [];
+	}
+	async getDirectoryHandleByPath(path, create = false) {
+		const root = this.#fsRoot || await this.getStorageRootHandle("/user/");
+		if (!root) return null;
+		const parts = normalizeDirectoryPath(path).split("/").filter(Boolean);
+		let current = root;
+		for (const part of parts) current = await current.getDirectoryHandle(part, { create });
+		return current;
+	}
+	normalizeUserRelativePath(path) {
+		const normalized = normalizeDirectoryPath(path);
+		if (normalized === "/user/" || normalized === "/idb/") return "/";
+		if (normalized.startsWith("/user/")) return normalized.slice(5);
+		if (normalized.startsWith("/idb/")) return normalized.slice(4);
+		return normalized;
+	}
+	async getStorageRootHandle(path) {
+		return resolveRootHandle(isIdbPath(path) ? "/idb/" : "/user/", path);
+	}
+	async getOpfsRootHandle() {
+		this.#fsRoot = await this.getStorageRootHandle("/user/");
+		return this.#fsRoot;
+	}
+	async getUserDirHandle(path, create = false) {
+		const root = await this.getStorageRootHandle(path);
+		if (!root) return null;
+		const parts = this.normalizeUserRelativePath(path).split("/").filter(Boolean);
+		let current = root;
+		for (const part of parts) current = await current.getDirectoryHandle(part, { create });
+		return current;
+	}
+	async writeUserFile(file, destPath = this.path) {
+		if (isBookmarksPath(destPath)) {
+			this.dispatchEvent(new CustomEvent("bookmarks-reject", {
+				detail: {
+					reason: "bookmarks backend does not store file bytes",
+					path: destPath,
+					count: 1
+				},
+				bubbles: true,
+				composed: true
+			}));
+			return;
+		}
+		const dir = await this.getUserDirHandle(destPath, true);
+		if (!dir) return;
+		const safeName = (file?.name || `file-${Date.now()}`).trim().replace(/\s+/g, "-");
+		const writable = await (await dir.getFileHandle(safeName, { create: true })).createWritable();
+		await writable.write(file);
+		await writable.close();
+	}
+	/**
+	* Select files without assuming the File System Access constructors exist.
+	* Some shells expose a `showOpenFilePicker` polyfill that throws while
+	* evaluating `FileSystemHandle`; a normal file input is the safe fallback.
+	*/
+	async pickFilesForUpload() {
+		const picker = globalThis?.showOpenFilePicker;
+		if (typeof picker === "function" && typeof globalThis?.FileSystemHandle === "function") {
+			const handles = await picker({ multiple: true }).catch(() => []);
+			const files = [];
+			for (const handle of handles || []) {
+				const file = await handle?.getFile?.().catch?.(() => null);
+				if (isFileLike(file)) files.push(file);
+			}
+			return files;
+		}
+		if (typeof document === "undefined") return [];
+		return new Promise((resolve) => {
+			const input = document.createElement("input");
+			input.type = "file";
+			input.multiple = true;
+			input.style.cssText = "position:fixed;inline-size:1px;block-size:1px;opacity:0;pointer-events:none;";
+			let settled = false;
+			const finish = (files = []) => {
+				if (settled) return;
+				settled = true;
+				input.remove();
+				resolve(files);
+			};
+			input.addEventListener("change", () => {
+				finish(Array.from(input.files || []).filter(isFileLike));
+			}, { once: true });
+			input.addEventListener("cancel", () => finish(), { once: true });
+			(document.body || document.documentElement).appendChild(input);
+			input.click();
+		});
+	}
+	/**
+	* Resolve the only writable destinations for external file ingress.
+	* The virtual root is a navigation scope, so root drops/pastes are stored
+	* in `/user/` and then surfaced by navigating there. `/bookmarks/` is a
+	* live Chrome Bookmarks mount (CRX only) and accepts URI drops.
+	*/
+	incomingDestinationPath() {
+		const currentPath = normalizeDirectoryPath(this.path);
+		if (canReceiveIncomingPath(currentPath) && isWorkspacePath(currentPath)) return currentPath;
+		if (isBookmarksPath(currentPath)) return currentPath;
+		if (isVirtualRootPath(currentPath)) return "/user/";
+		return null;
+	}
+	/**
+	* Returns the registered bookmarks FsBackend for `path`, or `null` when
+	* the path is not under `/bookmarks/` or the backend was never registered
+	* (non-CRX hosts). WHY: mutation handlers branch on this so OPFS write
+	* paths are never reached for `/bookmarks/**`.
+	*/
+	bookmarksBackendFor(path) {
+		const backend = resolveFsBackend(path);
+		return backend && backend.root === BOOKMARKS_ROOT ? backend : null;
+	}
+	/**
+	* Ingest a drop/paste into `/bookmarks/`. URI entries become Chrome
+	* bookmarks via `createUrl`; raw File bytes are rejected with a
+	* user-visible event since `/bookmarks/` is not a byte store.
+	*/
+	async ingestIntoBookmarks(data, destination) {
+		const backend = this.bookmarksBackendFor(destination);
+		if (!backend?.createUrl) return;
+		const files = await this.extractFilesFromData(data);
+		if (files.length > 0) {
+			this.dispatchEvent(new CustomEvent("bookmarks-reject", {
+				detail: {
+					reason: "bookmarks backend does not store file bytes",
+					path: destination,
+					count: files.length
+				},
+				bubbles: true,
+				composed: true
+			}));
+			return;
+		}
+		const getData = (type) => data?.getData?.(type) ?? "";
+		const uriList = String(getData("text/uri-list") || "");
+		const plainText = String(getData("text/plain") || "");
+		const lines = (uriList || plainText).split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
+		for (const line of lines) {
+			if (!/^https?:\/\//i.test(line)) continue;
+			const title = line;
+			try {
+				await backend.createUrl(destination, title, line);
+			} catch (e) {
+				console.warn(e);
+			}
+		}
+	}
+	/**
+	* Capture directory-handle promises during the original drop event.
+	*
+	* WHY: Chromium exposes `getAsFileSystemHandle()` only during the same
+	* event turn. Calling it after `extractFilesFromData()` has awaited, or
+	* calling it from an insecure HTTP page, can terminate the renderer with
+	* RESULT_CODE_KILLED_BAD_MESSAGE instead of throwing a normal exception.
+	*/
+	captureDirectoryHandlePromises(data) {
+		if (globalThis.isSecureContext !== true) return [];
+		const promises = [];
+		for (const item of Array.from(data?.items ?? [])) {
+			if (item?.kind !== "file" || typeof item?.getAsFileSystemHandle !== "function") continue;
+			let legacyEntry = null;
+			try {
+				legacyEntry = item.webkitGetAsEntry?.() ?? null;
+			} catch {}
+			if (legacyEntry && !legacyEntry.isDirectory) continue;
+			if (!legacyEntry) try {
+				if (isFileLike(item.getAsFile?.())) continue;
+			} catch {}
+			try {
+				promises.push(Promise.resolve(item.getAsFileSystemHandle()));
+			} catch {}
+		}
+		return promises;
+	}
+	async ingestIncomingData(data, destination, directoryHandlePromises = []) {
+		const files = await this.extractFilesFromData(data);
+		const directories = (await Promise.allSettled(directoryHandlePromises)).flatMap((result) => result.status === "fulfilled" && result.value?.kind === "directory" ? [result.value] : []);
+		if (files.length > 0) for (const file of files) await this.writeUserFile(file, destination);
+		for (const directory of directories) {
+			const name = String(directory?.name || `folder-${Date.now()}`).trim().replace(/\s+/g, "-");
+			const target = await getDirectoryHandle(this.#fsRoot, `${destination}${name}`, { create: true });
+			if (target) await copyFromOneHandlerToAnother(directory, target, { create: true });
+		}
+		if (files.length > 0 || directories.length > 0) return;
+		const transferItems = Array.from(data?.items ?? []);
+		const getData = (type) => data?.getData?.(type) || "";
+		const uriList = getData("text/uri-list");
+		const plainText = getData("text/plain");
+		if (transferItems.length > 0) {
+			if (!uriList && !plainText) return;
+			await handleIncomingEntries({ getData }, destination, this.#fsRoot);
+			return;
+		}
+		await handleIncomingEntries(data, destination, this.#fsRoot);
+	}
+	async finishIncoming(destination) {
+		if (isVirtualRootPath(this.path)) this.path = destination;
+		await this.refreshList(this.path);
+	}
+	/**
+	* Imperative save API for shells/channels — writes into the OPFS-backed workspace folder.
+	* Defaults to {@link FileOperative.path}; optional `destPath` overrides the parent directory.
+	*/
+	async ingestFileIntoWorkspace(file, destPath) {
+		await this.writeUserFile(file, destPath ?? this.path);
+	}
+	async removeUserEntry(absPath, recursive = true) {
+		const root = await this.getStorageRootHandle(absPath);
+		if (!root) return false;
+		const parts = this.normalizeUserRelativePath(absPath).replace(/\/+$/g, "").split("/").filter(Boolean);
+		if (!parts.length) return false;
+		const name = parts.pop();
+		let dir = root;
+		for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: false });
+		await dir.removeEntry(name, { recursive });
+		return true;
+	}
+	async renameUserFile(absPath, newName) {
+		const root = await this.getStorageRootHandle(absPath);
+		if (!root) return;
+		const parts = this.normalizeUserRelativePath(absPath).replace(/\/+$/g, "").split("/").filter(Boolean);
+		if (!parts.length) return;
+		const oldName = parts.pop();
+		let dir = root;
+		for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: false });
+		const oldFile = await (await dir.getFileHandle(oldName, { create: false })).getFile();
+		const safeName = (newName || "").trim().replace(/\s+/g, "-");
+		if (!safeName || safeName === oldName) return;
+		const writable = await (await dir.getFileHandle(safeName, { create: true })).createWritable();
+		await writable.write(oldFile);
+		await writable.close();
+		await dir.removeEntry(oldName);
+	}
+	async extractFilesFromData(data) {
+		const files = [];
+		const now = Date.now();
+		const extByMime = (mime) => {
+			const m = (mime || "").toLowerCase();
+			if (m.includes("css")) return "css";
+			if (m.includes("json")) return "json";
+			if (m.includes("markdown")) return "md";
+			if (m.includes("svg")) return "svg";
+			if (m.includes("png")) return "png";
+			if (m.includes("jpeg") || m.includes("jpg")) return "jpg";
+			if (m.includes("gif")) return "gif";
+			if (m.includes("webp")) return "webp";
+			if (m.includes("plain")) return "txt";
+			return "bin";
+		};
+		const nativeFiles = Array.from(data?.files ?? []).filter(isFileLike);
+		files.push(...nativeFiles);
+		const items = Array.from(data?.items ?? []);
+		for (const item of items) {
+			if (item?.kind === "file" && typeof item?.getAsFile === "function") {
+				const f = item.getAsFile();
+				if (isFileLike(f)) files.push(f);
+				continue;
+			}
+			const types = Array.from(item?.types ?? []);
+			if (typeof item?.getType === "function" && types.length > 0) {
+				const type = String(types[0] || "");
+				try {
+					const blob = await item.getType(type);
+					if (!blob) continue;
+					const ext = extByMime(blob.type || type);
+					files.push(new File([blob], `clipboard-${now}-${files.length}.${ext}`, {
+						type: blob.type || type,
+						lastModified: now
+					}));
+				} catch {}
+			}
+		}
+		return files;
+	}
+	async readEntriesFromDirectory(dir) {
+		if (!dir) return [];
+		const entries = [];
+		for await (const [name, handle] of dir.entries()) {
+			const kind = handle?.kind || (name?.endsWith?.("/") ? "directory" : "file");
+			const item = observe({
+				name,
+				kind,
+				handle
+			});
+			if (kind === "file") {
+				item.type = getMimeTypeByFilename?.(name);
+				try {
+					const f = await handle?.getFile?.();
+					item.file = f;
+					item.size = f?.size;
+					item.lastModified = f?.lastModified;
+					item.type = f?.type || item.type;
+				} catch {}
+			}
+			entries.push(item);
+		}
+		return entries;
+	}
+	async listUserEntriesDirect(path, createIfMissing = false) {
+		const normalized = normalizeDirectoryPath(path);
+		const strippedPath = normalized.replace(/^\/user\/?/, "/");
+		const legacyPath = normalized;
+		const dirs = [];
+		const tryPush = (dir) => {
+			if (!dir) return;
+			if (!dirs.includes(dir)) dirs.push(dir);
+		};
+		tryPush(await this.getDirectoryHandleByPath(strippedPath, false).catch(() => null));
+		if (legacyPath !== strippedPath) tryPush(await this.getDirectoryHandleByPath(legacyPath, false).catch(() => null));
+		if (!dirs.length && createIfMissing) tryPush(await this.getDirectoryHandleByPath(strippedPath, true).catch(() => null));
+		const merged = /* @__PURE__ */ new Map();
+		for (const dir of dirs) {
+			const chunk = await this.readEntriesFromDirectory(dir);
+			for (const entry of chunk) {
+				if (!entry?.name) continue;
+				const key = `${entry.kind}:${entry.name}`;
+				if (!merged.has(key)) merged.set(key, entry);
+			}
+		}
+		return Array.from(merged.values());
+	}
+	applyEntries(entries) {
+		const unique = /* @__PURE__ */ new Map();
+		for (const entry of entries || []) {
+			if (!entry || !entry.name) continue;
+			const key = `${entry.kind}:${entry.name}`;
+			if (!unique.has(key)) unique.set(key, entry);
+		}
+		this.#entries.value = Array.from(unique.values());
+		this.dispatchEvent(new CustomEvent("entries-updated", {
+			detail: {
+				path: this.path,
+				count: unique.size
+			},
+			bubbles: true,
+			composed: true
+		}));
+	}
+	async itemAction(item, how = "click") {
+		const self = this;
+		const itemPath = item?.path || "";
+		const detailPath = itemPath || (self.path || "/") + (item?.name || "");
+		const detail = {
+			path: detailPath,
+			item,
+			originalEvent: null,
+			how
+		};
+		const event = new CustomEvent("open-item", {
+			detail,
+			bubbles: true,
+			composed: true,
+			cancelable: true
+		});
+		this.host?.dispatchEvent(event);
+		if (event.defaultPrevented) return;
+		if (item?.kind === "directory") self.path = itemPath ? normalizeDirectoryPath(itemPath) : (self.path?.endsWith?.("/") ? self.path : self.path + "/") + (item?.name || "") + "/";
+		else {
+			const href = item?.href;
+			if (href && /^https?:\/\//i.test(href)) {
+				const openEvent = new CustomEvent("open-link", {
+					detail: {
+						href,
+						item,
+						path: detailPath
+					},
+					bubbles: true,
+					composed: true,
+					cancelable: true
+				});
+				this.host?.dispatchEvent(openEvent);
+				if (openEvent.defaultPrevented) return;
+				try {
+					if (typeof window !== "undefined" && typeof window.open === "function") window.open(href, "_blank", "noopener,noreferrer");
+				} catch (e) {
+					console.warn(e);
+				}
+				return;
+			}
+			const abs = (self.path || "/") + (item?.name || "");
+			if (!item?.file) {
+				const loadPath = itemPath || abs;
+				const backend = resolveFsBackend(loadPath);
+				if (typeof backend?.readFile === "function") item.file = await backend.readFile(loadPath).catch(() => null);
+				if (!item.file) item.file = asProvidedFile(await provide(loadPath).catch(() => null));
+				if (item.file) {
+					item.size = item.file.size;
+					item.lastModified = item.file.lastModified;
+					item.type = item.file.type || item.type;
+				}
+			}
+			const openEvent = new CustomEvent("open", {
+				detail,
+				bubbles: true,
+				composed: true
+			});
+			this.host?.dispatchEvent(openEvent);
+		}
+	}
+	async requestUse() {}
+	async refreshList(path = this.path) {
+		await this.loadPath(path);
+		return this;
+	}
+	async loadPath(path = this.path) {
+		this.#pendingLoadPath = path;
+		if (this.#loadLock) return new Promise((resolve) => {
+			this.#loadWaiters.push(resolve);
+		});
+		this.#loadLock = true;
+		try {
+			while (this.#pendingLoadPath != null) {
+				const nextPath = this.#pendingLoadPath;
+				this.#pendingLoadPath = null;
+				await this.#loadPathNow(nextPath);
+			}
+		} finally {
+			this.#loadLock = false;
+			const waiters = this.#loadWaiters.splice(0, this.#loadWaiters.length);
+			for (const resolve of waiters) resolve(this);
+		}
+		return this;
+	}
+	async #loadPathNow(path = this.path) {
+		try {
+			this.#loading.value = true;
+			this.#error.value = "";
+			const rel = normalizeDirectoryPath(path?.value || path || this.path || "/");
+			this.detachDirectoryObservers();
+			if (isVirtualRootPath(rel)) {
+				this.applyEntries(this.listVirtualRootEntries());
+				return this;
+			}
+			if (isAssetsPath(rel)) {
+				const backend = resolveFsBackend(rel);
+				try {
+					const remote = await backend?.list?.(rel);
+					if (remote && remote.length) {
+						this.applyEntries(remote.map((e) => observe(e)));
+						return this;
+					}
+				} catch {}
+				this.applyEntries(await this.listAssetEntries(rel));
+				return this;
+			}
+			if (isUserPath(rel)) {
+				const entries = await this.listUserEntriesDirect(rel, true);
+				this.applyEntries(entries);
+				return this;
+			}
+			const backend = resolveFsBackend(rel);
+			if (backend && backend.root !== "/user/" && backend.root !== "/assets/") {
+				this.applyEntries((await backend.list(rel)).map((e) => observe(e)));
+				const subscribe = backend.subscribeBookmarksInvalidation;
+				if (typeof subscribe === "function" && !this.#bookmarksInvalidationOff) this.#bookmarksInvalidationOff = subscribe(() => {
+					const current = normalizeDirectoryPath(this.path);
+					if (resolveFsBackend(current)?.root === backend.root) this.loadPath(current).catch(() => {});
+				});
+				return this;
+			}
+			try {
+				this.#dirProxy = openDirectory(this.#fsRoot, rel, { create: false });
+				await this.#dirProxy;
+			} catch (openErr) {
+				if (!isUserPath(rel)) throw openErr;
+				this.#dirProxy = openDirectory(this.#fsRoot, rel, { create: true });
+				await this.#dirProxy;
+			}
+			const loader = async () => {
+				const entries = await this.collectDirectoryEntries();
+				if (entries?.length != null && entries?.length >= 0 && typeof entries?.length == "number") this.applyEntries(entries);
+			};
+			const debouncedLoader = () => {
+				if (this.#loaderDebounceTimer) clearTimeout(this.#loaderDebounceTimer);
+				this.#loaderDebounceTimer = setTimeout(() => loader(), 50);
+			};
+			await loader()?.catch?.(console.warn.bind(console));
+			this.#subscribed = affected(await this.#dirProxy?.getMap?.() ?? [], debouncedLoader);
+		} catch (e) {
+			this.#error.value = e?.message || String(e || "");
+			this.applyEntries([]);
+			console.warn(e);
+		} finally {
+			this.#loading.value = false;
+		}
+		return this;
+	}
+	onRowClick = (item, ev) => {
+		ev.preventDefault();
+		this.itemAction(item, "click");
+	};
+	onRowDblClick = (item, ev) => {
+		ev.preventDefault();
+		this.itemAction(item, "dblclick");
+	};
+	onRowDragStart = (item, ev) => {
+		if (!ev.dataTransfer) return;
+		ev.dataTransfer.effectAllowed = "copyMove";
+		const payload = buildExplorerDragPayload(item, this.path || "/");
+		try {
+			ev.dataTransfer.setData("application/json", payload.json);
+		} catch {}
+		ev.dataTransfer.setData("text/plain", payload.plain);
+		ev.dataTransfer.setData("text/uri-list", payload.uriList);
+		if (payload.href) try {
+			ev.dataTransfer.setData("text/x-moz-url", `${payload.href}\n${item?.name || payload.href}`);
+		} catch {}
+		if (item?.file) {
+			ev.dataTransfer.setData("DownloadURL", item?.file?.type + ":" + item?.file?.name + ":" + URL.createObjectURL(item?.file));
+			ev.dataTransfer.items.add(item?.file);
+		}
+	};
+	async runMenuAction(item, actionId, ev) {
+		await this.onMenuAction(item, actionId, ev ?? new MouseEvent("contextmenu"));
+	}
+	async onMenuAction(item, actionId, ev) {
+		try {
+			const itemName = item?.name;
+			if (!actionId) return;
+			const abs = (this.path || "/") + (itemName || "");
+			const bmPath = item?.path || "";
+			const bmBackend = bmPath ? this.bookmarksBackendFor(bmPath) : null;
+			switch (actionId) {
+				case "delete":
+				case "rename":
+				case "movePath":
+					if (this.readonly || isReadonlyPath(abs)) {
+						this.dispatchEvent(new CustomEvent("readonly-blocked", {
+							detail: {
+								action: actionId,
+								path: abs
+							},
+							bubbles: true,
+							composed: true
+						}));
+						break;
+					}
+					if (actionId === "delete") {
+						if (bmBackend?.remove) {
+							if (globalThis.confirm?.(`Delete “${itemName || "bookmark"}”?`) !== true) break;
+							await bmBackend.remove(bmPath, true);
+						} else {
+							const fsBackend = resolveFsBackend(abs) || (bmPath ? resolveFsBackend(bmPath) : null);
+							const nativePath = bmPath && fsBackend && bmPath.startsWith(fsBackend.root) ? bmPath : abs;
+							if (fsBackend?.remove && fsBackend.root !== "/user/" && fsBackend.root !== "/assets/") {
+								if (globalThis.confirm?.(`Delete “${itemName || "item"}”?`) !== true) break;
+								await fsBackend.remove(nativePath, true);
+							} else if (isWorkspacePath(abs)) await this.removeUserEntry(abs, true);
+							else await remove(this.#fsRoot, abs);
+						}
+						await this.refreshList(this.path);
+						break;
+					}
+					if (actionId === "rename") {
+						const next = prompt("Rename to:", itemName);
+						if (next && next !== itemName) {
+							if (bmBackend?.rename) await bmBackend.rename(bmPath, next);
+							else if (item?.kind === "file") if (isWorkspacePath(abs)) await this.renameUserFile(abs ?? "", next ?? "");
+							else await this.renameFile(abs ?? "", next ?? "");
+							await this.refreshList(this.path);
+						}
+						break;
+					}
+					if (actionId === "movePath") {
+						const srcPath = bmPath || abs;
+						this.#clipboard = {
+							items: [srcPath],
+							cut: true
+						};
+						try {
+							await waitForClipboardFrame();
+							await navigator.clipboard?.writeText?.(srcPath);
+						} catch {}
+						break;
+					}
+					break;
+				case "new-folder": {
+					if (this.readonly || isReadonlyPath(this.path)) {
+						this.dispatchEvent(new CustomEvent("readonly-blocked", {
+							detail: {
+								action: actionId,
+								path: this.path
+							},
+							bubbles: true,
+							composed: true
+						}));
+						break;
+					}
+					const destBackend = this.bookmarksBackendFor(this.path);
+					if (destBackend?.mkdir) {
+						const fields = await openBookmarkFieldsDialog({
+							heading: "New folder",
+							description: "Chrome bookmarks folder",
+							showUrl: false,
+							initialTitle: "New folder",
+							submitLabel: "Create"
+						});
+						if (!fields?.title) break;
+						await destBackend.mkdir(this.path, fields.title);
+					} else {
+						const name = prompt("Folder name:", "New folder");
+						if (!name) break;
+						if (isWorkspacePath(this.path)) {
+							const folder = String(name).trim();
+							if (folder) await this.getUserDirHandle(`${this.path}${folder}/`, true);
+						}
+					}
+					await this.refreshList(this.path);
+					break;
+				}
+				case "new-bookmark": {
+					const destBackend = this.bookmarksBackendFor(this.path);
+					if (!destBackend?.createUrl) break;
+					const fields = await openBookmarkFieldsDialog({
+						heading: "New bookmark",
+						description: "Saved to Chrome bookmarks",
+						showUrl: true,
+						initialUrl: "https://",
+						submitLabel: "Create"
+					});
+					if (!fields?.url) break;
+					await destBackend.createUrl(this.path, fields.title || fields.url, fields.url);
+					await this.refreshList(this.path);
+					break;
+				}
+				case "edit-bookmark": {
+					if (!item || !bmBackend) break;
+					const isFolder = item.kind === "directory";
+					const fields = await openBookmarkFieldsDialog({
+						heading: isFolder ? "Rename folder" : "Edit bookmark",
+						description: "Chrome bookmarks",
+						showUrl: !isFolder,
+						initialTitle: item.name,
+						initialUrl: item.href || "",
+						submitLabel: "Save"
+					});
+					if (!fields) break;
+					if (bmBackend.update) await bmBackend.update(bmPath, isFolder ? { title: fields.title } : {
+						title: fields.title,
+						url: fields.url
+					});
+					else if (bmBackend.rename && fields.title && fields.title !== itemName) await bmBackend.rename(bmPath, fields.title);
+					await this.refreshList(this.path);
+					break;
+				}
+				case "open":
+					await this.itemAction(item);
+					break;
+				case "paste":
+					await this.requestPaste();
+					break;
+				case "view":
+					this.dispatchEvent(new CustomEvent("context-action", { detail: {
+						action: "view",
+						item
+					} }));
+					break;
+				case "send-transfer":
+					this.dispatchEvent(new CustomEvent("context-action", { detail: {
+						action: "send-transfer",
+						item
+					} }));
+					break;
+				case "share":
+				case "copy-base64":
+				case "copy-text":
+				case "copy-image":
+				case "copy-real-path":
+				case "copy-blob-url": {
+					const current = this.path || "/";
+					const result = actionId === "share" ? await shareExplorerItem(item, current) : actionId === "copy-base64" ? await copyExplorerBase64Url(item, current) : actionId === "copy-text" ? await copyExplorerInlineText(item, current) : actionId === "copy-image" ? await copyExplorerImage(item, current) : actionId === "copy-real-path" ? await copyExplorerRealPath(item, current) : await copyExplorerBlobUrl(item, current);
+					this.dispatchEvent(new CustomEvent("context-action", { detail: {
+						action: actionId,
+						item,
+						handled: true,
+						message: result.message
+					} }));
+					break;
+				}
+				case "attach-workcenter":
+					this.dispatchEvent(new CustomEvent("context-action", { detail: {
+						action: "attach-workcenter",
+						item
+					} }));
+					break;
+				case "download":
+					Promise.try(async () => {
+						if (isAssetsPath(abs)) {
+							const file = asProvidedFile(await provide(abs));
+							if (file) await downloadFile(file);
+							return;
+						}
+						if (item?.kind === "file") await downloadFile(await getFileHandle(this.#fsRoot, abs, { create: false }));
+						else await downloadFile(await getDirectoryHandle(this.#fsRoot, abs, { create: false }));
+					}).catch(console.warn);
+					break;
+				case "copyPath":
+					this.#clipboard = {
+						items: [abs],
+						cut: false
+					};
+					try {
+						await waitForClipboardFrame();
+						await navigator.clipboard?.writeText?.(abs);
+					} catch {}
+					break;
+				case "copy":
+					this.#clipboard = {
+						items: [abs],
+						cut: false
+					};
+					try {
+						await waitForClipboardFrame();
+						await navigator.clipboard?.writeText?.(abs);
+					} catch {}
+					break;
+			}
+		} catch (e) {
+			console.warn(e);
+			this.#error.value = e?.message || String(e || "");
+		}
+	}
+	async renameFile(oldName, newName) {
+		const file = await (await getFileHandle(this.#fsRoot, oldName, { create: false }))?.getFile?.();
+		if (!file) return;
+		if (!await getFileHandle(this.#fsRoot, newName, { create: true }).catch(() => null)) await writeFile(this.#fsRoot, this.path + newName, file);
+		else await writeFile(this.#fsRoot, this.path + newName, file);
+		await remove(this.#fsRoot, this.path + oldName);
+	}
+	async requestUpload() {
+		const destination = this.incomingDestinationPath();
+		if (destination) {
+			if (isBookmarksPath(destination)) {
+				this.dispatchEvent(new CustomEvent("bookmarks-reject", {
+					detail: {
+						reason: "bookmarks backend does not store file bytes",
+						path: destination,
+						count: 0
+					},
+					bubbles: true,
+					composed: true
+				}));
+				return;
+			}
+			try {
+				const files = await this.pickFilesForUpload();
+				for (const file of files) await this.writeUserFile(file, destination);
+				await this.finishIncoming(destination);
+			} catch (e) {
+				console.warn(e);
+			}
+			return;
+		}
+		const currentPath = normalizeDirectoryPath(this.path);
+		if (this.readonly || isReadonlyPath(currentPath)) return;
+		try {
+			await uploadFile(currentPath, null);
+			await this.refreshList(currentPath);
+		} catch (e) {
+			console.warn(e);
+		}
+	}
+	async requestPaste() {
+		const destination = this.incomingDestinationPath();
+		if (!destination) return;
+		if (isBookmarksPath(destination)) {
+			const internal = this.#clipboard;
+			if (internal?.cut && internal.items.length > 0 && internal.items.every((p) => isBookmarksPath(p))) {
+				const moveBackend = this.bookmarksBackendFor(destination);
+				if (moveBackend?.move) {
+					try {
+						for (const src of internal.items) try {
+							await moveBackend.move(src, destination);
+						} catch (e) {
+							console.warn(e);
+						}
+						this.#clipboard = null;
+						await this.refreshList(this.path);
+					} catch (e) {
+						console.warn(e);
+					}
+					return;
+				}
+			}
+			try {
+				let systemText = "";
+				try {
+					await waitForClipboardFrame();
+					systemText = await navigator.clipboard?.readText?.();
+				} catch {}
+				if (systemText) {
+					await this.ingestIntoBookmarks({ getData: (type) => type === "text/plain" ? systemText : "" }, destination);
+					await this.refreshList(this.path);
+				}
+			} catch (e) {
+				console.warn(e);
+			}
+			return;
+		}
+		try {
+			try {
+				await waitForClipboardFrame();
+				const clipboardItems = await navigator.clipboard.read();
+				if (clipboardItems && clipboardItems.length > 0) {
+					const files = await this.extractFilesFromData(clipboardItems);
+					if (files.length > 0) {
+						for (const file of files) await this.writeUserFile(file, destination);
+						await this.finishIncoming(destination);
+						return;
+					}
+				}
+			} catch (e) {}
+			let systemText = "";
+			try {
+				await waitForClipboardFrame();
+				systemText = await navigator.clipboard?.readText?.();
+			} catch {}
+			const internalItems = this.#clipboard?.items || [];
+			if (systemText) {
+				await handleIncomingEntries({ getData: (type) => type === "text/plain" ? systemText : "" }, destination, this.#fsRoot);
+				await this.finishIncoming(destination);
+				return;
+			}
+			if (internalItems.length > 0) {
+				const txt = internalItems.join("\n");
+				if (internalItems.every((x) => String(x || "").startsWith("/user/"))) {
+					for (const src of internalItems) {
+						const file = await readFile(this.#fsRoot, src).catch(() => null);
+						if (isFileLike(file)) {
+							await this.writeUserFile(file, destination);
+							if (this.#clipboard?.cut) await this.removeUserEntry(src, true).catch(() => null);
+						}
+					}
+					if (this.#clipboard?.cut) this.#clipboard = null;
+				} else await handleIncomingEntries({ getData: (type) => type === "text/plain" ? txt : "" }, destination, this.#fsRoot);
+				await this.finishIncoming(destination);
+			}
+		} catch (e) {
+			console.warn(e);
+		}
+	}
+	onPaste(ev) {
+		const destination = this.incomingDestinationPath();
+		if (!destination) return;
+		ev.preventDefault();
+		if (isBookmarksPath(destination)) {
+			const payload = ev.clipboardData || ev.dataTransfer;
+			if (payload) {
+				Promise.try(async () => {
+					await this.ingestIntoBookmarks(payload, destination);
+					await this.refreshList(this.path);
+				}).catch(console.warn);
+				return;
+			}
+			this.requestPaste();
+			return;
+		}
+		if (ev.clipboardData || ev.dataTransfer) {
+			Promise.try(async () => {
+				const payload = ev.clipboardData || ev.dataTransfer;
+				await this.ingestIncomingData(payload, destination);
+				await this.finishIncoming(destination);
+			}).catch(console.warn);
+			return;
+		}
+		this.requestPaste();
+	}
+	onCopy(ev) {}
+	async onDrop(ev) {
+		const destination = this.incomingDestinationPath();
+		if (!destination) return;
+		ev.preventDefault();
+		if (isBookmarksPath(destination)) {
+			const payload = ev.clipboardData || ev.dataTransfer;
+			if (payload) {
+				await this.ingestIntoBookmarks(payload, destination);
+				await this.refreshList(this.path);
+			}
+			return;
+		}
+		if (ev.clipboardData || ev.dataTransfer) {
+			const payload = ev.clipboardData || ev.dataTransfer;
+			const directoryHandlePromises = this.captureDirectoryHandlePromises(payload);
+			await this.ingestIncomingData(payload, destination, directoryHandlePromises);
+			await this.finishIncoming(destination);
+			return;
+		}
+	}
+	/** WHY: host is `ui-file-manager-content`; runtime listens on `ui-file-manager`. */
+	dispatchEvent(event) {
+		const host = this.host;
+		if (!host) return;
+		if (event instanceof CustomEvent) {
+			host.dispatchEvent(new CustomEvent(event.type, {
+				detail: event.detail,
+				bubbles: true,
+				composed: true,
+				cancelable: event.cancelable
+			}));
+			return;
+		}
+		host.dispatchEvent(event);
+	}
+};
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/utils.ts
+/**
+* Get icon name by MIME type
+*/
+var iconByMime = (mime, def = "file") => {
+	if (!mime) return def;
+	if (mime.startsWith("image/")) return "image";
+	if (mime.startsWith("audio/")) return "music";
+	if (mime.startsWith("video/")) return "video";
+	if (mime === "application/pdf") return "file-text";
+	if (mime.includes("zip") || mime.includes("7z") || mime.includes("rar")) return "file-archive";
+	if (mime.includes("json")) return "brackets-curly";
+	if (mime.includes("csv")) return "file-spreadsheet";
+	if (mime.includes("xml")) return "code";
+	if (mime.startsWith("text/")) return "file-text";
+	return def;
+};
+/**
+* Extension to icon mapping
+*/
+var EXTENSION_ICON_MAP = {
+	md: "file-text",
+	txt: "file-text",
+	pdf: "file-pdf",
+	doc: "file-doc",
+	docx: "file-doc",
+	png: "file-image",
+	jpg: "file-image",
+	jpeg: "file-image",
+	gif: "file-image",
+	svg: "file-image",
+	webp: "file-image",
+	js: "file-js",
+	ts: "file-ts",
+	jsx: "file-jsx",
+	tsx: "file-tsx",
+	html: "file-html",
+	css: "file-css",
+	scss: "file-css",
+	json: "file-json",
+	zip: "file-zip",
+	tar: "file-zip",
+	gz: "file-zip",
+	rar: "file-zip",
+	mp3: "file-audio",
+	wav: "file-audio",
+	mp4: "file-video",
+	mov: "file-video",
+	webm: "file-video"
+};
+/**
+* Get icon name by file extension
+*/
+var getFileIcon = (filename) => {
+	return EXTENSION_ICON_MAP[filename.split(".").pop()?.toLowerCase() || ""] || "file";
+};
+/**
+* Get icon for file entry item (unified function)
+* Handles FileEntry objects and string types.
+*/
+var iconFor = (item, type) => {
+	if (typeof item === "string") return item === "directory" ? "folder" : iconByMime(type || item || "");
+	if (item?.kind === "directory") return "folder";
+	return iconByMime(item?.type) || getFileIcon(item?.name || "");
+};
+/**
+* Normalize the identity kind used by row rendering and context-menu lookup.
+* A legacy entry may expose a File object without a `kind` field.
+*/
+var entryKind = (item) => item?.kind === "file" || item?.file ? "file" : "directory";
+/**
+* Keep file and directory rows distinct even when their names match.
+*/
+var entryKey = (item) => `${entryKind(item)}:${item?.name ?? ""}`;
+var sizeCache = /* @__PURE__ */ new Map();
+/**
+* Format file size with caching
+* Uses cached values for performance in lists.
+*/
+var formatSize = (bytes) => {
+	if (bytes === void 0 || bytes === null) return "";
+	if (sizeCache.has(bytes)) return sizeCache.get(bytes);
+	let formatted;
+	if (bytes < 1024) formatted = bytes + " B";
+	else if (bytes < 1024 * 1024) formatted = (bytes / 1024).toFixed(2) + " kB";
+	else if (bytes < 1024 * 1024 * 1024) formatted = (bytes / 1024 / 1024).toFixed(2) + " MB";
+	else formatted = (bytes / 1024 / 1024 / 1024).toFixed(2) + " GB";
+	sizeCache.set(bytes, formatted);
+	return formatted;
+};
+var dateCache = /* @__PURE__ */ new Map();
+/**
+* Format date with caching
+*/
+var formatDate = (timestamp) => {
+	if (timestamp === void 0 || timestamp === null) return "";
+	const ts = timestamp instanceof Date ? timestamp.getTime() : timestamp;
+	if (dateCache.has(ts)) return dateCache.get(ts);
+	const formatted = new Date(ts).toLocaleString("en-US", {
+		dateStyle: "short",
+		timeStyle: "short"
+	});
+	dateCache.set(ts, formatted);
+	return formatted;
+};
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/ContextMenu.ts
+var SUBMENU_HOVER_OPEN_MS = 320;
+var SUBMENU_HOVER_CLOSE_MS = 220;
+var CONTEXT_MENU_LAYER_Z_FALLBACK = "2147483640";
+var IMPORTANT_CSS = "important";
+var menuSession = 0;
+var menuLayer = null;
+var rootMenu = null;
+var rootMenuPlacement = null;
+var rootMenuOverlayUnregister = null;
+var cleanupFns = [];
+var submenuByDepth = /* @__PURE__ */ new Map();
+var submenuAnchorByDepth = /* @__PURE__ */ new Map();
+var submenuPlacementByDepth = /* @__PURE__ */ new Map();
+var submenuOpenTimers = /* @__PURE__ */ new Map();
+var submenuCloseTimers = /* @__PURE__ */ new Map();
+var SUBMENU_FALLBACKS = [
+	"left-start",
+	"right-end",
+	"left-end",
+	"bottom-start",
+	"top-start"
+];
+/**
+* WHY: Chromium CSS Anchor (`strategy: auto`) only flips — it does not keep the
+* submenu inside the visual viewport. Force the JS solver + a post-layout
+* measure so the first paint (icons/fonts) cannot leave a 0×0 clamp.
+*/
+var placeMenuOverlay = (menu, options) => {
+	const handle = placeOverlay(menu, {
+		...options,
+		strategy: "js"
+	});
+	if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => {
+		handle.update?.();
+	});
+	return handle;
+};
+/**
+* WHY: Before Settings opens, `html[data-theme]` may lag OS prefers-color-scheme.
+* Stamp the same pin QS/Theme uses so light panels never keep dark-default white ink.
+*/
+var resolveContextMenuTheme = () => {
+	const root = document.documentElement;
+	const pinned = String(root.getAttribute("data-theme") || "").trim().toLowerCase();
+	if (pinned === "light" || pinned === "dark") return pinned;
+	const scheme = String(root.getAttribute("data-scheme") || "").trim().toLowerCase();
+	if (scheme === "light" || scheme === "dark") return scheme;
+	try {
+		const stored = String(localStorage.getItem("rs-appearance-theme") || "").trim().toLowerCase();
+		if (stored === "light" || stored === "dark") return stored;
+	} catch {}
+	return typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+};
+/**
+* WHY: Explorer menus can be mounted beside host-shell controls that apply
+* broad `button`, `ul`, and `ui-icon` rules. Inline geometry stays important;
+* INVARIANT: do not stamp slate/hex background/color — wallpaper `--base-color` must tint the panel.
+*/
+var stampContextMenuPanel = (menu, compact) => {
+	menu.style.setProperty("position", "fixed", IMPORTANT_CSS);
+	menu.style.setProperty("box-sizing", "border-box", IMPORTANT_CSS);
+	menu.style.setProperty("min-width", compact ? "188px" : "220px", IMPORTANT_CSS);
+	menu.style.setProperty("max-width", "min(320px, calc(100vw - 24px))", IMPORTANT_CSS);
+	menu.style.setProperty("padding", compact ? "0.3rem" : "0.4rem", IMPORTANT_CSS);
+	menu.style.setProperty("border-radius", "14px", IMPORTANT_CSS);
+	menu.style.setProperty("pointer-events", "auto", IMPORTANT_CSS);
+	menu.style.setProperty("backdrop-filter", "blur(10px)", IMPORTANT_CSS);
+	menu.style.setProperty("-webkit-backdrop-filter", "blur(10px)", IMPORTANT_CSS);
+	menu.style.removeProperty("border");
+	menu.style.removeProperty("background");
+	menu.style.removeProperty("color");
+	menu.style.removeProperty("box-shadow");
+	const theme = resolveContextMenuTheme();
+	menu.dataset.theme = theme;
+	menu.style.setProperty("color-scheme", theme === "light" ? "light only" : "dark only", IMPORTANT_CSS);
+};
+var stampContextMenuList = (list) => {
+	list.style.setProperty("list-style", "none", IMPORTANT_CSS);
+	list.style.setProperty("list-style-type", "none", IMPORTANT_CSS);
+	list.style.setProperty("margin", "0", IMPORTANT_CSS);
+	list.style.setProperty("padding", "0", IMPORTANT_CSS);
+	list.style.setProperty("display", "flex", IMPORTANT_CSS);
+	list.style.setProperty("flex-direction", "column", IMPORTANT_CSS);
+	list.style.setProperty("align-items", "stretch", IMPORTANT_CSS);
+	list.style.setProperty("gap", "0.2rem", IMPORTANT_CSS);
+	list.style.setProperty("width", "100%", IMPORTANT_CSS);
+	list.style.setProperty("box-sizing", "border-box", IMPORTANT_CSS);
+};
+var stampContextMenuItem = (button, danger) => {
+	button.style.setProperty("appearance", "none", IMPORTANT_CSS);
+	button.style.setProperty("-webkit-appearance", "none", IMPORTANT_CSS);
+	button.style.setProperty("box-sizing", "border-box", IMPORTANT_CSS);
+	button.style.setProperty("width", "100%", IMPORTANT_CSS);
+	button.style.setProperty("max-width", "100%", IMPORTANT_CSS);
+	button.style.setProperty("margin", "0", IMPORTANT_CSS);
+	button.style.setProperty("display", "grid", IMPORTANT_CSS);
+	button.style.setProperty("grid-template-columns", "1.375rem minmax(0, 1fr) auto", IMPORTANT_CSS);
+	button.style.setProperty("align-items", "center", IMPORTANT_CSS);
+	button.style.setProperty("justify-items", "start", IMPORTANT_CSS);
+	button.style.setProperty("gap", "0.55rem", IMPORTANT_CSS);
+	button.style.setProperty("border", "none", IMPORTANT_CSS);
+	button.style.setProperty("border-radius", "10px", IMPORTANT_CSS);
+	button.style.setProperty("padding", "0.5rem 0.6rem", IMPORTANT_CSS);
+	button.style.setProperty("min-height", "2.35rem", IMPORTANT_CSS);
+	button.style.setProperty("font", "inherit", IMPORTANT_CSS);
+	button.style.setProperty("font-size", "0.8125rem", IMPORTANT_CSS);
+	button.style.setProperty("line-height", "1.25", IMPORTANT_CSS);
+	button.style.setProperty("text-align", "start", IMPORTANT_CSS);
+	button.style.setProperty("cursor", "pointer", IMPORTANT_CSS);
+	button.style.removeProperty("background");
+	button.style.removeProperty("background-color");
+	if (!danger) button.style.setProperty("color", "inherit", IMPORTANT_CSS);
+	else {
+		const dangerInk = resolveContextMenuTheme() === "light" ? "#9f1239" : "#fecaca";
+		button.style.setProperty("color", dangerInk, IMPORTANT_CSS);
+		button.style.setProperty("--cw-menu-fg", dangerInk, IMPORTANT_CSS);
+	}
+};
+var ensureStyle = () => {
+	let style = document.getElementById("cw-unified-context-menu-style");
+	if (!style) {
+		style = document.createElement("style");
+		style.id = "cw-unified-context-menu-style";
+		document.head.appendChild(style);
+	}
+	style.textContent = `
+        .cw-context-menu-layer {
+            position: fixed;
+            inset: 0;
+            z-index: var(--cw-context-menu-layer-z, ${CONTEXT_MENU_LAYER_Z_FALLBACK});
+            pointer-events: none;
+        }
+
+        .cw-context-menu {
+            /* WHY: Menu often mounts outside .wf-demo-root — use :root wallpaper seeds. */
+            --cw-menu-seed: var(--base-color, var(--color-primary, #5a7fff));
+            --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 100);
+            --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 880);
+            --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 14%, transparent);
+            position: fixed;
+            box-sizing: border-box;
+            min-width: 220px;
+            max-width: min(320px, calc(100vw - 24px));
+            padding: 0.4rem;
+            border-radius: 14px;
+            color-scheme: dark;
+            font-family: var(--cw-context-menu-font, ui-sans-serif, system-ui, sans-serif);
+            border: 1px solid var(--cw-menu-border);
+            background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 94%, transparent);
+            color: var(--cw-menu-fg);
+            /*
+             * WHY: !important — unlayered button rules / token-fallback sheets shipped by some hosts
+             * override the panel shadow otherwise; mirror the explorer-view unified menu so the
+             * speed-dial context menu keeps visible elevation + glass blur.
+             */
+            box-shadow:
+                var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)),
+                0 0 0 1px color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 8%, transparent) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            pointer-events: auto;
+            user-select: none;
+            /* WHY: nested Actions/Open-in menus are taller than the remaining
+             * viewport; CSS Anchor flip does not clamp, so the panel must scroll. */
+            max-height: min(80dvh, calc(100vh - 16px));
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        html[data-theme="light"] .cw-context-menu,
+        .cw-context-menu[data-theme="light"] {
+            color-scheme: light only;
+            --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 900);
+            --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 160);
+            --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 900) 14%, transparent);
+            border-color: var(--cw-menu-border);
+            background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 96%, transparent);
+            color: var(--cw-menu-fg);
+            box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16)) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+
+        html[data-theme="dark"] .cw-context-menu,
+        .cw-context-menu[data-theme="dark"] {
+            color-scheme: dark only;
+            --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 100);
+            --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 880);
+            --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 100) 14%, transparent);
+            border-color: var(--cw-menu-border);
+            background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 94%, transparent);
+            color: var(--cw-menu-fg);
+            box-shadow: var(--elev-3, 0 14px 36px rgba(0, 0, 0, 0.45)) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+
+        @media (prefers-color-scheme: light) {
+            html:not([data-theme="dark"]) .cw-context-menu:not([data-theme="dark"]) {
+                color-scheme: light only;
+                --cw-menu-fg: --u2-color-mod(var(--cw-menu-seed), 900);
+                --cw-menu-bg: --u2-color-mod(var(--cw-menu-seed), 160);
+                --cw-menu-border: color-mix(in oklab, --u2-color-mod(var(--cw-menu-seed), 900) 14%, transparent);
+                border-color: var(--cw-menu-border);
+                background: color-mix(in oklab, var(--color-surface-container, var(--cw-menu-bg)) 96%, transparent);
+                color: var(--cw-menu-fg);
+                box-shadow: var(--elev-2, 0 10px 28px rgba(15, 23, 42, 0.16)) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+            }
+        }
+
+        .cw-context-menu.cw-context-menu--compact {
+            min-width: 188px;
+            padding: 0.3rem;
+        }
+
+        .cw-context-menu__list {
+            list-style: none !important;
+            list-style-type: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.2rem;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+        }
+
+        .cw-context-menu__list > li {
+            list-style: none !important;
+            list-style-type: none !important;
+            display: block !important;
+            width: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box;
+        }
+
+        button.cw-context-menu__item,
+        .cw-context-menu button.cw-context-menu__item {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            display: grid !important;
+            grid-template-columns: 1.375rem minmax(0, 1fr) auto !important;
+            align-items: center !important;
+            justify-items: start !important;
+            gap: 0.55rem !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 0.5rem 0.6rem !important;
+            min-height: 2.35rem !important;
+            font: inherit !important;
+            font-size: 0.8125rem !important;
+            line-height: 1.25 !important;
+            text-align: start !important;
+            cursor: pointer !important;
+            background: transparent !important;
+            color: inherit !important;
+            box-shadow: none !important;
+        }
+
+        .cw-context-menu__item > * {
+            pointer-events: none;
+        }
+
+        button.cw-context-menu__item:hover,
+        .cw-context-menu button.cw-context-menu__item:hover,
+        button.cw-context-menu__item:focus-visible,
+        .cw-context-menu button.cw-context-menu__item:focus-visible {
+            outline: none !important;
+            background: color-mix(in oklab, var(--color-primary, --u2-color-mod(var(--cw-menu-seed), 550)) 16%, transparent) !important;
+        }
+
+        .cw-context-menu__item[disabled] {
+            opacity: 0.45;
+            cursor: default;
+        }
+
+        .cw-context-menu__item--danger {
+            color: #fecaca !important;
+        }
+
+        html[data-theme="light"] .cw-context-menu__item--danger,
+        .cw-context-menu[data-theme="light"] .cw-context-menu__item--danger {
+            color: #9f1239 !important;
+        }
+
+        .cw-context-menu__icon {
+            justify-self: center;
+            inline-size: 1.375rem;
+            block-size: 1.375rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cw-menu-fg, inherit);
+        }
+
+        .cw-context-menu__icon ui-icon {
+            --icon-size: 1.125rem;
+            --icon-color: var(--cw-menu-fg, currentColor);
+            inline-size: 1.125rem !important;
+            block-size: 1.125rem !important;
+            min-inline-size: 1.125rem !important;
+            min-block-size: 1.125rem !important;
+            --icon-padding: 0px !important;
+            color: var(--cw-menu-fg, inherit) !important;
+            pointer-events: none;
+        }
+
+        .cw-context-menu__label {
+            justify-self: stretch;
+            text-align: start !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-inline-size: 0;
+            color: var(--cw-menu-fg, inherit);
+        }
+
+        .cw-context-menu__chevron {
+            justify-self: end;
+            opacity: 0.72;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cw-menu-fg, inherit);
+        }
+
+        .cw-context-menu__chevron ui-icon {
+            --icon-size: 0.85rem;
+            --icon-color: var(--cw-menu-fg, currentColor);
+            pointer-events: none;
+        }
+    `;
+};
+var clearCleanup = () => {
+	for (const fn of cleanupFns) try {
+		fn();
+	} catch {}
+	cleanupFns = [];
+};
+var clearTimersFromDepth = (depth) => {
+	for (const [key, timer] of Array.from(submenuOpenTimers.entries())) if (key >= depth) {
+		clearTimeout(timer);
+		submenuOpenTimers.delete(key);
+	}
+	for (const [key, timer] of Array.from(submenuCloseTimers.entries())) if (key >= depth) {
+		clearTimeout(timer);
+		submenuCloseTimers.delete(key);
+	}
+};
+var closeSubmenusFromDepth = (depth) => {
+	clearTimersFromDepth(depth);
+	for (const [key, submenu] of Array.from(submenuByDepth.entries())) if (key >= depth) {
+		submenuPlacementByDepth.get(key)?.dispose();
+		submenuPlacementByDepth.delete(key);
+		submenu.remove();
+		submenuByDepth.delete(key);
+		submenuAnchorByDepth.delete(key);
+	}
+};
+var cancelScheduledCloseFromDepth = (depth) => {
+	for (const [key, timer] of Array.from(submenuCloseTimers.entries())) if (key >= depth) {
+		clearTimeout(timer);
+		submenuCloseTimers.delete(key);
+	}
+};
+var buildMenuElement = (entries, compact, depth, session, placementStrategy) => {
+	const menu = document.createElement("div");
+	menu.className = `cw-context-menu${compact ? " cw-context-menu--compact" : ""}`;
+	menu.setAttribute("role", "menu");
+	menu.dataset.menuDepth = String(depth);
+	menu.style.zIndex = String(depth + 1);
+	const list = document.createElement("ul");
+	list.className = "cw-context-menu__list";
+	stampContextMenuList(list);
+	menu.appendChild(list);
+	const openSubmenu = (item, anchorButton, nextDepth) => {
+		if (session !== menuSession || !rootMenu?.isConnected || !menuLayer?.isConnected) return;
+		closeSubmenusFromDepth(nextDepth);
+		if (!item.children?.length) return;
+		const submenu = buildMenuElement(item.children, compact, nextDepth, session, placementStrategy);
+		submenu.classList.add("cw-context-menu--submenu");
+		menuLayer.appendChild(submenu);
+		submenuByDepth.set(nextDepth, submenu);
+		submenuAnchorByDepth.set(nextDepth, anchorButton);
+		submenuPlacementByDepth.set(nextDepth, placeMenuOverlay(submenu, {
+			origin: {
+				type: "element",
+				element: anchorButton
+			},
+			placement: "right-start",
+			fallbacks: SUBMENU_FALLBACKS,
+			strategy: "js"
+		}));
+	};
+	const scheduleOpenSubmenu = (item, anchorButton, nextDepth) => {
+		const existingOpen = submenuOpenTimers.get(nextDepth);
+		if (existingOpen) clearTimeout(existingOpen);
+		cancelScheduledCloseFromDepth(nextDepth);
+		const timer = setTimeout(() => {
+			submenuOpenTimers.delete(nextDepth);
+			openSubmenu(item, anchorButton, nextDepth);
+		}, SUBMENU_HOVER_OPEN_MS);
+		submenuOpenTimers.set(nextDepth, timer);
+	};
+	const scheduleCloseSubmenuFromDepth = (nextDepth) => {
+		const existingClose = submenuCloseTimers.get(nextDepth);
+		if (existingClose) clearTimeout(existingClose);
+		const timer = setTimeout(() => {
+			submenuCloseTimers.delete(nextDepth);
+			closeSubmenusFromDepth(nextDepth);
+		}, SUBMENU_HOVER_CLOSE_MS);
+		submenuCloseTimers.set(nextDepth, timer);
+	};
+	for (const item of entries) {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = `cw-context-menu__item${item.danger ? " cw-context-menu__item--danger" : ""}`;
+		button.setAttribute("role", "menuitem");
+		button.disabled = Boolean(item.disabled);
+		stampContextMenuItem(button, Boolean(item.danger));
+		const hasChildren = Boolean(item.children?.length);
+		button.innerHTML = `
+            <span class="cw-context-menu__icon">${item.icon ? `<ui-icon icon="${item.icon}"></ui-icon>` : ""}</span>
+            <span class="cw-context-menu__label">${item.label}</span>
+            <span class="cw-context-menu__chevron">${hasChildren ? `<ui-icon icon="caret-right"></ui-icon>` : ""}</span>
+        `;
+		if (hasChildren) {
+			const nextDepth = depth + 1;
+			button.setAttribute("aria-haspopup", "menu");
+			button.addEventListener("pointerenter", () => scheduleOpenSubmenu(item, button, nextDepth));
+			button.addEventListener("pointerleave", () => scheduleCloseSubmenuFromDepth(nextDepth));
+			button.addEventListener("click", (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				if (session !== menuSession || !rootMenu?.isConnected) return;
+				cancelScheduledCloseFromDepth(nextDepth);
+				const existing = submenuByDepth.get(nextDepth);
+				const activeAnchor = submenuAnchorByDepth.get(nextDepth);
+				if (existing?.isConnected && activeAnchor === button) {
+					closeSubmenusFromDepth(nextDepth);
+					return;
+				}
+				openSubmenu(item, button, nextDepth);
+			});
+		} else button.addEventListener("click", async (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			if (session !== menuSession || !rootMenu?.isConnected) return;
+			closeUnifiedContextMenu();
+			if (item.disabled) return;
+			await item.action();
+		});
+		const li = document.createElement("li");
+		li.appendChild(button);
+		list.appendChild(li);
+	}
+	stampContextMenuPanel(menu, compact);
+	menu.addEventListener("pointerenter", () => cancelScheduledCloseFromDepth(depth));
+	menu.addEventListener("pointerleave", () => {
+		if (depth > 0) {
+			const existingClose = submenuCloseTimers.get(depth);
+			if (existingClose) clearTimeout(existingClose);
+			const timer = setTimeout(() => {
+				submenuCloseTimers.delete(depth);
+				closeSubmenusFromDepth(depth);
+			}, SUBMENU_HOVER_CLOSE_MS);
+			submenuCloseTimers.set(depth, timer);
+		}
+	});
+	return menu;
+};
+var closeUnifiedContextMenu = () => {
+	clearCleanup();
+	clearTimersFromDepth(0);
+	rootMenuOverlayUnregister?.();
+	rootMenuOverlayUnregister = null;
+	rootMenuPlacement?.dispose();
+	rootMenuPlacement = null;
+	closeSubmenusFromDepth(1);
+	submenuByDepth.clear();
+	submenuAnchorByDepth.clear();
+	submenuPlacementByDepth.clear();
+	rootMenu?.remove();
+	rootMenu = null;
+	menuLayer?.remove();
+	menuLayer = null;
+	menuSession += 1;
+};
+var openUnifiedContextMenu = (request) => {
+	const entries = (request.items || []).filter((item) => item && item.id && item.label);
+	if (!entries.length) {
+		closeUnifiedContextMenu();
+		return;
+	}
+	ensureStyle();
+	closeUnifiedContextMenu();
+	const session = menuSession;
+	const overlayHost = resolveOverlayHost() ?? document.body;
+	const layer = document.createElement("div");
+	layer.className = "cw-context-menu-layer";
+	menuLayer = layer;
+	overlayHost.appendChild(layer);
+	const submenuPlacementStrategy = request.placementStrategy ?? "auto";
+	const menu = buildMenuElement(entries, Boolean(request.compact), 0, session, submenuPlacementStrategy);
+	rootMenu = menu;
+	layer.appendChild(menu);
+	rootMenuPlacement = placeMenuOverlay(menu, {
+		origin: {
+			type: "point",
+			x: request.x,
+			y: request.y
+		},
+		placement: "bottom-start",
+		gap: 0,
+		strategy: "js"
+	});
+	rootMenuOverlayUnregister = registerTransientOverlay({
+		id: `context-menu-${session}`,
+		kind: "context-menu",
+		element: layer,
+		isActive: () => menuSession === session && menuLayer === layer && layer.isConnected,
+		close: () => {
+			closeUnifiedContextMenu();
+			return true;
+		}
+	});
+	const onPointerDown = (event) => {
+		if (session !== menuSession || !menuLayer?.isConnected) return;
+		const target = event.target;
+		if (target && menuLayer.contains(target)) return;
+		closeUnifiedContextMenu();
+	};
+	const onMenuInternalClick = (event) => {
+		if (session !== menuSession || !rootMenu?.isConnected) return;
+		const target = event.target;
+		if (!target) return;
+		const parentItem = target.closest?.(".cw-context-menu__item");
+		if (!parentItem) {
+			closeSubmenusFromDepth(1);
+			return;
+		}
+		if (!(parentItem.getAttribute("aria-haspopup") === "menu")) closeSubmenusFromDepth(1);
+	};
+	const onEscape = (event) => {
+		if (session !== menuSession) return;
+		if (event.key === "Escape") closeUnifiedContextMenu();
+	};
+	const close = () => closeUnifiedContextMenu();
+	document.addEventListener("pointerdown", onPointerDown, { capture: true });
+	document.addEventListener("contextmenu", onPointerDown, { capture: true });
+	document.addEventListener("keydown", onEscape);
+	menu.addEventListener("click", onMenuInternalClick, { capture: true });
+	window.addEventListener("resize", close, { passive: true });
+	window.addEventListener("blur", close, { passive: true });
+	cleanupFns.push(() => document.removeEventListener("pointerdown", onPointerDown, { capture: true }));
+	cleanupFns.push(() => document.removeEventListener("contextmenu", onPointerDown, { capture: true }));
+	cleanupFns.push(() => document.removeEventListener("keydown", onEscape));
+	cleanupFns.push(() => menu.removeEventListener("click", onMenuInternalClick, { capture: true }));
+	cleanupFns.push(() => window.removeEventListener("resize", close));
+	cleanupFns.push(() => window.removeEventListener("blur", close));
+};
+var hideInAppViewerActions = () => {
+	try {
+		const root = document.documentElement;
+		return root?.dataset?.cwspSku === "explorer" && root?.dataset?.cwspNativeShell === "capacitor";
+	} catch {
+		return false;
+	}
+};
+var makeFileActionOps = () => {
+	return [
+		{
+			id: "open",
+			label: "Open",
+			icon: "function"
+		},
+		...!hideInAppViewerActions() ? [{
+			id: "view",
+			label: "View",
+			icon: "eye"
+		}, {
+			id: "view-base",
+			label: "View (Base tab)",
+			icon: "arrow-square-out"
+		}] : [],
+		{
+			id: "share",
+			label: "Share…",
+			icon: "share-network"
+		},
+		{
+			id: "send-transfer",
+			label: "Send to Transfer",
+			icon: "paper-plane-tilt"
+		},
+		{
+			id: "attach-workcenter",
+			label: "Attach to Work Center",
+			icon: "lightning"
+		},
+		{
+			id: "attach-workcenter-queued",
+			label: "Queue attach (pending)",
+			icon: "clock-counter-clockwise"
+		},
+		{
+			id: "attach-workcenter-headless",
+			label: "Queue attach (headless)",
+			icon: "wave-sine"
+		},
+		{
+			id: "pin-home",
+			label: "Pin to Home Screen",
+			icon: "push-pin-simple"
+		},
+		{
+			id: "download",
+			label: "Download",
+			icon: "download"
+		}
+	];
+};
+var makeFileSystemOps = () => {
+	return [
+		{
+			id: "delete",
+			label: "Delete",
+			icon: "trash"
+		},
+		{
+			id: "rename",
+			label: "Rename",
+			icon: "pencil"
+		},
+		{
+			id: "copy-base64",
+			label: "Copy as Base64 URL",
+			icon: "code"
+		},
+		{
+			id: "copy-text",
+			label: "Copy as text",
+			icon: "text-t"
+		},
+		{
+			id: "copy-image",
+			label: "Copy as image",
+			icon: "image"
+		},
+		{
+			id: "copy-real-path",
+			label: "Copy real path",
+			icon: "map-pin"
+		},
+		{
+			id: "copy-blob-url",
+			label: "Copy as Blob URL",
+			icon: "link"
+		},
+		{
+			id: "copyPath",
+			label: "Copy Path",
+			icon: "copy"
+		},
+		{
+			id: "movePath",
+			label: "Move Path",
+			icon: "hand-withdraw"
+		}
+	];
+};
+var makeDirectoryOps = () => {
+	const allowed = /* @__PURE__ */ new Set([
+		"open",
+		"download",
+		"delete",
+		"rename",
+		"copyPath",
+		"movePath",
+		"share",
+		"copy-real-path"
+	]);
+	return [...makeFileActionOps(), ...makeFileSystemOps()].filter((item) => allowed.has(item.id));
+};
+var makeBookmarkFileOps = () => [
+	{
+		id: "open",
+		label: "Open",
+		icon: "arrow-square-out"
+	},
+	{
+		id: "share",
+		label: "Share…",
+		icon: "share-network"
+	},
+	{
+		id: "edit-bookmark",
+		label: "Edit bookmark…",
+		icon: "pencil"
+	},
+	{
+		id: "delete",
+		label: "Delete",
+		icon: "trash"
+	},
+	{
+		id: "copy-real-path",
+		label: "Copy real path",
+		icon: "map-pin"
+	},
+	{
+		id: "copyPath",
+		label: "Copy Path",
+		icon: "copy"
+	},
+	{
+		id: "movePath",
+		label: "Move",
+		icon: "hand-withdraw"
+	}
+];
+var makeBookmarkDirOps = () => [
+	{
+		id: "open",
+		label: "Open",
+		icon: "folder-open"
+	},
+	{
+		id: "edit-bookmark",
+		label: "Rename folder…",
+		icon: "pencil"
+	},
+	{
+		id: "delete",
+		label: "Delete folder",
+		icon: "trash"
+	},
+	{
+		id: "copyPath",
+		label: "Copy Path",
+		icon: "copy"
+	},
+	{
+		id: "movePath",
+		label: "Move",
+		icon: "hand-withdraw"
+	}
+];
+var makeEmptyOps = (path) => {
+	if (!canReceiveIncomingPath(path)) return [];
+	if (isBookmarksPath(path)) return [
+		{
+			id: "new-bookmark",
+			label: "New bookmark…",
+			icon: "bookmark-simple"
+		},
+		{
+			id: "new-folder",
+			label: "New folder…",
+			icon: "folder-plus"
+		},
+		{
+			id: "paste",
+			label: "Paste",
+			icon: "clipboard"
+		}
+	];
+	return [{
+		id: "paste",
+		label: "Paste",
+		icon: "clipboard"
+	}];
+};
+var getExplorerOperative = (fileManager) => ((fileManager.getRootNode?.())?.host)?.operativeInstance ?? null;
+var createItemCtxMenu = (fileManager, onMenuAction, entries) => {
+	const onContextMenu = (event) => {
+		const ev = event;
+		const row = Array.from(ev.composedPath?.() || []).find((element) => element?.classList?.contains?.("row")) ?? MOCElement(ev.target, ".row");
+		const rowKey = row?.getAttribute("data-entry-key");
+		const rowName = row?.getAttribute("data-id");
+		const item = (entries?.value ?? entries).find((entry) => rowKey ? entryKey(entry) === rowKey : entry?.name === rowName) ?? null;
+		const operative = getExplorerOperative(fileManager);
+		const currentPath = String(operative?.path || "/");
+		const bookmarkItem = Boolean(item && (isBookmarksPath(item.path) || isBookmarksPath(currentPath)));
+		const baseItems = item ? bookmarkItem ? entryKind(item) === "directory" ? makeBookmarkDirOps() : makeBookmarkFileOps() : entryKind(item) === "directory" ? makeDirectoryOps() : [...makeFileActionOps(), ...makeFileSystemOps()] : makeEmptyOps(currentPath);
+		if (baseItems.length === 0) return;
+		ev.preventDefault();
+		ev.stopPropagation();
+		const menuItems = baseItems.filter((menuItem) => {
+			if (menuItem.id === "copy-text") return isTextLikeEntry(item, item?.path || currentPath);
+			if (menuItem.id === "copy-image") return isImageLikeEntry(item, item?.path || currentPath);
+			return true;
+		}).map((menuItem) => ({
+			...menuItem,
+			danger: menuItem.id === "delete",
+			action: () => onMenuAction?.(item, menuItem.id, ev)
+		}));
+		openUnifiedContextMenu({
+			x: ev.clientX,
+			y: ev.clientY,
+			items: menuItems,
+			anchor: fileManager
+		});
+	};
+	fileManager.addEventListener("contextmenu", onContextMenu);
+	return () => fileManager.removeEventListener("contextmenu", onContextMenu);
+};
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/entry-sort.ts
+var EXPLORER_SORT_EVENT = "cwsp:explorer-sort-change";
+var STORAGE_KEY = "cwsp-explorer-sort";
+var SORT_SET = new Set([
+	["name", "Name"],
+	["date", "Date modified"],
+	["type", "Type"],
+	["size", "Size"],
+	["kind", "Kind (file / folder)"]
+].map(([v]) => v));
+var normalizeExplorerSortBy = (raw, fallback = "name") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "modified" || v === "mtime" || v === "updated") return "date";
+	if (v === "mime" || v === "ext" || v === "extension") return "type";
+	if (v === "bytes" || v === "length") return "size";
+	if (v === "folder" || v === "folders") return "kind";
+	return SORT_SET.has(v) ? v : fallback;
+};
+var normalizeSortDir = (raw, fallback = "asc") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "desc" || v === "descending" || v === "newest" || v === "z-a") return "desc";
+	if (v === "asc" || v === "ascending" || v === "oldest" || v === "a-z") return "asc";
+	return fallback;
+};
+var defaultDirForExplorerSort = (sortBy) => sortBy === "date" || sortBy === "size" ? "desc" : "asc";
+var peekExplorerSort = () => {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (raw) {
+			const parsed = JSON.parse(raw);
+			const sortBy = normalizeExplorerSortBy(parsed.sortBy);
+			return {
+				sortBy,
+				sortDir: normalizeSortDir(parsed.sortDir, defaultDirForExplorerSort(sortBy)),
+				foldersFirst: parsed.foldersFirst !== false
+			};
+		}
+	} catch {}
+	return {
+		sortBy: "name",
+		sortDir: "asc",
+		foldersFirst: true
+	};
+};
+var writeExplorerSort = (prefs) => {
+	const cur = peekExplorerSort();
+	const sortBy = prefs.sortBy != null ? normalizeExplorerSortBy(prefs.sortBy, cur.sortBy) : cur.sortBy;
+	const next = {
+		sortBy,
+		sortDir: prefs.sortDir != null ? normalizeSortDir(prefs.sortDir, defaultDirForExplorerSort(sortBy)) : cur.sortDir,
+		foldersFirst: prefs.foldersFirst != null ? Boolean(prefs.foldersFirst) : cur.foldersFirst
+	};
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+	} catch {}
+	try {
+		window.dispatchEvent(new CustomEvent(EXPLORER_SORT_EVENT, { detail: next }));
+	} catch {}
+	return next;
+};
+var cmpStr = (a, b) => a.localeCompare(b, void 0, {
+	numeric: true,
+	sensitivity: "base"
+}) || a.localeCompare(b);
+var cmpNum = (a, b) => a === b ? 0 : a < b ? -1 : 1;
+var extOf = (name) => {
+	const n = String(name || "").trim();
+	const cut = n.lastIndexOf(".");
+	return cut > 0 ? n.slice(cut + 1).toLowerCase() : "";
+};
+var typeOf = (item) => {
+	const mime = String(item.type || item.file?.type || "").trim().toLowerCase();
+	if (mime) return mime;
+	return extOf(String(item.name || ""));
+};
+var kindOf = (item) => {
+	const k = String(item.kind || "").toLowerCase();
+	return k === "directory" || k === "folder" ? "directory" : "file";
+};
+var mtimeOf = (item) => Number(item.lastModified || item.file?.lastModified || 0) || 0;
+var sizeOf = (item) => Number(item.size ?? item.file?.size ?? 0) || 0;
+var sortExplorerEntries = (entries, prefs) => {
+	const dir = prefs.sortDir === "desc" ? -1 : 1;
+	return [...entries].sort((left, right) => {
+		if (prefs.foldersFirst) {
+			const folders = Number(kindOf(left) === "file") - Number(kindOf(right) === "file");
+			if (folders) return folders;
+		}
+		let n = 0;
+		if (prefs.sortBy === "date") n = cmpNum(mtimeOf(left), mtimeOf(right));
+		else if (prefs.sortBy === "type") n = cmpStr(typeOf(left), typeOf(right));
+		else if (prefs.sortBy === "size") n = cmpNum(sizeOf(left), sizeOf(right));
+		else if (prefs.sortBy === "kind") n = cmpStr(kindOf(left), kindOf(right));
+		else n = cmpStr(String(left.name || ""), String(right.name || ""));
+		if (!n) n = cmpStr(String(left.name || ""), String(right.name || ""));
+		return n * dir;
+	});
+};
+//#endregion
+//#region ../../modules/projects/veela.css/src/scss/ui/components/explorer-settings.scss?inline
+var explorer_settings_default = ":host{background:var(--color-surface,light-dark(#f4f6f8,#141218));box-sizing:border-box;color:var(--color-on-surface,light-dark(#1c1b1f,#e6e1e5));color-scheme:inherit;display:block;grid-column:1/-1;grid-row:2;min-block-size:0;min-inline-size:0;overflow:auto;z-index:1}:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only}:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only}:host([hidden]){display:none!important}.explorer-settings{--es-bg:var(--color-surface,light-dark(#f4f6f8,#141218));--es-fg:var(--color-on-surface,light-dark(#1c1b1f,#e6e1e5));--es-muted:var(--color-on-surface-variant,light-dark(#5c6570,#a8b0bc));--es-outline:var(--color-outline-variant,light-dark(#c5cdd8,#3d4755));--es-surface-1:var(--color-surface-container-low,light-dark(#ffffff,#1c232d));--es-surface-2:var(--color-surface-container,light-dark(#f4f6f8,#171c24));--es-primary:var(--color-primary,#5a9ec8);--es-on-primary:var(--color-on-primary,#fff);color:var(--es-fg);display:flex;flex-direction:column;font:500 .875rem/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:.85rem;min-block-size:100%;padding:.75rem .85rem 1.25rem}.explorer-settings,.explorer-settings *,.explorer-settings :after,.explorer-settings :before{box-sizing:border-box}.explorer-settings__head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;margin:0}.explorer-settings__card p,.explorer-settings__hint{color:var(--es-muted);font-size:.8125rem;line-height:1.45;margin:0}.explorer-settings__card{background:var(--es-surface-2);border-radius:var(--card-radius,var(--radius-xl,1rem));display:flex;flex-direction:column;gap:.75rem;padding:1rem}.explorer-settings__card[hidden]{display:none!important}.explorer-settings__title{align-items:center;display:flex;font-size:.95rem;font-weight:600;gap:.5rem;margin:0}.explorer-settings__title ui-icon{--ui-icon-size:1.25rem;--ui-icon-padding:0px;color:var(--es-primary);flex-shrink:0}.explorer-settings__field{display:grid;gap:.35rem;margin:0}.explorer-settings__field>span{color:var(--es-muted);font-size:.75rem;font-weight:500}.explorer-settings__field select{appearance:none;background-color:var(--es-surface-1);background-image:linear-gradient(45deg,transparent 50%,var(--es-muted) 50%),linear-gradient(135deg,var(--es-muted) 50%,transparent 50%);background-position:calc(100% - 1.1rem) 50%,calc(100% - .75rem) 50%;background-repeat:no-repeat;background-size:.35rem .35rem,.35rem .35rem;border:none;border-radius:var(--input-radius,var(--radius-md,.5rem));color:var(--es-fg);display:block;font:inherit;inline-size:100%;min-block-size:2.5rem;padding:.5rem 2rem .5rem .75rem}.explorer-settings__field select:focus-visible{outline:2px solid color-mix(in oklab,var(--es-primary) 55%,transparent);outline-offset:1px}.explorer-settings__check{align-items:center;display:grid;font-size:.875rem;gap:.625rem;grid-template-columns:auto 1fr;min-block-size:var(--touch-min,2.75rem)}.explorer-settings__check input[type=checkbox]{accent-color:var(--es-primary);block-size:1.15rem;inline-size:1.15rem}.explorer-settings__status{background:var(--es-surface-1);border-radius:var(--input-radius,var(--radius-md,.5rem));color:var(--es-muted);font:inherit;font-size:.8125rem;line-height:1.45;margin:0;padding:.65rem .75rem;white-space:pre-wrap}.explorer-settings__actions{display:flex;flex-wrap:wrap;gap:.5rem}.explorer-settings .btn{align-items:center;background:var(--es-surface-1);border:none;border-radius:var(--radius-full,999px);color:var(--es-fg);cursor:pointer;display:inline-flex;font:500 .8125rem/1.2 inherit;gap:.35rem;justify-content:center;min-block-size:var(--touch-min,2.5rem);padding:.5rem 1.125rem}.explorer-settings .btn:hover:not(:disabled){background:color-mix(in oklab,var(--es-fg) 8%,var(--es-surface-1))}.explorer-settings .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--es-primary) 55%,transparent);outline-offset:1px}.explorer-settings .btn:disabled{cursor:not-allowed;opacity:.45}.explorer-settings .btn--primary{background:var(--es-primary);color:var(--es-on-primary)}.explorer-settings__mounts{display:grid;gap:.45rem}.explorer-settings__mounts:empty:before,.explorer-settings__mounts[data-empty=\"1\"]{color:var(--es-muted);font-size:.8125rem}.explorer-settings__mount{align-items:center;background:var(--es-surface-1);border-radius:var(--radius-lg,.75rem);display:flex;flex-wrap:wrap;gap:.45rem .7rem;padding:.55rem .7rem}.explorer-settings__mount code{font-size:.78rem;opacity:.7}";
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/ExplorerSettings.ts
+try {
+	preloadStyle(explorer_settings_default);
+} catch {}
+var paintMounts = (host) => {
+	const list = host.querySelector("[data-explorer-mounts]");
+	if (!list) return;
+	const mounts = listExplorerMounts();
+	list.replaceChildren();
+	if (!mounts.length) {
+		list.dataset.empty = "1";
+		list.textContent = "No mounted folders yet.";
+		return;
+	}
+	list.dataset.empty = "0";
+	for (const mount of mounts) {
+		const row = document.createElement("div");
+		row.className = "explorer-settings__mount";
+		row.innerHTML = `<span>${mount.label}</span><code>${mount.path}</code>`;
+		const unmount = document.createElement("button");
+		unmount.className = "btn";
+		unmount.type = "button";
+		unmount.textContent = "Unmount";
+		unmount.addEventListener("click", () => {
+			removeDirectoryMount(mount.id);
+			paintMounts(host);
+			window.dispatchEvent(new CustomEvent("cwsp:explorer-mount-change"));
+		});
+		row.append(unmount);
+		list.append(row);
+	}
+};
+var paintSort = (host) => {
+	const prefs = peekExplorerSort();
+	const by = host.querySelector("[data-explorer-sort-by]");
+	const dir = host.querySelector("[data-explorer-sort-dir]");
+	const folders = host.querySelector("[data-explorer-folders-first]");
+	if (by) by.value = prefs.sortBy;
+	if (dir) dir.value = prefs.sortDir;
+	if (folders) folders.checked = prefs.foldersFirst;
+};
+var paintStatus = (host, status, note = "") => {
+	const el = host.querySelector("[data-explorer-status]");
+	if (!el) return;
+	el.textContent = [
+		`All-files (/sdcard/): ${status?.allFilesAccess ? "granted" : "not granted"}`,
+		status?.note ? status.note : "",
+		note
+	].filter(Boolean).join("\n");
+};
+var ExplorerSettings = class ExplorerSettings extends UIElement {
+	/** WHY: pass CSS text so Glit can refill / shadow-fallback if the constructable sheet emptied. */
+	styles = () => explorer_settings_default;
+	onInitialize() {
+		const result = super.onInitialize();
+		queueMicrotask(() => {
+			paintSort(this);
+			paintMounts(this);
+			if (isNativeStorageAvailable()) getAllFilesStatus().then((s) => paintStatus(this, s));
+			else paintStatus(this, null, "Browser / PWA: use Mount folder (showDirectoryPicker).");
+		});
+		return result ?? this;
+	}
+	render = function() {
+		const self = this;
+		const native = isNativeStorageAvailable();
+		const picker = canShowDirectoryPicker();
+		return H`<div class="explorer-settings" part="root">
+            <header class="explorer-settings__head">
+                <h2>Explorer</h2>
+                <p class="explorer-settings__hint">Sort this list and how Android or the browser reach files.</p>
+            </header>
+            <section class="explorer-settings__card">
+                <h3 class="explorer-settings__title">
+                    <ui-icon icon="sort-ascending" icon-style="duotone" size="20"></ui-icon>
+                    List sort
+                </h3>
+                <p>Name, date, type, size, or kind. Folders can stay on top.</p>
+                <label class="explorer-settings__field">
+                    <span>Sort by</span>
+                    <select data-explorer-sort-by on:change=${(ev) => {
+			const v = ev.currentTarget.value;
+			writeExplorerSort({ sortBy: v });
+		}}>
+                        <option value="name">Name</option>
+                        <option value="date">Date modified</option>
+                        <option value="type">Type</option>
+                        <option value="size">Size</option>
+                        <option value="kind">Kind (file / folder)</option>
+                    </select>
+                </label>
+                <label class="explorer-settings__field">
+                    <span>Order</span>
+                    <select data-explorer-sort-dir on:change=${(ev) => {
+			writeExplorerSort({ sortDir: ev.currentTarget.value === "desc" ? "desc" : "asc" });
+		}}>
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </label>
+                <label class="explorer-settings__check">
+                    <input type="checkbox" data-explorer-folders-first on:change=${(ev) => {
+			writeExplorerSort({ foldersFirst: ev.currentTarget.checked });
+		}} />
+                    <span>Folders first</span>
+                </label>
+            </section>
+            <section class="explorer-settings__card" hidden=${!native}>
+                <h3 class="explorer-settings__title">
+                    <ui-icon icon="hard-drives" icon-style="duotone" size="20"></ui-icon>
+                    Android storage
+                </h3>
+                <p>All-files is <code>/sdcard/</code>. A picked tree is <code>/saf/</code> in this Explorer only.</p>
+                <p data-explorer-status class="explorer-settings__status">Checking…</p>
+                <div class="explorer-settings__actions">
+                    <button class="btn btn--primary" type="button" disabled=${!native} on:click=${() => {
+			requestAllFilesAccess().then(() => getAllFilesStatus().then((s) => paintStatus(self, s, "Opened system all-files settings.")));
+		}}>Allow all files</button>
+                    <button class="btn" type="button" disabled=${!native} on:click=${() => {
+			pickSafTree().then((uri) => {
+				paintStatus(self, null, uri ? `SAF tree: ${uri}` : "SAF pick cancelled.");
+				window.dispatchEvent(new CustomEvent("cwsp:explorer-mount-change"));
+			});
+		}}>Pick SAF folder</button>
+                </div>
+            </section>
+            <section class="explorer-settings__card">
+                <h3 class="explorer-settings__title">
+                    <ui-icon icon="hard-drives" icon-style="duotone" size="20"></ui-icon>
+                    Origin storage
+                </h3>
+                <p>OPFS is <code>/user/</code> when available. IndexedDB is <code>/idb/</code> beside it, or <code>/user/</code> if OPFS is off.</p>
+                <label class="explorer-settings__check">
+                    <input type="checkbox" data-explorer-opfs-enabled checked=${isOpfsSupportEnabled()} disabled=${!isOpfsCapabilityAvailable()} on:change=${(ev) => {
+			setOpfsSupportEnabled(ev.currentTarget.checked);
+			refreshMappedStorageRoots();
+			unregisterFsBackend("/user/");
+			unregisterFsBackend("/idb/");
+			ensureDefaultFsBackends();
+			window.dispatchEvent(new CustomEvent("cwsp:explorer-mount-change"));
+		}} />
+                    <span>Use OPFS for <code>/user/</code></span>
+                </label>
+            </section>
+            <section class="explorer-settings__card" hidden=${native || !picker}>
+                <h3 class="explorer-settings__title">
+                    <ui-icon icon="folder-plus" icon-style="duotone" size="20"></ui-icon>
+                    Browser mounts
+                </h3>
+                <p>Chromium <code>showDirectoryPicker</code>. Handles stay in this session beside <code>/user/</code>.</p>
+                <div class="explorer-settings__actions">
+                    <button class="btn" type="button" disabled=${!picker} on:click=${() => {
+			pickBrowserDirectory().then((handle) => {
+				if (!handle) return;
+				addDirectoryMount(handle);
+				paintMounts(self);
+				window.dispatchEvent(new CustomEvent("cwsp:explorer-mount-change"));
+			});
+		}}>Mount folder</button>
+                </div>
+                <div data-explorer-mounts class="explorer-settings__mounts"></div>
+            </section>
+        </div>`;
+	};
+};
+ExplorerSettings = __decorate([defineElement("ui-explorer-settings")], ExplorerSettings);
+var openExplorerSettings = (host) => {
+	const existing = host?.querySelector("ui-explorer-settings") ?? document.querySelector("ui-explorer-settings");
+	if (existing) {
+		existing.hidden = false;
+		host?.classList.add("fm-root--settings");
+		return existing;
+	}
+	const page = document.createElement("ui-explorer-settings");
+	(host || document.body).append(page);
+	host?.classList.add("fm-root--settings");
+	return page;
+};
+var closeExplorerSettings = () => {
+	document.querySelectorAll("ui-file-manager").forEach((fm) => {
+		const root = fm.shadowRoot?.querySelector(".fm-root");
+		root?.classList.remove("fm-root--settings");
+		root?.querySelector("ui-explorer-settings")?.remove();
+	});
+	document.querySelector("ui-explorer-settings")?.remove();
+};
+addEvent(window, "keydown", (ev) => {
+	if (ev.key === "Escape") closeExplorerSettings();
+});
+//#endregion
+export { showError as _, sortExplorerEntries as a, UIElement_default as b, openUnifiedContextMenu as c, formatDate as d, formatSize as f, resolveBookmarksMenuApi as g, isBookmarksPath as h, peekExplorerSort as i, entryKey as l, FileOperative as m, openExplorerSettings as n, closeUnifiedContextMenu as o, iconFor as p, EXPLORER_SORT_EVENT as r, createItemCtxMenu as s, closeExplorerSettings as t, entryKind as u, showSuccess as v, __decorate as x, UIElement as y };

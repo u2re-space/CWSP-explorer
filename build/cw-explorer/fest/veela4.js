@@ -1,19 +1,19 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../com/app4.js","../chunks/vite-preload-DHlaQ_oz.js","../vendor/jsox.js","../com/app.js","../com/app6.js","../com/app2.js","../com/app3.js","../com/app5.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../com/app5.js","../chunks/vite-preload-DHlaQ_oz.js","../com/app.js","../vendor/jsox.js","../com/app2.js","../com/app7.js","../com/app3.js","../com/app4.js","../com/app6.js"])))=>i.map(i=>d[i]);
 import { g as shouldHandoffViewToSibling, l as isCwspNativeHost, m as publicHrefForView, p as publicHrefForSku, r as androidPackageForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../chunks/ecosystem-skus.js";
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
-import { R as initGlobalClipboard, X as property, Y as defineElement, Z as H, lt as bindWith } from "../vendor/jsox.js";
-import { g as getDir } from "../com/app.js";
 import { a as loadSettings } from "../vendor/jsox2.js";
 import { b as sinkToOpenLinkTarget, f as peekOpenPolicy, g as resolveOpenPlacement, h as resolveHostOpenPolicy, i as classifyOpenKindFromName, m as resolveExplorerOpenSink, p as rememberOpenPolicyFromSettings, r as classifyOpenKind, s as looksLikePreviewableBinary, w as viewIdForOpenSink, x as skuForOpenSink } from "../chunks/open-policy.js";
+import { Q as H, X as defineElement, Z as property, ut as bindWith, z as initGlobalClipboard } from "../com/app.js";
+import { g as getDir } from "../com/app2.js";
 import { a as persistSpeedDialItems, i as ensureSpeedDialMeta, o as persistSpeedDialMeta, r as createEmptySpeedDialItem, s as speedDialItems, t as addSpeedDialItem } from "../chunks/StateStorage.js";
-import { a as sortExplorerEntries, c as openUnifiedContextMenu, d as formatDate, f as formatSize, h as isBookmarksPath, i as peekExplorerSort, l as entryKey, m as FileOperative, n as openExplorerSettings, p as iconFor, r as EXPLORER_SORT_EVENT, s as createItemCtxMenu, t as closeExplorerSettings, u as entryKind, x as __decorate, y as UIElement } from "../com/app2.js";
-import { b as toExplorerStoragePath, y as resolveEntryIcon } from "../com/app4.js";
-import { r as resolveFsBackend, t as ensureDefaultFsBackends } from "../com/app5.js";
+import { a as sortExplorerEntries, c as openUnifiedContextMenu, d as formatDate, f as formatSize, h as isBookmarksPath, i as peekExplorerSort, l as entryKey, m as FileOperative, n as openExplorerSettings, p as iconFor, r as EXPLORER_SORT_EVENT, s as createItemCtxMenu, t as closeExplorerSettings, u as entryKind, x as __decorate, y as UIElement } from "../com/app3.js";
+import { T as toExplorerStoragePath, w as resolveEntryIcon } from "../com/app5.js";
+import { r as resolveFsBackend, t as ensureDefaultFsBackends } from "../com/app6.js";
 import { n as createViewConstructor, t as sendViewProtocolMessage } from "../chunks/UniformViewTransport.js";
 import { t as ExplorerChannelAction } from "../chunks/channel-actions.js";
 import { loadAsAdopted, preloadStyle, removeAdopted, scheduleBakeScreenColors, unbakeScreenColors } from "/fest/style-lib.js";
-import { addEvent, handleStyleChange } from "/fest/dom.js";
 import { affected, observe, propRef, ref } from "/fest/object.js";
+import { addEvent, handleStyleChange } from "/fest/dom.js";
 //#region src/inject.ts
 /** Merge inject layers: menu items concatenate; handlers shallow-merge last-wins; onWire chains in order. */
 function mergeExplorerInject(...layers) {
@@ -168,7 +168,7 @@ var openFileWithSystem = async (file, sourcePath, chooser) => {
 			})) return true;
 			if (isNativeStorageVirtualPath(href)) {
 				const { openNativeStorageFile } = await __vitePreload(async () => {
-					const { openNativeStorageFile } = await import("../com/app4.js").then((n) => n.m);
+					const { openNativeStorageFile } = await import("../com/app5.js").then((n) => n._);
 					return { openNativeStorageFile };
 				}, __vite__mapDeps([7,2,8]), import.meta.url);
 				if (await openNativeStorageFile(href, {
@@ -228,7 +228,7 @@ var openExplorerSrcInTab = (sourcePath) => {
 /** WHY: `/sdcard/` `/saf/` open in one native IPC — no JS read, no WebView hop. */
 var openNativeStorageByPolicy = async (sourcePath, sink, mimeType) => {
 	const { openNativeStorageFile } = await __vitePreload(async () => {
-		const { openNativeStorageFile } = await import("../com/app4.js").then((n) => n.m);
+		const { openNativeStorageFile } = await import("../com/app5.js").then((n) => n._);
 		return { openNativeStorageFile };
 	}, __vite__mapDeps([7,2,8]), import.meta.url);
 	const mime = String(mimeType || "").trim() || guessMimeFromName(sourcePath);
@@ -258,7 +258,7 @@ var nativeViewUri = async (sourcePath) => {
 	if (/^(content|file|https?):/i.test(p)) return p;
 	try {
 		const { resolveNativeStorageUri } = await __vitePreload(async () => {
-			const { resolveNativeStorageUri } = await import("../com/app4.js").then((n) => n.m);
+			const { resolveNativeStorageUri } = await import("../com/app5.js").then((n) => n._);
 			return { resolveNativeStorageUri };
 		}, __vite__mapDeps([7,2,8]), import.meta.url);
 		const uri = await resolveNativeStorageUri(p);
@@ -366,7 +366,7 @@ var writePersistedExplorerPath = (path) => {
 function loadLastPath(explorer, initialPath) {
 	try {
 		ensureDefaultFsBackends();
-		__vitePreload(() => import("../vendor/jsox.js").then((n) => n.t).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([9,2,8,10]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app.js").then((n) => n.t).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([9,2,8,10,11]), import.meta.url).catch(() => {});
 	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();
@@ -630,9 +630,9 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		} catch {}
 		if (!item.file) try {
 			const { provide } = await __vitePreload(async () => {
-				const { provide } = await import("../vendor/jsox.js").then((n) => n.t);
+				const { provide } = await import("../com/app.js").then((n) => n.t);
 				return { provide };
-			}, __vite__mapDeps([9,2,8,10]), import.meta.url);
+			}, __vite__mapDeps([9,2,8,10,11]), import.meta.url);
 			item.file = await provide(sourcePath);
 		} catch {}
 	};
@@ -874,7 +874,7 @@ function wireExplorerSubtree(shellRoot, wireOpts) {
 		const rebakeRows = () => scheduleBakeScreenColors(shellRoot);
 		fm.addEventListener("entries-updated", rebakeRows, { signal });
 		fm.addEventListener("rs-navigate", rebakeRows, { signal });
-		__vitePreload(() => import("../com/app6.js").then((n) => n.n).then((m) => m.installExplorerBackStack()), __vite__mapDeps([11,2,9,8,10,12,13,7,14]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app7.js").then((n) => n.n).then((m) => m.installExplorerBackStack()), __vite__mapDeps([12,2,9,8,10,11,13,14,7,15]), import.meta.url).catch(() => {});
 		return {
 			cleanup: () => {
 				writePersistedExplorerPath(fm.path || "/user/");
@@ -1400,7 +1400,7 @@ var FileManager = class FileManager extends UIElement {
                 <button class="btn" title="Refresh" on:click=${() => requestAnimationFrame(() => self.navigate(self.inputValue || self.path || "/"))}><ui-icon icon="arrow-clockwise" size="1.5rem" style="--ui-icon-padding:0px"/></button>
             </div>
             <div class="fm-toolbar-center"><form style="display: contents;" onsubmit="return false;">
-                <input class="address c2-surface" autocomplete="off" type="text" name="address" value=${self.path || "/"} />
+                <input class="address c2-surface" autocomplete="off" type="text" name="address" inputmode="url" value=${self.path || "/"} />
             </form></div>
             <div class="fm-toolbar-right">
                 <button class="btn" title="Add" on:click=${() => requestAnimationFrame(() => self.requestUpload?.())}><ui-icon icon="upload" size="1.5rem" style="--ui-icon-padding:0px"/></button>

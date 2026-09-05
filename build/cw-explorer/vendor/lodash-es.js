@@ -1,5 +1,5 @@
 import { r as __exportAll, s as __toESM, t as __commonJSMin } from "../chunks/rolldown-runtime.js";
-import { Z as H } from "./jsox.js";
+import { Q as H } from "../com/app.js";
 //#region ../../node_modules/lodash-es/_freeGlobal.js
 /** Detect free variable `global` from Node.js. */
 var freeGlobal = typeof global == "object" && global && global.Object === Object && global;

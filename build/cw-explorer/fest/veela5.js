@@ -1,18 +1,18 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/ecosystem-skus.js","../com/app4.js","../chunks/vite-preload-DHlaQ_oz.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../vendor/@capacitor_core.js","../chunks/rolldown-runtime.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/ecosystem-skus.js","../com/app5.js","../chunks/vite-preload-DHlaQ_oz.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
-import { A as pointerAnchorRef, Q as vector2Ref, U as elementPointerMap, Z as H, at as navigate, it as registerModal, st as M } from "../vendor/jsox.js";
+import { $ as vector2Ref, Q as H, W as elementPointerMap, at as registerModal, ct as M, j as pointerAnchorRef, ot as navigate } from "../com/app.js";
 import { o as setAppWallpaperFromBlob, r as getWallpaperStoragePointer } from "../vendor/culori.js";
-import { E as handleIncomingEntries } from "../com/app.js";
-import { c as openUnifiedContextMenu } from "../com/app2.js";
+import { E as handleIncomingEntries } from "../com/app2.js";
+import { c as openUnifiedContextMenu } from "../com/app3.js";
 import { _ as toggleQuickSettingsFlyout, t as app_menu_default, v as toggleCalendarFlyout } from "./veela2.js";
-import "../com/app3.js";
-import { n as listVirtualRootEntriesFromRouter, r as resolveFsBackend } from "../com/app5.js";
-import { t as installLauncherBackStack } from "../com/app6.js";
+import "../com/app4.js";
+import { n as listVirtualRootEntriesFromRouter, r as resolveFsBackend } from "../com/app6.js";
+import { t as installLauncherBackStack } from "../com/app7.js";
 import { r as HomeChannelAction } from "../chunks/channel-actions.js";
 import { $ as resolveSpeedDialItemHref, A as isSpeedDialVirtualPath, B as parseSpeedDialItemFromJSON, C as getDefaultTileShape, Ct as normalizeOrient, D as gridLayoutState, E as getSpeedDialMirrorPath, Et as visualLayout, F as normalizeExternalWebHref, G as persistSpeedDialIconBlob, H as parseSpeedDialItemFromURL, I as normalizeItemIconBitmapScale, J as persistWallpaper, K as persistSpeedDialItems, L as normalizeOpenLinkTarget, M as looksLikeSpeedDialShortcutJson, N as markSpeedDialUserEditBeforeHydrate, O as isExternalWebHref, P as mirrorSpeedDialItems, Q as resolveSpeedDialIconUrl, R as openInDetachedBrowserWindow, S as findSpeedDialItem, St as markOccupiedSpan, T as getSpeedDialMeta, Tt as pointToLogicalCell, U as parseSpeedDialItemFromVirtualPath, V as parseSpeedDialItemFromSmartText, W as parseSpeedDialViewFromHref, X as removeSpeedDialItem, Y as refreshSpeedDialMirror, Z as resolveItemOpenLinkTarget, _ as defaultOpenLinkTargetForHref, _t as syncPlateGlyphInk, a as addSpeedDialItem, at as tileIconFetchSize, b as ensureSpeedDialMeta, bt as logicalToVisualCell, c as applySpeedDialSnapshot, ct as wasSpeedDialUserEdited, d as captureSpeedDialSnapshot, dt as createTileUiIconElement, et as setItemSpan, f as cloneSpeedDialItemPacked, ft as defaultIconScaleForDisplay, g as createWidgetSpeedDialItem, gt as normalizeTileShape, h as createSpeedDialItemFromClipboard, ht as normalizeIconDisplay, i as addClonedSpeedDialItem, it as stripCoreRailTilesFromGrid, k as isMirrorMode, l as buildSpeedDialViewPathHref, lt as ICON_DISPLAY_OPTIONS, m as createEmptySpeedDialItem, mt as isTileShapeValue, n as NAVIGATION_SHORTCUTS, nt as speedDialItems, o as applyIconScaleToPaintedNodes, ot as upsertSpeedDialItem, p as copySpeedDialItemToClipboard, pt as inferIconDisplay, q as persistSpeedDialMeta, r as SPEED_DIAL_MUTATION_EVENT, rt as speedDialMeta, s as applyItemIconScaleToElement, st as wallpaperState, t as ICON_BITMAP_SCALE_OPTIONS, tt as setSpeedDialMirrorPath, u as canUseNativeOpenUri, ut as TILE_SHAPE_OPTIONS, v as defaultWidgetSpan, vt as syncShapelessIconShadow, w as getItemSpan, wt as normalizeSpan, x as findNextFreeCellInSnapshot, xt as logicalToVisualSpan, y as emitSpeedDialMutation, yt as findNearestFreeRect, z as openInNewBrowserTab } from "../chunks/launcher-state.js";
 import { loadAsAdopted, preloadStyle } from "/fest/style-lib.js";
-import { DOMMixin, MOCElement, ensureVirtualKeyboardOverlay, getCorrectOrientation, isInFocus, orientationNumberMap, updateVP } from "/fest/dom.js";
 import { affected, numberRef, observe, propRef } from "/fest/object.js";
+import { DOMMixin, MOCElement, ensureVirtualKeyboardOverlay, getCorrectOrientation, isInFocus, orientationNumberMap, updateVP } from "/fest/dom.js";
 import "/fest/icon.js";
 //#region ../../modules/views/home-view/src/ts/tiles-lock.ts
 var TILES_LOCKED_KEY = "cw::workspace::speed-dial::tiles-locked";
@@ -1011,7 +1011,7 @@ var openNativeStorageByLinkTarget = async (path, linkTarget, mimeType) => {
 	if (!virtual) return false;
 	try {
 		const { openNativeStorageFile } = await __vitePreload(async () => {
-			const { openNativeStorageFile } = await import("../com/app4.js").then((n) => n.m);
+			const { openNativeStorageFile } = await import("../com/app5.js").then((n) => n._);
 			return { openNativeStorageFile };
 		}, __vite__mapDeps([8,2,9]), import.meta.url);
 		const declared = String(mimeType || "").trim();

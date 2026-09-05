@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","./vite-preload-DHlaQ_oz.js","./multi-value-list.js","./capacitor-permissions.js","./rolldown-runtime.js","./capacitor-clipboard-asset.js","../com/app4.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./sw-handling.js","./ecosystem-skus.js","./UnifiedMessaging.js","./UniformInterop.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./core.js","./templates.js","./sw-unwrap.js","../vendor/jsox.js","../com/app.js","../vendor/jsox2.js","./remote-connection-runtime.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","./vite-preload-DHlaQ_oz.js","./multi-value-list.js","./capacitor-permissions.js","./rolldown-runtime.js","./capacitor-clipboard-asset.js","../com/app5.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","../vendor/@fest-lib_lure.js","./ecosystem-skus.js","./UnifiedMessaging.js","./UniformInterop.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./core.js","./templates.js","./sw-unwrap.js","../vendor/jsox2.js","./remote-connection-runtime.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","../com/app.js","../vendor/jsox.js","../com/app2.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as LS_BOOT_SHELL_LAST_ACTIVE } from "../shells/preference.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
@@ -1967,7 +1967,7 @@ var BootLoader = class BootLoader {
 			if (isCapacitorCwsNativeShell()) {
 				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([5,3,4]), import.meta.url).catch(() => void 0);
-				__vitePreload(() => import("../com/app4.js").then((n) => n.m).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([6,4,1]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app5.js").then((n) => n._).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([6,4,1]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
@@ -2002,9 +2002,9 @@ var BootLoader = class BootLoader {
 				}
 			})()) try {
 				const { initIngressPWA } = await __vitePreload(async () => {
-					const { initIngressPWA } = await import("./sw-handling.js");
+					const { initIngressPWA } = await import("../vendor/@fest-lib_lure.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([12,13,4,10,1,14,15,16,17,18,19,9,20,21,22,23,8,11,2,24,25,26,27,28,29,30,31]), import.meta.url);
+				}, __vite__mapDeps([12,13,4,10,1,14,15,16,17,18,19,9,20,21,8,11,2,22,23,24,25,26,27,28,29,30,31,32]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);
