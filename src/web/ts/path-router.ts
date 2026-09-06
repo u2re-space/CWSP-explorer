@@ -1,1 +1,1 @@
-../../../../../projects/fl.ui/src/ui/explorer/path-router.ts
+../../../../../modules/projects/fl.ui/src/ui/explorer/path-router.ts

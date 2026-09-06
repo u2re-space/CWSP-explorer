@@ -1,1 +1,1 @@
-../shared/vite.view.config.js
+../../modules/projects/subsystem/vite.view.config.js
