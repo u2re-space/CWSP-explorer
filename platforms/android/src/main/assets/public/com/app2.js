@@ -1352,7 +1352,7 @@ async function remove(rootHandle, relPath, options = {}, logger = defaultLogger)
 }
 var openImageFilePicker = async () => {
 	const $e = "showOpenFilePicker";
-	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => import("./app16.js"), [], import.meta.url))?.[$e])(imageImportDesc);
+	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => import("./app15.js"), [], import.meta.url))?.[$e])(imageImportDesc);
 };
 var downloadFile = async (file, filename) => {
 	if (file instanceof FileSystemFileHandle) file = await file.getFile();
@@ -1371,7 +1371,7 @@ var downloadFile = async (file, filename) => {
 	const fx = await (self?.showOpenFilePicker ? new Promise((r) => r({
 		showOpenFilePicker: self?.showOpenFilePicker?.bind?.(window),
 		showSaveFilePicker: self?.showSaveFilePicker?.bind?.(window)
-	})) : __vitePreload(() => import("./app16.js"), [], import.meta.url));
+	})) : __vitePreload(() => import("./app15.js"), [], import.meta.url));
 	if (window?.showSaveFilePicker) {
 		const writableFileStream = await (await fx?.showSaveFilePicker?.({ suggestedName: filename })?.catch?.(console.warn.bind(console)))?.createWritable?.({ keepExistingData: true })?.catch?.(console.warn.bind(console));
 		await writableFileStream?.write?.(file)?.catch?.(console.warn.bind(console));
@@ -1463,7 +1463,7 @@ var uploadDirectory = async (dest = "/user/", id = null) => {
 var uploadFile = async (dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 	const $e = "showOpenFilePicker";
 	dest = stripStorageScopePrefix(dest);
-	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => import("./app16.js"), [], import.meta.url))?.[$e])({
+	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => import("./app15.js"), [], import.meta.url))?.[$e])({
 		...generalFileImportDesc,
 		multiple: true
 	})?.then?.(async (handles = []) => {

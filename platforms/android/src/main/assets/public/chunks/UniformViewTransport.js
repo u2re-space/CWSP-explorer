@@ -1,5 +1,5 @@
 import { d as sendProtocolMessage, r as createProtocolEnvelope } from "./UnifiedMessaging.js";
-import { b as normalizeDataAsset } from "../com/app.js";
+import { o as normalizeDataAsset } from "../com/app.js";
 //#region ../../modules/projects/subsystem/registry.ts
 var ViewBase = class extends HTMLElement {
 	id = "view";
@@ -76,7 +76,7 @@ var sendViewProtocolMessage = async (input) => {
 			files: attachments.map((entry) => entry.data)
 		} : {}
 	};
-	return sendProtocolMessage(createProtocolEnvelope({
+	const envelope = createProtocolEnvelope({
 		type: input.type,
 		source: input.source,
 		destination: input.destination,
@@ -91,7 +91,8 @@ var sendViewProtocolMessage = async (input) => {
 			...input.metadata || {},
 			attachmentCount: attachments.length
 		}
-	}));
+	});
+	return sendProtocolMessage(envelope);
 };
 //#endregion
 export { createViewConstructor as n, sendViewProtocolMessage as t };

@@ -501,12 +501,12 @@ function getUnifiedMessaging$1() {
 			dbName: "CWSP-shellMessageQueue",
 			storeName: "messages",
 			maxRetries: 3,
-			defaultExpirationMs: 1440 * 60 * 1e3
+			defaultExpirationMs: 864e5
 		},
 		pendingStoreOptions: {
 			storageKey: "rs-unified-messaging-pending",
 			maxMessages: 200,
-			defaultTTLMs: 1440 * 60 * 1e3
+			defaultTTLMs: 864e5
 		}
 	});
 	return appMessagingInstance;

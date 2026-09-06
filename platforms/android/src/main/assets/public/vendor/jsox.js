@@ -99,6 +99,10 @@ var keywords = {
 	["Infinity"]: Infinity,
 	["undefined"]: void 0
 };
+var canTagOrBeTagged = (value_type) => value_type === VALUE_UNSET || value_type === VALUE_STRING;
+var isKeywordValue = (value_type) => value_type === VALUE_TRUE || value_type === VALUE_FALSE || value_type === VALUE_NULL || value_type === VALUE_UNDEFINED || value_type === VALUE_NAN || value_type === VALUE_NEG_NAN || value_type === VALUE_INFINITY || value_type === VALUE_NEG_INFINITY;
+var isWhitespace = (cInt) => cInt === 32 || cInt === 9 || cInt === 10 || cInt === 13 || cInt === 65279 || cInt === 8232 || cInt === 8233;
+var isLineTerminator = (cInt) => cInt === 10 || cInt === 13 || cInt === 8232 || cInt === 8233;
 /**
 * Extend Date type with a nanosecond field.
 * @constructor
@@ -107,10 +111,36 @@ var keywords = {
 */
 var DateNS = class extends Date {
 	constructor(a, b) {
-		super(a);
+		if (a === void 0) super();
+		else super(a);
 		this.ns = b || 0;
 	}
+	toString() {
+		return dateNSToLocalISO(this);
+	}
+	toISOString() {
+		const base = Date.prototype.toISOString.call(this);
+		const frac = (base.slice(-4, -1) + dateNSPad6(this.ns)).replace(/0+$/, "");
+		return base.slice(0, -5) + (frac ? "." + frac : "") + "Z";
+	}
+	toLocalISOString() {
+		return dateNSToLocalISO(this);
+	}
 };
+function dateNSPad6(num) {
+	const norm = Math.floor(Math.abs(num));
+	return (norm < 1e5 ? "0" : "") + (norm < 1e4 ? "0" : "") + (norm < 1e3 ? "0" : "") + (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+}
+function dateNSToLocalISO(this_) {
+	const tzo = -this_.getTimezoneOffset(), dif = tzo >= 0 ? "+" : "-", pad = function(num) {
+		const norm = Math.floor(Math.abs(num));
+		return (norm < 10 ? "0" : "") + norm;
+	}, pad3 = function(num) {
+		const norm = Math.floor(Math.abs(num));
+		return (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+	};
+	return this_.getFullYear() + "-" + pad(this_.getMonth() + 1) + "-" + pad(this_.getDate()) + "T" + pad(this_.getHours()) + ":" + pad(this_.getMinutes()) + ":" + pad(this_.getSeconds()) + "." + pad3(this_.getMilliseconds()) + dateNSPad6(this_.ns) + dif + pad(Math.abs(tzo) / 60) + ":" + pad(Math.abs(tzo) % 60);
+}
 JSOX.DateNS = DateNS;
 var contexts = [];
 /**
@@ -158,7 +188,12 @@ function dropBuffer(buf) {
 /**
 * Provide minimal escapes for a string to be encapsulated as a JSOX string in quotes.
 *
-* @param {string} string 
+* The caller supplies the quotes, and may append the result in segments, so this
+* cannot know which of the three quote characters will end up delimiting it; all
+* three are escaped regardless.  A parser accepts a foreign quote unescaped -- and
+* a raw newline in any quote style -- so this is conservative, not required.
+*
+* @param {string} string
 * @returns {string}
 */
 JSOX.escape = function(string) {
@@ -185,13 +220,71 @@ JSOX.reset = function() {
 	toObjectTypes = /* @__PURE__ */ new Map();
 	fromProtoTypes = /* @__PURE__ */ new Map();
 	commonClasses = [];
+	_parse_level = 0;
 };
+/**
+* Placeholder standing in for a reference that could not be resolved while
+* parsing -- either it pointed forward at something not built yet, or it pointed
+* at an object still open, whose identity is not settled until its revive returns.
+* Replaced by resolveDeferredRefs() once the value is complete.
+* @internal
+*/
+var DeferredRef = class {
+	constructor(path, cause) {
+		this.path = path;
+		this.cause = cause;
+	}
+};
+/**
+* Second pass: once the value is complete, every reference path resolves by plain
+* traversal from the root, so no context-stack guessing is required. Resolves each
+* deferred path, then substitutes the placeholders wherever they landed.
+* @internal
+*/
+function resolveDeferredRefs(root, refs, fixups) {
+	const resolved = /* @__PURE__ */ new Map();
+	const inProgress = /* @__PURE__ */ new Set();
+	const deref = (v) => v instanceof DeferredRef ? resolveOne(v) : v;
+	function resolveOne(ref) {
+		if (resolved.has(ref)) return resolved.get(ref);
+		if (inProgress.has(ref)) throw new Error("Reference path is circular through other references: " + ref.path);
+		inProgress.add(ref);
+		let obj = deref(root);
+		for (let i = 0; i < ref.path.length; i++) {
+			const key = ref.path[i];
+			if (obj === void 0 || obj === null) throw new Error("Reference did not resolve: ref[" + ref.path + "] -- nothing to index at position " + i + " ('" + key + "')");
+			obj = deref(obj[key]);
+		}
+		if (obj === void 0) throw new Error("Reference did not resolve: ref[" + ref.path + "] -- target is undefined");
+		inProgress.delete(ref);
+		resolved.set(ref, obj);
+		return obj;
+	}
+	for (const ref of refs) resolveOne(ref);
+	if (fixups) {
+		for (const f of fixups) if (f.container[f.key] === f.ref) f.container[f.key] = resolved.get(f.ref);
+	}
+	const seen = /* @__PURE__ */ new Set();
+	function substitute(node) {
+		if (!node || "object" !== typeof node || seen.has(node)) return;
+		seen.add(node);
+		const keys = Array.isArray(node) ? node.keys() : Object.keys(node);
+		for (const k of keys) {
+			const v = node[k];
+			if (v instanceof DeferredRef) node[k] = resolved.get(v);
+			else substitute(v);
+		}
+	}
+	substitute(root);
+	for (const ref of refs) substitute(ref.owner);
+	return root instanceof DeferredRef ? resolved.get(root) : root;
+}
 /**
 * Create a streaming parser.  Add data with parser.write(data); values that
 * are found are dispatched to the callback.
 *
 * @param {(value:any) => void} [cb]
-* @param {(this: any, key: string, value: any) => any} [reviver] 
+* @param {(this: any, key: string, value: any) => any} [reviver]
 * @returns {JSOXParser}
 */
 JSOX.begin = function(cb, reviver) {
@@ -209,7 +302,7 @@ JSOX.begin = function(cb, reviver) {
 	let n = 0;
 	let str;
 	let localFromProtoTypes = /* @__PURE__ */ new Map();
-	let word = WORD_POS_RESET, status = true, redefineClass = false, negative = false, result = null, rootObject = null, elements = void 0, context_stack = {
+	let word = WORD_POS_RESET, status = true, redefineClass = false, negative = false, signPending = false, result = null, rootObject = null, deferredRefs = null, deferredFixups = null, elements = void 0, context_stack = {
 		first: null,
 		last: null,
 		saved: null,
@@ -231,16 +324,26 @@ JSOX.begin = function(cb, reviver) {
 			this.length++;
 		},
 		pop() {
-			let result = this.last;
-			if (!(this.last = result.prior)) this.first = null;
-			result.next = this.saved;
+			let r = this.last;
+			if (!(this.last = r.prior)) this.first = null;
+			r.next = this.saved;
 			if (this.last) this.last.next = null;
-			if (!result.next) result.first = null;
-			this.saved = result;
+			if (!r.next) r.first = null;
+			this.saved = r;
 			this.length--;
-			return result.node;
+			return r.node;
 		},
-		length: 0
+		length: 0,
+		dump() {
+			console.log("STACK LENGTH:", this.length);
+			let cur = this.first;
+			let level = 0;
+			while (cur) {
+				console.log("Context:", level, cur.node);
+				level++;
+				cur = cur.next;
+			}
+		}
 	}, classes = [], protoTypes = {}, current_proto = null, current_class = null, current_class_field = 0, arrayType = -1, parse_context = CONTEXT_UNKNOWN, comment = 0, fromHex = false, decimal = false, exponent = false, exponent_sign = false, exponent_digit = false, inQueue = {
 		first: null,
 		last: null,
@@ -262,12 +365,12 @@ JSOX.begin = function(cb, reviver) {
 			this.last = recover;
 		},
 		shift() {
-			let result = this.first;
-			if (!result) return null;
-			if (!(this.first = result.next)) this.last = null;
-			result.next = this.saved;
-			this.saved = result;
-			return result.node;
+			let r = this.first;
+			if (!r) return null;
+			if (!(this.first = r.next)) this.last = null;
+			r.next = this.saved;
+			this.saved = r;
+			return r.node;
 		},
 		unshift(node) {
 			let recover = this.saved;
@@ -323,6 +426,7 @@ JSOX.begin = function(cb, reviver) {
 		reset() {
 			word = WORD_POS_RESET;
 			status = true;
+			result = null;
 			if (inQueue.last) inQueue.last.next = inQueue.save;
 			inQueue.save = inQueue.first;
 			inQueue.first = inQueue.last = null;
@@ -341,6 +445,7 @@ JSOX.begin = function(cb, reviver) {
 			val.name = null;
 			val.string = "";
 			val.className = null;
+			val.contains = null;
 			pos.line = 1;
 			pos.col = 1;
 			negative = false;
@@ -350,6 +455,18 @@ JSOX.begin = function(cb, reviver) {
 			stringEscape = false;
 			cr_escaped = false;
 			date_format = false;
+			arrayType = -1;
+			gatheringNumber = false;
+			signPending = false;
+			redefineClass = false;
+			rootObject = null;
+			deferredRefs = null;
+			deferredFixups = null;
+			stringUnicode = false;
+			unicodeWide = false;
+			stringHex = false;
+			hex_char = 0;
+			hex_char_len = 0;
 		},
 		usePrototype(className, protoType) {
 			protoTypes[className] = protoType;
@@ -363,7 +480,7 @@ JSOX.begin = function(cb, reviver) {
 			if (typeof msg !== "string" && typeof msg !== "undefined") msg = String(msg);
 			if (!status) throw new Error("Parser is still in an error state, please reset before resuming");
 			for (retcode = this._write(msg, false); retcode > 0; retcode = this._write()) {
-				if (typeof reviver === "function") (function walk(holder, key) {
+				const res = typeof reviver === "function" ? function walk(holder, key) {
 					let k, v, value = holder[key];
 					if (value && typeof value === "object") {
 						for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -373,8 +490,9 @@ JSOX.begin = function(cb, reviver) {
 						}
 					}
 					return reviver.call(holder, key, value);
-				})({ "": result }, "");
-				result = cb(result);
+				}({ "": result }, "") : result;
+				result = null;
+				cb(res);
 				if (retcode < 2) break;
 			}
 		},
@@ -391,9 +509,9 @@ JSOX.begin = function(cb, reviver) {
 			const writeResult = this._write(msg, true);
 			if (writeResult > 0) {
 				if (writeResult > 1) {}
-				let result = this.value();
-				if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
-				result = typeof reviver === "function" ? function walk(holder, key) {
+				let res = this.value();
+				if ("undefined" === typeof res && writeResult > 1) throw new Error("Pending value could not complete");
+				res = typeof reviver === "function" ? function walk(holder, key) {
 					let k, v, value = holder[key];
 					if (value && typeof value === "object") {
 						for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -403,8 +521,9 @@ JSOX.begin = function(cb, reviver) {
 						}
 					}
 					return reviver.call(holder, key, value);
-				}({ "": result }, "") : result;
-				return result;
+				}({ "": res }, "") : res;
+				result = null;
+				return res;
 			}
 			this.finalError();
 		},
@@ -426,8 +545,10 @@ JSOX.begin = function(cb, reviver) {
 				switch (val.value_type) {
 					case VALUE_NUMBER:
 						if ((val.string.length > 13 || val.string.length == 13 && val[0] > "2") && !date_format && !exponent_digit && !exponent_sign && !decimal) isBigInt = true;
-						if (isBigInt) if (hasBigInt) return BigInt(val.string);
-						else throw new Error("no builtin BigInt()", 0);
+						if (isBigInt) {
+							if (hasBigInt) return BigInt(val.string);
+							else throw new Error("no builtin BigInt()", 0);
+						}
 						if (date_format) {
 							const r = val.string.match(/\.(\d\d\d\d*)/);
 							const frac = r ? r[1] : null;
@@ -448,10 +569,16 @@ JSOX.begin = function(cb, reviver) {
 						if (val.className) {
 							fp = localFromProtoTypes.get(val.className);
 							if (!fp) fp = fromProtoTypes.get(val.className);
-							if (fp && fp.cb) {
-								val.className = null;
-								return fp.cb.call(val.string);
-							} else throw new Error("Double string error, no constructor for: new " + val.className + "(" + val.string + ")");
+							val.className = null;
+							if (fp && (fp.cb || !fp.synthetic)) {
+								const inst = fp.protoCon ? new fp.protoCon(val.string) : val.string;
+								if (fp.cb) {
+									const r = fp.cb.call(inst, void 0, val.string);
+									return r === void 0 ? inst : r;
+								}
+								return inst;
+							}
+							return val.string;
 						}
 						return val.string;
 					case VALUE_TRUE: return true;
@@ -474,67 +601,97 @@ JSOX.begin = function(cb, reviver) {
 					case VALUE_ARRAY:
 						if (arrayType >= 0) {
 							let ab;
-							if (val.contains.length) ab = DecodeBase64(val.contains[0]);
-							else ab = DecodeBase64(val.string);
+							val.className = null;
+							if (val.contains.length) {
+								if ("string" !== typeof val.contains[0]) throw new Error("Invalid base64 payload in " + knownArrayTypeNames[arrayType] + "[...]; a payload starting with a digit must be quoted");
+								ab = DecodeBase64(val.contains[0]);
+							} else ab = DecodeBase64(val.string);
 							if (arrayType === 0) {
 								arrayType = -1;
 								return ab;
 							} else {
+								const per = knownArrayTypes[arrayType].BYTES_PER_ELEMENT;
+								if (ab.byteLength % per) throw new Error("bad encoding for typed array data in " + knownArrayTypeNames[arrayType] + "[...]; " + ab.byteLength + " bytes is not a multiple of " + per);
 								const newab = new knownArrayTypes[arrayType](ab);
 								arrayType = -1;
 								return newab;
 							}
 						} else if (arrayType === -2) {
-							let obj = rootObject;
-							let lvl;
-							const pathlen = val.contains.length;
-							for (lvl = 0; lvl < pathlen; lvl++) {
-								const idx = val.contains[lvl];
-								let nextObj = obj[idx];
-								if (!nextObj) {
-									let ctx = context_stack.first;
-									let p = 0;
-									while (ctx && p < pathlen && p < context_stack.length) {
-										const thisKey = val.contains[p];
-										if (!ctx.next || thisKey !== ctx.next.node.name) break;
-										if (ctx.next) if ("number" === typeof thisKey) {
-											const actualObject = ctx.next.node.elements;
-											if (actualObject && thisKey >= actualObject.length) if (p === context_stack.length - 1) {
-												console.log("This is actually at the current object so use that", p, val.contains, elements);
-												nextObj = elements;
-												p++;
-												ctx = ctx.next;
-												break;
-											} else {
-												if (ctx.next.next && thisKey === actualObject.length) {
-													nextObj = ctx.next.next.node.elements;
-													ctx = ctx.next;
-													p++;
-													obj = nextObj;
-													continue;
-												}
-												nextObj = elements;
-												p++;
-												break;
-											}
-										} else if (thisKey !== ctx.next.node.name) {
-											nextObj = ctx.next.node.elements[thisKey];
-											lvl = p;
-											break;
-										} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
-										else nextObj = elements;
-										else nextObj = nextObj[thisKey];
-										ctx = ctx.next;
-										p++;
+							const deferPath = val.contains.slice();
+							try {
+								let obj = rootObject;
+								let lvl;
+								let lastResume = -1;
+								val.className = null;
+								const pathlen = val.contains.length;
+								for (lvl = 0; lvl < pathlen; lvl++) {
+									const idx = val.contains[lvl];
+									let nextObj = obj[idx];
+									if (!nextObj) {
+										let ctx = context_stack.first;
+										let p = 0;
+										while (ctx && p < pathlen && p < context_stack.length) {
+											const thisKey = val.contains[p];
+											if (!ctx.next || thisKey !== ctx.next.node.name) break;
+											if (ctx.next) {
+												if ("number" === typeof thisKey) {
+													const actualObject = ctx.next.node.elements;
+													if (actualObject && thisKey >= actualObject.length) {
+														if (p === context_stack.length - 1) {
+															console.log("This is actually at the current object so use that", p, val.contains, elements);
+															nextObj = elements;
+															p++;
+															ctx = ctx.next;
+															break;
+														} else {
+															if (ctx.next.next && thisKey === actualObject.length) {
+																nextObj = ctx.next.next.node.elements;
+																ctx = ctx.next;
+																p++;
+																obj = nextObj;
+																continue;
+															}
+															nextObj = elements;
+															p++;
+															break;
+														}
+													}
+												} else if (thisKey !== ctx.next.node.name) {
+													nextObj = ctx.next.node.elements[thisKey];
+													lvl = p;
+													break;
+												} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
+												else nextObj = elements;
+											} else nextObj = nextObj[thisKey];
+											ctx = ctx.next;
+											p++;
+										}
+										if (p <= lastResume) throw new Error("Path did not resolve properly:" + val.contains + " stalled at " + p + " (no progress)");
+										lastResume = p;
+										if (p < pathlen) lvl = p - 1;
+										else lvl = p;
 									}
-									if (p < pathlen) lvl = p - 1;
-									else lvl = p;
+									if (nextObj === void 0 || nextObj === null) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
+									if (nextObj === val.contains) throw new Error("Reference points at the slot holding it: ref[" + val.contains + "]");
+									obj = nextObj;
 								}
-								if ("object" === typeof nextObj && !nextObj) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
-								obj = nextObj;
+								arrayType = -3;
+								if (isStillOpen(obj)) {
+									const placeholder = new DeferredRef(deferPath, null);
+									placeholder.owner = elements;
+									if (!deferredRefs) deferredRefs = [];
+									deferredRefs.push(placeholder);
+									return placeholder;
+								}
+								return obj;
+							} catch (err) {
+								arrayType = -3;
+								const placeholder = new DeferredRef(deferPath, err);
+								placeholder.owner = elements;
+								if (!deferredRefs) deferredRefs = [];
+								deferredRefs.push(placeholder);
+								return placeholder;
 							}
-							arrayType = -3;
-							return obj;
 						}
 						if (val.className) {
 							fp = localFromProtoTypes.get(val.className);
@@ -543,14 +700,40 @@ JSOX.begin = function(cb, reviver) {
 							if (fp && fp.cb) return fp.cb.call(val.contains);
 						}
 						return val.contains;
-					default:
-						console.log("Unhandled value conversion.", val);
-						break;
+					default: console.log("Unhandled value conversion.", val);
 				}
+			}
+			function noteDeferred(ref, container, key) {
+				if (!deferredFixups) deferredFixups = [];
+				deferredFixups.push({
+					ref,
+					container,
+					key
+				});
+			}
+			function isStillOpen(obj) {
+				if (!obj || "object" !== typeof obj) return false;
+				if (obj === elements) return true;
+				for (let ctx = context_stack.first; ctx; ctx = ctx.next) if (ctx.node && ctx.node.elements === obj) return true;
+				return false;
+			}
+			function reviveTaggedArray() {
+				if (!val.className) return void 0;
+				let fp = localFromProtoTypes.get(val.className);
+				if (!fp) fp = fromProtoTypes.get(val.className);
+				val.className = null;
+				if (fp && fp.cb) return fp.cb.call(val.contains);
 			}
 			function arrayPush() {
 				if (arrayType == -3) {
 					if (val.value_type === VALUE_OBJECT) elements.push(val.contains);
+					else if (val.value_type === VALUE_ARRAY) {
+						const revived = reviveTaggedArray();
+						if (revived !== void 0) {
+							const idx = elements.lastIndexOf(val.contains);
+							if (idx >= 0) elements[idx] = revived;
+						}
+					}
 					arrayType = -1;
 					return;
 				}
@@ -559,30 +742,43 @@ JSOX.begin = function(cb, reviver) {
 						elements.push(void 0);
 						delete elements[elements.length - 1];
 						break;
-					default:
-						elements.push(convertValue());
+					default: {
+						const pushed = convertValue();
+						elements.push(pushed);
+						if (pushed instanceof DeferredRef) noteDeferred(pushed, elements, elements.length - 1);
+						if (arrayType === -3) arrayType = -1;
 						break;
+					}
 				}
 				RESET_VAL();
 			}
+			function nextClassField() {
+				if (elements && Object.keys(elements).length > current_class_field) throwError("class body mixes named and positional values; fault while parsing;", cInt);
+				const name = current_class.fields[current_class_field++];
+				if (void 0 === name) throwError("class field has no matching field definitions;", cInt);
+				return name;
+			}
 			function objectPush() {
 				if (arrayType === -3 && val.value_type === VALUE_ARRAY) {
+					const revived = reviveTaggedArray();
+					if (revived !== void 0 && elements[val.name] === val.contains) elements[val.name] = revived;
 					RESET_VAL();
 					arrayType = -1;
 					return;
 				}
 				if (val.value_type === VALUE_EMPTY) return;
-				if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
+				if (!val.name && current_class) val.name = nextClassField();
 				let value = convertValue();
 				if (current_proto && current_proto.protoDef && current_proto.protoDef.cb) {
 					value = current_proto.protoDef.cb.call(elements, val.name, value);
-					if (value) elements[val.name] = value;
+					if (value !== void 0) elements[val.name] = value;
 				} else elements[val.name] = value;
+				if (elements[val.name] instanceof DeferredRef) noteDeferred(elements[val.name], elements, val.name);
 				RESET_VAL();
 			}
 			function recoverIdent(cInt) {
 				if (word !== WORD_POS_RESET) {
-					if (negative) throwError("Negative outside of quotes, being converted to a string (would lose count of leading '-' characters)", cInt);
+					if (negative) throwError("fault while parsing number;", cInt);
 					switch (word) {
 						case WORD_POS_END:
 							switch (val.value_type) {
@@ -599,15 +795,13 @@ JSOX.begin = function(cb, reviver) {
 									val.string += "Infinity";
 									break;
 								case VALUE_NEG_INFINITY:
-									val.string += "-Infinity";
-									throwError("Negative outside of quotes, being converted to a string", cInt);
+									throwError("fault while parsing number;", cInt);
 									break;
 								case VALUE_NAN:
 									val.string += "NaN";
 									break;
 								case VALUE_NEG_NAN:
-									val.string += "-NaN";
-									throwError("Negative outside of quotes, being converted to a string", cInt);
+									throwError("fault while parsing number;", cInt);
 									break;
 								case VALUE_UNDEFINED:
 									val.string += "undefined";
@@ -702,9 +896,6 @@ JSOX.begin = function(cb, reviver) {
 						case WORD_POS_FIELD: break;
 						case WORD_POS_AFTER_FIELD: break;
 						case WORD_POS_AFTER_FIELD_VALUE:
-							throwError("String-keyword recovery fail (after whitespace)", cInt);
-							break;
-						default:
 					}
 					val.value_type = VALUE_STRING;
 					if (word < WORD_POS_FIELD) word = WORD_POS_END;
@@ -717,7 +908,19 @@ JSOX.begin = function(cb, reviver) {
 				else if (cInt == 44) {} else {
 					if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 65279 || cInt == 8232 || cInt == 8233) return;
 					if (cInt == 44 || cInt == 125 || cInt == 93 || cInt == 58);
-					else val.string += str;
+					else {
+						if (word === WORD_POS_AFTER_FIELD || word === WORD_POS_AFTER_FIELD_VALUE) {
+							if (val.className) {
+								status = false;
+								throwError("too many strings in a row; fault while parsing;", cInt);
+							}
+							getProto();
+							if (!val.className) val.className = val.string;
+							val.string = "";
+							word = WORD_POS_END;
+						}
+						val.string += str;
+					}
 				}
 			}
 			function gatherString(start_c) {
@@ -730,17 +933,18 @@ JSOX.begin = function(cb, reviver) {
 						n++;
 					}
 					pos.col++;
-					if (cInt == start_c) if (stringEscape) {
-						if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
-						else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
-						else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
-						if (cr_escaped) {
-							cr_escaped = false;
-							retval = 1;
-						} else val.string += str;
-						stringEscape = false;
-					} else retval = 1;
-					else if (stringEscape) {
+					if (cInt == start_c) {
+						if (stringEscape) {
+							if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
+							else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
+							else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
+							if (cr_escaped) {
+								cr_escaped = false;
+								retval = 1;
+							} else val.string += str;
+							stringEscape = false;
+						} else retval = 1;
+					} else if (stringEscape) {
 						if (unicodeWide) {
 							if (cInt == 125) {
 								val.string += String.fromCodePoint(hex_char);
@@ -836,20 +1040,19 @@ JSOX.begin = function(cb, reviver) {
 								hex_char_len = 0;
 								hex_char = 0;
 								continue;
-							default:
-								val.string += str;
-								break;
+							default: val.string += str;
 						}
 						stringEscape = false;
-					} else if (cInt === 92) if (stringEscape) {
-						val.string += "\\";
-						stringEscape = false;
+					} else if (cInt === 92) {
+						if (stringEscape) {
+							val.string += "\\";
+							stringEscape = false;
+						} else {
+							stringEscape = true;
+							hex_char = 0;
+							hex_char_len = 0;
+						}
 					} else {
-						stringEscape = true;
-						hex_char = 0;
-						hex_char_len = 0;
-					}
-					else {
 						if (cr_escaped) {
 							cr_escaped = false;
 							pos.line++;
@@ -873,21 +1076,27 @@ JSOX.begin = function(cb, reviver) {
 						if (cInt == 95) continue;
 						pos.col++;
 						if (cInt >= 48 && cInt <= 57) {
+							if (fromHex && ((val.string[1] === "b" || val.string[1] === "B") && cInt > 49 || (val.string[1] === "o" || val.string[1] === "O") && cInt > 55)) {
+								status = false;
+								throwError("fault while parsing number;", cInt);
+								break;
+							}
 							if (exponent) exponent_digit = true;
 							val.string += str;
-						} else if (cInt == 45 || cInt == 43) if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
-							if (cInt == 45 && !exponent) negative = !negative;
-							val.string += str;
-							exponent_sign = true;
-						} else {
-							if (negative) {
-								val.string = "-" + val.string;
-								negative = false;
+						} else if (cInt == 45 || cInt == 43) {
+							if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
+								if (cInt == 45 && !exponent) negative = !negative;
+								val.string += str;
+								exponent_sign = true;
+							} else {
+								if (negative) {
+									val.string = "-" + val.string;
+									negative = false;
+								}
+								val.string += str;
+								date_format = true;
 							}
-							val.string += str;
-							date_format = true;
-						}
-						else if (cInt == 78) {
+						} else if (cInt == 78) {
 							if (word == WORD_POS_RESET) {
 								gatheringNumber = false;
 								word = WORD_POS_NAN_1;
@@ -924,44 +1133,50 @@ JSOX.begin = function(cb, reviver) {
 							}
 							val.string += str;
 							date_format = true;
-						} else if (cInt == 46) if (!decimal && !fromHex && !exponent) {
-							val.string += str;
-							decimal = true;
-						} else {
-							status = false;
-							throwError("fault while parsing number;", cInt);
-							break;
-						}
-						else if (cInt == 110) {
-							isBigInt = true;
-							break;
-						} else if (fromHex && (cInt >= 95 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
-						else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) if (!fromHex && val.string == "0") {
-							fromHex = true;
-							val.string += str;
-						} else {
-							status = false;
-							throwError("fault while parsing number;", cInt);
-							break;
-						}
-						else if (cInt == 101 || cInt == 69) if (!exponent) {
-							val.string += str;
-							exponent = true;
-						} else {
-							status = false;
-							throwError("fault while parsing number;", cInt);
-							break;
-						}
-						else if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
-							pos.col -= n - _n;
-							n = _n;
-							break;
-						} else {
-							if (complete_at_end) {
+						} else if (cInt == 46) {
+							if (!decimal && !fromHex && !exponent) {
+								val.string += str;
+								decimal = true;
+							} else {
 								status = false;
 								throwError("fault while parsing number;", cInt);
+								break;
 							}
+						} else if (cInt == 110) {
+							isBigInt = true;
 							break;
+						} else if (fromHex && (val.string[1] === "x" || val.string[1] === "X") && (cInt >= 97 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
+						else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) {
+							if (!fromHex && val.string == "0") {
+								fromHex = true;
+								val.string += str;
+							} else {
+								status = false;
+								throwError("fault while parsing number;", cInt);
+								break;
+							}
+						} else if (cInt == 101 || cInt == 69) {
+							if (!exponent) {
+								val.string += str;
+								exponent = true;
+							} else {
+								status = false;
+								throwError("fault while parsing number;", cInt);
+								break;
+							}
+						} else {
+							if (cInt == 160) break;
+							if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
+								pos.col -= n - _n;
+								n = _n;
+								break;
+							} else {
+								if (complete_at_end) {
+									status = false;
+									throwError("fault while parsing number;", cInt);
+								}
+								break;
+							}
 						}
 					}
 				}
@@ -979,49 +1194,52 @@ JSOX.begin = function(cb, reviver) {
 				if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(123);
 				let protoDef;
 				protoDef = getProto();
-				if (parse_context == CONTEXT_UNKNOWN) if (word == WORD_POS_FIELD || word == WORD_POS_END && (protoDef || val.string.length)) {
-					if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
-					if (!protoDef || !protoDef.protoDef && val.string) {
-						cls = classes.find((cls) => cls.name === val.string);
-						if (!cls) {
-							function privateProto() {}
-							classes.push(cls = {
-								name: val.string,
-								protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.constructor,
-								fields: []
-							});
-							nextMode = CONTEXT_CLASS_FIELD;
-						} else if (redefineClass) {
-							cls.fields.length = 0;
-							nextMode = CONTEXT_CLASS_FIELD;
-						} else {
-							tmpobj = new cls.protoCon();
-							nextMode = CONTEXT_CLASS_VALUE;
+				if (parse_context == CONTEXT_UNKNOWN) {
+					if (word == WORD_POS_FIELD || word == WORD_POS_END && (protoDef || val.string.length)) {
+						if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
+						if (!protoDef || !protoDef.protoDef && val.string) {
+							cls = classes.find((cls) => cls.name === val.string);
+							if (!cls) {
+								function privateProto() {}
+								classes.push(cls = {
+									name: val.string,
+									protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.prototype.constructor,
+									fields: []
+								});
+								nextMode = CONTEXT_CLASS_FIELD;
+							} else if (redefineClass) {
+								cls.fields.length = 0;
+								nextMode = CONTEXT_CLASS_FIELD;
+							} else {
+								tmpobj = new cls.protoCon();
+								nextMode = CONTEXT_CLASS_VALUE;
+							}
+							redefineClass = false;
 						}
-						redefineClass = false;
-					}
-					current_class = cls;
-					word = WORD_POS_RESET;
-				} else word = WORD_POS_FIELD;
-				else if (word == WORD_POS_FIELD || parse_context === CONTEXT_IN_ARRAY || parse_context === CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) if (word != WORD_POS_RESET || val.value_type == VALUE_STRING) {
-					if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
-					else {
-						cls = classes.find((cls) => cls.name === val.string);
-						if (!cls) {
-							function privateProto() {}
-							localFromProtoTypes.set(val.string, {
-								protoCon: privateProto.prototype.constructor,
-								cb: null
-							});
-							tmpobj = new privateProto();
-						} else {
-							nextMode = CONTEXT_CLASS_VALUE;
-							tmpobj = {};
+						current_class = cls;
+						word = WORD_POS_RESET;
+					} else word = WORD_POS_FIELD;
+				} else if (word == WORD_POS_FIELD || parse_context === CONTEXT_IN_ARRAY || parse_context === CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
+					if (word != WORD_POS_RESET || val.value_type == VALUE_STRING) {
+						if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
+						else {
+							cls = classes.find((cls) => cls.name === val.string);
+							if (!cls) {
+								function privateProto() {}
+								localFromProtoTypes.set(val.string, {
+									protoCon: privateProto.prototype.constructor,
+									cb: null,
+									synthetic: true
+								});
+								tmpobj = new privateProto();
+							} else {
+								nextMode = CONTEXT_CLASS_VALUE;
+								tmpobj = new cls.protoCon();
+							}
 						}
-					}
-					word = WORD_POS_RESET;
-				} else word = WORD_POS_RESET;
-				else if (parse_context == CONTEXT_OBJECT_FIELD && word == WORD_POS_RESET) {
+						word = WORD_POS_RESET;
+					} else word = WORD_POS_RESET;
+				} else if (parse_context == CONTEXT_OBJECT_FIELD && word == WORD_POS_RESET) {
 					throwError("fault while parsing; getting field name unexpected ", cInt);
 					status = false;
 					return false;
@@ -1033,7 +1251,7 @@ JSOX.begin = function(cb, reviver) {
 					if (arrayType == -1) {}
 					val.name = elements.length;
 				} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
-					if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
+					if (!val.name && current_class) val.name = nextClassField();
 					elements[val.name] = tmpobj;
 				}
 				old_context.context = parse_context;
@@ -1059,7 +1277,7 @@ JSOX.begin = function(cb, reviver) {
 			}
 			function openArray() {
 				if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(91);
-				if (word == WORD_POS_END && val.string.length) {
+				if ((word == WORD_POS_END || parse_context !== CONTEXT_UNKNOWN && (word == WORD_POS_AFTER_FIELD || word == WORD_POS_AFTER_FIELD_VALUE) || parse_context == CONTEXT_UNKNOWN && word == WORD_POS_FIELD) && val.string.length) {
 					let typeIndex = knownArrayTypeNames.findIndex((type) => type === val.string);
 					word = WORD_POS_RESET;
 					if (typeIndex >= 0) {
@@ -1071,7 +1289,7 @@ JSOX.begin = function(cb, reviver) {
 						arrayType = -2;
 					} else if (localFromProtoTypes.get(val.string)) val.className = val.string;
 					else if (fromProtoTypes.get(val.string)) val.className = val.string;
-					else throwError(`Unknown type '${val.string}' specified for array`, cInt);
+					else val.className = null;
 				} else if (parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || word == WORD_POS_AFTER_FIELD) {
 					throwError("Fault while parsing; while getting field name unexpected", cInt);
 					status = false;
@@ -1090,11 +1308,12 @@ JSOX.begin = function(cb, reviver) {
 							console.log("This says it's resolved.......");
 							arrayType = -3;
 						}
-						if (current_proto && current_proto.protoDef) if (current_proto.protoDef.cb) {
-							const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
-							if (newarr !== void 0) tmparr = elements[val.name] = newarr;
+						if (current_proto && current_proto.protoDef) {
+							if (current_proto.protoDef.cb) {
+								const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
+								if (newarr !== void 0) tmparr = elements[val.name] = newarr;
+							} else elements[val.name] = tmparr;
 						} else elements[val.name] = tmparr;
-						else elements[val.name] = tmparr;
 					}
 					old_context.context = parse_context;
 					old_context.elements = elements;
@@ -1120,26 +1339,26 @@ JSOX.begin = function(cb, reviver) {
 				return true;
 			}
 			function getProto() {
-				const result = {
+				const rv = {
 					protoDef: null,
 					cls: null
 				};
-				if (result.protoDef = localFromProtoTypes.get(val.string)) {
+				if (rv.protoDef = localFromProtoTypes.get(val.string)) {
 					if (!val.className) {
 						val.className = val.string;
 						val.string = null;
 					}
-				} else if (result.protoDef = fromProtoTypes.get(val.string)) {
+				} else if (rv.protoDef = fromProtoTypes.get(val.string)) {
 					if (!val.className) {
 						val.className = val.string;
 						val.string = null;
 					}
 				}
 				if (val.string) {
-					result.cls = classes.find((cls) => cls.name === val.string);
-					if (!result.protoDef && !result.cls) {}
+					rv.cls = classes.find((cls) => cls.name === val.string);
+					if (!rv.protoDef && !rv.cls) {}
 				}
-				return result.protoDef || result.cls ? result : null;
+				return rv.protoDef || rv.cls ? rv : null;
 			}
 			if (!status) return -1;
 			if (msg && msg.length) {
@@ -1174,18 +1393,32 @@ JSOX.begin = function(cb, reviver) {
 						str += buf.charAt(n);
 						n++;
 					}
+					const sawSignPending = signPending;
+					signPending = false;
+					if (sawSignPending && !(cInt >= 48 && cInt <= 57 || cInt == 46 || cInt == 73 || cInt == 78)) return throwError("extra data after token; sign is not followed by a number;", cInt);
 					pos.col++;
 					if (comment) {
-						if (comment == 1) if (cInt == 42) comment = 3;
-						else if (cInt != 47) return throwError("fault while parsing;", cInt);
-						else comment = 2;
-						else if (comment == 2) {
-							if (cInt == 10 || cInt == 13) comment = 0;
+						let loneSolidus = false;
+						if (comment == 1) {
+							if (cInt == 42) comment = 3;
+							else if (cInt == 47) comment = 2;
+							else {
+								comment = 0;
+								loneSolidus = true;
+							}
+						} else if (comment == 2) {
+							if (isLineTerminator(cInt)) comment = 0;
 						} else if (comment == 3) {
 							if (cInt == 42) comment = 4;
 						} else if (cInt == 47) comment = 0;
 						else comment = 3;
-						continue;
+						if (!loneSolidus) continue;
+						{
+							const held = str;
+							str = "/";
+							recoverIdent(47);
+							str = held;
+						}
 					}
 					switch (cInt) {
 						case 35:
@@ -1195,42 +1428,53 @@ JSOX.begin = function(cb, reviver) {
 							comment = 1;
 							break;
 						case 123:
-							openObject();
-							break;
 						case 91:
-							openArray();
+							if (parse_context !== CONTEXT_UNKNOWN && !canTagOrBeTagged(val.value_type)) {
+								status = false;
+								throwError("fault while parsing; two values with no separator between them;", cInt);
+							}
+							if (cInt === 123) openObject();
+							else openArray();
 							break;
 						case 58:
 							if (parse_context == CONTEXT_CLASS_VALUE) {
-								word = WORD_POS_RESET;
-								val.name = val.string;
-								val.string = "";
-								val.value_type = VALUE_UNSET;
-							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) if (parse_context == CONTEXT_CLASS_FIELD) {
-								if (!Object.keys(elements).length) {
-									console.log("This is a full object, not a class def...", val.className);
-									const privateProto = () => {};
-									localFromProtoTypes.set(context_stack.last.node.current_class.name, {
-										protoCon: privateProto.prototype.constructor,
-										cb: null
-									});
-									elements = new privateProto();
-									parse_context = CONTEXT_OBJECT_FIELD_VALUE;
-									val.name = val.string;
-									word = WORD_POS_RESET;
-									val.string = "";
-									val.value_type = VALUE_UNSET;
-									console.log("don't do default;s do a revive...");
+								if (current_class_field > 0) {
+									status = false;
+									throwError("class body mixes named and positional values; fault while parsing;", cInt);
 								}
-							} else {
-								if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
 								word = WORD_POS_RESET;
 								val.name = val.string;
 								val.string = "";
-								parse_context = parse_context === CONTEXT_OBJECT_FIELD ? CONTEXT_OBJECT_FIELD_VALUE : CONTEXT_CLASS_FIELD_VALUE;
 								val.value_type = VALUE_UNSET;
-							}
-							else if (parse_context == CONTEXT_UNKNOWN) {
+							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) {
+								if (parse_context == CONTEXT_CLASS_FIELD) {
+									if (current_class && current_class.fields.length) {
+										status = false;
+										throwError("class body mixes named and positional values; fault while parsing;", cInt);
+									}
+									if (!Object.keys(elements).length) {
+										function privateProto() {}
+										localFromProtoTypes.set(context_stack.last.node.current_class.name, {
+											protoCon: privateProto.prototype.constructor,
+											cb: null,
+											synthetic: true
+										});
+										elements = new privateProto();
+										parse_context = CONTEXT_OBJECT_FIELD_VALUE;
+										val.name = val.string;
+										word = WORD_POS_RESET;
+										val.string = "";
+										val.value_type = VALUE_UNSET;
+									}
+								} else {
+									if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
+									word = WORD_POS_RESET;
+									val.name = val.string;
+									val.string = "";
+									parse_context = parse_context === CONTEXT_OBJECT_FIELD ? CONTEXT_OBJECT_FIELD_VALUE : CONTEXT_CLASS_FIELD_VALUE;
+									val.value_type = VALUE_UNSET;
+								}
+							} else if (parse_context == CONTEXT_UNKNOWN) {
 								console.log("Override colon found, allow class redefinition", parse_context);
 								redefineClass = true;
 								break;
@@ -1243,25 +1487,27 @@ JSOX.begin = function(cb, reviver) {
 							break;
 						case 125:
 							if (word == WORD_POS_END) word = WORD_POS_RESET;
-							if (parse_context == CONTEXT_CLASS_FIELD) if (current_class) {
-								if (val.string) current_class.fields.push(val.string);
-								RESET_VAL();
-								let old_context = context_stack.pop();
-								parse_context = CONTEXT_UNKNOWN;
-								word = WORD_POS_RESET;
-								val.name = old_context.name;
-								elements = old_context.elements;
-								current_class = old_context.current_class;
-								current_class_field = old_context.current_class_field;
-								arrayType = old_context.arrayType;
-								val.value_type = old_context.valueType;
-								val.className = old_context.className;
-								rootObject = null;
-								dropContext(old_context);
-							} else throwError("State error; gathering class fields, and lost the class", cInt);
-							else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
+							if (parse_context == CONTEXT_CLASS_FIELD) {
+								if (current_class) {
+									if (val.string) current_class.fields.push(val.string);
+									RESET_VAL();
+									let old_context = context_stack.pop();
+									parse_context = CONTEXT_UNKNOWN;
+									word = WORD_POS_RESET;
+									val.name = old_context.name;
+									elements = old_context.elements;
+									current_class = old_context.current_class;
+									current_class_field = old_context.current_class_field;
+									arrayType = old_context.arrayType;
+									val.value_type = old_context.valueType;
+									val.className = old_context.className;
+									val.value_type = VALUE_UNSET;
+									rootObject = null;
+									dropContext(old_context);
+								} else throwError("State error; gathering class fields, and lost the class", cInt);
+							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
 								if (val.value_type != VALUE_UNSET) {
-									if (current_class) val.name = current_class.fields[current_class_field++];
+									if (current_class && !val.name) val.name = nextClassField();
 									objectPush();
 								}
 								val.value_type = VALUE_OBJECT;
@@ -1285,8 +1531,10 @@ JSOX.begin = function(cb, reviver) {
 								dropContext(old_context);
 								if (parse_context == CONTEXT_UNKNOWN) completed = true;
 							} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
-								if (val.value_type === VALUE_UNSET) if (word == WORD_POS_RESET) throwError("Fault while parsing; unexpected", cInt);
-								else recoverIdent(cInt);
+								if (val.value_type === VALUE_UNSET) {
+									if (word == WORD_POS_RESET) throwError("Fault while parsing; unexpected", cInt);
+									else recoverIdent(cInt);
+								}
 								objectPush();
 								val.value_type = VALUE_OBJECT;
 								val.contains = elements;
@@ -1342,14 +1590,15 @@ JSOX.begin = function(cb, reviver) {
 						case 44:
 							if (word < WORD_POS_AFTER_FIELD && word != WORD_POS_RESET) recoverIdent(cInt);
 							if (word == WORD_POS_END || word == WORD_POS_FIELD) word = WORD_POS_RESET;
-							if (parse_context == CONTEXT_CLASS_FIELD) if (current_class) {
-								current_class.fields.push(val.string);
-								val.string = "";
-								word = WORD_POS_FIELD;
-							} else throwError("State error; gathering class fields, and lost the class", cInt);
-							else if (parse_context == CONTEXT_OBJECT_FIELD) {
+							if (parse_context == CONTEXT_CLASS_FIELD) {
 								if (current_class) {
-									val.name = current_class.fields[current_class_field++];
+									current_class.fields.push(val.string);
+									val.string = "";
+									word = WORD_POS_FIELD;
+								} else throwError("State error; gathering class fields, and lost the class", cInt);
+							} else if (parse_context == CONTEXT_OBJECT_FIELD) {
+								if (current_class) {
+									val.name = nextClassField();
 									if (val.value_type != VALUE_UNSET) {
 										objectPush();
 										RESET_VAL();
@@ -1357,7 +1606,7 @@ JSOX.begin = function(cb, reviver) {
 								} else if (val.string || val.value_type) throwError("State error; comma in field name and/or lost the class", cInt);
 							} else if (parse_context == CONTEXT_CLASS_VALUE) {
 								if (current_class) {
-									if (arrayType != -3 && !val.name) val.name = current_class.fields[current_class_field++];
+									if (arrayType != -3 && !val.name) val.name = nextClassField();
 									if (val.value_type != VALUE_UNSET) {
 										if (arrayType != -3) objectPush();
 										RESET_VAL();
@@ -1386,6 +1635,10 @@ JSOX.begin = function(cb, reviver) {
 							negative = false;
 							break;
 						default:
+							if (parse_context !== CONTEXT_UNKNOWN && (word === WORD_POS_RESET || word === WORD_POS_AFTER_FIELD || word === WORD_POS_AFTER_FIELD_VALUE) && !canTagOrBeTagged(val.value_type) && !isWhitespace(cInt)) {
+								status = false;
+								throwError("fault while parsing; two values with no separator between them;", cInt);
+							}
 							switch (cInt) {
 								default:
 									if (parse_context == CONTEXT_UNKNOWN || parse_context == CONTEXT_OBJECT_FIELD_VALUE && word == WORD_POS_FIELD || parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || parse_context == CONTEXT_CLASS_FIELD) switch (cInt) {
@@ -1437,6 +1690,10 @@ JSOX.begin = function(cb, reviver) {
 											break;
 										default:
 											if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+												if (parse_context !== CONTEXT_UNKNOWN && val.value_type !== VALUE_UNSET) {
+													status = false;
+													throwError("fault while parsing; two values with no separator between them;", cInt);
+												}
 												fromHex = false;
 												exponent = false;
 												date_format = false;
@@ -1463,7 +1720,8 @@ JSOX.begin = function(cb, reviver) {
 												if (word !== WORD_POS_RESET && word !== WORD_POS_END) recoverIdent(cInt);
 											} else {
 												if (word === WORD_POS_END || word === WORD_POS_FIELD) {
-													val.string += str;
+													if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+													else val.string += str;
 													break;
 												}
 												if (parse_context == CONTEXT_OBJECT_FIELD) {
@@ -1475,10 +1733,13 @@ JSOX.begin = function(cb, reviver) {
 												}
 												if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) throwError("String unexpected", cInt);
 											}
-											break;
 									}
 									else {
 										if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+											if (parse_context !== CONTEXT_UNKNOWN && val.value_type !== VALUE_UNSET) {
+												status = false;
+												throwError("fault while parsing; two values with no separator between them;", cInt);
+											}
 											fromHex = false;
 											exponent = false;
 											date_format = false;
@@ -1489,31 +1750,54 @@ JSOX.begin = function(cb, reviver) {
 											val.string = str;
 											input.n = n;
 											collectNumber();
-										} else if (val.value_type == VALUE_UNSET) if (word != WORD_POS_RESET) recoverIdent(cInt);
-										else {
-											word = WORD_POS_END;
-											val.string += str;
-											val.value_type = VALUE_STRING;
-										}
-										else if (parse_context == CONTEXT_OBJECT_FIELD) throwError("Multiple values found in field name", cInt);
+										} else if (val.value_type == VALUE_UNSET) {
+											if (word != WORD_POS_RESET) recoverIdent(cInt);
+											else {
+												word = WORD_POS_END;
+												val.string += str;
+												val.value_type = VALUE_STRING;
+											}
+										} else if (parse_context == CONTEXT_OBJECT_FIELD) throwError("Multiple values found in field name", cInt);
 										else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
 											if (val.value_type != VALUE_STRING) {
 												if (val.value_type == VALUE_OBJECT || val.value_type == VALUE_ARRAY) throwError("String unexpected", cInt);
 												recoverIdent(cInt);
+												break;
 											}
-											if (word == WORD_POS_AFTER_FIELD) if (getProto()) val.string = str;
-											else throwError("String unexpected", cInt);
-											else if (word == WORD_POS_END) val.string += str;
+											if (word == WORD_POS_AFTER_FIELD || word == WORD_POS_AFTER_FIELD_VALUE) {
+												if (val.className) {
+													status = false;
+													throwError("too many strings in a row; fault while parsing;", cInt);
+												}
+												getProto();
+												if (!val.className) val.className = val.string;
+												val.string = str;
+												word = WORD_POS_END;
+												break;
+											} else if (word == WORD_POS_END) val.string += str;
 											else throwError("String unexpected", cInt);
 										} else if (parse_context == CONTEXT_IN_ARRAY) {
 											if (word == WORD_POS_AFTER_FIELD) {
+												if (val.className) {
+													status = false;
+													throwError("too many strings in a row; fault while parsing;", cInt);
+												}
 												if (!val.className) {
 													val.className = val.string;
 													val.string = "";
+													word = WORD_POS_END;
 												}
 												val.string += str;
 												break;
-											} else if (word == WORD_POS_END) val.string += str;
+											} else if (word == WORD_POS_END) {
+												if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+												else val.string += str;
+											}
+										} else if (parse_context == CONTEXT_CLASS_VALUE) {
+											if (word == WORD_POS_END) {
+												if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+												else val.string += str;
+											}
 										}
 										break;
 									}
@@ -1521,6 +1805,14 @@ JSOX.begin = function(cb, reviver) {
 								case 96:
 								case 34:
 								case 39:
+									if (parse_context !== CONTEXT_UNKNOWN && !canTagOrBeTagged(val.value_type)) {
+										status = false;
+										throwError("fault while parsing; two values with no separator between them;", cInt);
+									}
+									if (val.className) {
+										status = false;
+										throwError("too many strings in a row; fault while parsing;", cInt);
+									}
 									if (val.string) val.className = val.string;
 									val.string = "";
 									if (gatherString(cInt)) {
@@ -1651,14 +1943,14 @@ JSOX.begin = function(cb, reviver) {
 									} else recoverIdent(cInt);
 									break;
 								case 45:
-									if (word == WORD_POS_RESET) negative = !negative;
-									else recoverIdent(cInt);
+									if (word == WORD_POS_RESET) {
+										negative = !negative;
+										signPending = true;
+									} else recoverIdent(cInt);
 									break;
-								case 43:
-									if (word !== WORD_POS_RESET) recoverIdent(cInt);
-									break;
+								case 43: if (word !== WORD_POS_RESET) recoverIdent(cInt);
+								else signPending = true;
 							}
-							break;
 					}
 					if (completed) {
 						if (word == WORD_POS_END) word = WORD_POS_RESET;
@@ -1687,6 +1979,12 @@ JSOX.begin = function(cb, reviver) {
 			if (completed && val.value_type != VALUE_UNSET) {
 				word = WORD_POS_RESET;
 				result = convertValue();
+				if (deferredRefs) {
+					const refs = deferredRefs, fixups = deferredFixups;
+					deferredRefs = null;
+					deferredFixups = null;
+					result = resolveDeferredRefs(result, refs, fixups);
+				}
 				negative = false;
 				val.string = "";
 				val.value_type = VALUE_UNSET;
@@ -1716,9 +2014,9 @@ JSOX.parse = function(msg, reviver) {
 	const writeResult = parser._write(msg, true);
 	if (writeResult > 0) {
 		if (writeResult > 1) {}
-		let result = parser.value();
-		if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
-		result = typeof reviver === "function" ? function walk(holder, key) {
+		let value = parser.value();
+		if ("undefined" === typeof value && writeResult > 1) throw new Error("Pending value could not complete");
+		value = typeof reviver === "function" ? function walk(holder, key) {
 			let k, v, value = holder[key];
 			if (value && typeof value === "object") {
 				for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -1728,9 +2026,9 @@ JSOX.parse = function(msg, reviver) {
 				}
 			}
 			return reviver.call(holder, key, value);
-		}({ "": result }, "") : result;
+		}({ "": value }, "") : value;
 		_parse_level--;
-		return result;
+		return value;
 	}
 	parser.finalError();
 };
@@ -1787,7 +2085,7 @@ JSOX.registerToJSOX = function(name, ptype, f) {
 */
 JSOX.toJSOX = function(name, ptype, f) {
 	if (!ptype.prototype || ptype.prototype !== Object.prototype) {
-		if (toProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype");
+		if (toProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype " + name + " " + ptype?.name);
 		toProtoTypes.set(ptype.prototype, {
 			external: true,
 			name: name || f.constructor.name,
@@ -1849,6 +2147,8 @@ JSOX.stringifier = function() {
 	let classes = [];
 	let useQuote = "\"";
 	let fieldMap = /* @__PURE__ */ new WeakMap();
+	let sortFields = true;
+	let depth = 0;
 	const path = [];
 	let encoding = [];
 	const localToProtoTypes = /* @__PURE__ */ new WeakMap();
@@ -1979,7 +2279,7 @@ JSOX.stringifier = function() {
 		});
 		toProtoTypes.set(Uint8ClampedArray.prototype, {
 			external: true,
-			name: "uc8",
+			name: "cu8",
 			cb: function() {
 				return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
 			}
@@ -2114,7 +2414,20 @@ JSOX.stringifier = function() {
 		stringify(o, r, s) {
 			return stringify(o, r, s);
 		},
+		get sort() {
+			return sortFields;
+		},
+		set sort(v) {
+			sortFields = !!v;
+		},
+		get quote() {
+			return useQuote;
+		},
+		set quote(q) {
+			useQuote = q;
+		},
 		setQuote(q) {
+			console.log("JSOX: setQuote() is deprecated, use `stringifier.quote = ...` instead.");
 			useQuote = q;
 		},
 		registerToJSOX(n, p, f) {
@@ -2213,6 +2526,21 @@ JSOX.stringifier = function() {
 	function stringify(object, replacer, space) {
 		if (object === void 0) return "undefined";
 		if (object === null) return;
+		let restoreSort;
+		let restoreQuote;
+		if (replacer && "object" === typeof replacer && !Array.isArray(replacer)) {
+			const opts = replacer;
+			replacer = opts.replacer;
+			if (space === void 0) space = opts.pretty !== void 0 ? opts.pretty : opts.space;
+			if (opts.sort !== void 0) {
+				restoreSort = sortFields;
+				sortFields = !!opts.sort;
+			}
+			if (opts.quote !== void 0) {
+				restoreQuote = useQuote;
+				useQuote = opts.quote;
+			}
+		}
 		let gap;
 		let indent;
 		let rep;
@@ -2225,11 +2553,19 @@ JSOX.stringifier = function() {
 		else if (spaceType === "string") indent = space;
 		rep = replacer;
 		if (replacer && repType !== "function" && (repType !== "object" || typeof replacer.length !== "number")) throw new Error("JSOX.stringify");
-		path.length = 0;
-		fieldMap = /* @__PURE__ */ new WeakMap();
-		const finalResult = str("", { "": object });
-		commonClasses.length = 0;
-		return finalResult;
+		if (!depth) {
+			path.length = 0;
+			fieldMap = /* @__PURE__ */ new WeakMap();
+		}
+		depth++;
+		try {
+			return str("", { "": object });
+		} finally {
+			depth--;
+			if (!depth) commonClasses.length = 0;
+			if (restoreSort !== void 0) sortFields = restoreSort;
+			if (restoreQuote !== void 0) useQuote = restoreQuote;
+		}
 		function str(key, holder) {
 			var mind = gap;
 			const doArrayToJSOX_ = arrayToJSOX.cb;
@@ -2309,22 +2645,23 @@ JSOX.stringifier = function() {
 					value = rep.call(holder, key, value);
 				}
 				let toJSOX = protoConverter && protoConverter.cb || objectConverter && objectConverter.cb;
-				if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") if (!stringifying.find((val) => val === value)) {
-					if (typeof value === "object") {
-						v = getReference(value);
-						if (v) return v;
-					}
-					stringifying.push(value);
-					encoding[thisNodeNameIndex] = value;
-					value = toJSOX.call(value, stringifier);
-					isValue = false;
-					stringifying.pop();
-					if (protoConverter && protoConverter.name) {
-						if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
-					}
-					encoding.length = thisNodeNameIndex;
-				} else v = getReference(value);
-				else if (typeof value === "object") {
+				if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") {
+					if (!stringifying.find((val) => val === value)) {
+						if (typeof value === "object") {
+							v = getReference(value);
+							if (v) return v;
+						}
+						stringifying.push(value);
+						encoding[thisNodeNameIndex] = value;
+						value = toJSOX.call(value, stringifier);
+						isValue = false;
+						stringifying.pop();
+						if (protoConverter && protoConverter.name) {
+							if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
+						}
+						encoding.length = thisNodeNameIndex;
+					} else v = getReference(value);
+				} else if (typeof value === "object") {
 					v = getReference(value);
 					if (v) return v;
 				}
@@ -2354,8 +2691,10 @@ JSOX.stringifier = function() {
 								k = rep[i];
 								path[thisNodeNameIndex] = k;
 								v = str(k, value);
-								if (v !== void 0) if (partialClass) partial.push(v);
-								else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+								if (v !== void 0) {
+									if (partialClass) partial.push(v);
+									else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+								}
 							}
 							path.splice(thisNodeNameIndex, 1);
 						} else {
@@ -2366,8 +2705,12 @@ JSOX.stringifier = function() {
 									if (!Object.prototype.propertyIsEnumerable.call(value, k)) continue;
 								}
 								if (Object.prototype.hasOwnProperty.call(value, k)) {
-									let n;
-									for (n = 0; n < keys.length; n++) if (keys[n] > k) {
+									if (!sortFields && !partialClass) {
+										keys.push(k);
+										continue;
+									}
+									let n = 0;
+									for (; n < keys.length; n++) if (keys[n] > k) {
 										keys.splice(n, 0, k);
 										break;
 									}
@@ -2379,8 +2722,10 @@ JSOX.stringifier = function() {
 								if (Object.prototype.hasOwnProperty.call(value, k)) {
 									path[thisNodeNameIndex] = k;
 									v = str(k, value);
-									if (v !== void 0) if (partialClass) partial.push(v);
-									else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+									if (v !== void 0) {
+										if (partialClass) partial.push(v);
+										else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+									}
 								}
 							}
 							path.splice(thisNodeNameIndex, 1);
@@ -2467,9 +2812,13 @@ function DecodeBase64(buf) {
 	return ab;
 }
 /**
-* @param {unknown} object 
-* @param {(this: unknown, key: string, value: unknown)} [replacer] 
-* @param {string | number} [space] 
+* @param {unknown} object
+* @param {((this: unknown, key: string, value: unknown)=>any)|string[]|{replacer?:(this: unknown, key: string, value: unknown)=>any,pretty?:string|number,space?:string|number,sort?:boolean,quote?:string}} [replacer]
+*        a replacer function, a field-name array, or an options object; the options
+*        object may carry `pretty`/`space` (indent), `sort` (false emits fields in
+*        insertion order) and `quote` (the quote to prefer, default `"`), each
+*        applying only to this call.
+* @param {string | number} [space]
 * @returns {string}
 */
 JSOX.stringify = function(object, replacer, space) {

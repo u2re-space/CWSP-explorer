@@ -3,6 +3,7 @@ import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
 import { t as JSOX } from "../vendor/jsox.js";
 import { $ as uploadFile, A as isVirtualFsPath, B as readAsObjectURL, C as getMimeTypeByFilename, Ct as setOpfsSupportEnabled, D as hasFileExtension, E as handleIncomingEntries, F as normalizePath$1, G as remove, H as readFileUTF8, I as openDirectory, J as resolvePath, K as removeDirectory, L as openImageFilePicker, M as matchMappedRoot, N as mayNotPromise, O as imageImportDesc, P as mountAsRoot, Q as uploadDirectory, R as post, S as getLeast, St as normalizeIdbNodePath, T as handleError, U as refreshMappedStorageRoots, V as readFile, W as registerDirectoryRoot, X as unmountAsRoot, Y as resolveRootHandle, Z as unregisterDirectoryRoot, _ as getDirectoryHandle, _t as isIdbAvailable, a as createHandler, at as registerProvideBackend, b as getFileWriter, bt as isOpfsCapabilityAvailable, c as detectTypeByRelPath, ct as IDB_FS_ROOT, d as downloadFile, dt as OPFS_SUPPORT_KEY, et as walkExactFile, f as dropAsTempFile, ft as bindStorageRootsRefresher, g as getDir, gt as getIdbRoot, h as generalFileImportDesc, ht as createMemoryIdbFsStore, i as copyFromOneHandlerToAnother, it as matchProvideBackend, j as mappedRoots, k as isFsDirectoryHandle, l as directHandlers, lt as IdbDirectoryHandle, m as ensureWorker, mt as createIndexedDbFsStore, n as attachFile, nt as asProvidedFile, o as currentHandleMap, ot as unregisterProvideBackend, p as dropFile, pt as copyHandleTree, q as removeFile, r as clearAllInDirectory, rt as isProvidedDirectory, s as defaultLogger, st as wantsDirectoryProvide, tt as writeFile, u as directoryCacheMap, ut as IdbFileHandle, v as getFileExtension, vt as isIdbFsHandle, w as ghostImage, x as getHandler, xt as isOpfsSupportEnabled, y as getFileHandle, yt as isOpfsBackendActive, z as provide } from "./app2.js";
+import { _ as relPathCandidates, a as isMarkdownRelativeRef, b as saveMarkdownDocument, c as mountPickedDirectory, d as pickAssetDirectory, f as pickMarkdownFile, g as registerMarkdownFilePicker, h as provideBoundRelative, i as indexDirectoryFiles, l as observeFileSystemHandle, m as pickSidecarDirectoryFiles, n as collectRelativeMarkdownAssetRefs, o as markdownNeedsBoundDirectory, p as pickMarkdownSaveHandle, r as findEntryRelPath, t as bindDirectoryForLaunchedFiles, u as originalRelFromRef, v as resolveFileUnderDirectory, x as writeMarkdownToHandle, y as saveMarkdownBlob } from "./app3.js";
 import { UX_PRELOAD_HOST_CSS, addAdoptedSheetToElement, adoptedStyleSheetsCache, appear, applyNormalizedInlineStyle, bindStyle, compileInlineStyleAttribute, disappear, dispatchLifecycleEvent, getAdoptedStyleRule, getPadding, isStyleBinding, loadAsAdopted, loadCachedStyles, makeHostLayerOrder, pruneEmptyStyleAttribute, scheduleEnsureHostStyles, setProperty, setStyleProperty, waitElementAnimations } from "/fest/style-lib.js";
 import { $avoidTrigger, $getValue, $set, MOUNTED_FS_EVENT, MOUNTED_FS_HTTP_PATH, MOUNTED_FS_WS_PATH, WRef, bindEvent, camelToKebab, canBeInteger, clamp, contextify, createMountedFsId, cvt_cs_to_os, deref, getValue, handleListeners, hasValue, inProxy, isMountedFsResponse, isNotEqual, isObject, isObservable, isPrimitive, isValidObj, isValueRef, normalizePrimitive, toRef as toRef$1, unref, withCtx } from "/fest/core.js";
 import { $affected, $trigger, $triggerControl, $triggerLess, DoubleWeakMap, addToCallChain, affected, booleanRef, booleanRef as booleanRef$1, computed, conditional, deref as deref$1, iterated, numberRef, numberRef as numberRef$1, observe, ref, safe, stringRef, unaffected, unwrap } from "/fest/object.js";
@@ -420,16 +421,18 @@ var bindHandler = (element, value, prop, handler, set, withObserver) => {
 		const setRef = deref(set);
 		const elementRef = deref(wel);
 		const v = $getValue(valueRef) ?? $getValue(curr);
-		if (!setRef || setRef?.[prop] == valueRef) if (typeof valueRef?.[$behavior] == "function") valueRef?.[$behavior]?.((_val = curr) => handler(elementRef, prop, v), [
-			curr,
-			prop,
-			old
-		], [
-			controller?.signal,
-			prop,
-			wel
-		]);
-		else handler(elementRef, prop, v);
+		if (!setRef || setRef?.[prop] == valueRef) {
+			if (typeof valueRef?.[$behavior] == "function") valueRef?.[$behavior]?.((_val = curr) => handler(elementRef, prop, v), [
+				curr,
+				prop,
+				old
+			], [
+				controller?.signal,
+				prop,
+				wel
+			]);
+			else handler(elementRef, prop, v);
+		}
 	});
 	let obs = null;
 	if (typeof withObserver == "boolean" && withObserver) {
@@ -676,7 +679,8 @@ var makeUpdater = (defaultParent = null, mapper, isArray = true, lifecycle) => {
 		const $requestor = isValidParent(boundParent) ?? isValidParent(defaultParent);
 		const newNode = getNode(newEl, mapper, idx, $requestor);
 		const oldNode = getNode(oldEl, mapper, idx, $requestor);
-		let element = isValidParent(newNode?.parentElement ?? oldNode?.parentElement) ?? $requestor;
+		let doubtfulParent = newNode?.parentElement ?? oldNode?.parentElement;
+		let element = isValidParent(doubtfulParent) ?? $requestor;
 		if (!element) return;
 		if (defaultParent != element) defaultParent = element;
 		const oldIdx = indexOf(element, oldNode);
@@ -806,19 +810,21 @@ var Ch = class {
 		Promise.try(() => {
 			const element = this.$getNode(requestor);
 			if (!element || !requestor || element?.contains?.(requestor) || requestor == element) return;
-			if (requestor instanceof HTMLElement && isValidParent(requestor)) if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
-			else {
-				const observer = new MutationObserver((records) => {
-					for (const record of records) if (record.type === "childList") {
-						if (record.addedNodes.length > 0) {
-							if (Array.from(record.addedNodes || []).find((node) => node === element)) {
-								this.boundParent = requestor;
-								observer.disconnect();
+			if (requestor instanceof HTMLElement && isValidParent(requestor)) {
+				if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
+				else {
+					const observer = new MutationObserver((records) => {
+						for (const record of records) if (record.type === "childList") {
+							if (record.addedNodes.length > 0) {
+								if (Array.from(record.addedNodes || []).find((node) => node === element)) {
+									this.boundParent = requestor;
+									observer.disconnect();
+								}
 							}
 						}
-					}
-				});
-				observer.observe(requestor, { childList: true });
+					});
+					observer.observe(requestor, { childList: true });
+				}
 			}
 		})?.catch?.(console.warn.bind(console));
 		return this.element;
@@ -967,8 +973,10 @@ var getNode = (el, mapper, index = -1, requestor) => {
 	return result;
 };
 var appendOrEmplaceByIndex = (parent, child, index = -1) => {
-	if (isElement(child) && child != null && child?.parentNode != parent) if (Number.isInteger(index) && index >= 0 && index < parent?.childNodes?.length) parent?.insertBefore?.(child, parent?.childNodes?.[index]);
-	else parent?.append?.(child);
+	if (isElement(child) && child != null && child?.parentNode != parent) {
+		if (Number.isInteger(index) && index >= 0 && index < parent?.childNodes?.length) parent?.insertBefore?.(child, parent?.childNodes?.[index]);
+		else parent?.append?.(child);
+	}
 };
 var appendFix = (parent, child, index = -1) => {
 	if (!isElement(child) || parent == child || child?.parentNode == parent) return;
@@ -1013,16 +1021,18 @@ var dePhantomNode = (parent, node, index = -1) => {
 	return node;
 };
 var replaceOrSwap = (parent, oldEl, newEl) => {
-	if (oldEl?.parentNode) if (oldEl?.parentNode == newEl?.parentNode) {
-		parent = oldEl?.parentNode ?? parent;
-		if (oldEl.nextSibling === newEl) parent.insertBefore(newEl, oldEl);
-		else if (newEl.nextSibling === oldEl) parent.insertBefore(oldEl, newEl);
-		else {
-			const nextSiblingOfElement1 = oldEl.nextSibling;
-			parent.replaceChild(newEl, oldEl);
-			parent.insertBefore(oldEl, nextSiblingOfElement1);
-		}
-	} else oldEl?.replaceWith?.(newEl);
+	if (oldEl?.parentNode) {
+		if (oldEl?.parentNode == newEl?.parentNode) {
+			parent = oldEl?.parentNode ?? parent;
+			if (oldEl.nextSibling === newEl) parent.insertBefore(newEl, oldEl);
+			else if (newEl.nextSibling === oldEl) parent.insertBefore(oldEl, newEl);
+			else {
+				const nextSiblingOfElement1 = oldEl.nextSibling;
+				parent.replaceChild(newEl, oldEl);
+				parent.insertBefore(oldEl, nextSiblingOfElement1);
+			}
+		} else oldEl?.replaceWith?.(newEl);
+	}
 };
 var replaceChildren = async (element, cp, mapper, index = -1, old, lifecycle) => {
 	if (mapper != null) cp = mapper?.(cp, index);
@@ -1205,7 +1215,9 @@ var UniversalPseudoElementHandler = class {
 	getRule() {
 		const element = this.activateStyleTarget();
 		if (!element) return void 0;
-		return getAdoptedStyleRule(`.${this.token}${this.suffix}`, "ux-query-pseudo", pseudoStyleRoot(element));
+		const selector = `.${this.token}${this.suffix}`;
+		const root = pseudoStyleRoot(element);
+		return getAdoptedStyleRule(selector, "ux-query-pseudo", root);
 	}
 	getStyle() {
 		return this.getRule()?.style;
@@ -1721,10 +1733,12 @@ var UniversalElementHandler = class {
 		if (name == $affected && isInputLike(this.selector)) return (cb) => this._subscribeInput(target, cb);
 		if ((name == "valueRef" || name == "checkedRef") && isInputLike(this.selector)) return () => {
 			const prop = name == "checkedRef" ? "checked" : "value";
-			const ref = observe({ value: this._readInputState(target)[prop] });
-			ref[Symbol.dispose] = this._subscribeInput(target, (v, p) => {
+			const state = this._readInputState(target);
+			const ref = observe({ value: state[prop] });
+			const unsub = this._subscribeInput(target, (v, p) => {
 				if (p == prop) ref.value = v;
 			});
+			ref[Symbol.dispose] = unsub;
 			return ref;
 		};
 		if (name == "deref" && (typeof selected == "object" || typeof selected == "function") && selected != null) {
@@ -1927,8 +1941,10 @@ var reflectProperties = (element, properties) => {
 	});
 	makeDisposable([properties, element], affected(properties, (value, prop) => {
 		const el = wel.deref();
-		if (el) if (prop == "checked") setChecked(el, value);
-		else return bindWith(el, prop, value, handleProperty, weak?.deref?.(), true);
+		if (el) {
+			if (prop == "checked") setChecked(el, value);
+			else return bindWith(el, prop, value, handleProperty, weak?.deref?.(), true);
+		}
 		return null;
 	}));
 	element.addEventListener("change", onChange);
@@ -2041,10 +2057,12 @@ var Mp = class {
 			if (firstExisting) parent.insertBefore(this.#stub, firstExisting);
 			else parent.appendChild(this.#stub);
 		}
-		for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) if (lifecycle.disappear) {
-			await removeChild(parent, oldNode, null, -1, lifecycle);
-			if (this.#disposed || this.#boundParent !== parent) return;
-		} else oldNode.parentNode.removeChild(oldNode);
+		for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) {
+			if (lifecycle.disappear) {
+				await removeChild(parent, oldNode, null, -1, lifecycle);
+				if (this.#disposed || this.#boundParent !== parent) return;
+			} else oldNode.parentNode.removeChild(oldNode);
+		}
 		let anchor = this.#stub.nextSibling;
 		for (const node of desiredNodes) {
 			const wasInParent = node.parentNode === parent;
@@ -2149,22 +2167,24 @@ var Mp = class {
 			}
 			const element = getNode(this.#collection()?.[0], this.mapper.bind(this), 0);
 			if (!requestor || element?.contains?.(requestor) || requestor == element) return;
-			if (isElementParent(requestor)) if (!element) this.boundParent = requestor;
-			else if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
-			else {
-				this.#disconnectParentObserver();
-				const observer = new MutationObserver((records) => {
-					for (const record of records) if (record.type === "childList") {
-						if (record.addedNodes.length > 0) {
-							if (Array.from(record.addedNodes || []).find((node) => node === element)) {
-								this.boundParent = requestor;
-								observer.disconnect();
+			if (isElementParent(requestor)) {
+				if (!element) this.boundParent = requestor;
+				else if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
+				else {
+					this.#disconnectParentObserver();
+					const observer = new MutationObserver((records) => {
+						for (const record of records) if (record.type === "childList") {
+							if (record.addedNodes.length > 0) {
+								if (Array.from(record.addedNodes || []).find((node) => node === element)) {
+									this.boundParent = requestor;
+									observer.disconnect();
+								}
 							}
 						}
-					}
-				});
-				this.#parentObserver = observer;
-				observer.observe(requestor, { childList: true });
+					});
+					this.#parentObserver = observer;
+					observer.observe(requestor, { childList: true });
+				}
 			}
 		} catch (error) {
 			console.warn(error);
@@ -2219,8 +2239,10 @@ var Mp = class {
 			if ((args?.[1] == null || args?.[1] < 0 || typeof args?.[1] != "number" || !canBeInteger(args?.[1])) && (Array.isArray(source) || source instanceof Set)) return;
 			if (args?.[0] != null && (typeof args?.[0] == "object" || typeof args?.[0] == "function" || typeof args?.[0] == "symbol")) return this.#reMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
 			if (args?.[0] != null && source instanceof Set) return this.#pmMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
-			if (args?.[0] != null) if (this.#options?.uniquePrimitives && isPrimitive(args?.[0])) return this.#pmMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
-			else return rememberFragmentKids(this.#mapCb(...args));
+			if (args?.[0] != null) {
+				if (this.#options?.uniquePrimitives && isPrimitive(args?.[0])) return this.#pmMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
+				else return rememberFragmentKids(this.#mapCb(...args));
+			}
 		};
 	}
 	_onUpdate(newEl, idx, oldEl, op = "") {
@@ -2485,13 +2507,14 @@ var SwM = class {
 			const newNode = getFromMapped(this.mapped, idx ?? -1, parent) ?? this.#stub;
 			const oldNode = getFromMapped(this.mapped, old ?? -1, parent);
 			if (isElement(parent)) {
-				if (isElement(newNode)) if (isElement(oldNode)) try {
-					replaceOrSwap(parent, oldNode, newNode);
-				} catch (e) {
-					console.warn(e);
-				}
-				else appendFix(parent, newNode);
-				else if (oldNode && !newNode) removeChild(parent, oldNode);
+				if (isElement(newNode)) {
+					if (isElement(oldNode)) try {
+						replaceOrSwap(parent, oldNode, newNode);
+					} catch (e) {
+						console.warn(e);
+					}
+					else appendFix(parent, newNode);
+				} else if (oldNode && !newNode) removeChild(parent, oldNode);
 			}
 		}
 	}
@@ -2591,8 +2614,10 @@ var createElement = (type, props = {}, children, ...others) => {
 	const element = E(type, normalized, $children);
 	if (!element) return element;
 	Promise.try(() => {
-		if (ref) if (typeof ref == "function") ref?.(element);
-		else ref.value = element;
+		if (ref) {
+			if (typeof ref == "function") ref?.(element);
+			else ref.value = element;
+		}
 	})?.catch?.(console.warn.bind(console));
 	return element;
 };
@@ -4614,9 +4639,10 @@ var constrainRectAspectRatio = (rect, aspectRatio, mode = "fit") => {
 		const targetRatio = aspectRatio.value;
 		let newWidth = rect.size.x.value;
 		let newHeight = rect.size.y.value;
-		if (mode === "fit") if (currentRatio > targetRatio) newHeight = newWidth / targetRatio;
-		else newWidth = newHeight * targetRatio;
-		else if (currentRatio > targetRatio) newWidth = newHeight * targetRatio;
+		if (mode === "fit") {
+			if (currentRatio > targetRatio) newHeight = newWidth / targetRatio;
+			else newWidth = newHeight * targetRatio;
+		} else if (currentRatio > targetRatio) newWidth = newHeight * targetRatio;
 		else newHeight = newWidth / targetRatio;
 		return {
 			position: rect.position,
@@ -5503,27 +5529,29 @@ function htmlBuilder({ createElement = null } = {}) {
 		const psh = [], atb = [];
 		for (let i = 0; i < strings.length; i++) {
 			parts.push(strings?.[i] || "");
-			if (i < values.length) if (strings[i]?.trim()?.endsWith?.("<")) {
-				const dat = parseTag(values?.[i]);
-				parts.push(dat.tag || "div");
-				if (dat.id) parts.push(` id="${dat.id}"`);
-				if (dat.className) parts.push(` class="${dat.className}"`);
-			} else {
-				const $inTagOpen = checkInsideTagBlock(strings, strings?.[i] || "", strings?.[i + 1] || "");
-				const $afterEquals = /[\w:\-\.\]]\s*=\s*$/.test(strings[i]?.trim?.() ?? "") || strings[i]?.trim?.()?.endsWith?.("=");
-				const $isQuoteBegin = strings[i]?.trim?.()?.match?.(/['"]$/);
-				const $isQuoteEnd = strings[i + 1]?.trim?.()?.match?.(/^['"]/) ?? $isQuoteBegin;
-				const $betweenQuotes = $isQuoteBegin && $isQuoteEnd;
-				const $attributePattern = $afterEquals;
-				if (($attributePattern || $betweenQuotes) && $inTagOpen) {
-					const $needsToQuoteWrap = $attributePattern && !$betweenQuotes;
-					const ati = atb.length;
-					parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? $needsToQuoteWrap ? `"#{${ati}}"` : `#{${ati}}` : "");
-					atb.push(values?.[i]);
-				} else if (!$inTagOpen) {
-					const psi = psh.length;
-					parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? isPrimitive(values?.[i]) ? String(values?.[i])?.trim?.() : `<!--o:${psi}-->` : "");
-					psh.push(values?.[i]);
+			if (i < values.length) {
+				if (strings[i]?.trim()?.endsWith?.("<")) {
+					const dat = parseTag(values?.[i]);
+					parts.push(dat.tag || "div");
+					if (dat.id) parts.push(` id="${dat.id}"`);
+					if (dat.className) parts.push(` class="${dat.className}"`);
+				} else {
+					const $inTagOpen = checkInsideTagBlock(strings, strings?.[i] || "", strings?.[i + 1] || "");
+					const $afterEquals = /[\w:\-\.\]]\s*=\s*$/.test(strings[i]?.trim?.() ?? "") || strings[i]?.trim?.()?.endsWith?.("=");
+					const $isQuoteBegin = strings[i]?.trim?.()?.match?.(/['"]$/);
+					const $isQuoteEnd = strings[i + 1]?.trim?.()?.match?.(/^['"]/) ?? $isQuoteBegin;
+					const $betweenQuotes = $isQuoteBegin && $isQuoteEnd;
+					const $attributePattern = $afterEquals;
+					if (($attributePattern || $betweenQuotes) && $inTagOpen) {
+						const $needsToQuoteWrap = $attributePattern && !$betweenQuotes;
+						const ati = atb.length;
+						parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? $needsToQuoteWrap ? `"#{${ati}}"` : `#{${ati}}` : "");
+						atb.push(values?.[i]);
+					} else if (!$inTagOpen) {
+						const psi = psh.length;
+						parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? isPrimitive(values?.[i]) ? String(values?.[i])?.trim?.() : `<!--o:${psi}-->` : "");
+						psh.push(values?.[i]);
+					}
 				}
 			}
 		}
@@ -6183,6 +6211,8 @@ var copyCodeMetrics = (source, target, box = false) => {
 	target.style.setProperty("line-height", lineHeight);
 	(source.parentElement ?? source).style.setProperty("--code-line-height", lineHeight);
 	target.style.setProperty("font-synthesis", "none");
+	target.style.setProperty("font-weight", "400");
+	target.style.setProperty("font-style", "normal");
 	target.style.setProperty("font-kerning", "none");
 	target.style.setProperty("font-variant-ligatures", "none");
 	target.style.setProperty("font-feature-settings", "\"liga\" 0, \"clig\" 0, \"calt\" 0, \"dlig\" 0");
@@ -6402,8 +6432,10 @@ var Task = class {
 	addSelfToList(list, doFocus = false) {
 		if (list == null) return this;
 		const has = getBy(list, this);
-		if (has != this) if (!has) list?.push(makeTask(this));
-		else Object.assign(has, this);
+		if (has != this) {
+			if (!has) list?.push(makeTask(this));
+			else Object.assign(has, this);
+		}
 		this.list = list;
 		if (doFocus) {
 			this.focus = true;
@@ -6493,7 +6525,8 @@ var Task = class {
 };
 var makeTask = (taskId, list, state = null, payload = {}, action) => {
 	if (taskId instanceof Task) return observe(taskId);
-	return observe(new Task(taskId, list, state, payload, action));
+	const task = new Task(taskId, list, state, payload, action);
+	return observe(task);
 };
 var makeTasks = (createCb) => {
 	const tasks = observe([]);
@@ -6601,20 +6634,21 @@ var addProxiedEvent = (root, type, options = {
 				for (const cb of Array.from(set)) if (cb(ev)) hadHandled = true;
 			};
 			const path = ev?.composedPath?.();
-			if (Array.isArray(path)) if (strategy === "closest") for (const n of path) {
-				const el = resolveHTMLElement(n);
-				if (!el) continue;
-				const set = targets.get(el);
-				if (!set) continue;
-				callSet(set);
-				break;
-			}
-			else for (const n of path) {
-				const el = resolveHTMLElement(n);
-				if (!el) continue;
-				callSet(targets.get(el));
-			}
-			else {
+			if (Array.isArray(path)) {
+				if (strategy === "closest") for (const n of path) {
+					const el = resolveHTMLElement(n);
+					if (!el) continue;
+					const set = targets.get(el);
+					if (!set) continue;
+					callSet(set);
+					break;
+				}
+				else for (const n of path) {
+					const el = resolveHTMLElement(n);
+					if (!el) continue;
+					callSet(targets.get(el));
+				}
+			} else {
 				let cur = resolveHTMLElement(ev?.target);
 				while (cur) {
 					const set = targets.get(cur);
@@ -7356,9 +7390,9 @@ var GridLayoutUtils = class {
 					currentRow += cell.rowSpan.value;
 					break;
 				case "diagonal":
-					cell.row = numberRef(Math.floor(index / Math.sqrt(cells.length)));
+					const diagonal = Math.floor(index / Math.sqrt(cells.length));
+					cell.row = numberRef(diagonal);
 					cell.col = numberRef(index % Math.ceil(Math.sqrt(cells.length)));
-					break;
 			}
 			redistributed.push(cell);
 		});
@@ -7892,7 +7926,8 @@ var CSSCustomProps = class {
 		};
 	}
 	static getReactiveProperty(element, propName) {
-		const reactiveValue = numberRef(parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0);
+		const initialValue = parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0;
+		const reactiveValue = numberRef(initialValue);
 		new MutationObserver(() => {
 			const newValue = parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0;
 			reactiveValue.value = newValue;
@@ -8384,7 +8419,6 @@ var SelectionController = class {
 				style.top = "50%";
 				style.left = "0";
 				style.transform = "translateY(-50%)";
-				break;
 		}
 	}
 	getCursorForHandle(handle) {
@@ -8541,7 +8575,6 @@ var SelectionController = class {
 			case "w":
 				newX += delta.x.value;
 				newWidth -= delta.x.value;
-				break;
 		}
 		if (newWidth < 0) {
 			newX += newWidth;
@@ -8566,8 +8599,10 @@ var SelectionController = class {
 		if (this.options.aspectRatio) {
 			const currentRatio = rect.size.x.value / rect.size.y.value;
 			const targetRatio = this.options.aspectRatio;
-			if (Math.abs(currentRatio - targetRatio) > .01) if (currentRatio > targetRatio) rect.size.y.value = rect.size.x.value / targetRatio;
-			else rect.size.x.value = rect.size.y.value * targetRatio;
+			if (Math.abs(currentRatio - targetRatio) > .01) {
+				if (currentRatio > targetRatio) rect.size.y.value = rect.size.x.value / targetRatio;
+				else rect.size.x.value = rect.size.y.value * targetRatio;
+			}
 		}
 		rect.size.x.value = Math.max(this.options.minSize.x.value, Math.min(this.options.maxSize.x.value, rect.size.x.value));
 		rect.size.y.value = Math.max(this.options.minSize.y.value, Math.min(this.options.maxSize.y.value, rect.size.y.value));
@@ -9884,16 +9919,17 @@ var bindScrollbarPosition = (scrollbar, anchorBox, axis, options) => {
 	if (anchorBox?.connectElement) return anchorBox?.connectElement?.(scrollbar, Object.assign(options || {}, { placement: axis == "horizontal" ? "bottom" : "right" }));
 	scrollbar.style.position = useIntersection ? "fixed" : "absolute";
 	scrollbar.style.zIndex = `${zIndexShift}`;
-	if (useIntersection) if (axis === "horizontal") {
-		usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
-		usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
-		usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
-	} else {
-		usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[4]), handleStyleChange));
-		usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[1]), handleStyleChange));
-		usb.push(bindWith(scrollbar, "height", CSSUnitUtils.asPx(anchorBox[3]), handleStyleChange));
-	}
-	else if (axis === "horizontal") {
+	if (useIntersection) {
+		if (axis === "horizontal") {
+			usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
+		} else {
+			usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[4]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[1]), handleStyleChange));
+			usb.push(bindWith(scrollbar, "height", CSSUnitUtils.asPx(anchorBox[3]), handleStyleChange));
+		}
+	} else if (axis === "horizontal") {
 		usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
 		usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
 		usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
@@ -10319,26 +10355,28 @@ var appendScrollbarOverlay = (content, scrollbar, axis, options) => {
 	scrollbar.classList.add(`scrollbar-theme-${theme}`);
 	scrollbar.setAttribute("data-axis", axis);
 	const cleanupFunctions = [];
-	if (autoPosition) if (useIntersection) {
-		const intersectionBox = enhancedIntersectionBoxAnchorRef(content, {
-			root: window,
-			observeResize: true,
-			observeMutations: true,
-			observeIntersection: true
-		});
-		cleanupFunctions.push(bindScrollbarPosition(scrollbar, intersectionBox, axis, {
-			useIntersection: true,
-			zIndexShift
-		}));
-	} else {
-		const box = boundingBoxAnchorRef(content, {
-			observeResize: true,
-			observeMutations: true
-		});
-		cleanupFunctions.push(bindScrollbarPosition(scrollbar, box, axis, {
-			useIntersection: false,
-			zIndexShift
-		}));
+	if (autoPosition) {
+		if (useIntersection) {
+			const intersectionBox = enhancedIntersectionBoxAnchorRef(content, {
+				root: window,
+				observeResize: true,
+				observeMutations: true,
+				observeIntersection: true
+			});
+			cleanupFunctions.push(bindScrollbarPosition(scrollbar, intersectionBox, axis, {
+				useIntersection: true,
+				zIndexShift
+			}));
+		} else {
+			const box = boundingBoxAnchorRef(content, {
+				observeResize: true,
+				observeMutations: true
+			});
+			cleanupFunctions.push(bindScrollbarPosition(scrollbar, box, axis, {
+				useIntersection: false,
+				zIndexShift
+			}));
+		}
 	}
 	if (!scrollbar.parentNode) document.body.appendChild(scrollbar);
 	observeDisconnect(content, () => {
@@ -10909,6 +10947,45 @@ var dropMenuTrigger = (triggerElement, ctxMenuDesc, menuElement) => {
 	};
 };
 //#endregion
+//#region ../../modules/projects/lur.e/src/utils/text/decodeToastMessage.ts
+var PCT_OCTET = /%[0-9A-Fa-f]{2}/;
+var PCT_RUN = /(?:%[0-9A-Fa-f]{2})+/g;
+var MAX_PASSES = 3;
+var decodePctRun = (seq) => {
+	try {
+		return decodeURIComponent(seq);
+	} catch {
+		try {
+			return decodeURI(seq);
+		} catch {
+			return seq;
+		}
+	}
+};
+var decodeOnce = (text) => {
+	try {
+		return decodeURIComponent(text);
+	} catch {
+		try {
+			return decodeURI(text);
+		} catch {
+			return text.replace(PCT_RUN, decodePctRun);
+		}
+	}
+};
+/** Expand percent-encoded UTF-8 in toast / status text. Idempotent when already decoded. */
+var decodeToastMessage = (raw) => {
+	let text = String(raw ?? "");
+	if (!text || !PCT_OCTET.test(text)) return text;
+	for (let i = 0; i < MAX_PASSES; i++) {
+		const next = decodeOnce(text);
+		if (next === text) break;
+		text = next;
+		if (!PCT_OCTET.test(text)) break;
+	}
+	return text;
+};
+//#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/Clipboard.ts
 var CLIPBOARD_CHANNEL = "rs-clipboard";
 /** Beyond this, legacy execCommand + textarea.select() can freeze the tab for seconds. */
@@ -11064,9 +11141,10 @@ var writeImage = async (blob) => {
 			if (typeof document !== "undefined" && document.hasFocus && !document.hasFocus()) globalThis?.focus?.();
 			try {
 				let imageBlob;
-				if (typeof blob === "string") if (blob.startsWith("data:")) imageBlob = await (await fetch(blob)).blob();
-				else imageBlob = await (await fetch(blob)).blob();
-				else imageBlob = blob;
+				if (typeof blob === "string") {
+					if (blob.startsWith("data:")) imageBlob = await (await fetch(blob)).blob();
+					else imageBlob = await (await fetch(blob)).blob();
+				} else imageBlob = blob;
 				if (typeof navigator !== "undefined" && navigator.clipboard?.write) {
 					const pngBlob = imageBlob.type === "image/png" ? imageBlob : await convertToPng(imageBlob);
 					await navigator.clipboard.write([new ClipboardItem({ [pngBlob.type]: pngBlob })]);
@@ -11157,9 +11235,10 @@ var copy = async (data, options = {}) => {
 	return new Promise((resolve) => {
 		scheduleClipboardFrame(async () => {
 			let result;
-			if (data instanceof Blob) if (data.type.startsWith("image/")) result = await writeImage(data);
-			else result = await writeText(await data.text());
-			else if (type === "html" || typeof data === "string" && data.trim().startsWith("<")) result = await writeHTML(String(data));
+			if (data instanceof Blob) {
+				if (data.type.startsWith("image/")) result = await writeImage(data);
+				else result = await writeText(await data.text());
+			} else if (type === "html" || typeof data === "string" && data.trim().startsWith("<")) result = await writeHTML(String(data));
 			else if (type === "image") result = await writeImage(data);
 			else result = await writeText(toText(data));
 			if (showFeedback && (result.ok || !silentOnError)) broadcastClipboardFeedback(result);
@@ -11176,7 +11255,7 @@ var broadcastClipboardFeedback = (result) => {
 		channel.postMessage({
 			type: "show-toast",
 			options: {
-				message: result.ok ? "Copied to clipboard" : result.error || "Copy failed",
+				message: result.ok ? "Copied to clipboard" : decodeToastMessage(result.error || "Copy failed"),
 				kind: result.ok ? "success" : "error",
 				duration: 2e3
 			}
@@ -14886,7 +14965,8 @@ var dynamicTheme = (ROOT = document.documentElement) => {
 	setIdleInterval$1(updater, 500);
 };
 var currentColorFromPointRef = (x, y, ROOT = document.documentElement, timeout = 500) => {
-	const rfc = stringRef(pickBgColor(x, y, ROOT));
+	const color = pickBgColor(x, y, ROOT);
+	const rfc = stringRef(color);
 	const updater = () => {
 		const color = pickBgColor(x, y, ROOT);
 		rfc.value = color;
@@ -14900,7 +14980,8 @@ var currentColorFromPointRef = (x, y, ROOT = document.documentElement, timeout =
 	return rfc;
 };
 var currentColorFromCenterRef = (element, ROOT = document.documentElement, timeout = 500) => {
-	const rfc = stringRef(pickFromCenter(element));
+	const color = pickFromCenter(element);
+	const rfc = stringRef(color);
 	const updater = () => {
 		const color = pickFromCenter(element);
 		rfc.value = color;
@@ -15943,7 +16024,7 @@ var convertLab65ToDlch = ({ l, a, b, alpha }) => {
 	let res = {
 		mode: "dlch",
 		l: factor / 1 * Math.log(1 + .0039 * l),
-		c: Math.log(1 + .075 * G) / (.0435 * 1 * 1)
+		c: Math.log(1 + .075 * G) / .0435
 	};
 	if (res.c) res.h = normalizeHue((Math.atan2(f, e) + θ) / Math.PI * 180);
 	if (alpha !== void 0) res.alpha = alpha;
@@ -17697,7 +17778,7 @@ var α$1 = 1.09929682680944;
 var β$1 = .018053968510807;
 var gamma = (v) => {
 	const abs = Math.abs(v);
-	if (abs > β$1) return (Math.sign(v) || 1) * (α$1 * Math.pow(abs, .45) - (α$1 - 1));
+	if (abs > β$1) return (Math.sign(v) || 1) * (α$1 * Math.pow(abs, .45) - .09929682680944008);
 	return 4.5 * v;
 };
 var convertXyz65ToRec2020 = ({ x, y, z, alpha }) => {
@@ -18178,7 +18259,8 @@ function createJsonFile(data, filename = "data.json") {
 * Download text content as a file
 */
 function downloadTextFile(content, filename, mimeType = "text/plain") {
-	downloadFile(new Blob([content], { type: mimeType }), filename);
+	const blob = new Blob([content], { type: mimeType });
+	downloadFile(blob, filename);
 }
 /**
 * Download markdown content
@@ -18813,7 +18895,7 @@ function isBase64Like(input) {
 	return looksLikeBase64(input).isBase64;
 }
 async function normalizeDataAsset(input, options = {}) {
-	const maxBytes = options.maxBytes ?? 50 * 1024 * 1024;
+	const maxBytes = options.maxBytes ?? 52428800;
 	const namePrefix = (options.namePrefix || "asset").trim() || "asset";
 	const preserveFileName = options.preserveFileName ?? false;
 	let source = "text";
@@ -18860,7 +18942,7 @@ async function normalizeDataAsset(input, options = {}) {
 	};
 }
 async function stringToBlobOrFile(input, options = {}) {
-	const maxBytes = options.maxBytes ?? 50 * 1024 * 1024;
+	const maxBytes = options.maxBytes ?? 52428800;
 	const raw = (input ?? "").trim();
 	const parsedDataUrl = parseDataUrl(raw);
 	if (parsedDataUrl) {
@@ -19567,13 +19649,14 @@ var writeFileSmart = async (root, dirOrPath, file, options = {}) => {
 		console.warn("writeFileSmart JSON merge failed, falling back to raw write:", err);
 	}
 	let toWrite;
-	if (file instanceof File) if (file.name === finalName) toWrite = file;
-	else {
-		const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
-		const buf = await file.arrayBuffer();
-		toWrite = new File([buf], finalName, { type });
-	}
-	else {
+	if (file instanceof File) {
+		if (file.name === finalName) toWrite = file;
+		else {
+			const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
+			const buf = await file.arrayBuffer();
+			toWrite = new File([buf], finalName, { type });
+		}
+	} else {
 		const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
 		toWrite = new File([await file.arrayBuffer()], finalName, { type });
 	}
@@ -19841,9 +19924,9 @@ var FileHandler = class {
 	*/
 	formatFileSize(bytes) {
 		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-		return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+		if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
+		return `${(bytes / 1073741824).toFixed(1)} GB`;
 	}
 	/**
 	* Check if a file is likely a markdown file
@@ -19990,376 +20073,6 @@ async function extractTextFromDataTransfer(dt) {
 	} catch {}
 	return null;
 }
-//#endregion
-//#region ../../modules/projects/lur.e/src/utils/opfs/markdown-assets.ts
-/** True for `./assets/x`, `docs/a.md` — not http(s)/blob/data/#. */
-var isMarkdownRelativeRef = (value) => {
-	const raw = String(value || "").trim();
-	return Boolean(raw) && !/^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/|#|data:|blob:)/.test(raw);
-};
-/** Keep the markdown-relative token (`./assets/x.png`) even after the browser resolved it to the PWA origin. */
-var originalRelFromRef = (value) => {
-	const raw = String(value || "").trim();
-	if (!raw || raw.startsWith("#") || raw.startsWith("blob:") || raw.startsWith("data:")) return "";
-	if (isMarkdownRelativeRef(raw)) return raw;
-	try {
-		const url = new URL(raw, globalThis.location?.href || "http://localhost/");
-		if (globalThis.location?.origin && url.origin === globalThis.location.origin) return url.pathname.replace(/^\/+/, "");
-	} catch {}
-	return "";
-};
-/**
-* Main-thread `provide()` of a bound relative path (`/mounts/md-xxx/` + `./assets/logo.png`).
-* WHY: skips OPFS worker + HTTP fetch (JXL hooks those). Mapped `/mounts/` uses `walkExactFile`.
-*/
-var provideBoundRelative = async (mountRoot, originalRel, sourceUrl) => {
-	const rel = originalRelFromRef(originalRel) || String(originalRel || "").trim();
-	if (!rel) return null;
-	const bases = [];
-	if (sourceUrl && isVirtualFsPath(sourceUrl)) bases.push(getDir(sourceUrl));
-	if (mountRoot) bases.push(mountRoot);
-	const seen = /* @__PURE__ */ new Set();
-	for (const base of bases) for (const candidate of relPathCandidates(rel)) {
-		const path = normalizePath$1(base, candidate);
-		if (!path || seen.has(path)) continue;
-		seen.add(path);
-		const file = asProvidedFile(await provide(path).catch(() => null));
-		if (file) return file;
-	}
-	return null;
-};
-/** `assets/logo/x.png` → also `logo/x.png`, `x.png` (picker was `assets/` or `logo/`). */
-var relPathCandidates = (rel) => {
-	const clean = String(rel || "").trim().replace(/^\.\//, "").replace(/^\/+/, "");
-	if (!clean || /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/)/.test(clean)) return [];
-	const parts = clean.split(/[\\/]/).filter(Boolean);
-	return parts.map((_, i) => parts.slice(i).join("/"));
-};
-var findFileByBasename = async (dir, basename, depth = 5) => {
-	try {
-		return await (await dir.getFileHandle(basename, { create: false })).getFile();
-	} catch {}
-	if (depth <= 0) return null;
-	for await (const [, handle] of dir.entries()) {
-		if (handle.kind !== "directory") continue;
-		const found = await findFileByBasename(handle, basename, depth - 1);
-		if (found) return found;
-	}
-	return null;
-};
-/** Walk a picked folder so the viewer can resolve `./assets/…` by relative path or basename. */
-var indexDirectoryFiles = async (dir, prefix = "", depth = 8, acc = []) => {
-	if (depth < 0) return acc;
-	for await (const [name, handle] of dir.entries()) {
-		const rel = prefix ? `${prefix}/${name}` : name;
-		if (handle.kind === "file") try {
-			acc.push({
-				rel,
-				file: await handle.getFile()
-			});
-		} catch {}
-		else if (handle.kind === "directory") await indexDirectoryFiles(handle, rel, depth - 1, acc);
-	}
-	return acc;
-};
-/** Read a markdown-relative file from a picked directory (any ancestor of the file). */
-var resolveFileUnderDirectory = async (dir, rel) => {
-	if (!dir) return null;
-	const candidates = relPathCandidates(rel);
-	for (const candidate of candidates) {
-		const handle = await walkExactFile(dir, candidate);
-		if (!handle) continue;
-		try {
-			return await handle.getFile();
-		} catch {}
-	}
-	const base = candidates.at(-1);
-	if (!base || base.includes("/")) return null;
-	return findFileByBasename(dir, base);
-};
-/** Chromium File System Access — pick the folder that holds images / includes. */
-var pickAssetDirectory = async (options = {}) => {
-	const pick = globalThis.showDirectoryPicker;
-	if (typeof pick !== "function") return null;
-	try {
-		return await pick({
-			mode: options.mode || "read",
-			id: options.id || "markdown-assets",
-			startIn: options.startIn
-		});
-	} catch (error) {
-		if (error?.name === "AbortError") return null;
-		console.warn("[markdown-assets] showDirectoryPicker failed", error);
-		return null;
-	}
-};
-/** Watch a handle with experimental FileSystemObserver. */
-var observeFileSystemHandle = (handle, onRecords) => {
-	const Ctor = globalThis.FileSystemObserver;
-	if (typeof Ctor !== "function" || !handle) return null;
-	try {
-		const observer = new Ctor((records) => onRecords(records));
-		const obs = observer;
-		Promise.resolve(obs.observe(handle, { recursive: true })).catch(() => Promise.resolve(obs.observe(handle))).catch(() => {});
-		return { disconnect: () => observer.disconnect?.() };
-	} catch {
-		return null;
-	}
-};
-/** Map a picked directory to `/mounts/<id>/` for `provide()` + relative markdown URLs. */
-var mountPickedDirectory = (dir, prefix = "md") => {
-	const root = `/mounts/${prefix}-${Date.now().toString(36)}/`;
-	registerDirectoryRoot(root, dir);
-	return root;
-};
-/** Walk a directory tree for the relative path of a file handle. */
-var findEntryRelPath = async (dir, target) => {
-	for await (const [name, handle] of dir.entries()) if (handle.kind === "file") try {
-		if (await handle.isSameEntry(target)) return name;
-	} catch {}
-	else if (handle.kind === "directory") {
-		const inner = await findEntryRelPath(handle, target);
-		if (inner) return `${name}/${inner}`;
-	}
-	return null;
-};
-var ABSOLUTE_OR_EMBEDDED = /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:|\/\/|#|data:|blob:)/;
-/** Relative `![](…)` / `src` / `href` refs that need a sibling folder or sidecar files. */
-var collectRelativeMarkdownAssetRefs = (markdown) => {
-	const refs = /* @__PURE__ */ new Set();
-	const md = String(markdown || "");
-	for (const re of [/!\[[^\]]*\]\(\s*<?([^)\s>]+)>?/g, /\b(?:src|href)=["']([^"']+)["']/gi]) {
-		re.lastIndex = 0;
-		let match = re.exec(md);
-		while (match) {
-			const raw = String(match[1] || "").trim();
-			if (raw && !ABSOLUTE_OR_EMBEDDED.test(raw)) refs.add(raw.replace(/^\.\//, ""));
-			match = re.exec(md);
-		}
-	}
-	return [...refs];
-};
-var basenameOf = (value) => String(value || "").split(/[\\/]/).pop() || String(value || "");
-/** True when the markdown points at local assets that are not already in the transfer. */
-var markdownNeedsBoundDirectory = (markdown, sidecarNames = []) => {
-	const refs = collectRelativeMarkdownAssetRefs(markdown);
-	if (!refs.length) return false;
-	const names = new Set(sidecarNames.map((name) => basenameOf(name).toLowerCase()).filter(Boolean));
-	return refs.some((ref) => !names.has(basenameOf(ref).toLowerCase()));
-};
-/**
-* Offer `showDirectoryPicker` (same user-activation as Launch Queue when possible).
-* Cancel / missing API → null; caller continues with the File body alone.
-*/
-var bindDirectoryForLaunchedFiles = async (options) => {
-	const files = Array.isArray(options.files) ? options.files : [];
-	const mdName = String(options.filename || "").trim();
-	const mdFile = mdName && files.find((file) => file.name === mdName) || files.find((file) => /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/i.test(file.name)) || files[0];
-	let text = String(options.markdownText || "");
-	if (!text && mdFile) try {
-		text = await mdFile.text();
-	} catch {
-		text = "";
-	}
-	const sidecars = files.filter((file) => file !== mdFile).map((file) => file.name);
-	if (!markdownNeedsBoundDirectory(text, sidecars)) return null;
-	const dir = await pickAssetDirectory({
-		startIn: options.startIn,
-		id: "markdown-assets",
-		mode: "read"
-	});
-	if (!dir) return null;
-	const root = mountPickedDirectory(dir, "md");
-	let rel = mdFile?.name || mdName || "document.md";
-	const start = options.startIn;
-	if (start && start.kind === "file") {
-		const found = await findEntryRelPath(dir, start);
-		if (found) rel = found;
-	}
-	return {
-		root,
-		virtualPath: `${root}${rel}`
-	};
-};
-var MARKDOWN_INPUT_ACCEPT = ".md,.markdown,.mdown,.mkd,.mkdn,.mdtxt,.mdtext,.txt,text/markdown,text/plain";
-var pickFilesViaInput = (options) => new Promise((resolve) => {
-	const input = document.createElement("input");
-	input.type = "file";
-	if (options.accept) input.accept = options.accept;
-	if (options.multiple) input.multiple = true;
-	if (options.directory) {
-		input.setAttribute("webkitdirectory", "");
-		input.setAttribute("directory", "");
-		input.multiple = true;
-	}
-	const finish = (files) => resolve(files);
-	input.addEventListener("change", () => finish(Array.from(input.files || [])), { once: true });
-	input.addEventListener("cancel", () => finish([]), { once: true });
-	input.click();
-});
-var isExtensionPage = () => {
-	try {
-		return globalThis.location?.protocol === "chrome-extension:";
-	} catch {
-		return false;
-	}
-};
-/** FSA when present; Capacitor / CRX / Firefox fall back to `<input type=file>`. */
-var pickMarkdownFile = async () => {
-	const pickFile = globalThis.showOpenFilePicker;
-	if (!isExtensionPage() && typeof pickFile === "function") try {
-		const [handle] = await pickFile({
-			multiple: false,
-			types: [{
-				description: "Markdown",
-				accept: {
-					"text/markdown": [
-						".md",
-						".markdown",
-						".mdown",
-						".mkd"
-					],
-					"text/plain": [".txt"]
-				}
-			}]
-		});
-		if (!handle) return null;
-		return {
-			file: await handle.getFile(),
-			sidecars: [],
-			handle
-		};
-	} catch (error) {
-		if (error?.name === "AbortError") return null;
-	}
-	const files = await pickFilesViaInput({ accept: MARKDOWN_INPUT_ACCEPT });
-	return files[0] ? {
-		file: files[0],
-		sidecars: []
-	} : null;
-};
-/**
-* Folder of images / includes. Chromium FSA first; otherwise `webkitdirectory`
-* (Capacitor WebView + CRX) so relative `![](./assets/…)` can resolve from sidecars.
-*/
-var pickSidecarDirectoryFiles = async () => {
-	const dir = await pickAssetDirectory({
-		id: "markdown-assets",
-		mode: "read"
-	});
-	if (dir) return {
-		files: (await indexDirectoryFiles(dir)).map((row) => {
-			try {
-				Object.defineProperty(row.file, "webkitRelativePath", { value: row.rel });
-			} catch {}
-			return row.file;
-		}),
-		directory: dir,
-		root: mountPickedDirectory(dir, "md")
-	};
-	return {
-		files: await pickFilesViaInput({ directory: true }),
-		directory: null,
-		root: null
-	};
-};
-var MARKDOWN_SAVE_TYPES = [{
-	description: "Markdown files",
-	accept: { "text/markdown": [".md", ".markdown"] }
-}];
-/** Write through a remembered FSA handle (no second picker when permission holds). */
-var writeMarkdownToHandle = async (handle, content) => {
-	if (!handle || typeof handle.createWritable !== "function") return false;
-	try {
-		const query = handle.queryPermission?.({ mode: "readwrite" });
-		if (query) {
-			if (await query !== "granted") {
-				const next = await handle.requestPermission?.({ mode: "readwrite" });
-				if (next && next !== "granted") return false;
-			}
-		}
-		const writable = await handle.createWritable();
-		await writable.write(content);
-		await writable.close();
-		return true;
-	} catch {
-		return false;
-	}
-};
-/** `showSaveFilePicker` when the browser exposes it (Web / PWA / some CRX). */
-var pickMarkdownSaveHandle = async (filename) => {
-	const savePicker = globalThis.showSaveFilePicker;
-	if (typeof savePicker !== "function") return null;
-	const name = String(filename || "document.md").trim() || "document.md";
-	try {
-		return await savePicker({
-			suggestedName: name,
-			types: MARKDOWN_SAVE_TYPES
-		});
-	} catch (error) {
-		if (error?.name === "AbortError") return "cancelled";
-		return null;
-	}
-};
-/**
-* Remembered FSA handle → `showSaveFilePicker` → CRX `chrome.downloads`
-* → Web Share (Capacitor) → `<a download>`.
-* WHY: Save must not re-prompt when the last picker handle is still writable.
-*/
-var saveMarkdownDocument = async (content, filename, existingHandle) => {
-	const name = String(filename || "document.md").trim() || "document.md";
-	if (existingHandle && await writeMarkdownToHandle(existingHandle, content)) return {
-		result: "saved",
-		handle: existingHandle
-	};
-	const picked = await pickMarkdownSaveHandle(name);
-	if (picked === "cancelled") return { result: "cancelled" };
-	if (picked) {
-		if (await writeMarkdownToHandle(picked, content)) return {
-			result: "saved",
-			handle: picked
-		};
-	}
-	const chromeDl = globalThis.chrome?.downloads?.download;
-	const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-	if (typeof chromeDl === "function") {
-		const url = URL.createObjectURL(blob);
-		try {
-			await chromeDl({
-				url,
-				filename: name,
-				saveAs: true
-			});
-			return { result: "downloaded" };
-		} catch {
-			URL.revokeObjectURL(url);
-		}
-	}
-	const file = new File([blob], name, { type: "text/markdown" });
-	const nav = navigator;
-	if (typeof nav.share === "function" && (!nav.canShare || nav.canShare({ files: [file] }))) try {
-		await nav.share({
-			files: [file],
-			title: name
-		});
-		return { result: "shared" };
-	} catch (error) {
-		if (error?.name === "AbortError") return { result: "cancelled" };
-	}
-	try {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = name;
-		a.click();
-		setTimeout(() => URL.revokeObjectURL(url), 250);
-		return { result: "downloaded" };
-	} catch {
-		return { result: "failed" };
-	}
-};
-/** PWA FSA → CRX `chrome.downloads` → Web Share (Capacitor) → `<a download>`. */
-var saveMarkdownBlob = async (content, filename) => (await saveMarkdownDocument(content, filename)).result;
 //#endregion
 //#region ../../modules/projects/lur.e/src/interactive/modules/LazyLoader.ts
 /**
@@ -20640,6 +20353,7 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	datasetRef: () => datasetRef,
 	decodeBase64ToBytes: () => decodeBase64ToBytes,
 	decodeDesktopState: () => decodeDesktopState,
+	decodeToastMessage: () => decodeToastMessage,
 	defaultLogger: () => defaultLogger,
 	defaultZIndexShift: () => defaultZIndexShift,
 	defineElement: () => defineElement,
@@ -20913,6 +20627,7 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	registerContextMenu: () => registerContextMenu,
 	registerDirectoryRoot: () => registerDirectoryRoot,
 	registerLayerElement: () => registerLayerElement,
+	registerMarkdownFilePicker: () => registerMarkdownFilePicker,
 	registerModal: () => registerModal,
 	registerOverlay: () => registerOverlay,
 	registerOverlayElement: () => registerOverlayElement,
@@ -21036,4 +20751,4 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	writeText: () => writeText
 });
 //#endregion
-export { vector2Ref as $, createTemplateManager as A, writeText as B, setString as C, converter as D, parse as E, decodeDesktopState as F, bindOutsideDismiss as G, resolveOverlayHost as H, loadDesktopRaw as I, navigationEnable as J, makeTask as K, copy as L, getSpeechPrompt as M, makeUIState as N, dynamicTheme as O, saveUIState as P, H as Q, initClipboardReceiver as R, StorageKeys as S, oklch as T, numberRef$1 as U, registerTransientOverlay as V, elementPointerMap as W, defineElement as X, GLitElement as Y, property as Z, createFileHandler as _, isMarkdownRelativeRef as a, registerModal as at, normalizeDataAsset as b, originalRelFromRef as c, M$1 as ct, provideBoundRelative as d, ClosePriority as et, relPathCandidates as f, writeMarkdownToHandle as g, saveMarkdownDocument as h, indexDirectoryFiles as i, registerCloseable as it, pointerAnchorRef as j, placeOverlay as k, pickMarkdownFile as l, Q as lt, saveMarkdownBlob as m, getCachedComponent as n, hasActiveCloseable as nt, mountPickedDirectory as o, navigate as ot, resolveFileUnderDirectory as p, getBy as q, bindDirectoryForLaunchedFiles as r, initBackNavigation as rt, observeFileSystemHandle as s, E as st, src_exports as t, closeHighestPriority as tt, pickSidecarDirectoryFiles as u, bindWith as ut, decodeBase64ToBytes as v, createContentAddressedStore as w, parseDataUrl as x, isBase64Like as y, initGlobalClipboard as z };
+export { numberRef$1 as A, vector2Ref as B, copy as C, decodeToastMessage as D, writeText as E, navigationEnable as F, registerCloseable as G, closeHighestPriority as H, GLitElement as I, E as J, registerModal as K, defineElement as L, bindOutsideDismiss as M, makeTask as N, registerTransientOverlay as O, getBy as P, property as R, loadDesktopRaw as S, initGlobalClipboard as T, hasActiveCloseable as U, ClosePriority as V, initBackNavigation as W, Q as X, M$1 as Y, bindWith as Z, pointerAnchorRef as _, isBase64Like as a, saveUIState as b, StorageKeys as c, oklch as d, parse as f, createTemplateManager as g, placeOverlay as h, decodeBase64ToBytes as i, elementPointerMap as j, resolveOverlayHost as k, setString as l, dynamicTheme as m, getCachedComponent as n, normalizeDataAsset as o, converter as p, navigate as q, createFileHandler as r, parseDataUrl as s, src_exports as t, createContentAddressedStore as u, getSpeechPrompt as v, initClipboardReceiver as w, decodeDesktopState as x, makeUIState as y, H as z };

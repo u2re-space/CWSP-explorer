@@ -1,5 +1,6 @@
 import { v as stashSkuHandoff, y as takeSkuHandoff } from "./ecosystem-skus.js";
-import { Q as H, l as pickMarkdownFile, m as saveMarkdownBlob } from "../com/app.js";
+import { z as H } from "../com/app.js";
+import { f as pickMarkdownFile, y as saveMarkdownBlob } from "../com/app3.js";
 import { t as createViewState } from "./types.js";
 import { loadAsAdopted, removeAdopted } from "/fest/style-lib.js";
 import { ref } from "/fest/object.js";
@@ -120,9 +121,7 @@ var EditorView = class {
 				case "preview":
 					this.handlePreview();
 					break;
-				case "copy":
-					await this.handleCopy();
-					break;
+				case "copy": await this.handleCopy();
 			}
 		});
 	}

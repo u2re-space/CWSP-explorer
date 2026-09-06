@@ -4,7 +4,6 @@ import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 import { n as DEFAULT_SETTINGS } from "./SettingsTypes.js";
 //#region ../CWSP-document/src/shared/other/config/RuntimeSettings.ts
 var RuntimeSettings_exports = /* @__PURE__ */ __exportAll({ getRuntimeSettings: () => getRuntimeSettings });
-var provider;
 /** Lazily resolved so we never read `loadSettings` at module init (avoids TDZ when Rollup splits com-app ↔ boot chunks). */
 var defaultProvider = null;
 async function getDefaultProvider() {
@@ -18,7 +17,7 @@ async function getDefaultProvider() {
 }
 var getRuntimeSettings = async () => {
 	try {
-		return await (provider ?? await getDefaultProvider())() || DEFAULT_SETTINGS;
+		return await (await getDefaultProvider())() || DEFAULT_SETTINGS;
 	} catch {
 		return DEFAULT_SETTINGS;
 	}

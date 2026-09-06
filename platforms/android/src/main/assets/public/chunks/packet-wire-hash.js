@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","./UniformInterop.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core2.js","./crx-control-session2.js","./vite-preload-DHlaQ_oz.js","../com/app.js","../vendor/jsox.js","../com/app2.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","./UniformInterop.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core2.js","./crx-control-session2.js","./vite-preload-DHlaQ_oz.js","../com/app.js","../vendor/jsox.js","../com/app2.js","../com/app3.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 import { u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId, z as migrateLegacyCwspPublicPort } from "./airpad-cwsp-client-parity.js";
 import { t as JSOX } from "../vendor/jsox.js";
@@ -404,6 +404,10 @@ var DEFAULT_SETTINGS = {
 		filesOpenForShareMode: "auto",
 		filesInboundMode: "ask",
 		filesByteTransport: "auto",
+		deviceAliases: "",
+		deviceBluetooth: "",
+		bluetoothEnabled: true,
+		preferBluetooth: false,
 		filesLandingMode: "app",
 		filesIncomingDir: "",
 		filesAskDirEveryTime: true,
@@ -1771,8 +1775,10 @@ var loadSettings = async (opts) => {
 			try {
 				if (opts?.nativeOverlay !== false && isCwsNativeIpcAvailable()) {
 					const nativeSettings = await getNativeUnifiedSettings();
-					if (nativeSettings && typeof nativeSettings === "object") if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
-					else result = mergeNativeSettingsOverlay(result, nativeSettings);
+					if (nativeSettings && typeof nativeSettings === "object") {
+						if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
+						else result = mergeNativeSettingsOverlay(result, nativeSettings);
+					}
 				}
 			} catch {}
 			try {
@@ -2039,7 +2045,7 @@ var loadLureFs = () => {
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile,
 		writeFileSmart: m.writeFileSmart
-	})), __vite__mapDeps([9,1,8,10,11]), import.meta.url);
+	})), __vite__mapDeps([9,1,8,10,11,12]), import.meta.url);
 	return lureFsPromise;
 };
 var downloadContentsToOPFS = async (webDavClient, path = "/", opts = {}, rootHandle = null) => {

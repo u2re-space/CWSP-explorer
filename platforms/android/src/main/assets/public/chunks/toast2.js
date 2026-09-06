@@ -12,6 +12,40 @@ var DEDUPE_WINDOW_MS = 400;
 var lastToastFingerprint = "";
 var lastToastFingerprintAt = 0;
 var toastFingerprint = (opts) => `${opts.kind || "info"}\0${opts.position || DEFAULT_CONFIG.position}\0${opts.message}`;
+var PCT_OCTET = /%[0-9A-Fa-f]{2}/;
+var PCT_RUN = /(?:%[0-9A-Fa-f]{2})+/g;
+var decodePctRun = (seq) => {
+	try {
+		return decodeURIComponent(seq);
+	} catch {
+		try {
+			return decodeURI(seq);
+		} catch {
+			return seq;
+		}
+	}
+};
+/** MAP:modules/projects/lur.e/src/utils/text/decodeToastMessage.ts — keep inlined (zero deps). */
+var decodeToastMessage = (raw) => {
+	let text = String(raw ?? "");
+	if (!text || !PCT_OCTET.test(text)) return text;
+	for (let i = 0; i < 3; i++) {
+		let next;
+		try {
+			next = decodeURIComponent(text);
+		} catch {
+			try {
+				next = decodeURI(text);
+			} catch {
+				next = text.replace(PCT_RUN, decodePctRun);
+			}
+		}
+		if (next === text) break;
+		text = next;
+		if (!PCT_OCTET.test(text)) break;
+	}
+	return text;
+};
 var hasVisibleDuplicate = (layer, message, kind) => {
 	for (const el of Array.from(layer?.children ?? [])) if (el instanceof HTMLElement && el.classList.contains("rs-toast") && el.getAttribute("data-kind") === kind && el.textContent === message) return true;
 	return false;
@@ -268,7 +302,11 @@ var broadcastToast = (options) => {
 * @returns The created toast element, or null if in service worker context
 */
 var showToast = (options) => {
-	const opts = typeof options === "string" ? { message: options } : options;
+	const raw = typeof options === "string" ? { message: options } : options;
+	const opts = {
+		...raw,
+		message: decodeToastMessage(raw.message)
+	};
 	const { message, kind = "info", duration = DEFAULT_DURATION, persistent = false, position = DEFAULT_CONFIG.position, onClick } = opts;
 	if (!message) return null;
 	const fp = toastFingerprint(opts);

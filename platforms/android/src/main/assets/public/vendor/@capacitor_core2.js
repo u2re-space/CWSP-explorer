@@ -82,9 +82,10 @@ var createCapacitor = (win) => {
 			var _a, _b;
 			if (pluginHeader) {
 				const methodHeader = pluginHeader === null || pluginHeader === void 0 ? void 0 : pluginHeader.methods.find((m) => prop === m.name);
-				if (methodHeader) if (methodHeader.rtype === "promise") return (options) => cap.nativePromise(pluginName, prop.toString(), options);
-				else return (options, callback) => cap.nativeCallback(pluginName, prop.toString(), options, callback);
-				else if (impl) return (_a = impl[prop]) === null || _a === void 0 ? void 0 : _a.bind(impl);
+				if (methodHeader) {
+					if (methodHeader.rtype === "promise") return (options) => cap.nativePromise(pluginName, prop.toString(), options);
+					else return (options, callback) => cap.nativeCallback(pluginName, prop.toString(), options, callback);
+				} else if (impl) return (_a = impl[prop]) === null || _a === void 0 ? void 0 : _a.bind(impl);
 			} else if (impl) return (_b = impl[prop]) === null || _b === void 0 ? void 0 : _b.bind(impl);
 			else throw new CapacitorException(`"${pluginName}" plugin is not implemented on ${platform}`, ExceptionCode.Unimplemented);
 		};
@@ -223,7 +224,7 @@ var WebPlugin = class {
 		const listeners = this.listeners[eventName];
 		if (!listeners) return;
 		const index = listeners.indexOf(listenerFunc);
-		this.listeners[eventName].splice(index, 1);
+		if (index !== -1) this.listeners[eventName].splice(index, 1);
 		if (!this.listeners[eventName].length) this.removeWindowListener(this.windowListeners[eventName]);
 	}
 	addWindowListener(handle) {

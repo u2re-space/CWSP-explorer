@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./workcenter-command-wire.js","./rolldown-runtime.js","../com/app4.js","./vite-preload-DHlaQ_oz.js","../vendor/jsox.js","../com/app.js","../com/app2.js","../com/app5.js","../com/app6.js","../vendor/culori.js","./ViewTransferRouting.js","./ecosystem-skus.js","./names.js","./UnifiedMessaging.js","./UniformInterop.js","./open-policy.js","./process-ingress.js","./log-sanitizer.js","../vendor/jsox2.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./remote-connection-runtime.js","./SettingsTypes.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./workcenter-command-wire.js","./rolldown-runtime.js","../com/app5.js","./vite-preload-DHlaQ_oz.js","../vendor/jsox.js","../com/app.js","../com/app2.js","../com/app3.js","../com/app6.js","../vendor/culori.js","./ViewTransferRouting.js","./ecosystem-skus.js","./names.js","./UnifiedMessaging.js","./UniformInterop.js","./open-policy.js","./process-ingress.js","./log-sanitizer.js","../vendor/jsox2.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./remote-connection-runtime.js","./SettingsTypes.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { c as inferCwspSkuFromLocation } from "./ecosystem-skus.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
@@ -162,7 +162,7 @@ var onHeldIngressFiles = (listener) => {
 		heldIngressListeners.delete(listener);
 	};
 };
-var loadLauncherState = () => __vitePreload(() => import("../com/app4.js").then((n) => n.f), __vite__mapDeps([2,1,3,4,5,6,7,8]), import.meta.url);
+var loadLauncherState = () => __vitePreload(() => import("../com/app5.js").then((n) => n.f), __vite__mapDeps([2,1,3,4,5,6,7,8]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -172,8 +172,8 @@ var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"bmp",
 	"avif"
 ]);
-var MIN_WALLPAPER_BYTES = 20 * 1024;
-var MAX_WALLPAPER_BYTES = 25 * 1024 * 1024;
+var MIN_WALLPAPER_BYTES = 20480;
+var MAX_WALLPAPER_BYTES = 26214400;
 var MIN_WALLPAPER_EDGE = 320;
 var MAX_WALLPAPER_EDGE = 16384;
 var MIN_WALLPAPER_ASPECT = .3;
@@ -392,7 +392,7 @@ var applyLauncherIngress = async (payload) => {
 				getWallpaperStoragePointer,
 				WALLPAPER_IDB_MARKER
 			};
-		}, __vite__mapDeps([9,1,5,3,4,6]), import.meta.url);
+		}, __vite__mapDeps([9,1,5,3,4,6,7]), import.meta.url);
 		const { wallpaperState, persistWallpaper } = await loadLauncherState();
 		await setAppWallpaperFromBlob(image);
 		wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
@@ -472,7 +472,7 @@ var applyShellWallpaper = async (file) => {
 			getWallpaperStoragePointer,
 			WALLPAPER_IDB_MARKER
 		};
-	}, __vite__mapDeps([9,1,5,3,4,6]), import.meta.url);
+	}, __vite__mapDeps([9,1,5,3,4,6,7]), import.meta.url);
 	const { wallpaperState, persistWallpaper } = await loadLauncherState();
 	await setAppWallpaperFromBlob(file);
 	wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;

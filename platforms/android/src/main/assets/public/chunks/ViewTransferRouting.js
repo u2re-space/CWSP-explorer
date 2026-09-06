@@ -181,7 +181,8 @@ var mirrorTransferToViewChannel = (resolved, message) => {
 	}
 };
 var payloadSink = (payload, resolved) => {
-	return normalizeOpenSink(payload.hint?.sink ?? (resolved.metadata?.hint)?.sink, "ask");
+	const hinted = payload.hint?.sink ?? (resolved.metadata?.hint)?.sink;
+	return normalizeOpenSink(hinted, "ask");
 };
 var openResolvedWithSystem = async (payload, chooser) => {
 	const file = Array.isArray(payload.files) ? payload.files[0] : void 0;

@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/@capacitor_core.js","./rolldown-runtime.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./clipboard-device.js","./vite-preload-DHlaQ_oz.js","./capacitor-settings-permissions2.js","./capacitor-permissions2.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/@capacitor_core.js","./rolldown-runtime.js","./UniformInterop2.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../assets/index-DHkxbR3V.js","./ecosystem-skus.js","./vite-preload-DHlaQ_oz.js","./UnifiedMessaging.js","./UniformInterop.js","./UnifiedMessaging2.js","./core.js","./templates.js","./packet-wire-hash.js","../vendor/jsox.js","./ecosystem-skus2.js","./cws-bridge.js","../vendor/@capacitor_core2.js","./remote-connection-runtime.js","../vendor/jsox2.js","./open-policy.js","./SettingsTypes.js","../com/app.js","../com/app2.js","../com/app3.js","../vendor/culori.js","./Clipboard.js","./Runtime.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./capacitor-permissions2.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "./vite-preload-DHlaQ_oz.js";
 import { a as classifyOpenKindFromPayload, n as OPEN_KINDS } from "./open-policy.js";
@@ -165,9 +165,9 @@ var writeProcessIngressClipboard = async (text) => {
 	if (!value.trim()) return false;
 	try {
 		const { writeClipboardTextToDevice } = await __vitePreload(async () => {
-			const { writeClipboardTextToDevice } = await import("./clipboard-device.js").then((n) => n.t);
+			const { writeClipboardTextToDevice } = await import("../assets/index-DHkxbR3V.js").then((n) => n.i);
 			return { writeClipboardTextToDevice };
-		}, __vite__mapDeps([6,1,7,0,2,3,4,5]), import.meta.url);
+		}, __vite__mapDeps([6,1,7,3,8,9,10,11,12,13,2,0,4,5,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]), import.meta.url);
 		await writeClipboardTextToDevice(value);
 		return true;
 	} catch {
@@ -187,9 +187,9 @@ var holdCapacitorIngressJob = async (settings) => {
 	}
 	try {
 		const { ensureCapacitorBridgeDaemonStarted } = await __vitePreload(async () => {
-			const { ensureCapacitorBridgeDaemonStarted } = await import("./capacitor-settings-permissions2.js");
+			const { ensureCapacitorBridgeDaemonStarted } = await import("./capacitor-settings-permissions.js");
 			return { ensureCapacitorBridgeDaemonStarted };
-		}, __vite__mapDeps([8,9]), import.meta.url);
+		}, __vite__mapDeps([30,31]), import.meta.url);
 		await ensureCapacitorBridgeDaemonStarted({
 			...settings || {},
 			shell: {

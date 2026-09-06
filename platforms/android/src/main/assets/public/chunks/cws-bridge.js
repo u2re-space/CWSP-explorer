@@ -64,39 +64,41 @@ var CwsBridge = registerCwsBridgeOnce();
 var bridgeInitDone = false;
 var normalizeBridgeEnvelope = (channel, payload, envelope) => {
 	if (envelope && isProtocolEnvelope(envelope)) return normalizeProtocolEnvelope(envelope);
+	const interop = createInteropEnvelope({
+		purpose: "invoke",
+		protocol: "service",
+		transport: "service-worker",
+		type: "invoke",
+		op: "invoke",
+		source: "webview",
+		destination: "native",
+		srcChannel: "webview",
+		dstChannel: "native",
+		payload: payload ?? {},
+		data: payload ?? {}
+	});
 	return createProtocolEnvelope({
-		...createInteropEnvelope({
-			purpose: "invoke",
-			protocol: "service",
-			transport: "service-worker",
-			type: "invoke",
-			op: "invoke",
-			source: "webview",
-			destination: "native",
-			srcChannel: "webview",
-			dstChannel: "native",
-			payload: payload ?? {},
-			data: payload ?? {}
-		}),
+		...interop,
 		path: ["cws-bridge", channel]
 	});
 };
 var normalizeInvokeResultEnvelope = (channel, payload, result) => {
 	if (result?.envelope && isProtocolEnvelope(result.envelope)) return normalizeProtocolEnvelope(result.envelope);
+	const interop = createInteropEnvelope({
+		purpose: "invoke",
+		protocol: "service",
+		transport: "service-worker",
+		type: result.ok ? "response" : "ack",
+		op: "invoke",
+		source: "native",
+		destination: "webview",
+		srcChannel: "native",
+		dstChannel: "webview",
+		payload,
+		data: payload
+	});
 	return createProtocolEnvelope({
-		...createInteropEnvelope({
-			purpose: "invoke",
-			protocol: "service",
-			transport: "service-worker",
-			type: result.ok ? "response" : "ack",
-			op: "invoke",
-			source: "native",
-			destination: "webview",
-			srcChannel: "native",
-			dstChannel: "webview",
-			payload,
-			data: payload
-		}),
+		...interop,
 		path: ["cws-bridge", channel]
 	});
 };
@@ -287,7 +289,8 @@ async function getNativeUnifiedSettings() {
 }
 async function patchNativeUnifiedSettingsDetailed(appSettings) {
 	try {
-		const airpadJson = stringifyCwspRemoteConnectionV1(appSettingsToRemoteConnectionV1(appSettings));
+		const blob = appSettingsToRemoteConnectionV1(appSettings);
+		const airpadJson = stringifyCwspRemoteConnectionV1(blob);
 		const shellPatch = appSettingsShellToNativeExtras(appSettings);
 		try {
 			globalThis.localStorage?.setItem?.(AIRPAD_REMOTE_CONFIG_STORAGE_KEY, airpadJson);

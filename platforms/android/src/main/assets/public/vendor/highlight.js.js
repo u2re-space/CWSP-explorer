@@ -915,11 +915,13 @@ var require_core = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				const m = this.getMatcher(this.regexIndex);
 				m.lastIndex = this.lastIndex;
 				let result = m.exec(s);
-				if (this.resumingScanAtSamePosition()) if (result && result.index === this.lastIndex);
-				else {
-					const m2 = this.getMatcher(0);
-					m2.lastIndex = this.lastIndex + 1;
-					result = m2.exec(s);
+				if (this.resumingScanAtSamePosition()) {
+					if (result && result.index === this.lastIndex);
+					else {
+						const m2 = this.getMatcher(0);
+						m2.lastIndex = this.lastIndex + 1;
+						result = m2.exec(s);
+					}
 				}
 				if (result) {
 					this.regexIndex += result.position + 1;
@@ -3303,11 +3305,12 @@ var require_csharp = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			]
 		};
 		const TITLE_MODE = hljs.inherit(hljs.TITLE_MODE, { begin: "[a-zA-Z](\\.?\\w)*" });
+		const INTEGER_SUFFIX = "([uU][lL]?|[lL][uU]?)?";
 		const NUMBERS = {
 			className: "number",
 			variants: [
-				{ begin: "\\b0[bB]_*[01](_*[01])*([uU][lL]?|[lL][uU]?)?" },
-				{ begin: "(-?)\\b0[xX]_*[a-fA-F0-9](_*[a-fA-F0-9])*([uU][lL]?|[lL][uU]?)?" },
+				{ begin: "\\b0[bB]_*[01](_*[01])*" + INTEGER_SUFFIX },
+				{ begin: "(-?)\\b0[xX]_*[a-fA-F0-9](_*[a-fA-F0-9])*" + INTEGER_SUFFIX },
 				{ begin: "(-?)(\\b\\d(_*\\d)*(\\.(\\d(_*\\d)*)?)?|\\.\\d(_*\\d)*)([eE][-+]?\\d(_*\\d)*)?([fFdDmM]|[uU][lL]?|[lL][uU]?)?" }
 			],
 			relevance: 0
@@ -5338,7 +5341,8 @@ var require_java = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		const regex = hljs.regex;
 		const JAVA_IDENT_RE = "[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*";
 		const ARRAY_BRACKETS_OPTIONAL_RE = "(?:(?:\\s*\\[\\s*])+)?";
-		const TYPE_ARGS_OPTIONAL_RE = recurRegex("(?:\\s*<\\s*(?:\\?(?:\\s+(?:extends|super)\\s+[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*<@@@>(?:(?:\\s*\\[\\s*])+)?)?|[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*<@@@>(?:(?:\\s*\\[\\s*])+)?)(?:\\s*,\\s*(?:\\?(?:\\s+(?:extends|super)\\s+[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*<@@@>(?:(?:\\s*\\[\\s*])+)?)?|[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*<@@@>(?:(?:\\s*\\[\\s*])+)?))*\\s*>)?", /<@@@>/g, 2);
+		const TYPE_ARG_RE = "(?:\\?(?:\\s+(?:extends|super)\\s+[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*<@@@>(?:(?:\\s*\\[\\s*])+)?)?|[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*<@@@>(?:(?:\\s*\\[\\s*])+)?)";
+		const TYPE_ARGS_OPTIONAL_RE = recurRegex("(?:\\s*<\\s*" + TYPE_ARG_RE + "(?:\\s*,\\s*" + TYPE_ARG_RE + ")*\\s*>)?", /<@@@>/g, 2);
 		const KEYWORDS = {
 			keyword: [
 				"synchronized",
@@ -5405,7 +5409,7 @@ var require_java = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		};
 		const ANNOTATION = {
 			className: "meta",
-			begin: "@[À-ʸa-zA-Z_$][À-ʸa-zA-Z_$0-9]*",
+			begin: "@" + JAVA_IDENT_RE,
 			contains: [{
 				begin: /\(/,
 				end: /\)/,
@@ -5817,7 +5821,7 @@ var require_javascript = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 							},
 							{
 								className: "variable",
-								begin: "[A-Za-z$_][0-9A-Za-z$_]*(?=\\s*(-)|$)",
+								begin: IDENT_RE$1 + "(?=\\s*(-)|$)",
 								endsParent: true,
 								relevance: 0
 							},
@@ -6095,7 +6099,7 @@ var require_javascript = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				},
 				PROPERTY_ACCESS,
 				{
-					match: "\\$[A-Za-z$_][0-9A-Za-z$_]*",
+					match: "\\$" + IDENT_RE$1,
 					relevance: 0
 				},
 				{
@@ -7239,7 +7243,7 @@ var require_less = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			contains: [{ beginKeywords: "and not" }].concat(VALUE_MODES)
 		};
 		const RULE_MODE = {
-			begin: "([\\w-]+|@\\{[\\w-]+\\})\\s*:",
+			begin: INTERP_IDENT_RE + "\\s*:",
 			returnBegin: true,
 			end: /[;}]/,
 			relevance: 0,
@@ -7306,8 +7310,8 @@ var require_less = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				},
 				modes.CSS_NUMBER_MODE,
 				IDENT_MODE("selector-tag", INTERP_IDENT_RE, 0),
-				IDENT_MODE("selector-id", "#([\\w-]+|@\\{[\\w-]+\\})"),
-				IDENT_MODE("selector-class", "\\.([\\w-]+|@\\{[\\w-]+\\})", 0),
+				IDENT_MODE("selector-id", "#" + INTERP_IDENT_RE),
+				IDENT_MODE("selector-class", "\\." + INTERP_IDENT_RE, 0),
 				IDENT_MODE("selector-tag", "&", 0),
 				modes.ATTRIBUTE_SELECTOR_MODE,
 				{
@@ -9283,6 +9287,7 @@ var require_rust = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			relevance: 0,
 			begin: regex.concat(/\b/, /(?!(?:let|for|while|if|else|match)\b)/, IDENT_RE, regex.lookahead(/\s*\(/))
 		};
+		const NUMBER_SUFFIX = "([ui](8|16|32|64|128|size)|f(16|32|64|128))?";
 		const KEYWORDS = [
 			"abstract",
 			"as",
@@ -9473,10 +9478,10 @@ var require_rust = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				{
 					scope: "number",
 					variants: [
-						{ begin: "\\b0b([01_]+)([ui](8|16|32|64|128|size)|f(16|32|64|128))?" },
-						{ begin: "\\b0o([0-7_]+)([ui](8|16|32|64|128|size)|f(16|32|64|128))?" },
-						{ begin: "\\b0x([A-Fa-f0-9_]+)([ui](8|16|32|64|128|size)|f(16|32|64|128))?" },
-						{ begin: "\\b(\\d[\\d_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?)([ui](8|16|32|64|128|size)|f(16|32|64|128))?" }
+						{ begin: "\\b0b([01_]+)" + NUMBER_SUFFIX },
+						{ begin: "\\b0o([0-7_]+)" + NUMBER_SUFFIX },
+						{ begin: "\\b0x([A-Fa-f0-9_]+)" + NUMBER_SUFFIX },
+						{ begin: "\\b(\\d[\\d_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?)" + NUMBER_SUFFIX }
 					],
 					relevance: 0
 				},
@@ -11840,6 +11845,7 @@ var require_swift = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 var require_yaml = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	function yaml(hljs) {
 		const LITERALS = "true false yes no null";
+		const URI_CHARACTERS = "[\\w#;/?:@&=+$,.~*'()[\\]]+";
 		const KEY = {
 			className: "attr",
 			variants: [
@@ -11939,19 +11945,19 @@ var require_yaml = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			},
 			{
 				className: "type",
-				begin: "!\\w+![\\w#;/?:@&=+$,.~*'()[\\]]+"
+				begin: "!\\w+!" + URI_CHARACTERS
 			},
 			{
 				className: "type",
-				begin: "!<[\\w#;/?:@&=+$,.~*'()[\\]]+>"
+				begin: "!<" + URI_CHARACTERS + ">"
 			},
 			{
 				className: "type",
-				begin: "![\\w#;/?:@&=+$,.~*'()[\\]]+"
+				begin: "!" + URI_CHARACTERS
 			},
 			{
 				className: "type",
-				begin: "!![\\w#;/?:@&=+$,.~*'()[\\]]+"
+				begin: "!!" + URI_CHARACTERS
 			},
 			{
 				className: "meta",
@@ -12272,7 +12278,7 @@ var require_typescript = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 							},
 							{
 								className: "variable",
-								begin: "[A-Za-z$_][0-9A-Za-z$_]*(?=\\s*(-)|$)",
+								begin: IDENT_RE$1 + "(?=\\s*(-)|$)",
 								endsParent: true,
 								relevance: 0
 							},
@@ -12550,7 +12556,7 @@ var require_typescript = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				},
 				PROPERTY_ACCESS,
 				{
-					match: "\\$[A-Za-z$_][0-9A-Za-z$_]*",
+					match: "\\$" + IDENT_RE$1,
 					relevance: 0
 				},
 				{
@@ -12631,7 +12637,7 @@ var require_typescript = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		};
 		const DECORATOR = {
 			className: "meta",
-			begin: "@[A-Za-z$_][0-9A-Za-z$_]*"
+			begin: "@" + IDENT_RE$1
 		};
 		const swapMode = (mode, label, replacement) => {
 			const indx = mode.contains.findIndex((m) => m.label === label);

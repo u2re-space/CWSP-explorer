@@ -1,10 +1,8 @@
 import { g as shouldHandoffViewToSibling, m as publicHrefForView } from "./ecosystem-skus.js";
-import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
-import { l as isEnabledView, m as serviceChannels, n as ViewRegistry } from "./registry.js";
 import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
-import { O as dynamicTheme } from "../com/app.js";
-import { i as syncBrowserChromeTheme, n as applyTheme, r as resyncThemeAfterAdoptedViewSheet } from "./Theme.js";
-import { a as hubSettingsSectionPath, l as resolveEffectiveHubSettingsSection, n as canonicalHubSettingsSection, p as scheduleViewModulePrefetch } from "./settings-shell-profile.js";
+import { m as dynamicTheme } from "../com/app.js";
+import { D as isEnabledView, G as ensureHistoryBaseDataset, J as withHistoryBase, K as pathForSkuHostView, U as serviceChannels, W as initBootShellWindowActivity, b as ViewRegistry, q as stripHistoryBase } from "../assets/index-DHkxbR3V.js";
+import { _ as syncBrowserChromeTheme, a as hubSettingsSectionPath, g as resyncThemeAfterAdoptedViewSheet, h as applyTheme, l as resolveEffectiveHubSettingsSection, n as canonicalHubSettingsSection, p as scheduleViewModulePrefetch } from "./settings-shell-profile.js";
 import { t as showToast } from "./toast.js";
 import { loadInlineStyle, preloadStyle } from "/fest/style-lib.js";
 import { ref } from "/fest/object.js";
@@ -267,15 +265,16 @@ var ShellBase = class {
 				return false;
 			}
 		})();
-		if (this.id !== "immersive" && this.id !== "content") if (parentIsShellGrid) this.rootElement.style.minBlockSize = "0";
-		else {
-			this.rootElement.style.position = "absolute";
-			this.rootElement.style.inset = "0";
-			this.rootElement.style.inlineSize = "100%";
-			this.rootElement.style.blockSize = "100%";
-			this.rootElement.style.minBlockSize = "100%";
-		}
-		else this.rootElement.style.minBlockSize = "";
+		if (this.id !== "immersive" && this.id !== "content") {
+			if (parentIsShellGrid) this.rootElement.style.minBlockSize = "0";
+			else {
+				this.rootElement.style.position = "absolute";
+				this.rootElement.style.inset = "0";
+				this.rootElement.style.inlineSize = "100%";
+				this.rootElement.style.blockSize = "100%";
+				this.rootElement.style.minBlockSize = "100%";
+			}
+		} else this.rootElement.style.minBlockSize = "";
 		this.rootElement.style.pointerEvents = this.id === "content" ? "none" : "auto";
 		this.contentContainer = shellLayout.querySelector("[data-shell-content]") || shellLayout;
 		this.toolbarContainer = shellLayout.querySelector("[data-shell-toolbar]");
@@ -840,13 +839,14 @@ var ShellBase = class {
 		this.setTheme(this.createShellTheme(mode));
 		try {
 			const current = await loadSettings();
-			applyTheme(await saveSettings({
+			const saved = await saveSettings({
 				...current,
 				appearance: {
 					...current.appearance || {},
 					theme: mode
 				}
-			}));
+			});
+			applyTheme(saved);
 		} catch (error) {
 			console.warn(`[${this.id}] Failed to save theme mode:`, error);
 		}

@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/crx-control-session.js","../chunks/vite-preload-DHlaQ_oz.js","../com/app.js","../chunks/rolldown-runtime.js","./jsox.js","../com/app2.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/crx-control-session.js","../chunks/vite-preload-DHlaQ_oz.js","../com/app.js","../chunks/rolldown-runtime.js","./jsox.js","../com/app2.js","../com/app3.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
 import { c as isCwsNativeIpcAvailable, i as initCwsNativeBridge, l as patchNativeUnifiedSettingsDetailed, r as getNativeUnifiedSettings } from "./@capacitor_core.js";
@@ -554,8 +554,10 @@ JSOX.begin = function(cb, reviver) {
 				switch (val.value_type) {
 					case VALUE_NUMBER:
 						if ((val.string.length > 13 || val.string.length == 13 && val[0] > "2") && !date_format && !exponent_digit && !exponent_sign && !decimal) isBigInt = true;
-						if (isBigInt) if (hasBigInt) return BigInt(val.string);
-						else throw new Error("no builtin BigInt()", 0);
+						if (isBigInt) {
+							if (hasBigInt) return BigInt(val.string);
+							else throw new Error("no builtin BigInt()", 0);
+						}
 						if (date_format) {
 							const r = val.string.match(/\.(\d\d\d\d*)/);
 							const frac = r ? r[1] : null;
@@ -640,33 +642,36 @@ JSOX.begin = function(cb, reviver) {
 										while (ctx && p < pathlen && p < context_stack.length) {
 											const thisKey = val.contains[p];
 											if (!ctx.next || thisKey !== ctx.next.node.name) break;
-											if (ctx.next) if ("number" === typeof thisKey) {
-												const actualObject = ctx.next.node.elements;
-												if (actualObject && thisKey >= actualObject.length) if (p === context_stack.length - 1) {
-													console.log("This is actually at the current object so use that", p, val.contains, elements);
-													nextObj = elements;
-													p++;
-													ctx = ctx.next;
-													break;
-												} else {
-													if (ctx.next.next && thisKey === actualObject.length) {
-														nextObj = ctx.next.next.node.elements;
-														ctx = ctx.next;
-														p++;
-														obj = nextObj;
-														continue;
+											if (ctx.next) {
+												if ("number" === typeof thisKey) {
+													const actualObject = ctx.next.node.elements;
+													if (actualObject && thisKey >= actualObject.length) {
+														if (p === context_stack.length - 1) {
+															console.log("This is actually at the current object so use that", p, val.contains, elements);
+															nextObj = elements;
+															p++;
+															ctx = ctx.next;
+															break;
+														} else {
+															if (ctx.next.next && thisKey === actualObject.length) {
+																nextObj = ctx.next.next.node.elements;
+																ctx = ctx.next;
+																p++;
+																obj = nextObj;
+																continue;
+															}
+															nextObj = elements;
+															p++;
+															break;
+														}
 													}
-													nextObj = elements;
-													p++;
+												} else if (thisKey !== ctx.next.node.name) {
+													nextObj = ctx.next.node.elements[thisKey];
+													lvl = p;
 													break;
-												}
-											} else if (thisKey !== ctx.next.node.name) {
-												nextObj = ctx.next.node.elements[thisKey];
-												lvl = p;
-												break;
-											} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
-											else nextObj = elements;
-											else nextObj = nextObj[thisKey];
+												} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
+												else nextObj = elements;
+											} else nextObj = nextObj[thisKey];
 											ctx = ctx.next;
 											p++;
 										}
@@ -704,9 +709,7 @@ JSOX.begin = function(cb, reviver) {
 							if (fp && fp.cb) return fp.cb.call(val.contains);
 						}
 						return val.contains;
-					default:
-						console.log("Unhandled value conversion.", val);
-						break;
+					default: console.log("Unhandled value conversion.", val);
 				}
 			}
 			function noteDeferred(ref, container, key) {
@@ -901,8 +904,7 @@ JSOX.begin = function(cb, reviver) {
 						case WORD_POS_RESET: break;
 						case WORD_POS_FIELD: break;
 						case WORD_POS_AFTER_FIELD: break;
-						case WORD_POS_AFTER_FIELD_VALUE: break;
-						default:
+						case WORD_POS_AFTER_FIELD_VALUE:
 					}
 					val.value_type = VALUE_STRING;
 					if (word < WORD_POS_FIELD) word = WORD_POS_END;
@@ -940,17 +942,18 @@ JSOX.begin = function(cb, reviver) {
 						n++;
 					}
 					pos.col++;
-					if (cInt == start_c) if (stringEscape) {
-						if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
-						else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
-						else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
-						if (cr_escaped) {
-							cr_escaped = false;
-							retval = 1;
-						} else val.string += str;
-						stringEscape = false;
-					} else retval = 1;
-					else if (stringEscape) {
+					if (cInt == start_c) {
+						if (stringEscape) {
+							if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
+							else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
+							else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
+							if (cr_escaped) {
+								cr_escaped = false;
+								retval = 1;
+							} else val.string += str;
+							stringEscape = false;
+						} else retval = 1;
+					} else if (stringEscape) {
 						if (unicodeWide) {
 							if (cInt == 125) {
 								val.string += String.fromCodePoint(hex_char);
@@ -1046,20 +1049,19 @@ JSOX.begin = function(cb, reviver) {
 								hex_char_len = 0;
 								hex_char = 0;
 								continue;
-							default:
-								val.string += str;
-								break;
+							default: val.string += str;
 						}
 						stringEscape = false;
-					} else if (cInt === 92) if (stringEscape) {
-						val.string += "\\";
-						stringEscape = false;
+					} else if (cInt === 92) {
+						if (stringEscape) {
+							val.string += "\\";
+							stringEscape = false;
+						} else {
+							stringEscape = true;
+							hex_char = 0;
+							hex_char_len = 0;
+						}
 					} else {
-						stringEscape = true;
-						hex_char = 0;
-						hex_char_len = 0;
-					}
-					else {
 						if (cr_escaped) {
 							cr_escaped = false;
 							pos.line++;
@@ -1090,19 +1092,20 @@ JSOX.begin = function(cb, reviver) {
 							}
 							if (exponent) exponent_digit = true;
 							val.string += str;
-						} else if (cInt == 45 || cInt == 43) if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
-							if (cInt == 45 && !exponent) negative = !negative;
-							val.string += str;
-							exponent_sign = true;
-						} else {
-							if (negative) {
-								val.string = "-" + val.string;
-								negative = false;
+						} else if (cInt == 45 || cInt == 43) {
+							if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
+								if (cInt == 45 && !exponent) negative = !negative;
+								val.string += str;
+								exponent_sign = true;
+							} else {
+								if (negative) {
+									val.string = "-" + val.string;
+									negative = false;
+								}
+								val.string += str;
+								date_format = true;
 							}
-							val.string += str;
-							date_format = true;
-						}
-						else if (cInt == 78) {
+						} else if (cInt == 78) {
 							if (word == WORD_POS_RESET) {
 								gatheringNumber = false;
 								word = WORD_POS_NAN_1;
@@ -1139,35 +1142,38 @@ JSOX.begin = function(cb, reviver) {
 							}
 							val.string += str;
 							date_format = true;
-						} else if (cInt == 46) if (!decimal && !fromHex && !exponent) {
-							val.string += str;
-							decimal = true;
-						} else {
-							status = false;
-							throwError("fault while parsing number;", cInt);
-							break;
-						}
-						else if (cInt == 110) {
+						} else if (cInt == 46) {
+							if (!decimal && !fromHex && !exponent) {
+								val.string += str;
+								decimal = true;
+							} else {
+								status = false;
+								throwError("fault while parsing number;", cInt);
+								break;
+							}
+						} else if (cInt == 110) {
 							isBigInt = true;
 							break;
 						} else if (fromHex && (val.string[1] === "x" || val.string[1] === "X") && (cInt >= 97 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
-						else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) if (!fromHex && val.string == "0") {
-							fromHex = true;
-							val.string += str;
+						else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) {
+							if (!fromHex && val.string == "0") {
+								fromHex = true;
+								val.string += str;
+							} else {
+								status = false;
+								throwError("fault while parsing number;", cInt);
+								break;
+							}
+						} else if (cInt == 101 || cInt == 69) {
+							if (!exponent) {
+								val.string += str;
+								exponent = true;
+							} else {
+								status = false;
+								throwError("fault while parsing number;", cInt);
+								break;
+							}
 						} else {
-							status = false;
-							throwError("fault while parsing number;", cInt);
-							break;
-						}
-						else if (cInt == 101 || cInt == 69) if (!exponent) {
-							val.string += str;
-							exponent = true;
-						} else {
-							status = false;
-							throwError("fault while parsing number;", cInt);
-							break;
-						}
-						else {
 							if (cInt == 160) break;
 							if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
 								pos.col -= n - _n;
@@ -1197,50 +1203,52 @@ JSOX.begin = function(cb, reviver) {
 				if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(123);
 				let protoDef;
 				protoDef = getProto();
-				if (parse_context == CONTEXT_UNKNOWN) if (word == WORD_POS_FIELD || word == WORD_POS_END && (protoDef || val.string.length)) {
-					if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
-					if (!protoDef || !protoDef.protoDef && val.string) {
-						cls = classes.find((cls) => cls.name === val.string);
-						if (!cls) {
-							function privateProto() {}
-							classes.push(cls = {
-								name: val.string,
-								protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.prototype.constructor,
-								fields: []
-							});
-							nextMode = CONTEXT_CLASS_FIELD;
-						} else if (redefineClass) {
-							cls.fields.length = 0;
-							nextMode = CONTEXT_CLASS_FIELD;
-						} else {
-							tmpobj = new cls.protoCon();
-							nextMode = CONTEXT_CLASS_VALUE;
+				if (parse_context == CONTEXT_UNKNOWN) {
+					if (word == WORD_POS_FIELD || word == WORD_POS_END && (protoDef || val.string.length)) {
+						if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
+						if (!protoDef || !protoDef.protoDef && val.string) {
+							cls = classes.find((cls) => cls.name === val.string);
+							if (!cls) {
+								function privateProto() {}
+								classes.push(cls = {
+									name: val.string,
+									protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.prototype.constructor,
+									fields: []
+								});
+								nextMode = CONTEXT_CLASS_FIELD;
+							} else if (redefineClass) {
+								cls.fields.length = 0;
+								nextMode = CONTEXT_CLASS_FIELD;
+							} else {
+								tmpobj = new cls.protoCon();
+								nextMode = CONTEXT_CLASS_VALUE;
+							}
+							redefineClass = false;
 						}
-						redefineClass = false;
-					}
-					current_class = cls;
-					word = WORD_POS_RESET;
-				} else word = WORD_POS_FIELD;
-				else if (word == WORD_POS_FIELD || parse_context === CONTEXT_IN_ARRAY || parse_context === CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) if (word != WORD_POS_RESET || val.value_type == VALUE_STRING) {
-					if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
-					else {
-						cls = classes.find((cls) => cls.name === val.string);
-						if (!cls) {
-							function privateProto() {}
-							localFromProtoTypes.set(val.string, {
-								protoCon: privateProto.prototype.constructor,
-								cb: null,
-								synthetic: true
-							});
-							tmpobj = new privateProto();
-						} else {
-							nextMode = CONTEXT_CLASS_VALUE;
-							tmpobj = new cls.protoCon();
+						current_class = cls;
+						word = WORD_POS_RESET;
+					} else word = WORD_POS_FIELD;
+				} else if (word == WORD_POS_FIELD || parse_context === CONTEXT_IN_ARRAY || parse_context === CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
+					if (word != WORD_POS_RESET || val.value_type == VALUE_STRING) {
+						if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
+						else {
+							cls = classes.find((cls) => cls.name === val.string);
+							if (!cls) {
+								function privateProto() {}
+								localFromProtoTypes.set(val.string, {
+									protoCon: privateProto.prototype.constructor,
+									cb: null,
+									synthetic: true
+								});
+								tmpobj = new privateProto();
+							} else {
+								nextMode = CONTEXT_CLASS_VALUE;
+								tmpobj = new cls.protoCon();
+							}
 						}
-					}
-					word = WORD_POS_RESET;
-				} else word = WORD_POS_RESET;
-				else if (parse_context == CONTEXT_OBJECT_FIELD && word == WORD_POS_RESET) {
+						word = WORD_POS_RESET;
+					} else word = WORD_POS_RESET;
+				} else if (parse_context == CONTEXT_OBJECT_FIELD && word == WORD_POS_RESET) {
 					throwError("fault while parsing; getting field name unexpected ", cInt);
 					status = false;
 					return false;
@@ -1309,11 +1317,12 @@ JSOX.begin = function(cb, reviver) {
 							console.log("This says it's resolved.......");
 							arrayType = -3;
 						}
-						if (current_proto && current_proto.protoDef) if (current_proto.protoDef.cb) {
-							const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
-							if (newarr !== void 0) tmparr = elements[val.name] = newarr;
+						if (current_proto && current_proto.protoDef) {
+							if (current_proto.protoDef.cb) {
+								const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
+								if (newarr !== void 0) tmparr = elements[val.name] = newarr;
+							} else elements[val.name] = tmparr;
 						} else elements[val.name] = tmparr;
-						else elements[val.name] = tmparr;
 					}
 					old_context.context = parse_context;
 					old_context.elements = elements;
@@ -1399,13 +1408,14 @@ JSOX.begin = function(cb, reviver) {
 					pos.col++;
 					if (comment) {
 						let loneSolidus = false;
-						if (comment == 1) if (cInt == 42) comment = 3;
-						else if (cInt == 47) comment = 2;
-						else {
-							comment = 0;
-							loneSolidus = true;
-						}
-						else if (comment == 2) {
+						if (comment == 1) {
+							if (cInt == 42) comment = 3;
+							else if (cInt == 47) comment = 2;
+							else {
+								comment = 0;
+								loneSolidus = true;
+							}
+						} else if (comment == 2) {
 							if (isLineTerminator(cInt)) comment = 0;
 						} else if (comment == 3) {
 							if (cInt == 42) comment = 4;
@@ -1445,34 +1455,35 @@ JSOX.begin = function(cb, reviver) {
 								val.name = val.string;
 								val.string = "";
 								val.value_type = VALUE_UNSET;
-							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) if (parse_context == CONTEXT_CLASS_FIELD) {
-								if (current_class && current_class.fields.length) {
-									status = false;
-									throwError("class body mixes named and positional values; fault while parsing;", cInt);
-								}
-								if (!Object.keys(elements).length) {
-									function privateProto() {}
-									localFromProtoTypes.set(context_stack.last.node.current_class.name, {
-										protoCon: privateProto.prototype.constructor,
-										cb: null,
-										synthetic: true
-									});
-									elements = new privateProto();
-									parse_context = CONTEXT_OBJECT_FIELD_VALUE;
-									val.name = val.string;
+							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) {
+								if (parse_context == CONTEXT_CLASS_FIELD) {
+									if (current_class && current_class.fields.length) {
+										status = false;
+										throwError("class body mixes named and positional values; fault while parsing;", cInt);
+									}
+									if (!Object.keys(elements).length) {
+										function privateProto() {}
+										localFromProtoTypes.set(context_stack.last.node.current_class.name, {
+											protoCon: privateProto.prototype.constructor,
+											cb: null,
+											synthetic: true
+										});
+										elements = new privateProto();
+										parse_context = CONTEXT_OBJECT_FIELD_VALUE;
+										val.name = val.string;
+										word = WORD_POS_RESET;
+										val.string = "";
+										val.value_type = VALUE_UNSET;
+									}
+								} else {
+									if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
 									word = WORD_POS_RESET;
+									val.name = val.string;
 									val.string = "";
+									parse_context = parse_context === CONTEXT_OBJECT_FIELD ? CONTEXT_OBJECT_FIELD_VALUE : CONTEXT_CLASS_FIELD_VALUE;
 									val.value_type = VALUE_UNSET;
 								}
-							} else {
-								if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
-								word = WORD_POS_RESET;
-								val.name = val.string;
-								val.string = "";
-								parse_context = parse_context === CONTEXT_OBJECT_FIELD ? CONTEXT_OBJECT_FIELD_VALUE : CONTEXT_CLASS_FIELD_VALUE;
-								val.value_type = VALUE_UNSET;
-							}
-							else if (parse_context == CONTEXT_UNKNOWN) {
+							} else if (parse_context == CONTEXT_UNKNOWN) {
 								console.log("Override colon found, allow class redefinition", parse_context);
 								redefineClass = true;
 								break;
@@ -1485,24 +1496,25 @@ JSOX.begin = function(cb, reviver) {
 							break;
 						case 125:
 							if (word == WORD_POS_END) word = WORD_POS_RESET;
-							if (parse_context == CONTEXT_CLASS_FIELD) if (current_class) {
-								if (val.string) current_class.fields.push(val.string);
-								RESET_VAL();
-								let old_context = context_stack.pop();
-								parse_context = CONTEXT_UNKNOWN;
-								word = WORD_POS_RESET;
-								val.name = old_context.name;
-								elements = old_context.elements;
-								current_class = old_context.current_class;
-								current_class_field = old_context.current_class_field;
-								arrayType = old_context.arrayType;
-								val.value_type = old_context.valueType;
-								val.className = old_context.className;
-								val.value_type = VALUE_UNSET;
-								rootObject = null;
-								dropContext(old_context);
-							} else throwError("State error; gathering class fields, and lost the class", cInt);
-							else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
+							if (parse_context == CONTEXT_CLASS_FIELD) {
+								if (current_class) {
+									if (val.string) current_class.fields.push(val.string);
+									RESET_VAL();
+									let old_context = context_stack.pop();
+									parse_context = CONTEXT_UNKNOWN;
+									word = WORD_POS_RESET;
+									val.name = old_context.name;
+									elements = old_context.elements;
+									current_class = old_context.current_class;
+									current_class_field = old_context.current_class_field;
+									arrayType = old_context.arrayType;
+									val.value_type = old_context.valueType;
+									val.className = old_context.className;
+									val.value_type = VALUE_UNSET;
+									rootObject = null;
+									dropContext(old_context);
+								} else throwError("State error; gathering class fields, and lost the class", cInt);
+							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
 								if (val.value_type != VALUE_UNSET) {
 									if (current_class && !val.name) val.name = nextClassField();
 									objectPush();
@@ -1528,8 +1540,10 @@ JSOX.begin = function(cb, reviver) {
 								dropContext(old_context);
 								if (parse_context == CONTEXT_UNKNOWN) completed = true;
 							} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
-								if (val.value_type === VALUE_UNSET) if (word == WORD_POS_RESET) throwError("Fault while parsing; unexpected", cInt);
-								else recoverIdent(cInt);
+								if (val.value_type === VALUE_UNSET) {
+									if (word == WORD_POS_RESET) throwError("Fault while parsing; unexpected", cInt);
+									else recoverIdent(cInt);
+								}
 								objectPush();
 								val.value_type = VALUE_OBJECT;
 								val.contains = elements;
@@ -1585,12 +1599,13 @@ JSOX.begin = function(cb, reviver) {
 						case 44:
 							if (word < WORD_POS_AFTER_FIELD && word != WORD_POS_RESET) recoverIdent(cInt);
 							if (word == WORD_POS_END || word == WORD_POS_FIELD) word = WORD_POS_RESET;
-							if (parse_context == CONTEXT_CLASS_FIELD) if (current_class) {
-								current_class.fields.push(val.string);
-								val.string = "";
-								word = WORD_POS_FIELD;
-							} else throwError("State error; gathering class fields, and lost the class", cInt);
-							else if (parse_context == CONTEXT_OBJECT_FIELD) {
+							if (parse_context == CONTEXT_CLASS_FIELD) {
+								if (current_class) {
+									current_class.fields.push(val.string);
+									val.string = "";
+									word = WORD_POS_FIELD;
+								} else throwError("State error; gathering class fields, and lost the class", cInt);
+							} else if (parse_context == CONTEXT_OBJECT_FIELD) {
 								if (current_class) {
 									val.name = nextClassField();
 									if (val.value_type != VALUE_UNSET) {
@@ -1727,7 +1742,6 @@ JSOX.begin = function(cb, reviver) {
 												}
 												if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) throwError("String unexpected", cInt);
 											}
-											break;
 									}
 									else {
 										if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
@@ -1745,13 +1759,14 @@ JSOX.begin = function(cb, reviver) {
 											val.string = str;
 											input.n = n;
 											collectNumber();
-										} else if (val.value_type == VALUE_UNSET) if (word != WORD_POS_RESET) recoverIdent(cInt);
-										else {
-											word = WORD_POS_END;
-											val.string += str;
-											val.value_type = VALUE_STRING;
-										}
-										else if (parse_context == CONTEXT_OBJECT_FIELD) throwError("Multiple values found in field name", cInt);
+										} else if (val.value_type == VALUE_UNSET) {
+											if (word != WORD_POS_RESET) recoverIdent(cInt);
+											else {
+												word = WORD_POS_END;
+												val.string += str;
+												val.value_type = VALUE_STRING;
+											}
+										} else if (parse_context == CONTEXT_OBJECT_FIELD) throwError("Multiple values found in field name", cInt);
 										else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
 											if (val.value_type != VALUE_STRING) {
 												if (val.value_type == VALUE_OBJECT || val.value_type == VALUE_ARRAY) throwError("String unexpected", cInt);
@@ -1783,11 +1798,15 @@ JSOX.begin = function(cb, reviver) {
 												}
 												val.string += str;
 												break;
-											} else if (word == WORD_POS_END) if (isKeywordValue(val.value_type)) recoverIdent(cInt);
-											else val.string += str;
+											} else if (word == WORD_POS_END) {
+												if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+												else val.string += str;
+											}
 										} else if (parse_context == CONTEXT_CLASS_VALUE) {
-											if (word == WORD_POS_END) if (isKeywordValue(val.value_type)) recoverIdent(cInt);
-											else val.string += str;
+											if (word == WORD_POS_END) {
+												if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+												else val.string += str;
+											}
 										}
 										break;
 									}
@@ -1938,12 +1957,9 @@ JSOX.begin = function(cb, reviver) {
 										signPending = true;
 									} else recoverIdent(cInt);
 									break;
-								case 43:
-									if (word !== WORD_POS_RESET) recoverIdent(cInt);
-									else signPending = true;
-									break;
+								case 43: if (word !== WORD_POS_RESET) recoverIdent(cInt);
+								else signPending = true;
 							}
-							break;
 					}
 					if (completed) {
 						if (word == WORD_POS_END) word = WORD_POS_RESET;
@@ -2638,22 +2654,23 @@ JSOX.stringifier = function() {
 					value = rep.call(holder, key, value);
 				}
 				let toJSOX = protoConverter && protoConverter.cb || objectConverter && objectConverter.cb;
-				if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") if (!stringifying.find((val) => val === value)) {
-					if (typeof value === "object") {
-						v = getReference(value);
-						if (v) return v;
-					}
-					stringifying.push(value);
-					encoding[thisNodeNameIndex] = value;
-					value = toJSOX.call(value, stringifier);
-					isValue = false;
-					stringifying.pop();
-					if (protoConverter && protoConverter.name) {
-						if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
-					}
-					encoding.length = thisNodeNameIndex;
-				} else v = getReference(value);
-				else if (typeof value === "object") {
+				if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") {
+					if (!stringifying.find((val) => val === value)) {
+						if (typeof value === "object") {
+							v = getReference(value);
+							if (v) return v;
+						}
+						stringifying.push(value);
+						encoding[thisNodeNameIndex] = value;
+						value = toJSOX.call(value, stringifier);
+						isValue = false;
+						stringifying.pop();
+						if (protoConverter && protoConverter.name) {
+							if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
+						}
+						encoding.length = thisNodeNameIndex;
+					} else v = getReference(value);
+				} else if (typeof value === "object") {
 					v = getReference(value);
 					if (v) return v;
 				}
@@ -2683,8 +2700,10 @@ JSOX.stringifier = function() {
 								k = rep[i];
 								path[thisNodeNameIndex] = k;
 								v = str(k, value);
-								if (v !== void 0) if (partialClass) partial.push(v);
-								else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+								if (v !== void 0) {
+									if (partialClass) partial.push(v);
+									else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+								}
 							}
 							path.splice(thisNodeNameIndex, 1);
 						} else {
@@ -2699,8 +2718,8 @@ JSOX.stringifier = function() {
 										keys.push(k);
 										continue;
 									}
-									let n;
-									for (n = 0; n < keys.length; n++) if (keys[n] > k) {
+									let n = 0;
+									for (; n < keys.length; n++) if (keys[n] > k) {
 										keys.splice(n, 0, k);
 										break;
 									}
@@ -2712,8 +2731,10 @@ JSOX.stringifier = function() {
 								if (Object.prototype.hasOwnProperty.call(value, k)) {
 									path[thisNodeNameIndex] = k;
 									v = str(k, value);
-									if (v !== void 0) if (partialClass) partial.push(v);
-									else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+									if (v !== void 0) {
+										if (partialClass) partial.push(v);
+										else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+									}
 								}
 							}
 							path.splice(thisNodeNameIndex, 1);
@@ -4078,8 +4099,10 @@ var loadSettings = async (opts) => {
 			try {
 				if (opts?.nativeOverlay !== false && isCwsNativeIpcAvailable()) {
 					const nativeSettings = await getNativeUnifiedSettings();
-					if (nativeSettings && typeof nativeSettings === "object") if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
-					else result = mergeNativeSettingsOverlay(result, nativeSettings);
+					if (nativeSettings && typeof nativeSettings === "object") {
+						if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
+						else result = mergeNativeSettingsOverlay(result, nativeSettings);
+					}
 				}
 			} catch {}
 			try {
@@ -4346,7 +4369,7 @@ var loadLureFs = () => {
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile,
 		writeFileSmart: m.writeFileSmart
-	})), __vite__mapDeps([2,3,1,4,5]), import.meta.url);
+	})), __vite__mapDeps([2,3,1,4,5,6]), import.meta.url);
 	return lureFsPromise;
 };
 var downloadContentsToOPFS = async (webDavClient, path = "/", opts = {}, rootHandle = null) => {

@@ -3,7 +3,7 @@ import { a as invokeCwsNative, s as isCapacitorCwsNativeShell } from "../vendor/
 import { C as sanitizeFleetRouteTarget, D as shouldPreferWanGatewayForAirpad, E as shouldFleetDeskGatewayProbeFallbacks, K as splitConnectHostList, M as CWSP_DEFAULT_HTTPS_PORTS, N as CWSP_DEFAULT_HTTP_PORTS, T as shouldConnectViaFleetGateway, _ as isOnHomeFleetLanPageHost, d as isFleetDeskWireNodeId, f as isFleetGatewayWireNodeId, g as isOffHomeFleetNetwork, h as isHomeFleetLanHost, m as isGuestPrivateLanIpv4, p as isGatewayHttpsOrigin, r as DEFAULT_DESK_WIRE_NODE_ID, u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId } from "./airpad-cwsp-client-parity.js";
 import { a as shouldAnnotateCoordinatorPayload, i as annotateCoordinatorPayload, l as shouldDeferCrxHubSocketBootstrap, n as inferWireDedupeCategory, o as annotatePacketWireTime64, r as packetWireDedupeGuard, t as annotatePacketWireHash, u as setAirpadCredentialInvalidator } from "./packet-wire-hash.js";
 import { C as isPreferNativeWebsocketEnabled, S as isNeutralinoNodeClipboardHubOwned, T as isShellRemoteClipboardBridgeEnabled, _ as getRemoteRouteTarget, a as getAirPadEndpointUrl, b as isClipboardSenderAllowedForInbound, c as getAirPadPeerInstanceId, d as getAssociatedClientToken, f as getClientAccessToken, g as getRemoteProtocol, h as getRemoteHost, i as getAirPadDirectTargetUrl, l as getAirPadTransportMode, m as getClipboardPushIntervalMs, n as getAccessToken, o as getAirPadHandshakeArchetype, p as getClipboardBroadcastWireTargets, r as getAirPadClientId, s as getAirPadHandshakeConnectionType, t as applyAirpadRuntimeFromAppSettings, u as getAirPadTransportSecret, v as isApplyRemoteClipboardToDeviceEnabled, w as isPushLocalClipboardToLanEnabled, x as isMaintainHubSocketConnectionEnabled, y as isClipboardHubBootstrapEnabled } from "./remote-connection-runtime.js";
-import { a as writeClipboardTextToDevice, i as writeClipboardImageToDevice, n as isCapacitorNativeShell, r as readClipboardTextFromDevice } from "./clipboard-device.js";
+import { a as isCapacitorNativeShell, c as writeClipboardTextToDevice, o as readClipboardTextFromDevice, s as writeClipboardImageToDevice } from "../assets/index-DHkxbR3V.js";
 import { withTimeout } from "/fest/core.js";
 //#region ../../modules/projects/subsystem/src/boot/native-socket.ts
 var appendParams = (target, params) => {
@@ -1413,9 +1413,10 @@ function connectWS() {
 		const wanGatewayIpv4 = [];
 		const publicIpv4 = [];
 		const guestPrivateIpv4 = [];
-		for (const e of entries) if (!isIpv4Literal(e.host)) if (e.source === "page") dnsPage.push(e);
-		else dnsRemote.push(e);
-		else if (isFleetLanGatewayHost(e.host)) lanGatewayIpv4.push(e);
+		for (const e of entries) if (!isIpv4Literal(e.host)) {
+			if (e.source === "page") dnsPage.push(e);
+			else dnsRemote.push(e);
+		} else if (isFleetLanGatewayHost(e.host)) lanGatewayIpv4.push(e);
 		else if (isFleetWanGatewayHost(e.host)) wanGatewayIpv4.push(e);
 		else if (isHomeFleetPrivateIpv4(e.host) || e.host === "127.0.0.1") homeFleetIpv4.push(e);
 		else if (isPrivateIp(e.host)) guestPrivateIpv4.push(e);
@@ -1802,7 +1803,8 @@ function connectWS() {
 		});
 		socket.on("clipboard:update", async (msg) => {
 			const decoded = await unwrapIncomingPayload(msg);
-			if (!isClipboardSenderAllowedForInbound(getCoordinatorPacketSenderId(decoded))) return;
+			const sender = getCoordinatorPacketSenderId(decoded);
+			if (!isClipboardSenderAllowedForInbound(sender)) return;
 			const asset = extractClipboardAssetFromPacket(decoded);
 			if (asset) {
 				applyIncomingClipboardImage(asset, { source: decoded?.source });

@@ -1,16 +1,17 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./jsox2.js","../chunks/rolldown-runtime.js","../chunks/vite-preload-DHlaQ_oz.js","./@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/remote-connection-runtime.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/BootLoader.js","../shells/preference.js","../chunks/registry.js","../chunks/UnifiedMessaging.js","../chunks/UniformInterop.js","../views/inbound-timing.js","../views/ingress-validation.js","../chunks/ShareTargetGateway.js","../chunks/UnifiedMessaging2.js","../chunks/core.js","../chunks/templates.js","../fest/veela.js","../com/app.js","./jsox.js","../com/app2.js","./culori.js","../chunks/StateStorage.js","../chunks/Clipboard.js","../chunks/Runtime.js","../chunks/packet-wire-hash.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge.js","./@capacitor_core2.js","../chunks/clipboard-device.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js","../chunks/CustomInstructions.js","../chunks/utils.js","../chunks/unified.js","../chunks/RuntimeSettings.js","./@toon-format_toon.js","../chunks/sku-ingress.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./jsox2.js","../chunks/rolldown-runtime.js","../chunks/vite-preload-DHlaQ_oz.js","./@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/remote-connection-runtime.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../assets/index-DHkxbR3V.js","../chunks/UnifiedMessaging.js","../chunks/UniformInterop.js","../chunks/UnifiedMessaging2.js","../chunks/core.js","../chunks/templates.js","../chunks/packet-wire-hash.js","./jsox.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge.js","./@capacitor_core2.js","../com/app.js","../com/app2.js","../com/app3.js","./culori.js","../chunks/Clipboard.js","../chunks/Runtime.js","../chunks/capacitor-permissions.js","../chunks/CustomInstructions.js","../chunks/utils.js","./@toon-format_toon.js","../chunks/RuntimeSettings.js","../chunks/sku-ingress.js"])))=>i.map(i=>d[i]);
 import { c as inferCwspSkuFromLocation, l as isCwspNativeHost, n as SKU_HUB_PATHS, v as stashSkuHandoff } from "../chunks/ecosystem-skus.js";
 import { n as BROADCAST_CHANNELS } from "../chunks/names.js";
 import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
 import { f as unifiedMessaging } from "../chunks/UnifiedMessaging.js";
-import { a as safeCacheOpen, i as safeCacheMatch, n as consumeCachedShareTargetPayload$1, o as safeCachePut, r as storeShareTargetPayloadToCache$1, t as buildShareDataFromCachedPayload } from "../chunks/ShareTargetGateway.js";
 import { l as postProcessApi, o as unifiedMessaging$1, u as processApiAuthFromSettings } from "../chunks/UnifiedMessaging2.js";
 import { n as readProcessApiResultText, t as unwrapSwInteropMessage } from "../chunks/sw-unwrap.js";
 import "../chunks/UniformInterop2.js";
 import { a as loadSettings } from "./jsox2.js";
 import { a as classifyOpenKindFromPayload } from "../chunks/open-policy.js";
 import { a as holdCapacitorIngressJob, c as peekProcessIngressSettings, d as resolveProcessIngressKind, f as shouldAttachProcessIngress, i as formatProcessIngressResult, n as allowProcessWebLaunchQueue, o as instructionTextForIngress, p as writeProcessIngressClipboard, r as allowProcessWebShareLaunch, u as rememberProcessIngressSettings } from "../chunks/process-ingress.js";
-import { L as copy, R as initClipboardReceiver, r as bindDirectoryForLaunchedFiles } from "../com/app.js";
+import { C as copy, w as initClipboardReceiver } from "../com/app.js";
+import { t as bindDirectoryForLaunchedFiles } from "../com/app3.js";
+import { F as safeCacheOpen, I as safeCachePut, M as consumeCachedShareTargetPayload$1, N as storeShareTargetPayloadToCache$1, P as safeCacheMatch, j as buildShareDataFromCachedPayload } from "../assets/index-DHkxbR3V.js";
 import { a as holdIngressFiles, c as isAndroidLocalShareUri, d as refineLauncherImageIngress, i as flushHeldIngressToWorkCenter, o as holdIngressFilesForPolicy, p as skuIngressHint, s as installShellImageOpenListener, t as applyLauncherIngress, u as peekHeldIngressFiles } from "../chunks/sku-ingress.js";
 import { t as summarizeForLog$1 } from "../chunks/log-sanitizer.js";
 import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "../chunks/ViewTransferRouting.js";
@@ -29,6 +30,40 @@ var DEDUPE_WINDOW_MS = 400;
 var lastToastFingerprint = "";
 var lastToastFingerprintAt = 0;
 var toastFingerprint = (opts) => `${opts.kind || "info"}\0${opts.position || DEFAULT_CONFIG.position}\0${opts.message}`;
+var PCT_OCTET = /%[0-9A-Fa-f]{2}/;
+var PCT_RUN = /(?:%[0-9A-Fa-f]{2})+/g;
+var decodePctRun = (seq) => {
+	try {
+		return decodeURIComponent(seq);
+	} catch {
+		try {
+			return decodeURI(seq);
+		} catch {
+			return seq;
+		}
+	}
+};
+/** MAP:modules/projects/lur.e/src/utils/text/decodeToastMessage.ts — keep inlined (zero deps). */
+var decodeToastMessage = (raw) => {
+	let text = String(raw ?? "");
+	if (!text || !PCT_OCTET.test(text)) return text;
+	for (let i = 0; i < 3; i++) {
+		let next;
+		try {
+			next = decodeURIComponent(text);
+		} catch {
+			try {
+				next = decodeURI(text);
+			} catch {
+				next = text.replace(PCT_RUN, decodePctRun);
+			}
+		}
+		if (next === text) break;
+		text = next;
+		if (!PCT_OCTET.test(text)) break;
+	}
+	return text;
+};
 var hasVisibleDuplicate = (layer, message, kind) => {
 	for (const el of Array.from(layer?.children ?? [])) if (el instanceof HTMLElement && el.classList.contains("rs-toast") && el.getAttribute("data-kind") === kind && el.textContent === message) return true;
 	return false;
@@ -285,7 +320,11 @@ var broadcastToast = (options) => {
 * @returns The created toast element, or null if in service worker context
 */
 var showToast = (options) => {
-	const opts = typeof options === "string" ? { message: options } : options;
+	const raw = typeof options === "string" ? { message: options } : options;
+	const opts = {
+		...raw,
+		message: decodeToastMessage(raw.message)
+	};
 	const { message, kind = "info", duration = DEFAULT_DURATION, persistent = false, position = DEFAULT_CONFIG.position, onClick } = opts;
 	if (!message) return null;
 	const fp = toastFingerprint(opts);
@@ -389,7 +428,8 @@ var PENDING_CACHE = "rs-process-pending-v1";
 var PENDING_CACHE_URL = "/process/pending.json";
 var loadPending = async () => {
 	try {
-		const response = await safeCacheMatch(await safeCacheOpen(PENDING_CACHE), PENDING_CACHE_URL);
+		const cache = await safeCacheOpen(PENDING_CACHE);
+		const response = await safeCacheMatch(cache, PENDING_CACHE_URL);
 		if (!response) return [];
 		const json = await response.json();
 		return Array.isArray(json?.operations) ? json.operations : [];
@@ -650,7 +690,7 @@ var bindSwPageBridge = () => {
 	const replayShareCache = () => {
 		consumeCachedShareTargetPayload$1({ clear: false }).then((cached) => {
 			if (!cached) return;
-			if (Date.now() - Number(cached.meta?.timestamp || Date.now()) > 300 * 1e3) return;
+			if (Date.now() - Number(cached.meta?.timestamp || Date.now()) > 3e5) return;
 			const hasFiles = Array.isArray(cached.files) && cached.files.length > 0;
 			const meta = cached.meta || {};
 			if (!hasFiles && !meta.text && !meta.url && !meta.title) return;
@@ -1646,11 +1686,12 @@ var applyLiveShareIngress = async (shareData) => {
 	try {
 		const settings = await loadSettings().catch(() => null);
 		rememberProcessIngressSettings(settings);
-		if (resolveProcessIngressKind(settings, classifyOpenKindFromPayload({
+		const kind = classifyOpenKindFromPayload({
 			...payload,
 			files,
 			hint: payload.hint
-		})).mode === "process") return processShareTargetData({
+		});
+		if (resolveProcessIngressKind(settings, kind).mode === "process") return processShareTargetData({
 			...payload,
 			files,
 			fileCount: files.length
@@ -1669,7 +1710,7 @@ var consumeFreshCachedShare = async () => {
 		const ts = Number(cached.meta?.timestamp || 0);
 		if (ts && ts <= lastConsumedShareTs) return false;
 		const ageMs = Date.now() - (ts || Date.now());
-		if (ts && (ageMs < 0 || ageMs > 300 * 1e3)) return false;
+		if (ts && (ageMs < 0 || ageMs > 3e5)) return false;
 		const files = Array.isArray(cached.files) ? cached.files : [];
 		const meta = cached.meta || {};
 		if (!files.length && !meta.text && !meta.url && !meta.title) return false;
@@ -1805,7 +1846,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 			}
 			_swUpdateInterval = globalThis?.setInterval?.(() => {
 				registration?.update?.().catch?.(console.warn);
-			}, 300 * 1e3);
+			}, 3e5);
 			console.log("[PWA] Service worker registered successfully");
 			return registration;
 		} catch (error) {
@@ -2130,9 +2171,9 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		if (!delivered && peekHeldIngressFiles().length === 0) return false;
 		try {
 			const { bootLoader } = await __vitePreload(async () => {
-				const { bootLoader } = await import("../chunks/BootLoader.js").then((n) => n.t);
+				const { bootLoader } = await import("../assets/index-DHkxbR3V.js").then((n) => n.t);
 				return { bootLoader };
-			}, __vite__mapDeps([13,1,14,10,2,15,5,16,17,18,19,20,21,22,23,4,24,0,3,6,7,8,9,11,12,25,26,27,28,29,30,31,32,33,34,35,36,37,38]), import.meta.url);
+			}, __vite__mapDeps([13,1,10,5,2,14,15,16,17,18,4,3,6,7,19,20,21,22,23,8,0,9,11,12,24,25,26,27,28,29,30]), import.meta.url);
 			const shell = bootLoader.getShell();
 			if (!(shell && ![
 				"window",
@@ -2187,27 +2228,30 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		}
 	};
 	let leftTheDocument = false;
-	if (silentRoute) if (!alreadyOnDest) console.log("[ViewTransfer] Silent mode: skipping navigation; delivery via channels only:", destNorm);
-	else await tryNavigateLiveShell();
-	else if (resolved.destination === "home" || sku === "launcher") await tryNavigateLiveShell();
+	if (silentRoute) {
+		if (!alreadyOnDest) console.log("[ViewTransfer] Silent mode: skipping navigation; delivery via channels only:", destNorm);
+		else await tryNavigateLiveShell();
+	} else if (resolved.destination === "home" || sku === "launcher") await tryNavigateLiveShell();
 	else if (!alreadyOnDest) {
-		if (!await tryNavigateLiveShell()) if ((() => {
-			try {
-				const c = globalThis.Capacitor;
-				return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-			} catch {
-				return false;
+		if (!await tryNavigateLiveShell()) {
+			if ((() => {
+				try {
+					const c = globalThis.Capacitor;
+					return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+				} catch {
+					return false;
+				}
+			})()) console.warn("[ViewTransfer] Skipping hard navigation on Capacitor:", destNorm);
+			else {
+				const nextUrl = new URL(globalThis?.location?.href);
+				nextUrl.pathname = destPath;
+				nextUrl.search = "";
+				nextUrl.hash = "";
+				if (pending) nextUrl.searchParams.set("shared", "1");
+				console.log("[ViewTransfer] Navigating to resolved route:", nextUrl.toString());
+				leftTheDocument = true;
+				globalThis.location.href = nextUrl.toString();
 			}
-		})()) console.warn("[ViewTransfer] Skipping hard navigation on Capacitor:", destNorm);
-		else {
-			const nextUrl = new URL(globalThis?.location?.href);
-			nextUrl.pathname = destPath;
-			nextUrl.search = "";
-			nextUrl.hash = "";
-			if (pending) nextUrl.searchParams.set("shared", "1");
-			console.log("[ViewTransfer] Navigating to resolved route:", nextUrl.toString());
-			leftTheDocument = true;
-			globalThis.location.href = nextUrl.toString();
 		}
 	} else {
 		await tryNavigateLiveShell();
@@ -2221,7 +2265,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 			const { replayQueuedMessagesForDestination } = await __vitePreload(async () => {
 				const { replayQueuedMessagesForDestination } = await import("../chunks/UnifiedMessaging2.js").then((n) => n.t);
 				return { replayQueuedMessagesForDestination };
-			}, __vite__mapDeps([21,1,5,2,22,23,4]), import.meta.url);
+			}, __vite__mapDeps([16,1,5,2,17,18,4]), import.meta.url);
 			await replayQueuedMessagesForDestination("viewer");
 		} catch {}
 	}
@@ -2302,7 +2346,7 @@ var resolveShareCustomInstruction = async (settings, instructionId) => {
 		const { getActiveInstructionText } = await __vitePreload(async () => {
 			const { getActiveInstructionText } = await import("../chunks/CustomInstructions.js").then((n) => n.t);
 			return { getActiveInstructionText };
-		}, __vite__mapDeps([39,1,0,2,3,4,5,6,7,8,9,10,11,12,40]), import.meta.url);
+		}, __vite__mapDeps([31,1,0,2,3,4,5,6,7,8,9,10,11,12,32]), import.meta.url);
 		const active = String(await getActiveInstructionText() || "").trim();
 		if (active) return active;
 	} catch {}
@@ -2310,7 +2354,7 @@ var resolveShareCustomInstruction = async (settings, instructionId) => {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
 			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../chunks/templates.js").then((n) => n.n);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
-		}, __vite__mapDeps([23,1,22]), import.meta.url);
+		}, __vite__mapDeps([18,1,17]), import.meta.url);
 		const id = String(instructionId || "").trim().toLowerCase();
 		const byLabel = id ? DEFAULT_INSTRUCTION_TEMPLATES.find((item) => String(item.label || "").trim().toLowerCase() === id) : null;
 		return String((byLabel || DEFAULT_INSTRUCTION_TEMPLATES[0])?.instruction || "").trim();
@@ -2362,7 +2406,7 @@ var shareProcessKey = (shareData) => {
 };
 var recentShareProcess = /* @__PURE__ */ new Map();
 var toastProcessError = (raw) => {
-	const text = String(raw || "").replace(/\s+/g, " ").trim();
+	const text = decodeToastMessage(String(raw || "")).replace(/\s+/g, " ").trim();
 	if (!text || /^\s*</.test(text) || /<!doctype|data-cwsp-sku/i.test(text)) return "Process API unavailable";
 	return text.slice(0, 140);
 };
@@ -2446,13 +2490,14 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 	}
 	const settings = await loadSettings().catch(() => null);
 	rememberProcessIngressSettings(settings);
-	const ingress = resolveProcessIngressKind(settings, classifyOpenKindFromPayload({
+	const kind = classifyOpenKindFromPayload({
 		files: Array.isArray(shareData.files) ? shareData.files.filter((f) => f instanceof File) : [],
 		text: shareData.text,
 		url: shareData.url || shareData.sharedUrl,
 		title: shareData.title,
 		hint: shareData.hint
-	}));
+	});
+	const ingress = resolveProcessIngressKind(settings, kind);
 	if (ingress.mode !== "process") {
 		console.log("[ShareTarget] Kind policy is attach — skip AI");
 		return false;
@@ -2517,9 +2562,9 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 		} else throw new Error("No processable content found");
 		if (isImageSharePayload(ingress.kind, shareFile, processingContent)) {
 			const { processDataWithInstruction } = await __vitePreload(async () => {
-				const { processDataWithInstruction } = await import("../chunks/unified.js").then((n) => n.n);
+				const { processDataWithInstruction } = await import("./@toon-format_toon.js").then((n) => n.n);
 				return { processDataWithInstruction };
-			}, __vite__mapDeps([41,1,2,22,0,3,4,5,6,7,8,9,10,11,12,42,40,43,31]), import.meta.url);
+			}, __vite__mapDeps([33,1,2,17,0,3,4,5,6,7,8,9,10,11,12,29,34,32]), import.meta.url);
 			const local = await processDataWithInstruction([{
 				type: "message",
 				role: "user",
@@ -2634,7 +2679,7 @@ var tryServerSideProcessing = async (shareData, copyToClipboard = true) => {
 		const { getRuntimeSettings } = await __vitePreload(async () => {
 			const { getRuntimeSettings } = await import("../chunks/RuntimeSettings.js").then((n) => n.t);
 			return { getRuntimeSettings };
-		}, __vite__mapDeps([42,1,2,11,9,10]), import.meta.url);
+		}, __vite__mapDeps([34,1,2,11,9,10]), import.meta.url);
 		const settings = await getRuntimeSettings().catch(() => null);
 		const apiKey = settings?.ai?.apiKey;
 		if (!apiKey) {
@@ -2733,7 +2778,7 @@ var handleShareTarget = () => {
 					const { dataUrlToFile } = await __vitePreload(async () => {
 						const { dataUrlToFile } = await import("../chunks/sku-ingress.js").then((n) => n.m);
 						return { dataUrlToFile };
-					}, __vite__mapDeps([44,1,10,2,9,12]), import.meta.url);
+					}, __vite__mapDeps([35,1,10,2,9,12]), import.meta.url);
 					const files = [];
 					for (const item of row.files || []) {
 						if (!item?.data) continue;
@@ -2821,7 +2866,7 @@ var handleShareTarget = () => {
 			}
 			const timestamp = Number(meta?.timestamp || Date.now());
 			const ageMs = Date.now() - timestamp;
-			if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs > 300 * 1e3) return;
+			if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs > 3e5) return;
 			const transferPayload = {
 				...buildShareDataFromCachedPayload({
 					meta,

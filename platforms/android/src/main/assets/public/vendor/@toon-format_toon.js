@@ -1,7 +1,11 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/CustomInstructions.js","../chunks/rolldown-runtime.js","./jsox2.js","../chunks/vite-preload-DHlaQ_oz.js","./@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/remote-connection-runtime.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/utils.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { t as CORE_ENTITY_EXTRACTION_INSTRUCTION } from "../chunks/core.js";
+import { t as __vitePreload } from "../chunks/vite-preload-DHlaQ_oz.js";
+import "../chunks/core.js";
 import { a as loadSettings, c as JSOX } from "./jsox2.js";
 import { t as canParseURL } from "../chunks/Runtime.js";
+import { n as getRuntimeSettings } from "../chunks/RuntimeSettings.js";
+import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "../chunks/utils.js";
 //#region ../CWSP-document/src/shared/service/model/GPT-Config.ts
 var typesForKind = {
 	"math": "input_text",
@@ -977,9 +981,9 @@ function resolveOptions(options) {
 var hasFile = () => typeof globalThis.File !== "undefined";
 var hasBlob = () => typeof globalThis.Blob !== "undefined";
 var DEFAULT_REQUEST_TIMEOUTS = {
-	low: 60 * 1e3,
-	medium: 300 * 1e3,
-	high: 900 * 1e3
+	low: 6e4,
+	medium: 3e5,
+	high: 9e5
 };
 var RETRY_DELAY = 2e3;
 /**
@@ -1035,7 +1039,7 @@ function getTimeoutConfig(effort) {
 }
 var toBase64 = (bytes) => {
 	if (typeof globalThis.Buffer !== "undefined") return globalThis.Buffer.from(bytes).toString("base64");
-	const CHUNK_SIZE = 1024 * 1024;
+	const CHUNK_SIZE = 1048576;
 	if (bytes.length > CHUNK_SIZE) {
 		let result = "";
 		for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
@@ -1055,7 +1059,7 @@ var getUsableData = async (data) => {
 	const BlobCtor = hasBlob() ? globalThis.Blob : void 0;
 	if (BlobCtor && data?.dataSource instanceof BlobCtor || FileCtor && data?.dataSource instanceof FileCtor) {
 		const fileSize = data?.dataSource?.size || 0;
-		const MAX_FILE_SIZE = 10 * 1024 * 1024;
+		const MAX_FILE_SIZE = 10485760;
 		if (fileSize > MAX_FILE_SIZE) {
 			console.warn(`[GPT-Responses] File too large: ${fileSize} bytes > ${MAX_FILE_SIZE} bytes`);
 			return {
@@ -1743,43 +1747,292 @@ function getResponseFormat(format) {
 	].includes(format) ? "json" : "text";
 }
 //#endregion
-//#region ../CWSP-document/src/shared/service/processing/entities.ts
-var entities_exports = /* @__PURE__ */ __exportAll({ extractEntities: () => extractEntities });
-var extractEntities = async (data, config) => {
+//#region ../CWSP-document/src/shared/service/processing/adapters.ts
+var detectPlatform = () => {
 	try {
-		const gpt = await getGPTInstance(config);
-		if (!gpt) return {
-			ok: false,
-			error: "No GPT instance"
-		};
-		const dataKind = typeof data === "string" ? detectDataKindFromContent(data) : (data instanceof File || data instanceof Blob) && data.type.startsWith("image/") ? "input_image" : "input_text";
-		if (Array.isArray(data) && (data?.[0]?.type === "message" || data?.[0]?.["role"])) await gpt?.getPending?.()?.push?.(...data);
-		else await gpt?.attachToRequest?.(data, dataKind);
-		await gpt.askToDoAction(CORE_ENTITY_EXTRACTION_INSTRUCTION);
-		const raw = await gpt.sendRequest("high", "medium", null, {
-			responseFormat: "json",
-			temperature: .2
-		});
-		if (!raw) return {
-			ok: false,
-			error: "No response"
-		};
-		const parseResult = extractJSONFromAIResponse(raw);
-		if (!parseResult.ok) return {
-			ok: false,
-			error: parseResult.error || "Failed to parse AI response"
-		};
-		return {
-			ok: true,
-			data: parseResult.data?.entities || [],
-			responseId: gpt.getResponseId()
-		};
+		if (typeof chrome !== "undefined" && chrome?.runtime?.id) return "crx";
+		if (typeof self !== "undefined" && "ServiceWorkerGlobalScope" in self) return "pwa";
+		if (typeof navigator !== "undefined" && "standalone" in navigator) return "pwa";
+		return "core";
+	} catch {
+		return "unknown";
+	}
+};
+//#endregion
+//#region ../CWSP-document/src/shared/service/processing/settings.ts
+var loadAISettings = async () => {
+	const platform = detectPlatform();
+	try {
+		if (platform === "crx") return await loadSettings();
+		else return await getRuntimeSettings();
 	} catch (e) {
+		console.error(`[AI-Service] Failed to load settings for platform ${platform}:`, e);
+		return null;
+	}
+};
+var getActiveCustomInstruction = async () => {
+	try {
+		const { getActiveInstructionText } = await __vitePreload(async () => {
+			const { getActiveInstructionText } = await import("../chunks/CustomInstructions.js").then((n) => n.t);
+			return { getActiveInstructionText };
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]), import.meta.url);
+		return await getActiveInstructionText();
+	} catch {
+		return "";
+	}
+};
+var getLanguageInstruction = async () => {
+	try {
+		const settings = await loadAISettings();
+		const lang = settings?.ai?.responseLanguage || "auto";
+		const translate = settings?.ai?.translateResults || false;
+		let instruction = LANGUAGE_INSTRUCTIONS[lang] || "";
+		if (translate && lang !== "auto" && lang !== "follow") instruction += TRANSLATE_INSTRUCTION;
+		return instruction;
+	} catch {
+		return "";
+	}
+};
+var getSvgGraphicsAddon = async () => {
+	try {
+		return (await loadAISettings())?.ai?.generateSvgGraphics ? SVG_GRAPHICS_ADDON : "";
+	} catch {
+		return "";
+	}
+};
+//#endregion
+//#region ../CWSP-document/src/shared/service/recognition/cache.ts
+var RecognitionCache = class {
+	cache = /* @__PURE__ */ new Map();
+	maxEntries = 100;
+	ttl = 864e5;
+	generateDataHash(data) {
+		if (data instanceof File) return `${data.name}-${data.size}-${data.lastModified}`;
+		if (typeof data === "string") return btoa(data).substring(0, 32);
+		return JSON.stringify(data).substring(0, 32);
+	}
+	get(data, format) {
+		const hash = this.generateDataHash(data);
+		const entry = this.cache.get(hash);
+		if (!entry) return null;
+		if (Date.now() - entry.timestamp > this.ttl) {
+			this.cache.delete(hash);
+			return null;
+		}
+		if (format && entry.recognizedAs !== format) return null;
+		return entry;
+	}
+	set(data, recognizedData, recognizedAs, responseId, metadata) {
+		const hash = this.generateDataHash(data);
+		if (this.cache.size >= this.maxEntries) {
+			const oldestKey = Array.from(this.cache.entries()).sort(([, a], [, b]) => a.timestamp - b.timestamp)[0][0];
+			this.cache.delete(oldestKey);
+		}
+		this.cache.set(hash, {
+			dataHash: hash,
+			recognizedData,
+			recognizedAs,
+			timestamp: Date.now(),
+			responseId,
+			metadata
+		});
+	}
+	clear() {
+		this.cache.clear();
+	}
+	getStats() {
 		return {
-			ok: false,
-			error: String(e)
+			entries: this.cache.size,
+			maxEntries: this.maxEntries,
+			ttl: this.ttl
 		};
 	}
 };
 //#endregion
-export { unwrapUnwantedCodeBlocks as a, isImageData as i, getGPTInstance as n, extractJSONFromAIResponse as o, getResponseFormat as r, entities_exports as t };
+//#region ../CWSP-document/src/shared/service/processing/unified.ts
+var unified_exports = /* @__PURE__ */ __exportAll({
+	processDataWithInstruction: () => processDataWithInstruction,
+	recognizeByInstructions: () => recognizeByInstructions
+});
+var recognitionCache = new RecognitionCache();
+var processDataWithInstruction = async (input, options = {}, sendResponse) => {
+	const settings = (await loadSettings())?.ai;
+	const { instruction = "", outputFormat = "auto", outputLanguage = "auto", enableSVGImageGeneration = "auto", intermediateRecognition, processingEffort = "low", processingVerbosity = "low", customInstruction, useActiveInstruction = false, includeImageRecognition, dataType, signal } = options;
+	const token = settings?.apiKey;
+	if (!token) {
+		const result = {
+			ok: false,
+			error: "No API key available"
+		};
+		sendResponse?.(result);
+		return result;
+	}
+	if (!input) {
+		const result = {
+			ok: false,
+			error: "No input provided"
+		};
+		sendResponse?.(result);
+		return result;
+	}
+	if (signal?.aborted) {
+		const result = {
+			ok: false,
+			error: "Cancelled"
+		};
+		sendResponse?.(result);
+		return result;
+	}
+	let finalInstruction = instruction;
+	if (customInstruction) finalInstruction = buildInstructionPrompt(finalInstruction, customInstruction);
+	else if (useActiveInstruction) {
+		const activeInstruction = await getActiveCustomInstruction();
+		if (activeInstruction) finalInstruction = buildInstructionPrompt(finalInstruction, activeInstruction);
+	}
+	const languageInstruction = await getLanguageInstruction();
+	if (languageInstruction) finalInstruction += languageInstruction;
+	if (enableSVGImageGeneration === true || enableSVGImageGeneration === "auto" && outputFormat === "html") {
+		const svgAddon = await getSvgGraphicsAddon();
+		if (svgAddon) finalInstruction += svgAddon;
+	}
+	if (outputFormat !== "auto") {
+		const formatInstruction = getOutputFormatInstruction(outputFormat);
+		if (formatInstruction) finalInstruction += formatInstruction;
+	}
+	const gpt = await getGPTInstance({
+		apiKey: token,
+		baseUrl: settings?.baseUrl,
+		model: settings?.model,
+		mcp: settings?.mcp
+	});
+	if (!gpt) {
+		const result = {
+			ok: false,
+			error: "AI initialization failed"
+		};
+		sendResponse?.(result);
+		return result;
+	}
+	gpt.clearPending();
+	let processingStages = 1;
+	let recognizedImages = false;
+	const intermediateRecognizedData = [];
+	if (Array.isArray(input) && (input?.[0]?.type === "message" || input?.[0]?.["role"])) await gpt.getPending()?.push(...input);
+	else {
+		const inputData = Array.isArray(input) ? input : [input];
+		for (const item of inputData) {
+			let processedItem = item;
+			if (typeof item === "string" && dataType === "svg" || typeof item === "string" && item.trim().startsWith("<svg")) processedItem = item;
+			else if (isImageData(item)) {
+				recognizedImages = true;
+				if (intermediateRecognition?.enabled !== false && (intermediateRecognition?.enabled || includeImageRecognition)) {
+					processingStages = 2;
+					const cachedResult = !intermediateRecognition?.forceRefresh ? recognitionCache.get(item, intermediateRecognition?.outputFormat) : null;
+					let recognizedContent;
+					let recognitionResponseId;
+					if (cachedResult) {
+						recognizedContent = cachedResult.recognizedData;
+						recognitionResponseId = cachedResult.responseId;
+					} else {
+						const recognitionResult = await recognizeByInstructions(item, intermediateRecognition?.dataPriorityInstruction || getIntermediateRecognitionInstruction(intermediateRecognition?.outputFormat || "markdown"), void 0, {
+							apiKey: token,
+							baseUrl: settings?.baseUrl,
+							model: settings?.model,
+							mcp: settings?.mcp
+						}, {
+							customInstruction: void 0,
+							useActiveInstruction: false
+						});
+						if (!recognitionResult.ok || !recognitionResult.data) {
+							recognizedContent = "";
+							recognitionResponseId = "";
+						} else {
+							recognizedContent = recognitionResult.data;
+							recognitionResponseId = recognitionResult.responseId || "";
+							if (intermediateRecognition?.cacheResults !== false) {
+								const recognizedAs = intermediateRecognition?.outputFormat || "markdown";
+								recognitionCache.set(item, recognizedContent, recognizedAs, recognitionResponseId);
+							}
+						}
+					}
+					intermediateRecognizedData.push({
+						originalData: item,
+						recognizedData: recognizedContent,
+						recognizedAs: intermediateRecognition?.outputFormat || "markdown",
+						responseId: recognitionResponseId
+					});
+					if (recognizedContent) processedItem = recognizedContent;
+				}
+			}
+			if (processedItem !== null && processedItem !== void 0) {
+				const attachKind = dataType === "image" || isImageData(processedItem) ? "input_image" : null;
+				await gpt?.attachToRequest?.(processedItem, attachKind);
+			}
+		}
+	}
+	await gpt.askToDoAction(finalInstruction);
+	let response;
+	let error;
+	try {
+		response = await gpt?.sendRequest?.(processingEffort, processingVerbosity, null, {
+			responseFormat: getResponseFormat(outputFormat),
+			temperature: .3,
+			signal
+		});
+	} catch (e) {
+		error = String(e);
+	}
+	let parsedResponse = response;
+	if (typeof response === "string") try {
+		parsedResponse = JSON.parse(response);
+	} catch {
+		parsedResponse = null;
+	}
+	const responseContent = parsedResponse?.choices?.[0]?.message?.content;
+	let cleanedResponse = responseContent ? unwrapUnwantedCodeBlocks(responseContent.trim()) : null;
+	let finalData = cleanedResponse;
+	if (cleanedResponse && instruction?.includes("Recognize data from image")) try {
+		const parsedJson = JSON.parse(cleanedResponse);
+		if (parsedJson?.recognized_data) {
+			if (Array.isArray(parsedJson.recognized_data)) finalData = parsedJson.recognized_data.join("\n");
+			else if (typeof parsedJson.recognized_data === "string") finalData = parsedJson.recognized_data;
+			else finalData = JSON.stringify(parsedJson.recognized_data);
+		} else if (parsedJson?.ok === false) finalData = null;
+		else finalData = cleanedResponse;
+	} catch {
+		finalData = cleanedResponse;
+	}
+	const result = {
+		ok: !!finalData && !error,
+		data: finalData || void 0,
+		error: error || (!finalData ? "No data recognized" : void 0),
+		responseId: parsedResponse?.id || gpt?.getResponseId?.(),
+		processingStages,
+		recognizedImages,
+		intermediateRecognizedData: intermediateRecognizedData.length > 0 ? intermediateRecognizedData : void 0
+	};
+	sendResponse?.(result);
+	return result;
+};
+var recognizeByInstructions = async (input, instructions, sendResponse, config, options) => {
+	const result = await processDataWithInstruction(input, {
+		instruction: instructions,
+		customInstruction: options?.customInstruction,
+		useActiveInstruction: options?.useActiveInstruction,
+		processingEffort: options?.recognitionEffort || "low",
+		processingVerbosity: options?.recognitionVerbosity || "low",
+		outputFormat: "auto",
+		outputLanguage: "auto",
+		enableSVGImageGeneration: "auto"
+	});
+	const legacyResult = {
+		ok: result.ok,
+		data: result.data,
+		error: result.error,
+		responseId: result.responseId
+	};
+	sendResponse?.(legacyResult);
+	return legacyResult;
+};
+//#endregion
+export { unified_exports as n, extractJSONFromAIResponse as r, processDataWithInstruction as t };
