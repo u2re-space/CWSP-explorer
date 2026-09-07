@@ -553,8 +553,8 @@ var Be = (e, t) => {
 	if (typeof screen < "u") {
 		let t = screen?.availWidth + "px", r = screen?.availHeight + "px";
 		return {
-			"--screen-width": Math.min(screen?.width, screen?.availWidth) + "px",
-			"--screen-height": Math.min(screen?.height, screen?.availHeight) + "px",
+			"--screen-width": Math.min(screen?.width, globalThis?.screen?.availWidth || screen?.width) + "px",
+			"--screen-height": Math.min(screen?.height, globalThis?.screen?.availHeight || screen?.height) + "px",
 			"--avail-width": e ? r : t,
 			"--avail-height": e ? t : r,
 			"--view-height": Math.min(screen?.availHeight, window?.innerHeight) + "px",
