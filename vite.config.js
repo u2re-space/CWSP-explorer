@@ -41,7 +41,8 @@ const createExplorerHostConfig = async (host) => {
     return cfg;
 };
 
-export default async ({ mode } = {}) => {
+export default async (env = {}) => {
+    const { mode } = env;
     if (mode === "capacitor" || mode === "capacitor-explorer") {
         const { createCapacitorSkuConfig } = await import("../CWSP-document/vite.config.js");
         return createCapacitorSkuConfig("explorer");
@@ -55,11 +56,14 @@ export default async ({ mode } = {}) => {
     if (mode === "neutralino") {
         return createExplorerHostConfig("neutralino");
     }
-    return defineViewProject({
+    // WHY: defineViewProject returns defineConfig(fn); Vite already invoked this
+    // default export and will not call a nested factory — it must get an object.
+    const factory = defineViewProject({
         name: "explorer-view",
         root: explorerRoot,
         defaultDevPort: 443,
         sslDir: "certs",
         pwa: true
     });
+    return typeof factory === "function" ? await factory(env) : factory;
 };
