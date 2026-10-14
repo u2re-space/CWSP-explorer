@@ -8,6 +8,7 @@
 import "./sw-preamble";
 import { collectShareFiles, stageShareFromFormData } from "./lib/share-stage";
 import { publishSwShareReceived, shareLandingPath } from "com/routing/pwa/sw-result-wire";
+import { installShareTargetStaticRoutes } from "com/routing/pwa/sw-lifecycle";
 
 declare const self: ServiceWorkerGlobalScope & {
     __WB_MANIFEST: Array<{ url: string; revision?: string | null }>;
@@ -20,6 +21,7 @@ void _manifest;
 const SHARE_PATHS = new Set(["/share-target", "/share_target"]);
 
 self.addEventListener("install", (event) => {
+    installShareTargetStaticRoutes(event);
     event.waitUntil(self.skipWaiting());
 });
 
