@@ -122,7 +122,7 @@ ui-window.explorer-native-window[native-mode] {
             color: var(--color-on-surface);
             background: #f7f8fc;
             background: light-dark(#f7f8fc, #1a1d24);
-            background: var(--color-surface);
+            background: var(--color-surface-container-low);
         }
 
         cw-view-explorer {
@@ -147,7 +147,7 @@ ui-window.explorer-native-window[native-mode] {
             font-family: var(--font-family, var(--explorer-font-sans, system-ui, sans-serif));
             background: #f7f8fc;
             background: light-dark(#f7f8fc, #1a1d24);
-            background: var(--color-surface);
+            background: var(--color-surface-container-low);
             color: #1a1c1f;
             color: light-dark(#1a1c1f, #e8eaed);
             color: var(--color-on-surface);
@@ -287,7 +287,7 @@ ui-window.explorer-native-window[native-mode] {
         border: none;
         border-radius: 0.75rem;
         padding: 1rem 1.1rem;
-        background: var(--color-surface);
+        background: var(--color-surface-container-low);
         color: var(--color-on-surface);
         box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--color-on-surface) 18%, transparent);
     }
