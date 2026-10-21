@@ -2,8 +2,8 @@
  * Filename: sku-boot.ts
  * FullPath: apps/CWSP-explorer/src/frontend/web/sku-boot.ts
  * FIND:sku
- * Change date: 13.42.00_27.08.2026
- * Reason: One explorer SKU boot for Capacitor, web/PWA, CRX, and Neutralino.
+ * Change date: 12.00.00_21.10.2026
+ * Reason: Explorer SKU keeps the native Android nav bar visible (no SystemBars.hide).
  */
 
 import { bootMinimal } from "boot/BootLoader";
@@ -91,15 +91,6 @@ export const bootExplorerSku = async (
     }
     installExplorerShareIngress();
     void import("@fest-lib/lure").then((m) => m.ensureRemoteMountedFs()).catch(() => {});
-
-    if (host === "capacitor") {
-        try {
-            const { SystemBarType, SystemBars } = await import("@capacitor/core");
-            await SystemBars.hide({ bar: SystemBarType.NavigationBar });
-        } catch {
-            /* web preview */
-        }
-    }
 
     if (host === "neutralino") {
         try {
