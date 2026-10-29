@@ -49,14 +49,14 @@
         border-radius: var(--radius-md);
         background: var(--color-bg-alt);
         color: var(--color-fg);
-        color: contrast-color(var(--color-bg-alt));
+        color: --u2-contrast-color(var(--color-bg-alt));
         border: 1px solid var(--color-border);
         cursor: pointer;
         transition: all var(--transition-fast);
 
         &:hover:not(:disabled) {
             background: var(--color-border);
-            color: contrast-color(var(--color-border));
+            color: --u2-contrast-color(var(--color-border));
         }
 
         &:focus-visible {
@@ -86,7 +86,7 @@
         border: none;
         background: var(--ui-bg);
         color: var(--ui-fg);
-        color: contrast-color(var(--ui-bg));
+        color: --u2-contrast-color(var(--ui-bg));
         border-radius: var(--ui-radius);
         padding: max(var(--ui-pad-y, 0px), 0px) max(var(--ui-pad-x, 0px), 0px);
         font-size: var(--ui-font-size);
@@ -155,7 +155,7 @@
 
         &:hover {
             background: var(--ui-bg-hover);
-            color: contrast-color(var(--ui-bg-hover));
+            color: --u2-contrast-color(var(--ui-bg-hover));
             box-shadow: var(--elev-1);
             transform: translateY(-1px);
         }
@@ -177,7 +177,7 @@
 
             &:hover {
                 background: var(--color-surface-container-high);
-                color: contrast-color(var(--color-surface-container-high));
+                color: --u2-contrast-color(var(--color-surface-container-high));
                 box-shadow: var(--elev-0);
             }
         }
@@ -295,13 +295,13 @@
     .btn-primary {
         background: var(--color-primary);
         color: white;
-        color: contrast-color(var(--color-primary));
+        color: --u2-contrast-color(var(--color-primary));
         border-color: var(--color-primary);
 
         &:hover:not(:disabled) {
             background: var(--color-primary-hover);
             border-color: var(--color-primary-hover);
-            color: contrast-color(var(--color-primary-hover));
+            color: --u2-contrast-color(var(--color-primary-hover));
         }
     }
 
@@ -479,7 +479,7 @@
             border-radius: var(--radius-md, 10px);
             background-color: var(--color-surface, light-dark(#f6f8fc, #1b2029));
             color: var(--color-on-surface, light-dark(#12151c, #eceff7));
-            color: contrast-color(var(--color-surface, light-dark(#f6f8fc, #1b2029)));
+            color: --u2-contrast-color(var(--color-surface, light-dark(#f6f8fc, #1b2029)));
             font-size: 0.875rem;
             font-weight: 400;
             box-shadow:
@@ -519,7 +519,7 @@
                 position: relative;
                 background-color: transparent;
                 color: var(--color-on-surface, light-dark(#12151c, #eceff7));
-                color: contrast-color(var(--color-surface, light-dark(#f6f8fc, #1b2029)));
+                color: --u2-contrast-color(var(--color-surface, light-dark(#f6f8fc, #1b2029)));
                 cursor: pointer;
                 text-wrap: nowrap;
                 text-overflow: ellipsis;
@@ -532,20 +532,20 @@
                 &:hover {
                     background-color: var(--color-surface-container-high, light-dark(#e8ecf4, #2a3140));
                     color: var(--color-on-surface, light-dark(#12151c, #eceff7));
-                    color: contrast-color(var(--color-surface-container-high, light-dark(#e8ecf4, #2a3140)));
+                    color: --u2-contrast-color(var(--color-surface-container-high, light-dark(#e8ecf4, #2a3140)));
                 }
 
                 &:active {
                     background-color: var(--color-surface-container-highest, light-dark(#dde3ee, #343b4d));
                     color: var(--color-on-surface, light-dark(#12151c, #eceff7));
-                    color: contrast-color(var(--color-surface-container-highest, light-dark(#dde3ee, #343b4d)));
+                    color: --u2-contrast-color(var(--color-surface-container-highest, light-dark(#dde3ee, #343b4d)));
                 }
 
                 &:focus-visible {
                     outline: 2px solid var(--color-primary, light-dark(#1d6fd1, #7eb8ff));
                     outline-offset: 1px;
                     background-color: var(--color-surface-container-high, light-dark(#e8ecf4, #2a3140));
-                    color: contrast-color(var(--color-surface-container-high, light-dark(#e8ecf4, #2a3140)));
+                    color: --u2-contrast-color(var(--color-surface-container-high, light-dark(#e8ecf4, #2a3140)));
                 }
 
                 &:not(.ctx-menu-separator) {
@@ -587,7 +587,7 @@
                 padding: 0;
                 background-color: var(--color-outline-variant, light-dark(#c9ced8, #474e5e));
                 color: var(--color-on-surface-variant, light-dark(#545c6f, #b4bfd4));
-                color: contrast-color(var(--color-outline-variant, light-dark(#c9ced8, #474e5e)));
+                color: --u2-contrast-color(var(--color-outline-variant, light-dark(#c9ced8, #474e5e)));
                 opacity: 0.55;
                 pointer-events: none;
             }
@@ -750,14 +750,14 @@
                         background: var(--color-primary);
                         color: var(--color-on-primary);
                         border-color: var(--color-primary);
-                        color: contrast-color(var(--color-primary));
+                        color: --u2-contrast-color(var(--color-primary));
                     }
 
                     &:not(.btn-primary) {
                         background: var(--color-surface-container);
                         color: var(--color-on-surface);
                         border-color: var(--color-outline-variant);
-                        color: contrast-color(var(--color-surface-container));
+                        color: --u2-contrast-color(var(--color-surface-container));
                     }
                 }
             }

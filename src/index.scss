@@ -211,7 +211,7 @@ ui-window.explorer-native-window[native-mode] {
                 border-radius: 0.375rem;
                 background: var(--color-primary, #3794ff);
                 color: var(--color-on-primary, #fff);
-                color: contrast-color(var(--color-primary, #3794ff));
+                color: --u2-contrast-color(var(--color-primary, #3794ff));
                 cursor: pointer;
 
                 &:hover {
@@ -255,14 +255,14 @@ ui-window.explorer-native-window[native-mode] {
             border-radius: 999px;
             background: color-mix(in oklab, var(--color-on-surface, #fff) 8%, transparent);
             color: inherit;
-            color: contrast-color(color-mix(in oklab, var(--color-on-surface, #fff) 8%, transparent));
+            color: --u2-contrast-color(color-mix(in oklab, var(--color-on-surface, #fff) 8%, transparent));
             cursor: pointer;
             font-size: 0.8125rem;
             font-weight: 500;
 
             &:hover {
                 background: color-mix(in oklab, var(--color-on-surface, #fff) 13%, transparent);
-                color: contrast-color(color-mix(in oklab, var(--color-on-surface, #fff) 13%, transparent));
+                color: --u2-contrast-color(color-mix(in oklab, var(--color-on-surface, #fff) 13%, transparent));
             }
 
             &:focus-visible {
